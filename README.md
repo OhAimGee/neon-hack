@@ -14,9 +14,9 @@ Le jeu **se compile et se lance**, mais plusieurs systèmes sont affichés sans 
 |---|---|
 | Boucle de jeu, `scan`, `bruteforce`, `decrypt` | Effets des achats en boutique |
 | Niveaux et déblocage de commandes | Progression des quêtes ; 3 contacts sur 4 |
-| **Alerte 0-100** (jauge, refroidissement, boutique fermée, game over, `laylow`) ; **niveaux 1-6** avec courbe d'expérience et déblocages | `exploit`, `stealthmode`, sauvegarde |
+| **Alerte 0-100** (jauge, refroidissement, boutique fermée, game over, `laylow`) ; **niveaux 1-6** avec courbe d'expérience et déblocages ; **monde unifié** (7 systèmes reliés, `exploit`, récompenses uniques) | `stealthmode`, sauvegarde |
 | Fin d'entrée (Ctrl+D) et saisies invalides gérées ; `--seed`, `--fast`, `--lang`, tests automatisés | Équilibrage général (valeurs provisoires) ; farm de crédits par la boutique/`advhack` |
-| Ambiance, ASCII art, lore ; affichage boutique/contacts/quêtes | Texte anglais complet (aide, statut et alerte sont traduits, le reste non) |
+| Ambiance, ASCII art, lore ; affichage boutique/contacts/quêtes | Texte anglais complet (aide, statut, alerte et monde sont traduits, le reste non) |
 
 La refonte (architecture unifiée, tests, sauvegarde, français/anglais, releases binaires) se déroule sur la branche `refonte/v1`. La version d'origine reste consultable via le tag `legacy-v2.087`.
 
@@ -58,8 +58,9 @@ Tapez `help` en jeu : l'aide n'affiche que les commandes déjà débloquées (ca
 
 - **Départ** : `scan` (débloqué). Les 5 premiers scans rapportent 5, 4, 3, 2, 1 points : ils mènent au niveau 2 et débloquent `bruteforce` ; les suivants ne rapportent plus rien. L'expérience vient ensuite des hacks (chaque cible ne paie qu'une fois).
 - **Niveaux** (expérience cumulée) : 1 Novice · 2 Apprenti (15) · 3 Hacker (60) · 4 Expert (140) · 5 Maître (260) · 6 Légende (420, niveau maximal, débloque `temporalhack`). `status` affiche la progression ; chaque montée annonce les commandes débloquées.
-- **Hacking** : `scan`, `bruteforce <cible>`, `decrypt <texte>`, `backdoor`, `traceroute`, `uploadvirus`.
+- **Hacking** : `scan`, `bruteforce <cible>`, `decrypt <texte>`, `backdoor`, `traceroute`, `exploit`, `uploadvirus`, `aihack`.
 - **Hacking avancé** : `advhack <cible>`, `analyzedefenses`, `socialeng`, `aiassist`, `neuralsync`, `quantumdecrypt`, `temporalhack`.
+- **Le réseau** : 7 systèmes, révélés par `scan` selon votre niveau et reliés entre eux. Pour attaquer un système il faut avoir **compromis son relais** (`scan` marque `[ROUTE FERMÉE]`) ; `traceroute` nomme le relais et, une fois un système tracé, `exploit` (niveau 4) perce directement. Chaque système ne paie qu'**une fois** (crédits, expérience, fichiers) : `socialeng` y apporte des accès internes (+15 % sur toutes les attaques). Les méthodes de `advhack` exigent un outil, actif dès que vous en possédez l'équipement (ordinateur quantique, IA assistante, virus, `neuralsync`…).
 - **Monde** : `shop`, `laylow`, `quests`, `contacts`, `contact <n° ou nom>`, `messages`, `read <n°>`.
 - **Système** : `status`, `clear`, `quit`.
 

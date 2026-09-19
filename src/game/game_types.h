@@ -100,6 +100,8 @@ typedef struct
     bool has_backdoor;
     bool has_virus;
     bool is_traced;
+    bool is_discovered; // révélé par `scan` (niveau de découverte atteint)
+    bool has_intel;     // accès internes obtenus par ingénierie sociale (+chance sur ce système)
     int data_value;
     int firewall_strength;
     char corporation[50];

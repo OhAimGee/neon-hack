@@ -12,6 +12,7 @@
 #include "../i18n/i18n.h"
 #include "legacy_colors.h"
 #include "progression.h"
+#include "world.h"
 
 #include <ctype.h>
 #include <stdio.h>
@@ -20,13 +21,50 @@
 #include <time.h>
 
 
-/* Les fonctions d'advanced_hacking.c accumulent l'expérience dans pending_xp : on la verse ici,
- * par le point d'entrée unique, pour que les montées de niveau et déblocages aient lieu. */
-static void flush_advanced_xp(GameState *gs)
+/*
+ * Les attaques avancées visent les MÊMES systèmes que les classiques (gs->nodes) : seuls ceux qui
+ * ont un profil de défense avancé (nh_world_adv_target) les acceptent. Résout l'argument en
+ * (système, cible avancée) et explique à l'écran pourquoi pas.
+ */
+static bool resolve_advanced(const GameState *gs, const char *name, bool need_route, int *node_idx, int *target_id)
 {
-    int xp = gs->advanced.pending_xp;
-    gs->advanced.pending_xp = 0;
-    nh_grant_xp(gs, xp);
+    int idx = nh_world_resolve(gs, name, need_route);
+    if (idx < 0)
+        return false;
+    int tid = nh_world_adv_target(idx);
+    if (tid < 0)
+    {
+        printf(nh_tr(NH_STR_WORLD_NO_PROFILE), gs->nodes[idx].name);
+        printf("\n");
+        return false;
+    }
+    *node_idx = idx;
+    *target_id = tid;
+    return true;
+}
+
+/* Liste les systèmes découverts qui ont un profil avancé. */
+static void list_advanced_targets(const GameState *gs)
+{
+    bool any = false;
+    for (int i = 0; i < nh_world_count(); i++)
+    {
+        int tid = nh_world_adv_target(i);
+        if (tid < 0 || !gs->nodes[i].is_discovered)
+            continue;
+        if (!any)
+            printf("%s\n", nh_tr(NH_STR_WORLD_ADV_TARGETS));
+        any = true;
+        const AdvancedTarget *t = &gs->advanced.targets[tid];
+        printf("  %s%s%s (%s) - %d/100", COLOR_YELLOW, gs->nodes[i].name, COLOR_RESET, t->name, t->security_rating);
+        if (gs->nodes[i].is_compromised)
+            printf(" %s%s%s", COLOR_GREEN, nh_tr(NH_STR_WORLD_TAG_COMPROMISED), COLOR_RESET);
+        else if (!nh_world_reachable(gs->nodes, i))
+            printf(" %s%s%s", COLOR_RED, nh_tr(NH_STR_WORLD_TAG_ROUTE_CLOSED), COLOR_RESET);
+        printf("\n");
+    }
+    if (!any)
+        printf("%s\n", nh_tr(NH_STR_WORLD_ADV_NONE));
 }
 
 bool cmd_advanced_hack(GameState *gs, const char *target_name)
@@ -34,43 +72,41 @@ bool cmd_advanced_hack(GameState *gs, const char *target_name)
     if (strlen(target_name) == 0)
     {
         printf("Usage: advhack <nom_cible>\n");
-        printf("Cibles disponibles: nexus-mainframe, banking-network, research-lab, gov-database, underground-market\n");
+        list_advanced_targets(gs);
         return false;
     }
 
-    // Trouver la cible dans le système avancé
-    int target_id = -1;
-    for (int i = 0; i < gs->advanced.target_count; i++)
-    {
-        if (strcmp(gs->advanced.targets[i].name, target_name) == 0)
-        {
-            target_id = i;
-            break;
-        }
-    }
+    int node_idx, target_id;
+    if (!resolve_advanced(gs, target_name, true, &node_idx, &target_id))
+        return false;
 
-    if (target_id == -1)
+    NetworkNode *node = &gs->nodes[node_idx];
+    if (node->is_compromised)
     {
-        printf("Cible '%s' introuvable. Utilisez 'analyzedefenses' pour voir les cibles disponibles.\n", target_name);
+        printf("%s\n", nh_tr(NH_STR_WORLD_ALREADY_COMPROMISED));
         return false;
     }
 
+    nh_world_sync_tools(gs);
     display_hacking_menu(&gs->advanced);
 
-    printf("\nChoisissez une méthode de hack (1-8): ");
+    printf("\nChoisissez une méthode de hack (1-%d): ", gs->advanced.method_count);
     char input[10];
     nh_read_line(input, sizeof(input));
     int method_choice = atoi(input) - 1;
 
-    if (method_choice < 0 || method_choice >= 8)
+    if (method_choice < 0 || method_choice >= gs->advanced.method_count)
     {
         printf("Méthode invalide.\n");
         return false;
     }
 
-    HackType hack_type = (HackType)method_choice;
-    bool ok = attempt_advanced_hack(&gs->advanced, target_id, hack_type, &gs->player, &gs->alert);
-    flush_advanced_xp(gs);
+    /* Le numéro choisi est celui du menu (ordre de la table des méthodes), pas celui de l'enum. */
+    HackType hack_type = gs->advanced.methods[method_choice].type;
+    int bonus = nh_world_node_bonus(node) - nh_alert_success_penalty(&gs->alert);
+    bool ok = attempt_advanced_hack(&gs->advanced, target_id, hack_type, &gs->player, &gs->alert, bonus);
+    if (ok)
+        nh_world_compromise(gs, node_idx, true);
     return ok;
 }
 
@@ -162,22 +198,17 @@ bool cmd_analyze_defenses(GameState *gs, const char *target_name)
     if (strlen(target_name) == 0)
     {
         printf("\n" COLOR_YELLOW "🎯 CIBLES DISPONIBLES:" COLOR_RESET "\n");
-        display_advanced_targets(&gs->advanced);
+        list_advanced_targets(gs);
         return true;
     }
 
-    // Trouver et analyser la cible spécifique
-    for (int i = 0; i < gs->advanced.target_count; i++)
-    {
-        if (strcmp(gs->advanced.targets[i].name, target_name) == 0)
-        {
-            display_defense_analysis(&gs->advanced.targets[i]);
-            return true;
-        }
-    }
+    // Une analyse est passive : elle n'exige pas que la route soit ouverte
+    int node_idx, target_id;
+    if (!resolve_advanced(gs, target_name, false, &node_idx, &target_id))
+        return false;
 
-    printf("Cible '%s' introuvable.\n", target_name);
-    return false;
+    display_defense_analysis(&gs->advanced.targets[target_id]);
+    return true;
 }
 
 bool cmd_social_engineer(GameState *gs, const char *target_name)
@@ -188,25 +219,28 @@ bool cmd_social_engineer(GameState *gs, const char *target_name)
         return false;
     }
 
-    // Trouver la cible
-    int target_id = -1;
-    for (int i = 0; i < gs->advanced.target_count; i++)
-    {
-        if (strcmp(gs->advanced.targets[i].name, target_name) == 0)
-        {
-            target_id = i;
-            break;
-        }
-    }
+    // Réussie, elle donne des accès internes : toutes les attaques sur ce système y gagnent
+    // NH_INTEL_BONUS points, une fois pour toutes (et l'expérience n'est versée qu'une fois).
+    int node_idx, target_id;
+    if (!resolve_advanced(gs, target_name, true, &node_idx, &target_id))
+        return false;
 
-    if (target_id == -1)
+    NetworkNode *node = &gs->nodes[node_idx];
+    if (node->has_intel)
     {
-        printf("Cible introuvable pour l'ingénierie sociale.\n");
+        printf(nh_tr(NH_STR_WORLD_INTEL_ALREADY), node->name);
+        printf("\n");
         return false;
     }
 
     bool ok = social_engineering_attack(&gs->advanced, target_id, &gs->player, &gs->alert);
-    flush_advanced_xp(gs);
+    if (ok)
+    {
+        node->has_intel = true;
+        printf(nh_tr(NH_STR_WORLD_INTEL_GAINED), node->name, NH_INTEL_BONUS);
+        printf("\n");
+        nh_grant_xp(gs, 20);
+    }
     return ok;
 }
 
@@ -227,43 +261,19 @@ bool cmd_temporal_hack(GameState *gs, const char *target_name)
         return false;
     }
 
-    // Trouver la cible
-    int target_id = -1;
-    for (int i = 0; i < gs->advanced.target_count; i++)
-    {
-        if (strcmp(gs->advanced.targets[i].name, target_name) == 0)
-        {
-            target_id = i;
-            break;
-        }
-    }
+    // Le hack temporel contourne la route : le relais n'a pas besoin d'être compromis
+    int node_idx, target_id;
+    if (!resolve_advanced(gs, target_name, false, &node_idx, &target_id))
+        return false;
 
-    if (target_id == -1)
+    if (gs->nodes[node_idx].is_compromised)
     {
-        printf("Cible introuvable pour le hack temporel.\n");
+        printf("%s\n", nh_tr(NH_STR_WORLD_ALREADY_COMPROMISED));
         return false;
     }
 
     bool ok = temporal_hack_attempt(&gs->advanced, target_id, &gs->player, &gs->alert);
-    flush_advanced_xp(gs);
+    if (ok)
+        nh_world_compromise(gs, node_idx, true);
     return ok;
-}
-
-/*
- * Mort depuis l'origine : la commande « quantumdecrypt » du niveau 5
- * (cmd_quantum_decrypt) la masquait dans le dispatch. Volontairement non
- * enregistrée dans la table de commandes ; à fusionner avec
- * cmd_quantum_decrypt lors de la Phase 3 (unification du hacking).
- */
-
-bool cmd_quantum_decrypt_advanced(GameState *gs, const char *encrypted_data)
-{
-    if (strlen(encrypted_data) == 0)
-    {
-        printf("Usage: quantumdecrypt <données_cryptées>\n");
-        printf("Exemple: quantumdecrypt 'Q#X7#NEXUS#SECRET#DATA'\n");
-        return false;
-    }
-
-    return activate_quantum_hack(&gs->advanced.quantum, encrypted_data);
 }

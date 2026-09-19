@@ -179,7 +179,6 @@ static void test_unlocks_per_level(void)
     /* Commandes à niveau minimum : socialeng (2) et advhack (3) sont annoncées. */
     CHECK(has(out, "socialeng"));
     CHECK(has(out, "advhack"));
-    CHECK(!has(out, "exploit")); /* pas de handler : jamais annoncée */
 
     int stealth = gs->player.stealth_rating;
     grant(gs, 80, out, sizeof out); /* 140 : niveau 4 */
@@ -190,6 +189,7 @@ static void test_unlocks_per_level(void)
     CHECK_INT(gs->player.stealth_rating, stealth + 2);
     CHECK(has(out, "traceroute"));
     CHECK(has(out, "uploadvirus"));
+    CHECK(has(out, "exploit")); /* enfin implémentée : annoncée avec les autres */
     CHECK(!gs->player.has_ai_assistant);
 
     int credits = gs->player.credits;
@@ -315,7 +315,12 @@ static void test_traceroute_is_not_a_farm(void)
     CHECK_INT(gs->player.experience, 8);
     CHECK(has(out, "déjà tracée"));
 
-    /* Un autre nœud rapporte, lui, une fois. */
+    /* Un système encore inconnu ne se trace pas… */
+    run_line(gs, "traceroute corp-server-01", out, sizeof out);
+    CHECK(has(out, "introuvable"));
+    CHECK_INT(gs->player.experience, 8);
+    /* …un autre système, une fois découvert, rapporte, lui, une fois. */
+    gs->nodes[1].is_discovered = true;
     run_line(gs, "traceroute corp-server-01", out, sizeof out);
     CHECK_INT(gs->player.experience, 16);
     free(gs);
@@ -349,7 +354,7 @@ static void test_aihack_is_not_a_farm(void)
         run_line(gs, "aihack localhost", out, sizeof out);
     CHECK_INT(gs->player.credits, credits); /* plus de fichiers recrédités à chaque appel */
     CHECK_INT(gs->player.experience, xp);
-    CHECK(has(out, "déjà compromis"));
+    CHECK(has(out, "Aucun fichier à extraire")); /* tout a été extrait à la compromission */
     free(gs);
 }
 
@@ -397,15 +402,12 @@ static void test_advanced_xp_goes_through_level_ups(void)
     nh_term_set_color(false);
     nh_set_fast(true);
 
-    /* Les fonctions de hacking avancé déposent leur expérience dans pending_xp ; la commande
-     * la verse par nh_grant_xp : la montée de niveau et les déblocages ont bien lieu. */
+    /* Compromettre un système avancé verse son expérience par nh_grant_xp (via le monde) : la
+     * montée de niveau et les déblocages ont bien lieu. */
     gs->player.level = LEVEL_APPRENTICE;
     gs->player.experience = 20;
-    gs->advanced.pending_xp = 0;
-    /* Simule ce que fait cmd_social_engineer en cas de réussite (+100). */
-    gs->advanced.pending_xp = 100;
     NhCapture cap = nh_capture_begin();
-    nh_grant_xp(gs, gs->advanced.pending_xp);
+    nh_grant_xp(gs, 100);
     nh_capture_end(&cap, out, sizeof out);
     CHECK_INT(gs->player.level, LEVEL_HACKER);
     CHECK(gs->player.commands_unlocked[CMD_DECRYPT]);

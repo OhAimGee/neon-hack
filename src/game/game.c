@@ -6,6 +6,7 @@
  * jeu et le dispatch des commandes sont neufs (voir commands.c).
  */
 #include "game.h"
+#include "world.h"
 
 #include "../core/io.h"
 #include "../core/platform.h"
@@ -84,71 +85,8 @@ void init_game(GameState *gs)
     init_advanced_hacking_system(&gs->advanced);
 
 
-    // Initialiser le réseau avec nouvelles propriétés
-    strcpy(gs->nodes[0].name, "localhost");
-    gs->nodes[0].security = SECURITY_LOW;
-    gs->nodes[0].is_compromised = false;
-    gs->nodes[0].has_backdoor = false;
-    gs->nodes[0].has_virus = false;
-    gs->nodes[0].is_traced = false;
-    gs->nodes[0].data_value = 10;
-    gs->nodes[0].firewall_strength = 2;
-    strcpy(gs->nodes[0].corporation, "Independent");
-    gs->nodes[0].file_count = 1;
-    strcpy(gs->nodes[0].secret_files[0].filename, "user_data.txt");
-    strcpy(gs->nodes[0].secret_files[0].content, "Données utilisateur locales");
-    gs->nodes[0].secret_files[0].encryption_level = 1;
-    gs->nodes[0].secret_files[0].is_unlocked = false;
-    gs->nodes[0].secret_files[0].credits_value = 50;
-
-    strcpy(gs->nodes[1].name, "corp-server-01");
-    gs->nodes[1].security = SECURITY_MEDIUM;
-    gs->nodes[1].is_compromised = false;
-    gs->nodes[1].has_backdoor = false;
-    gs->nodes[1].has_virus = false;
-    gs->nodes[1].is_traced = false;
-    gs->nodes[1].data_value = 50;
-    gs->nodes[1].firewall_strength = 5;
-    strcpy(gs->nodes[1].corporation, "MegaCorp Industries");
-    gs->nodes[1].file_count = 2;
-    strcpy(gs->nodes[1].secret_files[0].filename, "employee_records.db");
-    strcpy(gs->nodes[1].secret_files[0].content, "Registres des employés");
-    gs->nodes[1].secret_files[0].encryption_level = 2;
-    gs->nodes[1].secret_files[0].is_unlocked = false;
-    gs->nodes[1].secret_files[0].credits_value = 200;
-    strcpy(gs->nodes[1].secret_files[1].filename, "financial_data.xlsx");
-    strcpy(gs->nodes[1].secret_files[1].content, "Données financières confidentielles");
-    gs->nodes[1].secret_files[1].encryption_level = 3;
-    gs->nodes[1].secret_files[1].is_unlocked = false;
-    gs->nodes[1].secret_files[1].credits_value = 500;
-
-    strcpy(gs->nodes[2].name, "nexus-mainframe");
-    gs->nodes[2].security = SECURITY_HIGH;
-    gs->nodes[2].is_compromised = false;
-    gs->nodes[2].has_backdoor = false;
-    gs->nodes[2].has_virus = false;
-    gs->nodes[2].is_traced = false;
-    gs->nodes[2].data_value = 200;
-    gs->nodes[2].firewall_strength = 8;
-    strcpy(gs->nodes[2].corporation, "Nexus Corp");
-    gs->nodes[2].file_count = 3;
-    strcpy(gs->nodes[2].secret_files[0].filename, "project_ghost.dat");
-    strcpy(gs->nodes[2].secret_files[0].content, "CLASSIFIED");
-    gs->nodes[2].secret_files[0].encryption_level = 4;
-    gs->nodes[2].secret_files[0].is_unlocked = false;
-    gs->nodes[2].secret_files[0].credits_value = 1000;
-    strcpy(gs->nodes[2].secret_files[1].filename, "neural_maps.bin");
-    strcpy(gs->nodes[2].secret_files[1].content, "Cartes neurales des citoyens");
-    gs->nodes[2].secret_files[1].encryption_level = 5;
-    gs->nodes[2].secret_files[1].is_unlocked = false;
-    gs->nodes[2].secret_files[1].credits_value = 1500;
-    strcpy(gs->nodes[2].secret_files[2].filename, "quantum_keys.qkey");
-    strcpy(gs->nodes[2].secret_files[2].content, "Clés de chiffrement quantique");
-    gs->nodes[2].secret_files[2].encryption_level = 6;
-    gs->nodes[2].secret_files[2].is_unlocked = false;
-    gs->nodes[2].secret_files[2].credits_value = 2000;
-
-    gs->discovered_nodes = 3;
+    nh_world_init(gs->nodes);
+    nh_world_discover(gs->nodes, gs->player.level); // au départ, seul votre propre poste est connu
 
     // Initialiser la bibliothèque de virus
     init_virus_library(gs);

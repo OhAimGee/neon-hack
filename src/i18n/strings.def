@@ -66,6 +66,9 @@ NH_STR(NH_STR_HELP_BACKDOOR,
 NH_STR(NH_STR_HELP_TRACEROUTE,
        "Suivre le chemin des paquets vers une cible",
        "Trace the route of packets to a target")
+NH_STR(NH_STR_HELP_EXPLOIT,
+       "Exploiter la faille trouvée par traceroute (sans passer par les relais)",
+       "Exploit the flaw found by traceroute (bypassing the relays)")
 NH_STR(NH_STR_HELP_UPLOADVIRUS,
        "Télécharger un virus sur un système distant",
        "Upload a virus to a remote system")
@@ -251,3 +254,45 @@ NH_STR(NH_STR_PROG_ALREADY_CLAIMED, "(Vous avez déjà obtenu cette récompense.
 NH_STR(NH_STR_PROG_ALREADY_TRACED, "(Route déjà tracée : rien de nouveau à apprendre.)",
        "(Route already traced: nothing new to learn.)")
 NH_STR(NH_STR_STATUS_XP_MAX, "MAX", "MAX")
+
+/* ---- Monde unifié (src/game/world.c) ---- */
+NH_STR(NH_STR_WORLD_NOT_FOUND, "Système '%s' introuvable. Utilisez 'scan' d'abord.",
+       "System '%s' not found. Use 'scan' first.")
+NH_STR(NH_STR_WORLD_ROUTE_CLOSED, "Route fermée vers %s : compromettez d'abord %s.",
+       "No route to %s: compromise %s first.")
+NH_STR(NH_STR_WORLD_ALREADY_COMPROMISED, "Système déjà compromis.", "System already compromised.")
+NH_STR(NH_STR_WORLD_ACCESS, "Accès obtenu à %s !", "Access granted to %s!")
+NH_STR(NH_STR_WORLD_DATA, "Données récupérées : %d crédits", "Data recovered: %d credits")
+NH_STR(NH_STR_WORLD_FILE, "Fichier déchiffré : %s", "File decrypted: %s")
+NH_STR(NH_STR_WORLD_NOTHING_TO_EXTRACT, "Aucun fichier à extraire sur %s.",
+       "No file left to extract on %s.")
+NH_STR(NH_STR_WORLD_EXTRACT, "Extraction des fichiers de %s...", "Extracting files from %s...")
+NH_STR(NH_STR_WORLD_TAG_COMPROMISED, "[COMPROMIS]", "[COMPROMISED]")
+NH_STR(NH_STR_WORLD_TAG_ROUTE_CLOSED, "[ROUTE FERMÉE]", "[NO ROUTE]")
+NH_STR(NH_STR_WORLD_TAG_NEW, "[NOUVEAU]", "[NEW]")
+NH_STR(NH_STR_WORLD_SECURITY, "[SÉCURITÉ: %s]", "[SECURITY: %s]")
+NH_STR(NH_STR_WORLD_SEC_LOW, "FAIBLE", "LOW")
+NH_STR(NH_STR_WORLD_SEC_MEDIUM, "MOYENNE", "MEDIUM")
+NH_STR(NH_STR_WORLD_SEC_HIGH, "ÉLEVÉE", "HIGH")
+NH_STR(NH_STR_WORLD_SEC_CRITICAL, "CRITIQUE", "CRITICAL")
+NH_STR(NH_STR_WORLD_NO_PROFILE,
+       "%s n'a pas de profil de sécurité avancé : utilisez les commandes classiques.",
+       "%s has no advanced security profile: use the classic commands.")
+NH_STR(NH_STR_WORLD_ADV_TARGETS, "Cibles avancées connues :", "Known advanced targets:")
+NH_STR(NH_STR_WORLD_ADV_NONE, "Aucune cible avancée découverte : lancez 'scan'.",
+       "No advanced target discovered yet: run 'scan'.")
+NH_STR(NH_STR_WORLD_INTEL_GAINED,
+       "Accès internes obtenus sur %s : toutes les attaques y gagnent +%d %%.",
+       "Inside access gained on %s: every attack there gets +%d%%.")
+NH_STR(NH_STR_WORLD_INTEL_ALREADY, "Vous avez déjà des accès internes sur %s.",
+       "You already have inside access on %s.")
+NH_STR(NH_STR_EXPLOIT_USAGE, "Usage : exploit <nom_système>", "Usage: exploit <system_name>")
+NH_STR(NH_STR_EXPLOIT_NO_FLAW,
+       "Aucune faille connue sur %s : lancez d'abord « traceroute %s ».",
+       "No known flaw on %s: run \"traceroute %s\" first.")
+NH_STR(NH_STR_EXPLOIT_START, "Exploitation de la faille de %s...", "Exploiting the flaw of %s...")
+NH_STR(NH_STR_EXPLOIT_STEP1, "Chargement du payload zero-day...", "Loading the zero-day payload...")
+NH_STR(NH_STR_EXPLOIT_STEP2, "Contournement des relais...", "Bypassing the relays...")
+NH_STR(NH_STR_EXPLOIT_OK, "✓ Faille exploitée : brèche ouverte !", "✓ Flaw exploited: breach opened!")
+NH_STR(NH_STR_EXPLOIT_FAIL, "✗ Exploit contré : le correctif est déjà en place.",
+       "✗ Exploit countered: the patch is already in place.")

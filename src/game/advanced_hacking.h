@@ -73,7 +73,6 @@ typedef struct
     int defense_count;
     bool has_ai_guardian;
     bool quantum_encrypted;
-    int data_value;
     int corporate_level; // 1-5, 5 étant les plus dangereux
 } AdvancedTarget;
 
@@ -136,24 +135,22 @@ typedef struct
     int player_hacking_level;
     int neural_interface_sync;
     bool god_mode_unlocked;
-    int pending_xp; // expérience gagnée, à verser via nh_grant_xp() par l'appelant (cmd_advanced.c)
 } AdvancedHackingSystem;
 
 // Prototypes des fonctions
 void init_advanced_hacking_system(AdvancedHackingSystem *system);
 void display_hacking_menu(AdvancedHackingSystem *system);
-bool attempt_advanced_hack(AdvancedHackingSystem *system, int target_id, HackType method, Player *player, AlertSystem *alert);
+bool attempt_advanced_hack(AdvancedHackingSystem *system, int target_id, HackType method, Player *player, AlertSystem *alert, int chance_bonus);
 void display_available_tools(AdvancedHackingSystem *system);
 bool use_hacking_tool(AdvancedHackingSystem *system, HackingTool tool, Player *player);
 void update_stealth_system(StealthSystem *stealth);
-bool activate_quantum_hack(QuantumSystem *quantum, const char *target_data);
 void train_ai_assistant(AIAssistant *ai, int experience_points);
-void display_advanced_targets(AdvancedHackingSystem *system);
 bool install_backdoor_advanced(AdvancedHackingSystem *system, int target_id, Player *player);
 bool upload_advanced_virus(AdvancedHackingSystem *system, int target_id, char *virus_type, Player *player);
 void display_defense_analysis(AdvancedTarget *target);
 int calculate_hack_success_rate(const AdvancedHackingSystem *system, HackingMethod *method, AdvancedTarget *target, Player *player);
 void handle_detection(AdvancedTarget *target, AlertSystem *alert, int severity);
+int social_engineering_chance(const Player *player, const AdvancedTarget *target);
 bool social_engineering_attack(AdvancedHackingSystem *system, int target_id, Player *player, AlertSystem *alert);
 void display_neural_interface_status(AdvancedHackingSystem *system);
 bool temporal_hack_attempt(AdvancedHackingSystem *system, int target_id, Player *player, AlertSystem *alert);

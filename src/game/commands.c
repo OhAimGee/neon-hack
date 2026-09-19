@@ -114,6 +114,7 @@ static const NhCommand k_commands[] = {
     {"decrypt",        NULL,              NH_CAT_HACK,     CMD_DECRYPT,      0, false, NH_STR_HELP_DECRYPT,        cmd_decrypt},
     {"backdoor",       NULL,              NH_CAT_HACK,     CMD_BACKDOOR,     0, false, NH_STR_HELP_BACKDOOR,       cmd_backdoor},
     {"traceroute",     NULL,              NH_CAT_HACK,     CMD_TRACE_ROUTE,  0, false, NH_STR_HELP_TRACEROUTE,     cmd_trace_route},
+    {"exploit",        NULL,              NH_CAT_HACK,     CMD_EXPLOIT,      0, false, NH_STR_HELP_EXPLOIT,        cmd_exploit},
     {"uploadvirus",    "upload_virus",    NH_CAT_HACK,     CMD_UPLOAD_VIRUS, 0, false, NH_STR_HELP_UPLOADVIRUS,    cmd_upload_virus},
     {"stealth",        NULL,              NH_CAT_HACK,     NO,               0, true,  NH_STR_HELP_STEALTH,        cmd_stealth_mode},
     {"aihack",         "ai_hack",         NH_CAT_HACK,     CMD_AI_HACK,      0, false, NH_STR_HELP_AIHACK,         cmd_ai_hack},

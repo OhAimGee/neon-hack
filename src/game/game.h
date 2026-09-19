@@ -10,7 +10,7 @@
 #include "quest_system.h"
 #include "shop.h"
 
-#define NH_MAX_NODES 5
+#define NH_MAX_NODES 7 /* = nh_world_count() (world.c le vérifie à la compilation) */
 
 /*
  * Tout l'état d'une partie. Aucune variable globale : chaque fonction de jeu
@@ -25,7 +25,6 @@ typedef struct GameState
 
     /* Réseau */
     NetworkNode nodes[NH_MAX_NODES];
-    int discovered_nodes;
 
     /* Mécaniques d'origine */
     Virus viruses[10];
@@ -63,6 +62,7 @@ bool cmd_backdoor(GameState *gs, const char *target);
 bool cmd_trace_route(GameState *gs, const char *target);
 bool cmd_upload_virus(GameState *gs, const char *target);
 bool cmd_stealth_mode(GameState *gs, const char *arg);
+bool cmd_exploit(GameState *gs, const char *target);
 bool cmd_ai_hack(GameState *gs, const char *target);
 bool cmd_quantum_decrypt(GameState *gs, const char *data);
 
@@ -81,6 +81,5 @@ bool cmd_neural_sync(GameState *gs, const char *arg);
 bool cmd_analyze_defenses(GameState *gs, const char *target_name);
 bool cmd_social_engineer(GameState *gs, const char *target_name);
 bool cmd_temporal_hack(GameState *gs, const char *target_name);
-bool cmd_quantum_decrypt_advanced(GameState *gs, const char *encrypted_data); /* non enregistrée */
 
 #endif /* NH_GAME_H */

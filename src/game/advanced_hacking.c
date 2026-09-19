@@ -120,7 +120,6 @@ void init_advanced_hacking_system(AdvancedHackingSystem *system)
         .defense_count = 3,
         .has_ai_guardian = true,
         .quantum_encrypted = true,
-        .data_value = 10000,
         .corporate_level = 5};
     system->targets[0].defenses[0] = (DefenseSystem){
         .type = DEFENSE_TYPE_AI_GUARDIAN,
@@ -151,7 +150,6 @@ void init_advanced_hacking_system(AdvancedHackingSystem *system)
         .defense_count = 2,
         .has_ai_guardian = false,
         .quantum_encrypted = true,
-        .data_value = 5000,
         .corporate_level = 4};
     system->targets[1].defenses[0] = (DefenseSystem){
         .type = DEFENSE_TYPE_FIREWALL,
@@ -175,7 +173,6 @@ void init_advanced_hacking_system(AdvancedHackingSystem *system)
         .defense_count = 2,
         .has_ai_guardian = true,
         .quantum_encrypted = false,
-        .data_value = 3000,
         .corporate_level = 3};
     system->targets[2].defenses[0] = (DefenseSystem){
         .type = DEFENSE_TYPE_AI_GUARDIAN,
@@ -199,7 +196,6 @@ void init_advanced_hacking_system(AdvancedHackingSystem *system)
         .defense_count = 3,
         .has_ai_guardian = true,
         .quantum_encrypted = true,
-        .data_value = 8000,
         .corporate_level = 5};
     system->targets[3].defenses[0] = (DefenseSystem){
         .type = DEFENSE_TYPE_AI_GUARDIAN,
@@ -230,7 +226,6 @@ void init_advanced_hacking_system(AdvancedHackingSystem *system)
         .defense_count = 1,
         .has_ai_guardian = false,
         .quantum_encrypted = false,
-        .data_value = 1500,
         .corporate_level = 2};
     system->targets[4].defenses[0] = (DefenseSystem){
         .type = DEFENSE_TYPE_FIREWALL,
@@ -382,13 +377,15 @@ void display_hacking_menu(AdvancedHackingSystem *system)
 
         if (method->requires_tool)
         {
-            printf("      %sRequiert:%s %s\n", COLOR_RED, COLOR_RESET,
-                   system->tools[method->required_tool].name);
+            const CyberTool *tool = &system->tools[method->required_tool];
+            printf("      %sRequiert:%s %s %s%s%s\n", COLOR_RED, COLOR_RESET, tool->name,
+                   tool->is_active ? COLOR_GREEN : COLOR_RED, tool->is_active ? "[ACTIF]" : "[INACTIF]",
+                   COLOR_RESET);
         }
     }
 
     printf("\n%sCommandes spéciales:%s\n", COLOR_MAGENTA, COLOR_RESET);
-    printf("  advhack <cible> <méthode>  - Lancer un hack avancé\n");
+    printf("  advhack <cible>            - Lancer un hack avancé (la méthode est demandée ensuite)\n");
     printf("  stealthmode                - Activer/désactiver mode furtif\n");
     printf("  quantumdecrypt <data>      - Décryptage quantique\n");
     printf("  aiassist <cible>           - Assistance IA pour hack\n");
@@ -398,7 +395,7 @@ void display_hacking_menu(AdvancedHackingSystem *system)
     printf("  temporalhack <cible>       - Hack temporel (expérimental)\n");
 }
 
-bool attempt_advanced_hack(AdvancedHackingSystem *system, int target_id, HackType method, Player *player, AlertSystem *alert)
+bool attempt_advanced_hack(AdvancedHackingSystem *system, int target_id, HackType method, Player *player, AlertSystem *alert, int chance_bonus)
 {
     if (target_id < 0 || target_id >= system->target_count)
     {
@@ -456,7 +453,11 @@ bool attempt_advanced_hack(AdvancedHackingSystem *system, int target_id, HackTyp
     printf("\n");
 
     // Calcul du taux de succès
-    int final_success_rate = calculate_hack_success_rate(system, selected_method, target, player);
+    int final_success_rate = calculate_hack_success_rate(system, selected_method, target, player) + chance_bonus;
+    if (final_success_rate < 1)
+        final_success_rate = 1;
+    if (final_success_rate > 99)
+        final_success_rate = 99;
     int roll = rand() % 100;
 
     printf("\n%sAnalyse des défenses...%s\n", COLOR_YELLOW, COLOR_RESET);
@@ -467,12 +468,7 @@ bool attempt_advanced_hack(AdvancedHackingSystem *system, int target_id, HackTyp
     if (roll < final_success_rate)
     {
         printf("\n%s🎯 HACK RÉUSSI ! 🎯%s\n", COLOR_BRIGHT_GREEN, COLOR_RESET);
-        printf("\n%sAccès obtenu à: %s%s\n", COLOR_GREEN, target->name, COLOR_RESET);
-        printf("%sDonnées récupérées: %d crédits%s\n", COLOR_GREEN, target->data_value, COLOR_RESET);
-
-        // Récompenses
-        player->credits += target->data_value;
-        system->pending_xp += target->data_value / 10;
+        // Crédits, expérience et fichiers : versés une seule fois par le monde (nh_world_compromise)
         if (selected_method->requires_tool)
         {
             system->tools[selected_method->required_tool].battery_life -= selected_method->energy_cost;
@@ -480,9 +476,6 @@ bool attempt_advanced_hack(AdvancedHackingSystem *system, int target_id, HackTyp
 
         // Augmenter le niveau de hack
         system->player_hacking_level += (target->corporate_level > 3) ? 1 : 0;
-
-        printf("\n%s[+%d EXP] [+%d CRÉDITS]%s\n",
-               COLOR_BRIGHT_GREEN, target->data_value / 10, target->data_value, COLOR_RESET);
 
         return true;
     }
@@ -591,8 +584,6 @@ bool temporal_hack_attempt(AdvancedHackingSystem *system, int target_id, Player 
     {
         printf("\n%sHACK TEMPOREL RÉUSSI!%s\n", COLOR_GREEN, COLOR_RESET);
         printf("Les défenses ont été contournées via manipulation temporelle!\n");
-        system->pending_xp += 200;
-        player->credits += target->data_value * 2;
         return true;
     }
     else
@@ -629,6 +620,18 @@ void display_defense_analysis(AdvancedTarget *target)
     }
 }
 
+int social_engineering_chance(const Player *player, const AdvancedTarget *target)
+{
+    /* security_rating est sur 100 : l'ancienne formule (rating × 5) le lisait sur 10 et rendait
+     * l'attaque impossible. Valeurs provisoires (équilibrage en phase 5). */
+    int chance = 50 + player->level * 5 + player->reputation * 2 - target->security_rating / 2;
+    if (chance < 5)
+        return 5;
+    if (chance > 95)
+        return 95;
+    return chance;
+}
+
 bool social_engineering_attack(AdvancedHackingSystem *system, int target_id, Player *player, AlertSystem *alert)
 {
     if (target_id < 0 || target_id >= system->target_count)
@@ -658,14 +661,13 @@ bool social_engineering_attack(AdvancedHackingSystem *system, int target_id, Pla
         fflush(stdout);
         nh_sleep_ms(800);
     }
-    int success_chance = 60 + (player->reputation * 2) - (target->security_rating * 5);
+    int success_chance = social_engineering_chance(player, target);
     int roll = rand() % 100;
 
     if (roll < success_chance)
     {
         printf("\n%sINGÉNIERIE SOCIALE RÉUSSIE!%s\n", COLOR_GREEN, COLOR_RESET);
         printf("Informations d'accès obtenues via manipulation humaine!\n");
-        system->pending_xp += 100;
         return true;
     }
     else
@@ -771,61 +773,6 @@ bool use_hacking_tool(AdvancedHackingSystem *system, HackingTool tool_type, Play
     return true;
 }
 
-void display_advanced_targets(AdvancedHackingSystem *system)
-{
-    printf("\n%s╔══════════════════════════════════════════════════════════════════╗%s\n", COLOR_BRIGHT_CYAN, COLOR_RESET);
-    printf("%s║                     CIBLES HAUTE VALEUR                         ║%s\n", COLOR_BRIGHT_CYAN, COLOR_RESET);
-    printf("%s╚══════════════════════════════════════════════════════════════════╝%s\n", COLOR_BRIGHT_CYAN, COLOR_RESET);
-
-    for (int i = 0; i < system->target_count; i++)
-    {
-        AdvancedTarget *target = &system->targets[i];
-        char *difficulty_color;
-        char *difficulty_text;
-
-        if (target->security_rating > 85)
-        {
-            difficulty_color = COLOR_RED;
-            difficulty_text = "EXTRÊME";
-        }
-        else if (target->security_rating > 70)
-        {
-            difficulty_color = COLOR_YELLOW;
-            difficulty_text = "ÉLEVÉ";
-        }
-        else if (target->security_rating > 50)
-        {
-            difficulty_color = COLOR_CYAN;
-            difficulty_text = "MOYEN";
-        }
-        else
-        {
-            difficulty_color = COLOR_GREEN;
-            difficulty_text = "FAIBLE";
-        }
-
-        printf("\n%s[%d] %s%s\n", COLOR_YELLOW, i + 1, target->name, COLOR_RESET);
-        printf("    Sécurité: %s%s (%d/100)%s | Valeur: %s%d crédits%s\n",
-               difficulty_color, difficulty_text, target->security_rating, COLOR_RESET,
-               COLOR_GREEN, target->data_value, COLOR_RESET);
-        printf("    Niveau corporate: %s%d/5%s | Défenses: %d systèmes\n",
-               COLOR_MAGENTA, target->corporate_level, COLOR_RESET, target->defense_count);
-
-        if (target->quantum_encrypted)
-        {
-            printf("    %s🔐 Encryption Quantique%s", COLOR_CYAN, COLOR_RESET);
-        }
-        if (target->has_ai_guardian)
-        {
-            printf("    %s🤖 Gardien IA%s", COLOR_YELLOW, COLOR_RESET);
-        }
-        printf("\n");
-    }
-
-    printf("\n%sUtilisez 'advhack <numéro> <méthode>' pour attaquer une cible.%s\n",
-           COLOR_BRIGHT_GREEN, COLOR_RESET);
-}
-
 void update_stealth_system(StealthSystem *stealth)
 {
     time_t current_time = time(NULL);
@@ -850,34 +797,6 @@ void update_stealth_system(StealthSystem *stealth)
             stealth->detection_meter = 0;
         }
     }
-}
-
-bool activate_quantum_hack(QuantumSystem *quantum, const char *target_data)
-{
-    if (quantum->quantum_cores == 0)
-    {
-        printf("%sAucun processeur quantique disponible.%s\n", COLOR_RED, COLOR_RESET);
-        return false;
-    }
-
-    printf("\n%s🌌 ACTIVATION DU HACK QUANTIQUE 🌌%s\n", COLOR_MAGENTA, COLOR_RESET);
-    printf("%sInitialisation de l'intrication quantique...%s\n", COLOR_CYAN, COLOR_RESET);
-
-    // Animation
-    for (int i = 0; i < 10; i++)
-    {
-        printf("⚛️ ");
-        fflush(stdout);
-        nh_sleep_ms(300);
-    }
-    printf("\n");
-
-    quantum->entanglement_active = true;
-    printf("%sIntrication quantique établie !%s\n", COLOR_BRIGHT_GREEN, COLOR_RESET);
-    printf("%sVitesse de décryptage multipliée par %d !%s\n",
-           COLOR_GREEN, quantum->decrypt_speed_multiplier, COLOR_RESET);
-
-    return true;
 }
 
 void train_ai_assistant(AIAssistant *ai, int experience_points)

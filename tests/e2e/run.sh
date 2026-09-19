@@ -255,6 +255,59 @@ if [ "$CODE" -eq 0 ] && [ "$elapsed" -le 3 ]; then
     pass "sortie redirigée = mode rapide automatique (${elapsed}s)"
 else fail "mode rapide" "code=$CODE durée=${elapsed}s (attendu <= 3s ; l'ancienne version dépassait 15s)"; fi
 
+# --- Monde unifié : relais, découverte, exploit ------------------------------
+
+FIVE='scan\nscan\nscan\nscan\nscan\n'
+
+run "T\n${FIVE}scan\nquit\n" --fast
+if contains "corp-server-01" && contains "[NOUVEAU]" && contains "[ROUTE FERMÉE]" && ! contains "nexus-mainframe"; then
+    pass "scan au niveau 2 : nouveau système visible, route fermée, niveau 3 encore caché"
+else fail "scan par niveau"; fi
+
+run "T\n${FIVE}scan\nbruteforce corp-server-01\nquit\n" --fast
+if contains "Route fermée vers corp-server-01 : compromettez d'abord localhost." && ! contains "ATTAQUE BRUTE FORCE"; then
+    pass "bruteforce sur un système dont le relais n'est pas compromis : refusé, avec explication"
+else fail "route fermée"; fi
+
+run "T\n${FIVE}bruteforce corp-server-01\nquit\n" --fast
+if contains "Système 'corp-server-01' introuvable"; then
+    pass "monter de niveau ne révèle rien tout seul : il faut relancer un scan"
+else fail "découverte par scan"; fi
+
+run "T\n${FIVE}scan\nbruteforce nexus-mainframe\nquit\n" --fast
+if contains "Système 'nexus-mainframe' introuvable" && ! contains "ATTAQUE BRUTE FORCE"; then
+    pass "système pas encore découvert (niveau trop bas) : introuvable"
+else fail "système non découvert"; fi
+
+run "T\n${FIVE}scan\nbruteforce corp-server-01\nquit\n" --fast --lang en
+if contains "No route to corp-server-01: compromise localhost first."; then
+    pass "route fermée expliquée en anglais"
+else fail "route fermée (en)"; fi
+
+run "T\nexploit localhost\nquit\n" --fast
+if contains "Commande non disponible à votre niveau."; then pass "exploit verrouillée avant le niveau 4"
+else fail "exploit verrouillée"; fi
+
+# Avec une graine où localhost tombe : la route vers corp-server-01 s'ouvre, l'état est persistant.
+ok_seed=""
+for seed in 1 2 3 4 5 6 7 8; do
+    run "T\n${FIVE}bruteforce localhost\nbruteforce corp-server-01\nscan\nquit\n" --fast --seed "$seed"
+    if contains "Accès obtenu à localhost !"; then ok_seed=$seed; break; fi
+done
+if [ -n "$ok_seed" ] && ! contains "Route fermée" && contains "[COMPROMIS]" && contains "Données récupérées : 10 crédits"; then
+    pass "compromettre le relais ouvre la route ; le scan garde l'état (graine $ok_seed)"
+else fail "ouverture de route" "graine=${ok_seed:-aucune}"; fi
+
+# Un système compromis ne se re-pirate pas, et ne repaie pas.
+if [ -n "$ok_seed" ]; then
+    run "T\n${FIVE}bruteforce localhost\nbruteforce localhost\nbruteforce localhost\nquit\n" --fast --seed "$ok_seed"
+    paid=$(printf '%s' "$OUT" | grep -c "Données récupérées")
+    again=$(printf '%s' "$OUT" | grep -c "Système déjà compromis")
+    if [ "$paid" -eq 1 ] && [ "$again" -eq 2 ]; then
+        pass "re-pirater un système compromis : ni gain ni nouvelle expérience (1 paiement, 2 refus)"
+    else fail "pas de re-paiement" "paiements=$paid refus=$again"; fi
+fi
+
 # --- Bilan -------------------------------------------------------------------
 
 echo

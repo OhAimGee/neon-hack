@@ -87,7 +87,7 @@ static void test_find(void)
     CHECK(nh_find_command("") == NULL);
     CHECK(nh_find_command("sca") == NULL);
     CHECK(nh_find_command("scans") == NULL);
-    CHECK(nh_find_command("exploit") == NULL); /* pas encore implémentée : absente, pas fantôme */
+    CHECK(nh_find_command("exploit") != NULL);
 }
 
 static void test_state_init(void)
@@ -98,7 +98,8 @@ static void test_state_init(void)
     CHECK(gs->running);
     CHECK(!gs->player.game_over);
     CHECK_STR(gs->nodes[0].name, "localhost");
-    CHECK_INT(gs->discovered_nodes, 3);
+    CHECK(gs->nodes[0].is_discovered); /* votre poste est connu d'emblée… */
+    CHECK(!gs->nodes[1].is_discovered); /* …le reste se découvre par scan */
     CHECK(gs->player.commands_unlocked[CMD_SCAN]);
     CHECK(!gs->player.commands_unlocked[CMD_BRUTEFORCE]);
 

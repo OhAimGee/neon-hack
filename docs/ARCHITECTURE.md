@@ -11,6 +11,7 @@ src/main.c         point d'entrée : options, langue, création du GameState, bo
 src/game/          logique de jeu (GameState unique, plus aucune variable globale d'état)
   game.[ch]          GameState, init_game, boucle de jeu, progression (gain_experience)
   progression.[ch]   courbe d'expérience, niveaux 1-6, déblocages, récompenses uniques ; nh_grant_xp() est le SEUL point d'entrée
+  world.[ch]         le monde : graphe unique de systèmes (relais, découverte), état persistant, chances de succès, récompense unique
   alert.[ch]         alerte unique 0-100 : hausse, refroidissement, seuils, méthodes de réduction, affichage
   commands.[ch]      table de commandes, dispatch, aide, commandes système (help/status/quit/clear)
   cmd_hacking.c      commandes de hacking classiques (scan, bruteforce, decrypt, backdoor…)
@@ -32,7 +33,7 @@ tests/e2e/run.sh   tests de bout en bout du jeu compilé (sorties redirigées)
 tests/e2e/pty_hud.py   tests de l'interface fixe dans un vrai pseudo-terminal + mini-émulateur d'écran
 ```
 
-Le code neuf (`src/core`, `src/ui`, `src/i18n`, `src/main.c`, `src/game/commands.c`, `src/game/alert.c`, `src/game/progression.c`)
+Le code neuf (`src/core`, `src/ui`, `src/i18n`, `src/main.c`, `src/game/commands.c`, `src/game/alert.c`, `src/game/progression.c`, `src/game/world.c`)
 est compilé avec `-Wpedantic -Wshadow -Wconversion -Werror`. Le reste de `src/game/`
 (code d'origine déplacé) ne l'est pas : il porte encore ses avertissements et sera
 remplacé, pas corrigé.
@@ -65,14 +66,41 @@ remplacé, pas corrigé.
   de montées de niveau que la courbe le permet (cumulé : 15 / 60 / 140 / 260 / 420 pour les niveaux
   2 à 6) avec leurs déblocages, décrits dans la table `k_rewards`. Les commandes « nouvellement
   disponibles » annoncées sont déduites de la table de commandes avant/après (jamais d'écart avec
-  `help`). Le hacking avancé n'écrit plus l'expérience directement : il la dépose dans
-  `AdvancedHackingSystem.pending_xp`, versée par `cmd_advanced.c` (provisoire, jusqu'au résolveur unique).
+  `help`). Le hacking avancé ne verse plus rien lui-même : crédits et expérience d'un système sont
+  versés par `nh_world_compromise()` (voir « Monde »).
   **Règle anti-farm** : une source d'expérience ou de crédits doit être limitée par un état — un
   budget (scans : 5+4+3+2+1), un drapeau sur le nœud (traceroute, système déjà compromis) ou un jalon
   à usage unique (`nh_milestone_claim` : message de test, premier décryptage quantique, document
   ultra-secret). Toute nouvelle récompense répétable doit suivre cette règle.
-- `exploit` n'est volontairement pas dans la table : elle n'a pas de handler
-  (phase 3). Une commande non implémentée n'est pas listée plutôt que d'être fantôme.
+- **Monde** (`world.c`) : un seul graphe, `gs->nodes[]`, construit depuis une table `static const`
+  (7 systèmes ; l'ancien code en avait 3 pour les commandes classiques et 5 cibles séparées pour `advhack`).
+
+  ```
+  localhost ─┬─ corp-server-01 ─┬─ nexus-mainframe ─ gov-database
+             │                  └─ research-lab
+             └─ underground-market ─ banking-network
+  ```
+
+  - **Découverte** : `scan` révèle les systèmes dont le niveau minimum est atteint (`nh_world_discover`) ;
+    seul `localhost` est connu au départ. Une commande ne vise qu'un système découvert.
+  - **Relais** : un système n'est atteignable que si son relais est compromis (`nh_world_reachable`).
+    `traceroute` (passif) et `analyzedefenses` ne demandent pas de route ; `exploit` (système déjà
+    tracé) et `temporalhack` la contournent. `nh_world_resolve()` fait la recherche *et* explique
+    l'échec : toutes les commandes passent par là (plus de boucle de recherche recopiée).
+  - **État persistant** par système : découvert, compromis, backdoor, virus, tracé, accès internes
+    (`socialeng`), fichiers extraits. Compromettre (`nh_world_compromise`) verse les crédits et
+    l'expérience du système **une seule fois** ; `deep` (IA, `advhack`, `temporalhack`) extrait aussi
+    les fichiers. Sur un système déjà compromis, `aihack` n'extrait que les fichiers restants.
+  - **Chances de succès** : une formule par méthode dans `k_formulas` (`nh_world_chance`), bornée à
+    5-95 % ; les malus d'alerte, le mode furtif, la discrétion du virus passent en `bonus`. Les accès
+    internes ajoutent 15 points sur tout le système. Les méthodes de `advhack` gardent leur propre
+    formule (`calculate_hack_success_rate`) mais reçoivent le même `bonus`.
+  - **Outils avancés** : leur état actif est *déduit* de ce que le joueur possède
+    (`nh_world_sync_tools`) — l'ancien code n'avait aucune commande pour les activer, donc aucune
+    méthode d'`advhack` (toutes exigent un outil) n'était jamais utilisable.
+  - Les 5 systèmes qui ont un profil de défense avancé (`AdvancedTarget`) sont reliés par
+    `nh_world_adv_target()` ; les autres (`localhost`, `corp-server-01`) n'acceptent que les commandes
+    classiques.
 
 ## Interface fixe (HUD)
 

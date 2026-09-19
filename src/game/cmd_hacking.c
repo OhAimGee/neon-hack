@@ -12,6 +12,7 @@
 #include "../i18n/i18n.h"
 #include "legacy_colors.h"
 #include "progression.h"
+#include "world.h"
 
 #include <ctype.h>
 #include <stdio.h>
@@ -35,43 +36,39 @@ bool cmd_scan_network(GameState *gs, const char *arg)
     }
     printf("\n\nSystèmes détectés:\n");
 
-    int max_nodes = (gs->player.level >= LEVEL_HACKER) ? 3 : (gs->player.level >= LEVEL_APPRENTICE) ? 2
-                                                                                                      : 1;
+    bool was_known[NH_MAX_NODES];
+    for (int i = 0; i < nh_world_count(); i++)
+        was_known[i] = gs->nodes[i].is_discovered;
+    int fresh = nh_world_discover(gs->nodes, gs->player.level);
 
-    for (int i = 0; i < max_nodes; i++)
+    for (int i = 0; i < nh_world_count(); i++)
     {
-        printf("  %s[%d]%s %s", COLOR_YELLOW, i + 1, COLOR_RESET, gs->nodes[i].name);
+        const NetworkNode *node = &gs->nodes[i];
+        if (!node->is_discovered)
+            continue;
 
-        if (gs->nodes[i].is_compromised)
-        {
-            printf(" %s[COMPROMIS]%s", COLOR_GREEN, COLOR_RESET);
-        }
+        printf("  %s[%d]%s %s", COLOR_YELLOW, i + 1, COLOR_RESET, node->name);
+        if (!was_known[i])
+            printf(" %s%s%s", COLOR_BRIGHT_CYAN, nh_tr(NH_STR_WORLD_TAG_NEW), COLOR_RESET);
+        if (node->is_compromised)
+            printf(" %s%s%s", COLOR_GREEN, nh_tr(NH_STR_WORLD_TAG_COMPROMISED), COLOR_RESET);
+        else if (!nh_world_reachable(gs->nodes, i))
+            printf(" %s%s%s", COLOR_RED, nh_tr(NH_STR_WORLD_TAG_ROUTE_CLOSED), COLOR_RESET);
 
-        switch (gs->nodes[i].security)
-        {
-        case SECURITY_LOW:
-            printf(" %s[SÉCURITÉ: FAIBLE]%s", COLOR_GREEN, COLOR_RESET);
-            break;
-        case SECURITY_MEDIUM:
-            printf(" %s[SÉCURITÉ: MOYENNE]%s", COLOR_YELLOW, COLOR_RESET);
-            break;
-        case SECURITY_HIGH:
-            printf(" %s[SÉCURITÉ: ÉLEVÉE]%s", COLOR_RED, COLOR_RESET);
-            break;
-        case SECURITY_CRITICAL:
-            printf(" %s[SÉCURITÉ: CRITIQUE]%s", COLOR_RED, COLOR_RESET);
-            break;
-        }
-        printf("\n");
+        const char *color = node->security == SECURITY_LOW ? COLOR_GREEN
+                            : node->security == SECURITY_MEDIUM ? COLOR_YELLOW
+                                                                : COLOR_RED;
+        printf(" %s", color);
+        printf(nh_tr(NH_STR_WORLD_SECURITY), nh_security_label(node->security));
+        printf("%s\n", COLOR_RESET);
     }
 
-    gs->discovered_nodes = max_nodes;
     int scan_xp = nh_scan_xp(gs->player.scans_done);
     if (gs->player.scans_done < 1000000)
         gs->player.scans_done++;
     if (scan_xp > 0)
         nh_grant_xp(gs, scan_xp);
-    else
+    else if (fresh == 0) // un scan qui révèle un nouveau système apprend quelque chose
         printf("\n%s\n", nh_tr(NH_STR_PROG_SCAN_DONE));
     nh_alert_raise(&gs->alert, 1);
 
@@ -87,27 +84,15 @@ bool cmd_bruteforce(GameState *gs, const char *target)
         return false;
     }
 
-    int target_index = -1;
-    for (int i = 0; i < gs->discovered_nodes; i++)
-    {
-        if (strcmp(gs->nodes[i].name, target) == 0)
-        {
-            target_index = i;
-            break;
-        }
-    }
-
-    if (target_index == -1)
-    {
-        printf("Cible non trouvée. Utilisez 'scan' d'abord.\n");
+    int target_index = nh_world_resolve(gs, target, true);
+    if (target_index < 0)
         return false;
-    }
 
     NetworkNode *node = &gs->nodes[target_index];
 
     if (node->is_compromised)
     {
-        printf("Système déjà compromis.\n");
+        printf("%s\n", nh_tr(NH_STR_WORLD_ALREADY_COMPROMISED));
         return false;
     }
 
@@ -116,6 +101,8 @@ bool cmd_bruteforce(GameState *gs, const char *target)
     printf("Tentative de craquage du mot de passe...\n");
 
     char *passwords[] = {"admin", "123456", "password", "root", "guest"};
+    int success_chance = nh_world_chance(NH_HACK_BRUTE, node, gs->player.level,
+                                         -nh_alert_success_penalty(&gs->alert));
 
     for (int i = 0; i < 5; i++)
     {
@@ -127,27 +114,11 @@ bool cmd_bruteforce(GameState *gs, const char *target)
             nh_sleep_ms(300);
         }
 
-        int success_chance = 80 - (node->security * 15) - nh_alert_success_penalty(&gs->alert);
         if (rand() % 100 < success_chance)
         {
             printf(" %sSUCCÈS !%s\n", COLOR_GREEN, COLOR_RESET);
-            node->is_compromised = true;
-
-            printf("\nAccès obtenu à %s !\n", target);
-            printf("Données récupérées: %d credits\n", node->data_value);
-
-            nh_grant_xp(gs, node->data_value / 2);
-            nh_alert_raise(&gs->alert, node->security * 5);
-
-            // Débloquer bruteforce après le premier hack réussi
-            if (!gs->player.commands_unlocked[CMD_BRUTEFORCE] && target_index == 0)
-            {
-                gs->player.commands_unlocked[CMD_BRUTEFORCE] = true;
-                gs->player.commands_unlocked[CMD_DECRYPT] = true;
-                print_colored_text("\n*** NOUVELLES COMMANDES DÉBLOQUÉES ***\n", COLOR_BRIGHT_GREEN);
-                printf("Vous pouvez maintenant utiliser: bruteforce, decrypt\n");
-            }
-
+            nh_world_compromise(gs, target_index, false);
+            nh_alert_raise(&gs->alert, (int)node->security * 5);
             return true;
         }
         else
@@ -157,7 +128,7 @@ bool cmd_bruteforce(GameState *gs, const char *target)
     }
 
     printf("\nAttaque brute force échouée.\n");
-    nh_alert_raise(&gs->alert, node->security * 8);
+    nh_alert_raise(&gs->alert, (int)node->security * 8);
     return false;
 }
 
@@ -218,22 +189,9 @@ bool cmd_backdoor(GameState *gs, const char *target)
         return false;
     }
 
-    // Chercher le nœud cible
-    int target_index = -1;
-    for (int i = 0; i < gs->discovered_nodes; i++)
-    {
-        if (strcmp(gs->nodes[i].name, target) == 0)
-        {
-            target_index = i;
-            break;
-        }
-    }
-
-    if (target_index == -1)
-    {
-        printf("Système '%s' non trouvé. Utilisez 'scan' d'abord.\n", target);
+    int target_index = nh_world_resolve(gs, target, true);
+    if (target_index < 0)
         return false;
-    }
 
     NetworkNode *node = &gs->nodes[target_index];
 
@@ -248,10 +206,9 @@ bool cmd_backdoor(GameState *gs, const char *target)
     print_typing_effect("Création des hooks système...", 500);
     print_typing_effect("Masquage des traces...", 500);
 
-    // Calcul de succès basé sur le niveau et la sécurité
-    int success_chance = 70 + (gs->player.level * 10) - (node->security * 15) - nh_alert_success_penalty(&gs->alert);
-    if (gs->stealth_mode)
-        success_chance += 20;
+    // Le mode furtif aide, l'alerte pénalise
+    int bonus = (gs->stealth_mode ? 20 : 0) - nh_alert_success_penalty(&gs->alert);
+    int success_chance = nh_world_chance(NH_HACK_BACKDOOR, node, gs->player.level, bonus);
 
     if (rand() % 100 < success_chance)
     {
@@ -287,48 +244,78 @@ bool cmd_trace_route(GameState *gs, const char *target)
     printf("Traçage de route vers %s...\n", target);
     print_typing_effect("Envoi des paquets ICMP...", 300);
 
-    // Simulation de traceroute
-    int hops = rand() % 8 + 3;
-    for (int i = 1; i <= hops; i++)
-    {
-        printf("%d   192.168.%d.%d   %dms\n", i, rand() % 255, rand() % 255, rand() % 100 + 10);
-        nh_sleep_ms(200); // 200ms delay
-    }
+    // Passif : il n'exige pas de route ouverte, seulement que le système soit connu
+    int target_index = nh_world_resolve(gs, target, false);
+    if (target_index < 0)
+        return false;
 
-    // Chercher le nœud cible
-    int target_index = -1;
-    for (int i = 0; i < gs->discovered_nodes; i++)
-    {
-        if (strcmp(gs->nodes[i].name, target) == 0)
-        {
-            target_index = i;
-            break;
-        }
-    }
+    NetworkNode *node = &gs->nodes[target_index];
+    bool first_trace = !node->is_traced;
+    node->is_traced = true;
 
-    if (target_index != -1)
-    {
-        NetworkNode *node = &gs->nodes[target_index];
-        bool first_trace = !node->is_traced;
-        node->is_traced = true;
+    printf("Route trouvée ! Informations système révélées :\n");
+    printf("  Corporation: %s\n", node->corporation);
+    printf("  Force firewall: %d/10\n", node->firewall_strength);
+    printf("  Fichiers secrets: %d détectés\n", node->file_count);
+    int uplink = nh_world_uplink(target_index);
+    if (uplink >= 0)
+        printf("  Relais: %s\n", gs->nodes[uplink].name);
 
-        printf("Route trouvée ! Informations système révélées :\n");
-        printf("  Corporation: %s\n", node->corporation);
-        printf("  Force firewall: %d/10\n", node->firewall_strength);
-        printf("  Fichiers secrets: %d détectés\n", node->file_count);
-
-        if (first_trace)
-            nh_grant_xp(gs, 8);
-        else
-            printf("%s\n", nh_tr(NH_STR_PROG_ALREADY_TRACED));
-        nh_alert_raise(&gs->alert, 3);
-        return true;
-    }
+    if (first_trace)
+        nh_grant_xp(gs, 8);
     else
+        printf("%s\n", nh_tr(NH_STR_PROG_ALREADY_TRACED));
+    nh_alert_raise(&gs->alert, 3);
+    return true;
+}
+
+bool cmd_exploit(GameState *gs, const char *target)
+{
+    if (strlen(target) == 0)
     {
-        printf("Hôte inaccessible\n");
+        printf("%s\n", nh_tr(NH_STR_EXPLOIT_USAGE));
         return false;
     }
+
+    // L'exploit perce directement : pas besoin que la route soit ouverte
+    int target_index = nh_world_resolve(gs, target, false);
+    if (target_index < 0)
+        return false;
+
+    NetworkNode *node = &gs->nodes[target_index];
+
+    if (node->is_compromised)
+    {
+        printf("%s\n", nh_tr(NH_STR_WORLD_ALREADY_COMPROMISED));
+        return false;
+    }
+    if (!node->is_traced)
+    {
+        printf(nh_tr(NH_STR_EXPLOIT_NO_FLAW), node->name, node->name);
+        printf("\n");
+        return false;
+    }
+
+    printf(nh_tr(NH_STR_EXPLOIT_START), node->name);
+    printf("\n");
+    print_typing_effect(nh_tr(NH_STR_EXPLOIT_STEP1), 400);
+    print_typing_effect(nh_tr(NH_STR_EXPLOIT_STEP2), 400);
+
+    int success_chance = nh_world_chance(NH_HACK_EXPLOIT, node, gs->player.level,
+                                         -nh_alert_success_penalty(&gs->alert));
+    if (rand() % 100 < success_chance)
+    {
+        print_colored_text(nh_tr(NH_STR_EXPLOIT_OK), COLOR_GREEN);
+        printf("\n");
+        nh_world_compromise(gs, target_index, false);
+        nh_alert_raise(&gs->alert, 12);
+        return true;
+    }
+
+    print_colored_text(nh_tr(NH_STR_EXPLOIT_FAIL), COLOR_RED);
+    printf("\n");
+    nh_alert_raise(&gs->alert, 25);
+    return false;
 }
 
 bool cmd_upload_virus(GameState *gs, const char *target)
@@ -354,22 +341,9 @@ bool cmd_upload_virus(GameState *gs, const char *target)
         return false;
     }
 
-    // Chercher le nœud cible
-    int target_index = -1;
-    for (int i = 0; i < gs->discovered_nodes; i++)
-    {
-        if (strcmp(gs->nodes[i].name, target) == 0)
-        {
-            target_index = i;
-            break;
-        }
-    }
-
-    if (target_index == -1)
-    {
-        printf("Système '%s' non trouvé.\n", target);
+    int target_index = nh_world_resolve(gs, target, true);
+    if (target_index < 0)
         return false;
-    }
 
     NetworkNode *node = &gs->nodes[target_index];
 
@@ -388,10 +362,9 @@ bool cmd_upload_virus(GameState *gs, const char *target)
     print_typing_effect("Injection du code malveillant...", 400);
     print_typing_effect("Activation du payload...", 400);
 
-    // Calcul de succès
-    int success_chance = 60 + chosen_virus->stealth_rating - (node->security * 10) - nh_alert_success_penalty(&gs->alert);
-    if (node->has_backdoor)
-        success_chance += 30;
+    // La discrétion du virus et une backdoor déjà en place aident, l'alerte pénalise
+    int bonus = chosen_virus->stealth_rating + (node->has_backdoor ? 30 : 0) - nh_alert_success_penalty(&gs->alert);
+    int success_chance = nh_world_chance(NH_HACK_VIRUS, node, gs->player.level, bonus);
 
     if (rand() % 100 < success_chance)
     {
@@ -465,29 +438,27 @@ bool cmd_ai_hack(GameState *gs, const char *target)
         return false;
     }
 
-    // Chercher le nœud cible
-    int target_index = -1;
-    for (int i = 0; i < gs->discovered_nodes; i++)
-    {
-        if (strcmp(gs->nodes[i].name, target) == 0)
-        {
-            target_index = i;
-            break;
-        }
-    }
-
-    if (target_index == -1)
-    {
-        printf("Système '%s' non trouvé.\n", target);
+    int target_index = nh_world_resolve(gs, target, true);
+    if (target_index < 0)
         return false;
-    }
 
     NetworkNode *node = &gs->nodes[target_index];
 
+    // Sur un système déjà compromis, l'IA sert à extraire ce qu'il reste (une seule fois par fichier)
     if (node->is_compromised)
     {
-        printf("Système déjà compromis.\n");
-        return false;
+        if (nh_world_locked_files(node) == 0)
+        {
+            printf(nh_tr(NH_STR_WORLD_NOTHING_TO_EXTRACT), node->name);
+            printf("\n");
+            return false;
+        }
+        print_colored_text(">>> IA NOVA EN LIGNE <<<\n", COLOR_MAGENTA);
+        printf(nh_tr(NH_STR_WORLD_EXTRACT), node->name);
+        printf("\n");
+        nh_world_extract(gs, target_index);
+        nh_alert_raise(&gs->alert, 5);
+        return true;
     }
 
     printf("Lancement de l'attaque IA sur %s...\n", target);
@@ -497,24 +468,14 @@ bool cmd_ai_hack(GameState *gs, const char *target)
     print_typing_effect("Exécution de l'attaque neuromorphe...", 300);
 
     // L'IA a un taux de succès très élevé
-    int success_chance = 85 + (gs->player.level * 5) - nh_alert_success_penalty(&gs->alert);
-    if (node->security == SECURITY_CRITICAL)
-        success_chance -= 20;
+    int success_chance = nh_world_chance(NH_HACK_AI, node, gs->player.level,
+                                         -nh_alert_success_penalty(&gs->alert));
 
     if (rand() % 100 < success_chance)
     {
-        node->is_compromised = true;
         print_colored_text("✓ SYSTÈME COMPROMIS PAR L'IA !\n", COLOR_BRIGHT_GREEN);
-
         // L'IA révèle tous les fichiers secrets
-        for (int i = 0; i < node->file_count; i++)
-        {
-            node->secret_files[i].is_unlocked = true;
-            printf("Fichier déchiffré: %s\n", node->secret_files[i].filename);
-            gs->player.credits += node->secret_files[i].credits_value;
-        }
-
-        nh_grant_xp(gs, 35);
+        nh_world_compromise(gs, target_index, true);
         nh_alert_raise(&gs->alert, 5); // L'IA est très discrète
         return true;
     }
