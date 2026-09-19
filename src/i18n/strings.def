@@ -1,0 +1,22 @@
+/*
+ * Table des textes du jeu : NH_STR(CLÉ, "français", "english").
+ *
+ * Une seule ligne par texte, avec les deux langues côte à côte : impossible
+ * d'oublier une traduction (le fichier ne compilerait pas), et un test vérifie
+ * que les deux versions contiennent les mêmes marqueurs printf (%d, %s...).
+ */
+NH_STR(NH_STR_BYE_1,
+       "Merci d'avoir joué à Neon Hack !",
+       "Thanks for playing Neon Hack!")
+NH_STR(NH_STR_BYE_2,
+       "Gardez vos secrets... dans l'ombre.",
+       "Keep your secrets... in the shadows.")
+NH_STR(NH_STR_INPUT_CLOSED,
+       "Entrée fermée : fin de la session.",
+       "Input closed: ending the session.")
+NH_STR(NH_STR_INVALID_OPTION,
+       "Option invalide.",
+       "Invalid option.")
+NH_STR(NH_STR_UNKNOWN_COMMAND,
+       "Commande inconnue: %s",
+       "Unknown command: %s")
