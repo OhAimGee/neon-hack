@@ -19,7 +19,7 @@ Le jeu **se compile et se lance**, mais plusieurs systèmes sont affichés sans 
 | Fin d'entrée (Ctrl+D) et saisies invalides gérées ; `--seed`, `--fast`, `--lang`, tests automatisés | Équilibrage général (valeurs provisoires) ; farm de crédits par la boutique/`advhack` |
 | Ambiance, ASCII art, lore ; affichage boutique/contacts/quêtes | Texte anglais complet (aide, statut, alerte et monde sont traduits, le reste non) |
 
-La refonte (architecture unifiée, tests, sauvegarde, français/anglais, releases binaires) se déroule sur la branche `refonte/v1`. La version d'origine reste consultable via le tag `legacy-v2.087`.
+La refonte (architecture unifiée, tests, sauvegarde, français/anglais, releases binaires) se déroule sur la branche `refonte/v1`. La version d'origine reste consultable via le tag `legacy-v2.087`. La suite prévue, phase par phase, jusqu'à la v1.0 (campagne complète, multiplateforme) est dans la [feuille de route](docs/ROADMAP.md).
 
 ## Compiler et lancer
 
@@ -53,7 +53,7 @@ make test   # tests unitaires du socle + tests de bout en bout du jeu
 make asan   # les mêmes, compilés avec AddressSanitizer + UBSan
 ```
 
-Voir [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) pour l'organisation du code et les règles de la refonte.
+Voir [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) pour l'organisation du code et les règles de la refonte, et [docs/ROADMAP.md](docs/ROADMAP.md) pour les phases à venir.
 
 ## Jouer
 

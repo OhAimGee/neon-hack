@@ -4,6 +4,9 @@ Neon Hack est en cours de refonte selon une approche **« strangler »** : le no
 socle se construit à côté du code d'origine, le jeu reste jouable à chaque étape,
 et les modules d'origine sont portés un par un avant d'être supprimés.
 
+Les numéros de phase cités dans le code et dans cette documentation (« phase 3 »,
+« phase 3.4 », « phase 5 », « phase 8 »…) renvoient à la [feuille de route](ROADMAP.md).
+
 ## Organisation actuelle
 
 ```
