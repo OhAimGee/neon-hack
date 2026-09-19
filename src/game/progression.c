@@ -48,15 +48,38 @@ int nh_scan_xp(int scans_done)
     return k_scan_xp[scans_done];
 }
 
-bool nh_milestone_claim(Player *player, NhMilestone milestone)
+bool nh_milestone_claim(GameState *gs, NhMilestone milestone)
 {
     if (milestone < 0 || milestone >= NH_MS_COUNT)
         return false;
     unsigned bit = 1u << (unsigned)milestone;
-    if (player->milestones & bit)
+    if (gs->player.milestones & bit)
         return false;
-    player->milestones |= bit;
+    gs->player.milestones |= bit;
+    nh_event(gs, NH_EV_MILESTONE, (int)milestone);
     return true;
+}
+
+void nh_grant_reputation(GameState *gs, int amount)
+{
+    if (amount == 0)
+        return;
+
+    Player *p = &gs->player;
+    long total = (long)p->reputation + amount;
+    if (total > NH_REPUTATION_CAP)
+        total = NH_REPUTATION_CAP;
+    if (total < -NH_REPUTATION_CAP)
+        total = -NH_REPUTATION_CAP;
+    p->reputation = (int)total;
+
+    if (amount > 0)
+    {
+        printf("%s", nh_c(NH_C_MAGENTA));
+        printf(nh_tr(NH_STR_PROG_REPUTATION), amount);
+        printf("%s ", nh_c(NH_C_RESET));
+    }
+    nh_event(gs, NH_EV_REPUTATION, p->reputation);
 }
 
 /* ---- Montée de niveau ----------------------------------------------------- */
@@ -116,6 +139,8 @@ static void level_up(GameState *gs)
         p->has_ai_assistant = true;
     if (r->quantum_computer)
         p->has_quantum_computer = true;
+
+    nh_event(gs, NH_EV_LEVEL_UP, level);
 
     printf("\n%s%s%s\n", nh_c(NH_C_BRIGHT_GREEN), nh_tr(NH_STR_PROG_LEVEL_UP), nh_c(NH_C_RESET));
     printf(nh_tr(NH_STR_PROG_LEVEL_NOW), level, nh_level_name(level));

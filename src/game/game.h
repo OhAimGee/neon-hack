@@ -7,6 +7,7 @@
 #include "advanced_hacking.h"
 #include "alert.h"
 #include "contacts.h"
+#include "events.h"
 #include "game_types.h"
 #include "quest_system.h"
 #include "shop.h"
@@ -38,6 +39,9 @@ typedef struct GameState
     QuestSystem quests;
     ContactSystem contacts;
     AdvancedHackingSystem advanced;
+
+    /* Ce qui vient de se passer (voir events.h) : vide entre deux commandes, jamais sauvegardé */
+    EventBus events;
 
     /* Tutoriel et sauvegarde */
     TutorialState tutorial;

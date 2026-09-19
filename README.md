@@ -12,12 +12,13 @@ Le jeu **se compile et se lance**, mais plusieurs systèmes sont affichés sans 
 
 | Fonctionne | Ne fonctionne pas encore |
 |---|---|
-| Boucle de jeu, `scan`, `bruteforce`, `decrypt` | Effets des achats en boutique |
-| Niveaux et déblocage de commandes | Progression des quêtes ; 3 contacts sur 4 |
+| Boucle de jeu, `scan`, `bruteforce`, `decrypt` | Effets des achats en boutique (seul le Street Cred Booster en a un) |
+| Niveaux et déblocage de commandes | 3 contacts sur 4 |
+| **Quêtes** : les quatre premières se jouent de bout en bout (tutoriel, *Baptême du Feu*, *Réseaux d'Information*, *L'œil du Cyclone*), journal `quests` FR/EN, objectifs mesurés sur l'état du jeu, récompenses versées une seule fois, annonces de chapitre | Quêtes 5 à 9 et épilogue (pas encore écrits) |
 | **Alerte 0-100** (jauge, refroidissement, boutique fermée, game over, `laylow`) ; **niveaux 1-6** avec courbe d'expérience et déblocages ; **monde unifié** (7 systèmes reliés, `exploit`, récompenses uniques) | `stealthmode` |
-| **Menu de lancement** (continuer, nouvelle partie, langue, options) ; **sauvegarde automatique** ; **prologue et tutoriel** menés par ECHO-7, où l'on choisit le nom du héros (« Case » par défaut) | Un seul emplacement de sauvegarde ; le journal de quêtes d'origine et l'écran d'accueil sont encore en français seulement |
+| **Menu de lancement** (continuer, nouvelle partie, langue, options) ; **sauvegarde automatique** ; **prologue et tutoriel** menés par ECHO-7, où l'on choisit le nom du héros (« Case » par défaut) | Un seul emplacement de sauvegarde ; l'écran d'accueil est encore en français seulement |
 | Fin d'entrée (Ctrl+D) et saisies invalides gérées ; `--seed`, `--fast`, `--lang`, tests automatisés | Équilibrage général (valeurs provisoires) ; farm de crédits par la boutique/`advhack` |
-| Ambiance, ASCII art, lore ; affichage boutique/contacts/quêtes | Texte anglais complet (aide, statut, alerte et monde sont traduits, le reste non) |
+| Ambiance, ASCII art, lore ; affichage boutique/contacts | Texte anglais complet (aide, statut, alerte, monde et quêtes sont traduits, le reste non) |
 
 La refonte (architecture unifiée, tests, sauvegarde, français/anglais, releases binaires) se déroule sur la branche `refonte/v1`. La version d'origine reste consultable via le tag `legacy-v2.087`. La suite prévue, phase par phase, jusqu'à la v1.0 (campagne complète, multiplateforme) est dans la [feuille de route](docs/ROADMAP.md).
 
@@ -61,7 +62,9 @@ Sur un terminal d'au moins 80×24, une **barre d'état** reste fixée en haut (n
 
 **Au lancement**, le menu propose : *Continuer* (avec le nom, le niveau et les crédits de la partie sauvegardée), *Nouvelle partie*, *Langue* (Français / English, appliquée sur-le-champ), *Options* (couleurs, animations du texte, barres fixes) et *Quitter*. Langue et options sont retenues d'une session à l'autre ; Entrée seule choisit *Continuer* s'il y a une sauvegarde, *Nouvelle partie* sinon.
 
-**Une nouvelle partie** commence par un court prologue : votre contact, **ECHO-7**, vous demande votre *handle*. C'est ainsi que se choisit le nom du héros (Entrée pour « Case », 20 caractères au plus, confirmation demandée). ECHO-7 propose ensuite un **tutoriel** : une mission pas à pas dans la vraie partie (`quests`, `help`, `scan`, `status`, atteindre le niveau 2, `bruteforce localhost`, `laylow`). Il commente chaque action, rappelle l'objectif si vous vous égarez (commande inconnue, verrouillée ou ratée) et ne bloque rien ; `quests` affiche l'avancement de la mission. La terminer rapporte 100 ¢ et 10 de réputation, une seule fois. On peut aussi répondre « Je me débrouille » et s'en passer.
+**Une nouvelle partie** commence par un court prologue : votre contact, **ECHO-7**, vous demande votre *handle*. C'est ainsi que se choisit le nom du héros (Entrée pour « Case », 20 caractères au plus, confirmation demandée). ECHO-7 propose ensuite un **tutoriel** : une mission pas à pas dans la vraie partie (`quests`, `help`, `scan`, `status`, atteindre le niveau 2, `bruteforce localhost`, `laylow`). Il commente chaque action, rappelle l'objectif si vous vous égarez (commande inconnue, verrouillée ou ratée) et ne bloque rien ; `quests` affiche l'avancement de la mission. La terminer rapporte 100 ¢ et 10 de réputation, une seule fois. On peut aussi répondre « Je me débrouille » et s'en passer (le tutoriel est alors clos sans récompense).
+
+**Les quêtes** démarrent d'elles-mêmes dès que leur niveau et leurs prérequis sont atteints, et le disent à l'écran (« NOUVELLE QUÊTE », avec une annonce de chapitre pour la première d'un chapitre). Elles se mesurent sur l'état du jeu — systèmes compromis, fichiers extraits, achats, contacts rencontrés, réputation, jalons — et non sur des compteurs : ce que vous avez déjà fait compte. `quests` ouvre le journal ; donner le numéro d'une quête en affiche le détail (contexte, objectifs, récompenses). Certains objectifs sont des *conditions* qui se vérifient au moment de conclure (« maintenir l'alerte sous 50 » : `laylow` la fait baisser) ; d'autres sont secrets jusqu'à leur accomplissement. Une quête terminée verse ses récompenses (crédits, réputation, expérience) **une seule fois** et peut en ouvrir une autre. Quatre quêtes sont jouables pour l'instant ; les suivantes viendront avec la phase 4 de la [feuille de route](docs/ROADMAP.md).
 
 **Sauvegarde** : la partie est enregistrée après chaque commande (et par `quit` ou `save`) dans `savegame.sav`, un fichier texte lisible, écrit de façon atomique : une coupure en pleine écriture laisse l'ancienne sauvegarde intacte. Un fichier corrompu, tronqué ou écrit par une version plus récente est refusé sans rien charger à moitié. Une partie perdue (alerte à 100) n'écrase pas la dernière sauvegarde : *Continuer* reprend juste avant la commande fatale.
 
@@ -81,7 +84,7 @@ Un message à décrypter pour essayer : `decrypt WKLV#LV#D#WHVW` (chiffre de Cé
 
 ```
 src/main.c         point d'entrée
-src/game/          état de jeu unique, table de commandes, commandes ; modules d'origine (boutique, alerte, quêtes, contacts) en cours de portage
+src/game/          état de jeu unique, table de commandes, bus d'événements, quêtes ; modules d'origine (boutique, contacts, hacking avancé) en cours de portage
 src/core/, ui/, i18n/   socle testé (entrées/sorties, options, RNG, terminal, textes FR/EN)
 tests/             tests unitaires (unit/) et de bout en bout (e2e/)
 docs/              architecture ; docs/legacy/ = rapports générés à l'époque (peu fiables)

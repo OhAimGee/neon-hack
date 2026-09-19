@@ -136,6 +136,27 @@ static void test_table_integrity(void)
     free(gs);
 }
 
+/* Les quêtes et le code de jeu nomment un système par son indice (NhNode) : il doit désigner le bon. */
+static void test_node_enum_matches_table(void)
+{
+    static const char *const k_names[NH_NODE_COUNT] = {
+        [NH_NODE_LOCALHOST] = "localhost",      [NH_NODE_CORP_SERVER] = "corp-server-01",
+        [NH_NODE_NEXUS] = "nexus-mainframe",    [NH_NODE_MARKET] = "underground-market",
+        [NH_NODE_LAB] = "research-lab",         [NH_NODE_BANK] = "banking-network",
+        [NH_NODE_GOV] = "gov-database",
+    };
+    GameState *gs = new_game();
+    CHECK_INT(NH_NODE_COUNT, nh_world_count());
+    for (int i = 0; i < NH_NODE_COUNT; i++)
+        CHECK_STR(gs->nodes[i].name, k_names[i]);
+    /* et le graphe raconte la même histoire que l'énumération */
+    CHECK_INT(nh_world_uplink(NH_NODE_LOCALHOST), -1);
+    CHECK_INT(nh_world_uplink(NH_NODE_CORP_SERVER), NH_NODE_LOCALHOST);
+    CHECK_INT(nh_world_uplink(NH_NODE_NEXUS), NH_NODE_CORP_SERVER);
+    CHECK_INT(nh_world_uplink(NH_NODE_GOV), NH_NODE_NEXUS);
+    free(gs);
+}
+
 static void test_init_state(void)
 {
     NetworkNode nodes[NH_MAX_NODES];
@@ -1014,6 +1035,7 @@ int main(void)
 {
     nh_io_set_input(NULL);
     test_table_integrity();
+    test_node_enum_matches_table();
     test_init_state();
     test_discover();
     test_find_and_reachable();

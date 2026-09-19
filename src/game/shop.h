@@ -35,6 +35,7 @@ typedef struct
     ShopItem items[ITEM_COUNT];
     int item_count;
     bool is_open;
+    unsigned bought; // bit i : l'objet i a déjà été acheté au moins une fois (sauvegardé ; lu par les quêtes)
     char vendor_name[50];
     char shop_location[100];
 } CyberShop;

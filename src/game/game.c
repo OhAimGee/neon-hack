@@ -81,7 +81,7 @@ void init_game(GameState *gs)
     // Initialiser les nouveaux modules
     init_shop(&gs->shop);
     nh_alert_init(&gs->alert);
-    init_quest_system(&gs->quests);
+    nh_quests_init(&gs->quests);
     init_contact_system(&gs->contacts);
     init_advanced_hacking_system(&gs->advanced);
 

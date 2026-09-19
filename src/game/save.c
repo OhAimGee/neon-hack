@@ -107,6 +107,7 @@ char *nh_save_to_text(const GameState *gs)
         if (!gs->shop.items[i].is_available)
             sold_out |= 1L << i;
     nh_kvw_int(&w, "shop.sold_out", sold_out);
+    nh_kvw_int(&w, "shop.bought", (long)gs->shop.bought);
 
     nh_kvw_int(&w, "alert.level", gs->alert.level);
     nh_kvw_int(&w, "alert.max", gs->alert.max_level);
@@ -130,21 +131,14 @@ char *nh_save_to_text(const GameState *gs)
         nh_kvw_int(&w, key(k, sizeof k, "contact.%d.interactions", i), c->interactions_count);
     }
 
-    nh_kvw_int(&w, "quests.active", gs->quests.active_quest_count);
-    nh_kvw_int(&w, "quests.completed", gs->quests.completed_quest_count);
-    nh_kvw_int(&w, "quests.progress", gs->quests.global_story_progress);
+    /* Les compteurs (actives, terminées, progression) se déduisent des statuts : on ne les écrit plus. */
     for (int i = 0; i < QUEST_COUNT; i++)
     {
-        const Quest *q = &gs->quests.quests[i];
-        long done = 0;
+        const QuestState *q = &gs->quests.quests[i];
+        const NhQuestDef *def = nh_quest_def((QuestType)i);
         nh_kvw_int(&w, key(k, sizeof k, "quest.%d.status", i), (long)q->status);
-        for (int o = 0; o < q->objective_count && o < 30; o++)
-        {
-            nh_kvw_int(&w, key(k, sizeof k, "quest.%d.obj.%d", i, o), q->objectives[o].current_value);
-            if (q->objectives[o].is_completed)
-                done |= 1L << o;
-        }
-        nh_kvw_int(&w, key(k, sizeof k, "quest.%d.done", i), done);
+        for (int o = 0; o < def->objective_count; o++)
+            nh_kvw_int(&w, key(k, sizeof k, "quest.%d.obj.%d", i, o), q->progress[o]);
     }
 
     nh_kvw_int(&w, "tutorial.step", gs->tutorial.step);
@@ -240,7 +234,7 @@ static void apply(GameState *gs, Reader *r)
     p->scans_done = (int)rd(r, "player.scans_done", 0, MAX_COUNTER, p->scans_done);
     p->milestones = (unsigned)rd(r, "player.milestones", 0, full_mask(NH_MS_COUNT), (long)p->milestones);
     p->credits = (int)rd(r, "player.credits", 0, MAX_CREDITS, p->credits);
-    p->reputation = (int)rd(r, "player.reputation", -MAX_COUNTER, MAX_COUNTER, p->reputation);
+    p->reputation = (int)rd(r, "player.reputation", -NH_REPUTATION_CAP, NH_REPUTATION_CAP, p->reputation);
     p->stealth_rating = (int)rd(r, "player.stealth_rating", 0, 100, p->stealth_rating);
     long unlocked = rd(r, "player.unlocked", 0, full_mask(MAX_COMMANDS), mask_of(p->commands_unlocked, MAX_COMMANDS));
     for (int i = 0; i < MAX_COMMANDS; i++)
@@ -275,6 +269,8 @@ static void apply(GameState *gs, Reader *r)
     long sold_out = rd(r, "shop.sold_out", 0, full_mask(ITEM_COUNT), 0);
     for (int i = 0; i < ITEM_COUNT; i++)
         gs->shop.items[i].is_available = !((sold_out >> i) & 1);
+    /* Un objet non consommable épuisé a forcément été acheté, même dans une sauvegarde qui n'a pas encore ce masque. */
+    gs->shop.bought = (unsigned)rd(r, "shop.bought", 0, full_mask(ITEM_COUNT), 0) | (unsigned)sold_out;
 
     gs->alert.level = (int)rd(r, "alert.level", 0, NH_ALERT_MAX, gs->alert.level);
     gs->alert.max_level = (int)rd(r, "alert.max", 0, NH_ALERT_MAX, gs->alert.max_level);
@@ -298,22 +294,20 @@ static void apply(GameState *gs, Reader *r)
         c->interactions_count = (int)rd(r, key(k, sizeof k, "contact.%d.interactions", i), 0, MAX_COUNTER, c->interactions_count);
     }
 
-    gs->quests.active_quest_count = (int)rd(r, "quests.active", 0, QUEST_COUNT, gs->quests.active_quest_count);
-    gs->quests.completed_quest_count = (int)rd(r, "quests.completed", 0, QUEST_COUNT, gs->quests.completed_quest_count);
-    gs->quests.global_story_progress = (int)rd(r, "quests.progress", 0, 100, gs->quests.global_story_progress);
+    /* Les clés « quests.* » et « quest.N.done » des versions précédentes sont ignorées : tout se déduit
+     * des statuts et de l'avancement. Une quête terminée est complète, quoi qu'en disent ses compteurs. */
     for (int i = 0; i < QUEST_COUNT; i++)
     {
-        Quest *q = &gs->quests.quests[i];
+        QuestState *q = &gs->quests.quests[i];
+        const NhQuestDef *def = nh_quest_def((QuestType)i);
         q->status = (QuestStatus)rd(r, key(k, sizeof k, "quest.%d.status", i), QUEST_STATUS_LOCKED, QUEST_STATUS_FAILED, (long)q->status);
-        for (int o = 0; o < q->objective_count; o++)
-            q->objectives[o].current_value = (int)rd(r, key(k, sizeof k, "quest.%d.obj.%d", i, o), 0, MAX_COUNTER, q->objectives[o].current_value);
-        long current = 0;
-        for (int o = 0; o < q->objective_count; o++)
-            if (q->objectives[o].is_completed)
-                current |= 1L << o;
-        long done = rd(r, key(k, sizeof k, "quest.%d.done", i), 0, full_mask(q->objective_count), current);
-        for (int o = 0; o < q->objective_count; o++)
-            q->objectives[o].is_completed = (done >> o) & 1;
+        for (int o = 0; o < def->objective_count; o++)
+        {
+            int value = (int)rd(r, key(k, sizeof k, "quest.%d.obj.%d", i, o), 0, MAX_COUNTER, q->progress[o]);
+            q->progress[o] = value < def->objectives[o].target ? value : def->objectives[o].target;
+            if (q->status == QUEST_STATUS_COMPLETED)
+                q->progress[o] = def->objectives[o].target;
+        }
     }
 
     gs->tutorial.step = (int)rd(r, "tutorial.step", 0, NH_TUT_STEP_COUNT - 1, gs->tutorial.step);

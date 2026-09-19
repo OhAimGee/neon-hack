@@ -8,6 +8,7 @@
 #include "../../src/core/parse.h"
 #include "../../src/core/platform.h"
 #include "../../src/game/progression.h"
+#include "../../src/game/quest_system.h"
 #include "../../src/game/save.h"
 #include "../../src/game/tutorial.h"
 #include "../../src/i18n/i18n.h"
@@ -77,6 +78,7 @@ static void make_rich(GameState *gs)
     gs->nodes[0].secret_files[0].is_unlocked = true;
 
     gs->shop.items[1].is_available = false;
+    gs->shop.bought = (1u << ITEM_ALERT_REDUCER) | (1u << ITEM_VIRUS_PACK);
 
     gs->alert.level = 33;
     gs->alert.max_level = 51;
@@ -93,11 +95,11 @@ static void make_rich(GameState *gs)
     gs->contacts.contacts[1].interactions_count = 6;
     gs->contacts.active_contacts = 2;
 
+    /* Tutoriel terminé, deuxième quête active avec un objectif accompli sur deux. */
     gs->quests.quests[QUEST_INTRO_TUTORIAL].status = QUEST_STATUS_COMPLETED;
-    gs->quests.quests[QUEST_INTRO_TUTORIAL].objectives[0].current_value = 1;
-    gs->quests.quests[QUEST_INTRO_TUTORIAL].objectives[0].is_completed = true;
-    gs->quests.completed_quest_count = 1;
-    gs->quests.global_story_progress = 12;
+    gs->quests.quests[QUEST_INTRO_TUTORIAL].progress[0] = 1;
+    gs->quests.quests[QUEST_FIRST_INFILTRATION].status = QUEST_STATUS_ACTIVE;
+    gs->quests.quests[QUEST_FIRST_INFILTRATION].progress[0] = 1;
 
     gs->tutorial.step = NH_TUT_HELP;
     gs->tutorial.done = false;
@@ -132,6 +134,7 @@ static void test_roundtrip(void)
     CHECK(b->nodes[0].secret_files[0].is_unlocked);
     CHECK_INT(b->nodes[3].firewall_strength, 13);
     CHECK(!b->shop.items[1].is_available && b->shop.items[0].is_available);
+    CHECK_INT(b->shop.bought, (1u << ITEM_ALERT_REDUCER) | (1u << ITEM_VIRUS_PACK));
     CHECK_INT(b->alert.level, 33);
     CHECK_INT(b->alert.max_level, 51);
     CHECK(b->alert.vpn_active && b->alert.proxy_active);
@@ -142,7 +145,12 @@ static void test_roundtrip(void)
     CHECK(b->contacts.contacts[1].is_unlocked && b->contacts.contacts[1].is_discovered);
     CHECK_INT(b->contacts.contacts[1].interactions_count, 6);
     CHECK_INT(b->quests.quests[QUEST_INTRO_TUTORIAL].status, QUEST_STATUS_COMPLETED);
-    CHECK_INT(b->quests.completed_quest_count, 1);
+    CHECK(nh_quest_objective_done(&b->quests, QUEST_INTRO_TUTORIAL, 0));
+    CHECK_INT(b->quests.quests[QUEST_FIRST_INFILTRATION].status, QUEST_STATUS_ACTIVE);
+    CHECK(nh_quest_objective_done(&b->quests, QUEST_FIRST_INFILTRATION, 0));
+    CHECK(!nh_quest_objective_done(&b->quests, QUEST_FIRST_INFILTRATION, 1));
+    CHECK_INT(nh_quests_count(&b->quests, QUEST_STATUS_COMPLETED), 1);
+    CHECK_INT(nh_quests_count(&b->quests, QUEST_STATUS_ACTIVE), 1);
     CHECK_INT(b->tutorial.step, NH_TUT_HELP);
     CHECK(!b->tutorial.done);
 
@@ -200,6 +208,8 @@ static void test_transactional_load(void)
         {"alert.vpn", "2"},              {"quest.0.status", "9"},     {"tutorial.step", "99"},
         {"tutorial.done", "7"},          {"contacts.active", "50"},   {"shop.sold_out", "999999"},
         {"player.unlocked", "-1"},       {"player.credits", ""},
+        {"quest.1.status", "5"},         {"quest.1.obj.0", "-1"},     {"quest.1.obj.0", "beaucoup"},
+        {"shop.bought", "999999"},       {"shop.bought", "-1"},
     };
     for (size_t i = 0; i < sizeof bad / sizeof bad[0]; i++)
     {
@@ -336,6 +346,71 @@ static void test_tutorial_state_persisted(void)
     CHECK_INT(b->tutorial.step, NH_TUT_NONE);
 
     free(a);
+    free(b);
+}
+
+static void test_quest_state_persisted(void)
+{
+    GameState *a = new_state();
+    a->quests.quests[QUEST_FIRST_INFILTRATION].status = QUEST_STATUS_ACTIVE;
+    a->quests.quests[QUEST_FIRST_INFILTRATION].progress[1] = 1;
+    char *text = nh_save_to_text(a);
+
+    /* Un statut par quête, un avancement par objectif ; rien pour une quête pas encore écrite. */
+    CHECK(strstr(text, "\nquest.0.status=2\n") != NULL); /* le tutoriel démarre actif */
+    CHECK(strstr(text, "\nquest.1.status=2\n") != NULL);
+    CHECK(strstr(text, "\nquest.1.obj.1=1\n") != NULL);
+    CHECK(strstr(text, "\nquest.1.obj.2=") == NULL);
+    CHECK(strstr(text, "\nquest.4.status=0\n") != NULL);
+    CHECK(strstr(text, "\nquest.4.obj.0=") == NULL);
+    /* Les compteurs d'origine se déduisent des statuts : ils ne sont plus écrits. */
+    CHECK(strstr(text, "quests.active") == NULL);
+    CHECK(strstr(text, "quests.completed") == NULL);
+    CHECK(strstr(text, "quest.0.done") == NULL);
+
+    GameState *b = new_state();
+    CHECK_INT(nh_save_from_text(b, text, strlen(text)), NH_SAVE_OK);
+    CHECK_INT(b->quests.quests[QUEST_FIRST_INFILTRATION].status, QUEST_STATUS_ACTIVE);
+    CHECK(!nh_quest_objective_done(&b->quests, QUEST_FIRST_INFILTRATION, 0));
+    CHECK(nh_quest_objective_done(&b->quests, QUEST_FIRST_INFILTRATION, 1));
+    CHECK_INT(b->quests.quests[QUEST_UNDERGROUND_CONTACT].status, QUEST_STATUS_LOCKED);
+
+    free(text);
+    free(a);
+    free(b);
+}
+
+static void test_quest_old_keys_and_clamping(void)
+{
+    GameState *fresh = new_state();
+    GameState *b = new_state();
+
+    /* Les clés des versions précédentes sont ignorées : la partie repart d'un état de quêtes neuf. */
+    const char *old =
+        "neon-hack-save=1\nquests.active=3\nquests.completed=2\nquests.progress=50\n"
+        "quest.0.done=1\nquest.1.done=1\nend=1\n";
+    CHECK_INT(nh_save_from_text(b, old, strlen(old)), NH_SAVE_OK);
+    CHECK(memcmp(&b->quests, &fresh->quests, sizeof b->quests) == 0);
+
+    /* Un avancement au-delà de l'objectif est ramené à l'objectif. */
+    const char *over = "neon-hack-save=1\nquest.1.status=2\nquest.1.obj.0=999\nend=1\n";
+    CHECK_INT(nh_save_from_text(b, over, strlen(over)), NH_SAVE_OK);
+    CHECK_INT(b->quests.quests[QUEST_FIRST_INFILTRATION].progress[0], 1);
+
+    /* Une quête terminée est complète, même si la sauvegarde n'a rien noté de son avancement. */
+    const char *done = "neon-hack-save=1\nquest.2.status=3\nend=1\n";
+    CHECK_INT(nh_save_from_text(b, done, strlen(done)), NH_SAVE_OK);
+    const NhQuestDef *def = nh_quest_def(QUEST_GATHER_INTEL);
+    for (int o = 0; o < def->objective_count; o++)
+        CHECK(nh_quest_objective_done(&b->quests, QUEST_GATHER_INTEL, o));
+
+    /* Une sauvegarde d'avant le masque d'achats : un objet épuisé a forcément été acheté. */
+    const char *sold = "neon-hack-save=1\nshop.sold_out=4\nend=1\n";
+    CHECK_INT(nh_save_from_text(b, sold, strlen(sold)), NH_SAVE_OK);
+    CHECK_INT(b->shop.bought, 4);
+    CHECK(!b->shop.items[2].is_available);
+
+    free(fresh);
     free(b);
 }
 
@@ -555,6 +630,8 @@ int main(void)
     test_tolerance();
     test_name_sanitized();
     test_tutorial_state_persisted();
+    test_quest_state_persisted();
+    test_quest_old_keys_and_clamping();
     test_save_path_kept_on_load();
     test_peek();
     test_files();

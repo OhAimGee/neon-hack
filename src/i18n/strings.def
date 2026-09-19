@@ -245,6 +245,7 @@ NH_STR(NH_STR_PROG_NEW_COMMANDS, "Nouvelles commandes débloquées : %s%s%s",
 NH_STR(NH_STR_PROG_EQUIPMENT, "Équipement débloqué : IA assistante + ordinateur quantique.",
        "Equipment unlocked: AI assistant + quantum computer.")
 NH_STR(NH_STR_PROG_CREDITS, "[+%d crédits]", "[+%d credits]")
+NH_STR(NH_STR_PROG_REPUTATION, "[+%d réputation]", "[+%d reputation]")
 NH_STR(NH_STR_PROG_MAX_LEVEL, "Niveau maximum atteint : il n'y a plus rien au-dessus de vous.",
        "Maximum level reached: there is nothing above you now.")
 NH_STR(NH_STR_PROG_SCAN_DONE, "Réseau déjà cartographié : ce scan ne vous apprend plus rien.",
@@ -397,7 +398,6 @@ NH_STR(NH_STR_TUT_REMINDER, "Concentre-toi, rookie. Ton objectif : %s", "Focus, 
 NH_STR(NH_STR_TUT_RESUME,
        "Content de te revoir, %s. On reprend là où on s'était arrêtés.",
        "Good to see you again, %s. Let's pick up where we left off.")
-NH_STR(NH_STR_TUT_DONE_BANNER, "*** MISSION ACCOMPLIE : %s ***", "*** MISSION COMPLETE: %s ***")
 NH_STR(NH_STR_TUT_DONE_1,
        "Pas mal du tout, %s. Tu tiens debout, et le réseau ne t'a pas encore avalé.",
        "Not bad at all, %s. You're still standing, and the net hasn't swallowed you yet.")
@@ -407,7 +407,6 @@ NH_STR(NH_STR_TUT_DONE_2,
 NH_STR(NH_STR_TUT_DONE_3,
        "Et méfie-toi de Nexus Corp. Ils préparent quelque chose de gros...",
        "And watch out for Nexus Corp. They're planning something big...")
-NH_STR(NH_STR_TUT_REWARD_REP, "[+%d réputation]", "[+%d reputation]")
 
 NH_STR(NH_STR_TUT_OBJ_QUESTS, "Ouvrir le journal de mission (quests)", "Open the mission log (quests)")
 NH_STR(NH_STR_TUT_OBJ_HELP, "Consulter l'aide (help)", "Check the help (help)")
@@ -438,3 +437,114 @@ NH_STR(NH_STR_TUT_SAY_BRUTEFORCE,
 NH_STR(NH_STR_TUT_SAY_LAYLOW,
        "Joli. Mais tu as laissé des traces. 'laylow' ouvre un menu pour faire redescendre l'alerte : choisis une méthode et applique-la (attendre est gratuit). Apprends à t'en servir avant d'en avoir besoin.",
        "Nice. But you left traces. 'laylow' opens a menu to bring your alert back down: pick a method and apply it (waiting is free). Learn it before you need it.")
+
+/* ---- Quêtes : interface ---- */
+NH_STR(NH_STR_QUEST_LOG_TITLE, "=== JOURNAL DE QUÊTES ===", "=== QUEST LOG ===")
+NH_STR(NH_STR_QUEST_SECTION_ACTIVE, "=== QUÊTES ACTIVES ===", "=== ACTIVE QUESTS ===")
+NH_STR(NH_STR_QUEST_SECTION_DONE, "=== QUÊTES TERMINÉES ===", "=== COMPLETED QUESTS ===")
+NH_STR(NH_STR_QUEST_NONE_ACTIVE, "Aucune quête active.", "No active quest.")
+NH_STR(NH_STR_QUEST_NONE_DONE, "Aucune quête terminée.", "No completed quest.")
+NH_STR(NH_STR_QUEST_NEXT_LEVEL, "Prochaine quête : atteignez le niveau %d.", "Next quest: reach level %d.")
+NH_STR(NH_STR_QUEST_PROGRESS, "Progression globale : %d %%", "Overall progress: %d%%")
+NH_STR(NH_STR_QUEST_PROMPT,
+       "Détails d'une quête ? (son numéro, ou 0 pour sortir) : ",
+       "Quest details? (its number, or 0 to leave): ")
+NH_STR(NH_STR_QUEST_NO_SUCH, "Aucune quête n° %d dans votre journal.", "No quest #%d in your log.")
+NH_STR(NH_STR_QUEST_DETAILS_TITLE, "=== DÉTAILS DE QUÊTE ===", "=== QUEST DETAILS ===")
+NH_STR(NH_STR_QUEST_LABEL_CONTACT, "Contact", "Contact")
+NH_STR(NH_STR_QUEST_LABEL_LOCATION, "Lieu", "Location")
+NH_STR(NH_STR_QUEST_LABEL_OBJECTIVES, "Objectifs :", "Objectives:")
+NH_STR(NH_STR_QUEST_LABEL_CONTEXT, "Contexte :", "Background:")
+NH_STR(NH_STR_QUEST_LABEL_REWARDS, "Récompenses :", "Rewards:")
+NH_STR(NH_STR_QUEST_REWARD_XP, "%d XP", "%d XP")
+NH_STR(NH_STR_QUEST_REWARD_CREDITS, "%d crédits", "%d credits")
+NH_STR(NH_STR_QUEST_REWARD_REPUTATION, "%d réputation", "%d reputation")
+NH_STR(NH_STR_QUEST_SECRET, "??? (objectif secret)", "??? (secret objective)")
+NH_STR(NH_STR_QUEST_NEW_BANNER, "*** NOUVELLE QUÊTE : %s ***", "*** NEW QUEST: %s ***")
+NH_STR(NH_STR_QUEST_NEW_HINT, "Tapez 'quests' pour les détails.", "Type 'quests' for details.")
+NH_STR(NH_STR_QUEST_OBJ_DONE, "✔ Objectif accompli : %s", "✔ Objective complete: %s")
+NH_STR(NH_STR_QUEST_DONE_BANNER, "*** QUÊTE TERMINÉE : %s ***", "*** QUEST COMPLETE: %s ***")
+
+/* ---- Chapitres ---- */
+NH_STR(NH_STR_CHAPTER_HEADER, "CHAPITRE %d : %s", "CHAPTER %d: %s")
+NH_STR(NH_STR_CHAPTER_1_TITLE, "L'ÉVEIL DU HACKER", "THE HACKER'S AWAKENING")
+NH_STR(NH_STR_CHAPTER_1_TEXT,
+       "Vos premiers pas dans l'underground cyberpunk de Neo-Tokyo. Apprenez les rouages du hacking et forgez votre réputation.",
+       "Your first steps in Neo-Tokyo's cyberpunk underground. Learn the ropes of hacking and build your reputation.")
+NH_STR(NH_STR_CHAPTER_2_TITLE, "DANS L'OMBRE DES CORPORATIONS", "IN THE SHADOW OF THE CORPORATIONS")
+NH_STR(NH_STR_CHAPTER_2_TEXT,
+       "Les corporations cachent de sombres secrets. Infiltrez leurs réseaux et découvrez la vérité.",
+       "The corporations are hiding dark secrets. Infiltrate their networks and uncover the truth.")
+NH_STR(NH_STR_CHAPTER_3_TITLE, "LE PROJET AURORA", "PROJECT AURORA")
+NH_STR(NH_STR_CHAPTER_3_TEXT,
+       "Nexus Corp développe une technologie de contrôle mental. L'avenir de l'humanité est en jeu.",
+       "Nexus Corp is developing mind-control technology. The future of humanity is at stake.")
+NH_STR(NH_STR_CHAPTER_4_TITLE, "LA LIBÉRATION", "THE LIBERATION")
+NH_STR(NH_STR_CHAPTER_4_TEXT,
+       "Alliez-vous avec l'IA AURA pour exposer les crimes de Nexus. La révolution digitale commence maintenant.",
+       "Team up with the AURA AI to expose Nexus's crimes. The digital revolution begins now.")
+
+/* ---- Quêtes : contenu (le titre du tutoriel est NH_STR_TUT_MISSION_TITLE) ---- */
+NH_STR(NH_STR_QT_TUTORIAL_DESC,
+       "Apprenez les bases du hacking et familiarisez-vous avec vos outils.",
+       "Learn the basics of hacking and get to know your tools.")
+NH_STR(NH_STR_QT_TUTORIAL_LORE,
+       "Neo-Tokyo, 2087. Les néons percent la brume toxique qui enveloppe la mégalopole. Vous venez de vous éveiller dans un petit appartement miteux du secteur 7. Votre cyberdeck clignote faiblement - il est temps de faire vos premiers pas dans le monde souterrain du hacking...",
+       "Neo-Tokyo, 2087. Neon lights pierce the toxic haze that wraps the megalopolis. You have just woken up in a shabby little apartment in sector 7. Your cyberdeck is blinking faintly - it is time to take your first steps into the hacking underworld...")
+NH_STR(NH_STR_QT_TUTORIAL_LOC, "Terminal personnel", "Personal terminal")
+NH_STR(NH_STR_QT_TUTORIAL_OBJ, "Suivre la formation d'ECHO-7", "Follow ECHO-7's training")
+
+NH_STR(NH_STR_QT_INFIL_TITLE, "Baptême du Feu", "Baptism of Fire")
+NH_STR(NH_STR_QT_INFIL_DESC,
+       "Infiltrez votre premier serveur corporate pour récupérer des données sensibles.",
+       "Infiltrate your first corporate server to recover sensitive data.")
+NH_STR(NH_STR_QT_INFIL_LORE,
+       "ECHO-7 vous a contacté via un canal crypté. Une corporation de second rang, MegaCorp Industries, cache des informations sur un projet classifié. C'est votre chance de prouver vos compétences et de commencer à vous faire un nom dans l'underground...",
+       "ECHO-7 reached out to you through an encrypted channel. A second-rate corporation, MegaCorp Industries, is hiding information about a classified project. This is your chance to prove your skills and start making a name for yourself in the underground...")
+NH_STR(NH_STR_QT_INFIL_LOC, "MegaCorp Industries - corp-server-01", "MegaCorp Industries - corp-server-01")
+NH_STR(NH_STR_QT_INFIL_OBJ_HACK,
+       "Infiltrer corp-server-01 (scan, puis bruteforce)",
+       "Infiltrate corp-server-01 (scan, then bruteforce)")
+NH_STR(NH_STR_QT_INFIL_OBJ_ALERT,
+       "Maintenir l'alerte sous %d (laylow la fait baisser)",
+       "Keep your alert below %d (laylow lowers it)")
+
+NH_STR(NH_STR_QT_INTEL_TITLE, "Réseaux d'Information", "Information Networks")
+NH_STR(NH_STR_QT_INTEL_DESC,
+       "Établissez des contacts et rassemblez des informations sur Nexus Corp.",
+       "Build contacts and gather intelligence on Nexus Corp.")
+NH_STR(NH_STR_QT_INTEL_LORE,
+       "Les données de MegaCorp révèlent des connexions troublantes avec Nexus Corp, la plus puissante mégacorporation de Neo-Tokyo. Pour comprendre ce qui se trame, vous devez infiltrer plusieurs réseaux et établir des contacts dans l'underground. R4Z0R, qui tient le marché noir du secteur 7, prétend aussi qu'une transmission chiffrée circule sur le réseau : à vous de la décrypter.",
+       "MegaCorp's data reveals disturbing links with Nexus Corp, the most powerful megacorporation in Neo-Tokyo. To understand what is going on, you must infiltrate several networks and build contacts in the underground. R4Z0R, who runs the black market in sector 7, also claims that an encrypted transmission is circulating on the net: it is up to you to decrypt it.")
+NH_STR(NH_STR_QT_INTEL_LOC, "Marché noir - plusieurs systèmes", "Black market - several systems")
+NH_STR(NH_STR_QT_INTEL_OBJ_CONTACT,
+       "Contacter R4Z0R au marché noir (contact R4Z0R)",
+       "Contact R4Z0R at the black market (contact R4Z0R)")
+NH_STR(NH_STR_QT_INTEL_OBJ_ITEM,
+       "Acheter le Stealth Module v2.0 (shop)",
+       "Buy the Stealth Module v2.0 (shop)")
+NH_STR(NH_STR_QT_INTEL_OBJ_SYSTEMS, "Compromettre 3 systèmes différents", "Compromise 3 different systems")
+NH_STR(NH_STR_QT_INTEL_OBJ_REP,
+       "Atteindre 50 points de réputation (le Street Cred Booster de la boutique aide)",
+       "Reach 50 reputation points (the shop's Street Cred Booster helps)")
+NH_STR(NH_STR_QT_INTEL_OBJ_DECRYPT,
+       "Décrypter la transmission interceptée (decrypt)",
+       "Decrypt the intercepted transmission (decrypt)")
+
+NH_STR(NH_STR_QT_NEXUS_TITLE, "L'œil du Cyclone", "The Eye of the Storm")
+NH_STR(NH_STR_QT_NEXUS_DESC,
+       "Infiltrez les serveurs de Nexus Corp pour découvrir la vérité sur le Projet Aurora.",
+       "Infiltrate Nexus Corp's servers to uncover the truth about Project Aurora.")
+NH_STR(NH_STR_QT_NEXUS_LORE,
+       "Vos investigations révèlent l'existence du 'Projet Aurora', une initiative secrète de Nexus Corp qui semble impliquer le contrôle des esprits via des implants neuraux. Les enjeux deviennent soudain beaucoup plus importants que de simples profits corporatifs...",
+       "Your investigations reveal the existence of 'Project Aurora', a secret Nexus Corp initiative that appears to involve mind control through neural implants. The stakes suddenly become far greater than mere corporate profit...")
+NH_STR(NH_STR_QT_NEXUS_LOC, "Nexus Corp - Serveurs sécurisés", "Nexus Corp - Secure servers")
+NH_STR(NH_STR_QT_NEXUS_OBJ_ITEM,
+       "Acquérir un équipement de haut niveau (shop : Quantum Encryption Key, Neural Assistant ou Quantum Processing Chip)",
+       "Acquire high-end equipment (shop: Quantum Encryption Key, Neural Assistant or Quantum Processing Chip)")
+NH_STR(NH_STR_QT_NEXUS_OBJ_BREACH,
+       "Percer les défenses de nexus-mainframe",
+       "Breach the defenses of nexus-mainframe")
+NH_STR(NH_STR_QT_NEXUS_OBJ_DATA,
+       "Extraire les données du Projet Aurora (advhack ou aihack)",
+       "Extract the Project Aurora data (advhack or aihack)")

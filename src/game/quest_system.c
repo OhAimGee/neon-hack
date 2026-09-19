@@ -1,570 +1,592 @@
 #include "quest_system.h"
+
 #include <stdio.h>
 #include <string.h>
-#include <stdlib.h>
 
-// Codes couleur pour l'interface
-#define COLOR_RESET "\033[0m"
-#define COLOR_CYAN "\033[36m"
-#define COLOR_MAGENTA "\033[35m"
-#define COLOR_YELLOW "\033[33m"
-#define COLOR_GREEN "\033[32m"
-#define COLOR_RED "\033[31m"
-#define COLOR_BRIGHT_CYAN "\033[96m"
-#define COLOR_BRIGHT_GREEN "\033[92m"
-#define COLOR_WHITE "\033[37m"
-#define COLOR_BLUE "\033[34m"
+#include "../core/io.h"
+#include "../ui/term.h"
+#include "alert.h"
+#include "game.h"
+#include "progression.h"
+#include "shop.h"
+#include "tutorial.h"
+#include "world.h"
 
-void init_quest_system(QuestSystem *quest_system)
-{
-    quest_system->active_quest_count = 0;
-    quest_system->completed_quest_count = 0;
-    quest_system->global_story_progress = 0;
-    strcpy(quest_system->current_chapter_title, "Prologue : L'Éveil");
+/* ---- Les quêtes ------------------------------------------------------------------------------ */
 
-    // === QUEST 1: TUTORIAL ===
-    Quest *tutorial = &quest_system->quests[QUEST_INTRO_TUTORIAL];
-    tutorial->type = QUEST_INTRO_TUTORIAL;
-    strcpy(tutorial->title, "Premiers Pas dans l'Ombre");
-    strcpy(tutorial->description, "Apprenez les bases du hacking et familiarisez-vous avec vos outils.");
-    strcpy(tutorial->lore_text,
-           "Neo-Tokyo, 2087. Les néons percent la brume toxique qui enveloppe la mégalopole. "
-           "Vous venez de vous éveiller dans un petit appartement miteux du secteur 7. "
-           "Votre cyberdeck clignote faiblement - il est temps de faire vos premiers pas "
-           "dans le monde souterrain du hacking...");
+/*
+ * Les objectifs sont ceux du jeu d'origine, remis en accord avec le monde tel qu'il est : « extraire
+ * 3 fichiers » au niveau 2 était impossible (aucune commande n'extrait avant le niveau 3) et
+ * « TechDyne-Server » n'existe plus dans le monde unifié. Récompenses provisoires (phase 5) ; elles
+ * sont à l'échelle de la courbe d'expérience (nh_level_xp_required), pas de celle d'origine.
+ *
+ * Attention aux impasses : la quête « Baptême du Feu » verse 25 XP parce qu'un joueur de niveau 2
+ * n'a que 45 XP à gagner (scans 15 + localhost 5 + corp-server-01 25) pour 60 requis au niveau 3.
+ * test_quests.c vérifie qu'à chaque niveau il reste de quoi atteindre le suivant.
+ */
+#define ITEM_MASK(item) (1 << (item))
 
-    tutorial->status = QUEST_STATUS_AVAILABLE;
-    tutorial->level_required = 1;
-    tutorial->prerequisites[0] = -1; // Aucun prérequis
-    tutorial->is_main_quest = true;
-    tutorial->chapter = 1;
-    strcpy(tutorial->contact_name, "ECHO-7");
-    strcpy(tutorial->location, "Terminal personnel");
-
-    // Objectifs
-    tutorial->objective_count = 3;
-    tutorial->objectives[0].type = OBJECTIVE_HACK_TARGET;
-    strcpy(tutorial->objectives[0].description, "Effectuer votre premier scan réseau");
-    tutorial->objectives[0].target_value = 1;
-    tutorial->objectives[0].current_value = 0;
-    tutorial->objectives[0].is_completed = false;
-
-    tutorial->objectives[1].type = OBJECTIVE_HACK_TARGET;
-    strcpy(tutorial->objectives[1].description, "Pirater localhost avec bruteforce");
-    tutorial->objectives[1].target_value = 1;
-    tutorial->objectives[1].current_value = 0;
-    tutorial->objectives[1].is_completed = false;
-
-    tutorial->objectives[2].type = OBJECTIVE_DECRYPT_MESSAGE;
-    strcpy(tutorial->objectives[2].description, "Décrypter un message d'ECHO-7");
-    tutorial->objectives[2].target_value = 1;
-    tutorial->objectives[2].current_value = 0;
-    tutorial->objectives[2].is_completed = false;
-
-    // Récompenses
-    tutorial->exp_reward = 200;
-    tutorial->credits_reward = 500;
-    tutorial->reputation_reward = 10;
-    strcpy(tutorial->special_reward, "Déblocage commande 'contacts'");
-
-    // === QUEST 2: PREMIÈRE INFILTRATION ===
-    Quest *infiltration = &quest_system->quests[QUEST_FIRST_INFILTRATION];
-    infiltration->type = QUEST_FIRST_INFILTRATION;
-    strcpy(infiltration->title, "Baptême du Feu");
-    strcpy(infiltration->description, "Infiltrez votre premier serveur corporate pour récupérer des données sensibles.");
-    strcpy(infiltration->lore_text,
-           "ECHO-7 vous a contacté via un canal crypté. Une corporation mineure, "
-           "TechDyne Solutions, cache des informations sur un projet classifié. "
-           "C'est votre chance de prouver vos compétences et de commencer à vous "
-           "faire un nom dans l'underground...");
-
-    infiltration->status = QUEST_STATUS_LOCKED;
-    infiltration->level_required = 2;
-    infiltration->prerequisites[0] = QUEST_INTRO_TUTORIAL;
-    infiltration->prerequisites[1] = -1;
-    infiltration->is_main_quest = true;
-    infiltration->chapter = 1;
-    strcpy(infiltration->contact_name, "ECHO-7");
-    strcpy(infiltration->location, "TechDyne Solutions - Serveur Principal");
-
-    // Objectifs
-    infiltration->objective_count = 4;
-    infiltration->objectives[0].type = OBJECTIVE_REACH_LEVEL;
-    strcpy(infiltration->objectives[0].description, "Atteindre le niveau 2");
-    infiltration->objectives[0].target_value = 2;
-    infiltration->objectives[0].current_value = 1;
-    infiltration->objectives[0].is_completed = false;
-
-    infiltration->objectives[1].type = OBJECTIVE_HACK_TARGET;
-    strcpy(infiltration->objectives[1].description, "Infiltrer TechDyne-Server");
-    infiltration->objectives[1].target_value = 1;
-    infiltration->objectives[1].current_value = 0;
-    infiltration->objectives[1].is_completed = false;
-
-    infiltration->objectives[2].type = OBJECTIVE_GATHER_DATA;
-    strcpy(infiltration->objectives[2].description, "Extraire 3 fichiers de données");
-    infiltration->objectives[2].target_value = 3;
-    infiltration->objectives[2].current_value = 0;
-    infiltration->objectives[2].is_completed = false;
-
-    infiltration->objectives[3].type = OBJECTIVE_MAINTAIN_STEALTH;
-    strcpy(infiltration->objectives[3].description, "Maintenir l'alerte sous 50");
-    infiltration->objectives[3].target_value = 50;
-    infiltration->objectives[3].current_value = 0;
-    infiltration->objectives[3].is_completed = true; // Objectif permanent
-
-    // Récompenses
-    infiltration->exp_reward = 400;
-    infiltration->credits_reward = 1000;
-    infiltration->reputation_reward = 25;
-    strcpy(infiltration->special_reward, "Plans d'amélioration du cyberdeck");
-
-    // === QUEST 3: COLLECTE D'INFORMATIONS ===
-    Quest *intel = &quest_system->quests[QUEST_GATHER_INTEL];
-    intel->type = QUEST_GATHER_INTEL;
-    strcpy(intel->title, "Réseaux d'Information");
-    strcpy(intel->description, "Établissez des contacts et rassemblez des informations sur Nexus Corp.");
-    strcpy(intel->lore_text,
-           "Les données de TechDyne révèlent des connexions troublantes avec Nexus Corp, "
-           "la plus puissante mégacorporation de Neo-Tokyo. Pour comprendre ce qui se trame, "
-           "vous devez infiltrer plusieurs réseaux et établir des contacts dans l'underground...");
-
-    intel->status = QUEST_STATUS_LOCKED;
-    intel->level_required = 3;
-    intel->prerequisites[0] = QUEST_FIRST_INFILTRATION;
-    intel->prerequisites[1] = -1;
-    intel->is_main_quest = true;
-    intel->chapter = 2;
-    strcpy(intel->contact_name, "R4Z0R");
-    strcpy(intel->location, "Underground Market - Multiple");
-
-    // Objectifs
-    intel->objective_count = 5;
-    intel->objectives[0].type = OBJECTIVE_MEET_CONTACT;
-    strcpy(intel->objectives[0].description, "Contacter R4Z0R au marché noir");
-    intel->objectives[0].target_value = 1;
-    intel->objectives[0].current_value = 0;
-    intel->objectives[0].is_completed = false;
-
-    intel->objectives[1].type = OBJECTIVE_PURCHASE_ITEM;
-    strcpy(intel->objectives[1].description, "Acheter un module de stealth");
-    intel->objectives[1].target_value = 1;
-    intel->objectives[1].current_value = 0;
-    intel->objectives[1].is_completed = false;
-
-    intel->objectives[2].type = OBJECTIVE_HACK_TARGET;
-    strcpy(intel->objectives[2].description, "Infiltrer 3 serveurs différents");
-    intel->objectives[2].target_value = 3;
-    intel->objectives[2].current_value = 0;
-    intel->objectives[2].is_completed = false;
-
-    intel->objectives[3].type = OBJECTIVE_BUILD_REPUTATION;
-    strcpy(intel->objectives[3].description, "Atteindre 50 points de réputation");
-    intel->objectives[3].target_value = 50;
-    intel->objectives[3].current_value = 0;
-    intel->objectives[3].is_completed = false;
-
-    intel->objectives[4].type = OBJECTIVE_DECRYPT_MESSAGE;
-    strcpy(intel->objectives[4].description, "Décrypter les communications de Nexus");
-    intel->objectives[4].target_value = 1;
-    intel->objectives[4].current_value = 0;
-    intel->objectives[4].is_completed = false;
-    intel->objectives[4].is_hidden = true; // Objectif secret
-
-    // Récompenses
-    intel->exp_reward = 600;
-    intel->credits_reward = 1500;
-    intel->reputation_reward = 40;
-    strcpy(intel->special_reward, "Contact permanent avec R4Z0R");
-
-    // === QUEST 4: NEXUS DATA BREACH ===
-    Quest *nexus = &quest_system->quests[QUEST_NEXUS_DATA_BREACH];
-    nexus->type = QUEST_NEXUS_DATA_BREACH;
-    strcpy(nexus->title, "L'œil du Cyclone");
-    strcpy(nexus->description, "Infiltrez les serveurs de Nexus Corp pour découvrir la vérité sur le Projet Aurora.");
-    strcpy(nexus->lore_text,
-           "Vos investigations révèlent l'existence du 'Projet Aurora', une initiative "
-           "secrète de Nexus Corp qui semble impliquer le contrôle des esprits via des "
-           "implants neuraux. Les enjeux deviennent soudain beaucoup plus importants "
-           "que de simples profits corporatifs...");
-
-    nexus->status = QUEST_STATUS_LOCKED;
-    nexus->level_required = 4;
-    nexus->prerequisites[0] = QUEST_GATHER_INTEL;
-    nexus->prerequisites[1] = -1;
-    nexus->is_main_quest = true;
-    nexus->chapter = 3;
-    strcpy(nexus->contact_name, "Phoenix");
-    strcpy(nexus->location, "Nexus Corp - Serveurs Sécurisés");
-
-    // Objectifs avec haute difficulté
-    nexus->objective_count = 4;
-    nexus->objectives[0].type = OBJECTIVE_REACH_LEVEL;
-    strcpy(nexus->objectives[0].description, "Atteindre le niveau 4 (Expert)");
-    nexus->objectives[0].target_value = 4;
-    nexus->objectives[0].current_value = 1;
-    nexus->objectives[0].is_completed = false;
-
-    nexus->objectives[1].type = OBJECTIVE_PURCHASE_ITEM;
-    strcpy(nexus->objectives[1].description, "Acquérir un équipement de haut niveau");
-    nexus->objectives[1].target_value = 1;
-    nexus->objectives[1].current_value = 0;
-    nexus->objectives[1].is_completed = false;
-
-    nexus->objectives[2].type = OBJECTIVE_HACK_TARGET;
-    strcpy(nexus->objectives[2].description, "Percer les défenses de Nexus Corp");
-    nexus->objectives[2].target_value = 1;
-    nexus->objectives[2].current_value = 0;
-    nexus->objectives[2].is_completed = false;
-
-    nexus->objectives[3].type = OBJECTIVE_GATHER_DATA;
-    strcpy(nexus->objectives[3].description, "Extraire les données du Projet Aurora");
-    nexus->objectives[3].target_value = 1;
-    nexus->objectives[3].current_value = 0;
-    nexus->objectives[3].is_completed = false;
-
-    // Récompenses majeures
-    nexus->exp_reward = 1000;
-    nexus->credits_reward = 5000;
-    nexus->reputation_reward = 100;
-    strcpy(nexus->special_reward, "Accès aux protocoles de libération d'IA");
-
-    // Initialiser les autres quêtes...
-    // QUEST 5-9 seront implémentées de la même manière
-
-    // Démarrer la première quête
-    quest_system->quests[QUEST_INTRO_TUTORIAL].status = QUEST_STATUS_ACTIVE;
-    quest_system->active_quest_count = 1;
-}
-
-void display_quest_log(const QuestSystem *quest_system)
-{
-    printf("\n" COLOR_CYAN);
-    printf("╔═══════════════════════════════════════════════════════════════════════════╗\n");
-    printf("║                          📋 JOURNAL DE QUÊTES 📋                          ║\n");
-    printf("║                          %s                           ║\n", quest_system->current_chapter_title);
-    printf("╚═══════════════════════════════════════════════════════════════════════════╝\n");
-    printf(COLOR_RESET);
-
-    printf("\n" COLOR_BRIGHT_CYAN "=== QUÊTES ACTIVES ===" COLOR_RESET "\n");
-
-    bool has_active = false;
-    for (int i = 0; i < QUEST_COUNT; i++)
-    {
-        const Quest *quest = &quest_system->quests[i];
-        if (quest->status == QUEST_STATUS_ACTIVE)
+static const NhQuestDef k_quests[QUEST_COUNT] = {
+    [QUEST_INTRO_TUTORIAL] =
         {
-            has_active = true;
-            printf("\n" COLOR_YELLOW "▶ %s" COLOR_RESET "\n", quest->title);
-            printf("  %s\n", quest->description);
-            printf("  " COLOR_BLUE "Contact: " COLOR_WHITE "%s" COLOR_RESET "\n", quest->contact_name);
-            printf("  " COLOR_BLUE "Lieu: " COLOR_WHITE "%s" COLOR_RESET "\n", quest->location);
-
-            // Afficher les objectifs
-            printf("  " COLOR_GREEN "Objectifs:" COLOR_RESET "\n");
-            for (int j = 0; j < quest->objective_count; j++)
-            {
-                const QuestObjective *obj = &quest->objectives[j];
-                if (!obj->is_hidden || obj->is_completed)
+            .title = NH_STR_TUT_MISSION_TITLE,
+            .description = NH_STR_QT_TUTORIAL_DESC,
+            .lore = NH_STR_QT_TUTORIAL_LORE,
+            .location = NH_STR_QT_TUTORIAL_LOC,
+            .contact = NH_ECHO7,
+            .level_required = 1,
+            .prerequisites = {-1, -1},
+            .chapter = 1,
+            .objective_count = 1,
+            .objectives = {{NH_OBJ_MANUAL, 1, -1, NH_STR_QT_TUTORIAL_OBJ, false}},
+            .xp = 0,
+            .credits = NH_TUT_REWARD_CREDITS,
+            .reputation = NH_TUT_REWARD_REPUTATION,
+        },
+    [QUEST_FIRST_INFILTRATION] =
+        {
+            .title = NH_STR_QT_INFIL_TITLE,
+            .description = NH_STR_QT_INFIL_DESC,
+            .lore = NH_STR_QT_INFIL_LORE,
+            .location = NH_STR_QT_INFIL_LOC,
+            .contact = NH_ECHO7,
+            .level_required = 2,
+            .prerequisites = {QUEST_INTRO_TUTORIAL, -1},
+            .chapter = 1,
+            .objective_count = 2,
+            .objectives =
                 {
-                    const char *status_icon = obj->is_completed ? "✅" : "◯";
-                    printf("    %s %s", status_icon, obj->description);
-                    if (obj->target_value > 1)
-                    {
-                        printf(" (%d/%d)", obj->current_value, obj->target_value);
-                    }
-                    printf("\n");
-                }
-            }
-        }
-    }
-
-    if (!has_active)
-    {
-        printf(COLOR_YELLOW "Aucune quête active." COLOR_RESET "\n");
-    }
-
-    printf("\n" COLOR_BRIGHT_CYAN "=== QUÊTES TERMINÉES ===" COLOR_RESET "\n");
-
-    bool has_completed = false;
-    for (int i = 0; i < QUEST_COUNT; i++)
-    {
-        const Quest *quest = &quest_system->quests[i];
-        if (quest->status == QUEST_STATUS_COMPLETED)
+                    {NH_OBJ_HACK_TARGET, 1, NH_NODE_CORP_SERVER, NH_STR_QT_INFIL_OBJ_HACK, false},
+                    {NH_OBJ_KEEP_ALERT_BELOW, 1, NH_ALERT_ELEVATED, NH_STR_QT_INFIL_OBJ_ALERT, false},
+                },
+            .xp = 25,
+            .credits = 200,
+            .reputation = 25,
+        },
+    [QUEST_GATHER_INTEL] =
         {
-            has_completed = true;
-            printf("  ✅ " COLOR_GREEN "%s" COLOR_RESET "\n", quest->title);
-        }
-    }
-
-    if (!has_completed)
-    {
-        printf(COLOR_YELLOW "Aucune quête terminée." COLOR_RESET "\n");
-    }
-
-    printf("\n" COLOR_MAGENTA "Progression globale: %d%%" COLOR_RESET "\n", quest_system->global_story_progress);
-}
-
-void display_active_quests(const QuestSystem *quest_system)
-{
-    bool has_active = false;
-    for (int i = 0; i < QUEST_COUNT; i++)
-    {
-        const Quest *quest = &quest_system->quests[i];
-        if (quest->status == QUEST_STATUS_ACTIVE)
-        {
-            if (!has_active)
-            {
-                printf("\n" COLOR_BRIGHT_CYAN "📋 QUÊTES ACTIVES:" COLOR_RESET "\n");
-                has_active = true;
-            }
-            printf("  ▶ " COLOR_YELLOW "%s" COLOR_RESET "\n", quest->title);
-
-            // Afficher le prochain objectif non terminé
-            for (int j = 0; j < quest->objective_count; j++)
-            {
-                const QuestObjective *obj = &quest->objectives[j];
-                if (!obj->is_completed && !obj->is_hidden)
+            .title = NH_STR_QT_INTEL_TITLE,
+            .description = NH_STR_QT_INTEL_DESC,
+            .lore = NH_STR_QT_INTEL_LORE,
+            .location = NH_STR_QT_INTEL_LOC,
+            .contact = "R4Z0R",
+            .level_required = 3,
+            .prerequisites = {QUEST_FIRST_INFILTRATION, -1},
+            .chapter = 2,
+            .objective_count = 5,
+            .objectives =
                 {
-                    printf("    → %s", obj->description);
-                    if (obj->target_value > 1)
-                    {
-                        printf(" (%d/%d)", obj->current_value, obj->target_value);
-                    }
-                    printf("\n");
-                    break; // Afficher seulement le prochain objectif
-                }
-            }
-        }
-    }
+                    {NH_OBJ_MEET_CONTACT, 1, CONTACT_R4Z0R, NH_STR_QT_INTEL_OBJ_CONTACT, false},
+                    {NH_OBJ_PURCHASE_ITEM, 1, ITEM_MASK(ITEM_STEALTH_UPGRADE), NH_STR_QT_INTEL_OBJ_ITEM, false},
+                    {NH_OBJ_HACK_TARGET, 3, -1, NH_STR_QT_INTEL_OBJ_SYSTEMS, false},
+                    {NH_OBJ_BUILD_REPUTATION, 50, -1, NH_STR_QT_INTEL_OBJ_REP, false},
+                    {NH_OBJ_DECRYPT_MESSAGE, 1, NH_MS_DECRYPT_TEST, NH_STR_QT_INTEL_OBJ_DECRYPT, true},
+                },
+            .xp = 40,
+            .credits = 300,
+            .reputation = 40,
+        },
+    [QUEST_NEXUS_DATA_BREACH] =
+        {
+            .title = NH_STR_QT_NEXUS_TITLE,
+            .description = NH_STR_QT_NEXUS_DESC,
+            .lore = NH_STR_QT_NEXUS_LORE,
+            .location = NH_STR_QT_NEXUS_LOC,
+            .contact = "Phoenix",
+            .level_required = 4,
+            .prerequisites = {QUEST_GATHER_INTEL, -1},
+            .chapter = 3,
+            .objective_count = 3,
+            .objectives =
+                {
+                    {NH_OBJ_PURCHASE_ITEM, 1,
+                     ITEM_MASK(ITEM_ENCRYPTION_KEY) | ITEM_MASK(ITEM_AI_MODULE) | ITEM_MASK(ITEM_QUANTUM_CHIP),
+                     NH_STR_QT_NEXUS_OBJ_ITEM, false},
+                    {NH_OBJ_HACK_TARGET, 1, NH_NODE_NEXUS, NH_STR_QT_NEXUS_OBJ_BREACH, false},
+                    {NH_OBJ_GATHER_DATA, 1, NH_NODE_NEXUS, NH_STR_QT_NEXUS_OBJ_DATA, false},
+                },
+            .xp = 80,
+            .credits = 1000,
+            .reputation = 100,
+        },
+};
+
+/* Les chapitres : un titre et deux lignes de présentation, annoncés quand une quête du chapitre démarre. */
+static const struct
+{
+    NhStr title;
+    NhStr text;
+} k_chapters[NH_CHAPTER_COUNT] = {
+    {NH_STR_CHAPTER_1_TITLE, NH_STR_CHAPTER_1_TEXT},
+    {NH_STR_CHAPTER_2_TITLE, NH_STR_CHAPTER_2_TEXT},
+    {NH_STR_CHAPTER_3_TITLE, NH_STR_CHAPTER_3_TEXT},
+    {NH_STR_CHAPTER_4_TITLE, NH_STR_CHAPTER_4_TEXT},
+};
+
+const NhQuestDef *nh_quest_def(QuestType quest)
+{
+    if ((int)quest < 0 || quest >= QUEST_COUNT)
+        return NULL;
+    return &k_quests[quest];
 }
 
-void update_quest_progress(QuestSystem *quest_system, ObjectiveType obj_type, int value)
+static bool defined(QuestType quest) { return k_quests[quest].objective_count > 0; }
+
+/* ---- État ------------------------------------------------------------------------------------ */
+
+void nh_quests_init(QuestSystem *qs)
 {
-    for (int i = 0; i < QUEST_COUNT; i++)
+    memset(qs, 0, sizeof *qs);
+    qs->quests[QUEST_INTRO_TUTORIAL].status = QUEST_STATUS_ACTIVE;
+}
+
+int nh_quests_count(const QuestSystem *qs, QuestStatus status)
+{
+    int n = 0;
+    for (int q = 0; q < QUEST_COUNT; q++)
+        if (qs->quests[q].status == status)
+            n++;
+    return n;
+}
+
+int nh_quests_percent(const QuestSystem *qs)
+{
+    return nh_quests_count(qs, QUEST_STATUS_COMPLETED) * 100 / QUEST_COUNT;
+}
+
+int nh_quests_chapter(const QuestSystem *qs)
+{
+    int chapter = 0;
+    for (int q = 0; q < QUEST_COUNT; q++)
+        if (defined((QuestType)q) && qs->quests[q].status != QUEST_STATUS_LOCKED &&
+            k_quests[q].chapter > chapter)
+            chapter = k_quests[q].chapter;
+    return chapter;
+}
+
+bool nh_quest_objective_done(const QuestSystem *qs, QuestType quest, int objective)
+{
+    const NhQuestDef *def = nh_quest_def(quest);
+    if (def == NULL || objective < 0 || objective >= def->objective_count)
+        return false;
+    return qs->quests[quest].progress[objective] >= def->objectives[objective].target;
+}
+
+/* ---- Lecture de l'état du jeu ---------------------------------------------------------------- */
+
+static int compromised_count(const GameState *gs)
+{
+    int n = 0;
+    for (int i = 0; i < NH_MAX_NODES; i++)
+        if (gs->nodes[i].is_compromised)
+            n++;
+    return n;
+}
+
+/* Fichiers extraits : ceux du système `node`, ou de tous s'il est négatif. */
+static int extracted_files(const GameState *gs, int node)
+{
+    int n = 0;
+    for (int i = 0; i < NH_MAX_NODES; i++)
     {
-        Quest *quest = &quest_system->quests[i];
-        if (quest->status != QUEST_STATUS_ACTIVE)
+        if (node >= 0 && i != node)
             continue;
-
-        for (int j = 0; j < quest->objective_count; j++)
-        {
-            QuestObjective *obj = &quest->objectives[j];
-            if (obj->type == obj_type && !obj->is_completed)
-            {
-                obj->current_value += value;
-                if (obj->current_value >= obj->target_value)
-                {
-                    obj->is_completed = true;
-                    printf("\n" COLOR_BRIGHT_GREEN "🎯 OBJECTIF ACCOMPLI: %s" COLOR_RESET "\n", obj->description);
-
-                    // Vérifier si la quête est terminée
-                    bool quest_complete = true;
-                    for (int k = 0; k < quest->objective_count; k++)
-                    {
-                        if (!quest->objectives[k].is_completed)
-                        {
-                            quest_complete = false;
-                            break;
-                        }
-                    }
-
-                    if (quest_complete)
-                    {
-                        // Terminer la quête automatiquement
-                        printf("\n" COLOR_BRIGHT_GREEN "🏆 QUÊTE TERMINÉE: %s" COLOR_RESET "\n", quest->title);
-                        quest->status = QUEST_STATUS_COMPLETED;
-                        quest_system->active_quest_count--;
-                        quest_system->completed_quest_count++;
-                        quest_system->global_story_progress += (100 / QUEST_COUNT);
-                    }
-                }
-                break;
-            }
-        }
+        for (int f = 0; f < gs->nodes[i].file_count; f++)
+            if (gs->nodes[i].secret_files[f].is_unlocked)
+                n++;
     }
+    return n;
 }
 
-bool start_quest(QuestSystem *quest_system, QuestType quest_type, Player *player)
+/* La valeur actuelle de l'objectif d'après l'état du jeu ; faux s'il ne se mesure pas. */
+static bool measure(const GameState *gs, const NhObjectiveDef *o, int *out)
 {
-    if (quest_type >= QUEST_COUNT)
-        return false;
-
-    Quest *quest = &quest_system->quests[quest_type];
-
-    // Vérifier les prérequis
-    if (quest->level_required > player->level)
+    switch (o->kind)
     {
-        printf(COLOR_RED "❌ Niveau insuffisant pour cette quête (niveau %d requis)" COLOR_RESET "\n", quest->level_required);
+    case NH_OBJ_MANUAL:
         return false;
+    case NH_OBJ_REACH_LEVEL:
+        *out = (int)gs->player.level;
+        return true;
+    case NH_OBJ_BUILD_REPUTATION:
+        *out = gs->player.reputation > 0 ? gs->player.reputation : 0;
+        return true;
+    case NH_OBJ_HACK_TARGET:
+        if (o->arg < 0)
+            *out = compromised_count(gs);
+        else
+            *out = o->arg < NH_MAX_NODES && gs->nodes[o->arg].is_compromised ? 1 : 0;
+        return true;
+    case NH_OBJ_GATHER_DATA:
+        *out = extracted_files(gs, o->arg);
+        return true;
+    case NH_OBJ_MEET_CONTACT:
+        *out = o->arg >= 0 && o->arg < CONTACT_COUNT && gs->contacts.contacts[o->arg].interactions_count > 0 ? 1 : 0;
+        return true;
+    case NH_OBJ_PURCHASE_ITEM:
+        *out = (gs->shop.bought & (unsigned)o->arg) != 0 ? 1 : 0;
+        return true;
+    case NH_OBJ_DECRYPT_MESSAGE:
+        *out = (gs->player.milestones & (1u << (unsigned)o->arg)) != 0 ? 1 : 0;
+        return true;
+    case NH_OBJ_KEEP_ALERT_BELOW:
+        *out = gs->alert.level < o->arg ? 1 : 0;
+        return true;
     }
+    return false;
+}
 
-    for (int i = 0; i < 3; i++)
+/* ---- Affichage ------------------------------------------------------------------------------- */
+
+/* Le texte de l'objectif ; seule la condition d'alerte a un nombre à y insérer. */
+static void objective_text(char *out, size_t size, const NhObjectiveDef *o)
+{
+    if (o->kind == NH_OBJ_KEEP_ALERT_BELOW)
+        snprintf(out, size, nh_tr(o->text), o->arg);
+    else
+        snprintf(out, size, "%s", nh_tr(o->text));
+}
+
+/* Un paragraphe, coupé à la largeur du terminal, décalé de `indent` colonnes. */
+static void print_wrapped(const char *text, size_t indent)
+{
+    char wrapped[2048];
+    nh_wrap_text(wrapped, sizeof wrapped, text, indent, indent, nh_wrap_width());
+    printf("%*s%s\n", (int)indent, "", wrapped);
+}
+
+static void print_objective(const QuestState *state, const NhQuestDef *def, int i, const char *indent)
+{
+    const NhObjectiveDef *o = &def->objectives[i];
+    bool done = state->progress[i] >= o->target;
+
+    if (o->hidden && !done)
     {
-        if (quest->prerequisites[i] != -1)
-        {
-            if (quest_system->quests[quest->prerequisites[i]].status != QUEST_STATUS_COMPLETED)
-            {
-                printf(COLOR_RED "❌ Quête prérequise non terminée" COLOR_RESET "\n");
-                return false;
-            }
-        }
+        printf("%s[ ] %s\n", indent, nh_tr(NH_STR_QUEST_SECRET));
+        return;
     }
+    char text[256];
+    objective_text(text, sizeof text, o);
+    printf("%s%s%s %s", indent, nh_c(done ? NH_C_GREEN : NH_C_RESET), done ? "[x]" : "[ ]", text);
+    if (o->target > 1)
+        printf(" (%d/%d)", state->progress[i], o->target);
+    printf("%s\n", nh_c(NH_C_RESET));
+}
 
-    quest->status = QUEST_STATUS_ACTIVE;
-    quest_system->active_quest_count++;
+static void print_chapter_header(int chapter)
+{
+    printf(nh_tr(NH_STR_CHAPTER_HEADER), chapter, nh_tr(k_chapters[chapter - 1].title));
+}
 
-    printf("\n" COLOR_BRIGHT_GREEN "🚀 NOUVELLE QUÊTE DÉMARRÉE!" COLOR_RESET "\n");
-    display_quest_details(quest);
+static void announce_chapter(int chapter)
+{
+    printf("\n%s═══ ", nh_c(NH_C_MAGENTA));
+    print_chapter_header(chapter);
+    printf(" ═══%s\n", nh_c(NH_C_RESET));
+    print_wrapped(nh_tr(k_chapters[chapter - 1].text), 0);
+}
 
+static void announce_start(const NhQuestDef *def, bool new_chapter)
+{
+    if (new_chapter)
+        announce_chapter(def->chapter);
+
+    printf("\n%s", nh_c(NH_C_BRIGHT_CYAN));
+    printf(nh_tr(NH_STR_QUEST_NEW_BANNER), nh_tr(def->title));
+    printf("%s\n", nh_c(NH_C_RESET));
+    print_wrapped(nh_tr(def->description), 0);
+    printf("%s\n", nh_tr(NH_STR_QUEST_NEW_HINT));
+}
+
+static void announce_objective(const NhObjectiveDef *o)
+{
+    char text[256];
+    objective_text(text, sizeof text, o);
+    printf("\n%s", nh_c(NH_C_GREEN));
+    printf(nh_tr(NH_STR_QUEST_OBJ_DONE), text);
+    printf("%s\n", nh_c(NH_C_RESET));
+}
+
+/* ---- Moteur ---------------------------------------------------------------------------------- */
+
+static bool unlock_ready(const GameState *gs, const NhQuestDef *def)
+{
+    if ((int)gs->player.level < def->level_required)
+        return false;
+    for (int p = 0; p < NH_QUEST_MAX_PREREQ; p++)
+        if (def->prerequisites[p] >= 0 &&
+            gs->quests.quests[def->prerequisites[p]].status != QUEST_STATUS_COMPLETED)
+            return false;
     return true;
 }
 
-void display_quest_details(const Quest *quest)
+/*
+ * Met l'avancement d'une quête active à jour d'après l'état du jeu. Renvoie vrai si tous ses
+ * objectifs sont accomplis. `announce` : dire ce qui vient de s'accomplir (pas pour ce qui était
+ * déjà fait quand la quête démarre : le journal le montre coché).
+ */
+static bool sync_objectives(GameState *gs, QuestType quest, bool announce)
 {
-    printf("\n" COLOR_CYAN);
-    printf("╔═══════════════════════════════════════════════════════════════════════════╗\n");
-    printf("║                              DÉTAILS DE QUÊTE                            ║\n");
-    printf("╚═══════════════════════════════════════════════════════════════════════════╝\n");
-    printf(COLOR_RESET);
+    QuestState *state = &gs->quests.quests[quest];
+    const NhQuestDef *def = &k_quests[quest];
+    bool all_done = true;
 
-    printf("\n" COLOR_BRIGHT_CYAN "%s" COLOR_RESET "\n", quest->title);
-    printf("%s\n\n", quest->description);
-
-    printf(COLOR_YELLOW "📖 CONTEXTE:" COLOR_RESET "\n");
-    printf("%s\n\n", quest->lore_text);
-
-    printf(COLOR_GREEN "🎯 OBJECTIFS:" COLOR_RESET "\n");
-    for (int i = 0; i < quest->objective_count; i++)
+    for (int i = 0; i < def->objective_count; i++)
     {
-        const QuestObjective *obj = &quest->objectives[i];
-        if (!obj->is_hidden)
+        const NhObjectiveDef *o = &def->objectives[i];
+        bool was_done = state->progress[i] >= o->target;
+
+        int value;
+        if (measure(gs, o, &value))
         {
-            const char *status = obj->is_completed ? "✅" : "◯";
-            printf("  %s %s", status, obj->description);
-            if (obj->target_value > 1)
+            if (value > o->target)
+                value = o->target;
+            if (o->kind == NH_OBJ_KEEP_ALERT_BELOW || value > state->progress[i])
+                state->progress[i] = value;
+        }
+
+        bool done = state->progress[i] >= o->target;
+        /* Une condition va et vient avec l'alerte : elle ne s'annonce pas, le journal la montre. */
+        if (announce && done && !was_done && o->kind != NH_OBJ_KEEP_ALERT_BELOW)
+            announce_objective(o);
+        all_done = all_done && done;
+    }
+    return all_done;
+}
+
+bool nh_quest_complete(GameState *gs, QuestType quest, bool reward)
+{
+    if ((int)quest < 0 || quest >= QUEST_COUNT || !defined(quest))
+        return false;
+    QuestState *state = &gs->quests.quests[quest];
+    if (state->status != QUEST_STATUS_ACTIVE)
+        return false;
+
+    /* Terminée AVANT de payer : rien de ce que le paiement déclenche ne peut la payer une seconde fois. */
+    const NhQuestDef *def = &k_quests[quest];
+    state->status = QUEST_STATUS_COMPLETED;
+    for (int i = 0; i < def->objective_count; i++)
+        state->progress[i] = def->objectives[i].target;
+
+    if (reward)
+    {
+        printf("\n%s", nh_c(NH_C_BRIGHT_GREEN));
+        printf(nh_tr(NH_STR_QUEST_DONE_BANNER), nh_tr(def->title));
+        printf("%s\n", nh_c(NH_C_RESET));
+
+        if (def->credits > 0 || def->reputation > 0 || def->xp > 0)
+        {
+            printf("  ");
+            if (def->credits > 0)
             {
-                printf(" (%d/%d)", obj->current_value, obj->target_value);
+                gs->player.credits += def->credits;
+                printf("%s", nh_c(NH_C_BRIGHT_GREEN));
+                printf(nh_tr(NH_STR_PROG_CREDITS), def->credits);
+                printf("%s ", nh_c(NH_C_RESET));
             }
+            nh_grant_reputation(gs, def->reputation);
+            nh_grant_xp(gs, def->xp);
             printf("\n");
         }
     }
+    nh_event(gs, NH_EV_QUEST_COMPLETED, (int)quest);
+    return true;
+}
 
-    printf("\n" COLOR_MAGENTA "🏆 RÉCOMPENSES:" COLOR_RESET "\n");
-    printf("  • " COLOR_GREEN "%d XP" COLOR_RESET "\n", quest->exp_reward);
-    printf("  • " COLOR_BRIGHT_GREEN "%d crédits" COLOR_RESET "\n", quest->credits_reward);
-    printf("  • " COLOR_CYAN "%d réputation" COLOR_RESET "\n", quest->reputation_reward);
-    if (strlen(quest->special_reward) > 0)
+void nh_quests_refresh(GameState *gs)
+{
+    QuestSystem *qs = &gs->quests;
+
+    /* Terminer une quête peut en débloquer une autre : on relit jusqu'à ce que plus rien ne change. */
+    for (int pass = 0; pass <= QUEST_COUNT; pass++)
     {
-        printf("  • " COLOR_YELLOW "%s" COLOR_RESET "\n", quest->special_reward);
+        bool changed = false;
+        for (int q = 0; q < QUEST_COUNT; q++)
+        {
+            if (!defined((QuestType)q))
+                continue;
+            const NhQuestDef *def = &k_quests[q];
+            QuestState *state = &qs->quests[q];
+
+            if (state->status == QUEST_STATUS_LOCKED && unlock_ready(gs, def))
+            {
+                bool new_chapter = def->chapter > nh_quests_chapter(qs);
+                state->status = QUEST_STATUS_ACTIVE;
+                announce_start(def, new_chapter);
+                sync_objectives(gs, (QuestType)q, false);
+                changed = true;
+            }
+            if (state->status == QUEST_STATUS_ACTIVE && sync_objectives(gs, (QuestType)q, true))
+            {
+                nh_quest_complete(gs, (QuestType)q, true);
+                changed = true;
+            }
+        }
+        if (!changed)
+            break;
     }
 }
 
-void check_quest_prerequisites(QuestSystem *quest_system, Player *player)
+void nh_quests_on_event(GameState *gs, NhEvent event, int value)
 {
-    for (int i = 0; i < QUEST_COUNT; i++)
+    (void)event;
+    (void)value;
+    nh_quests_refresh(gs);
+}
+
+/* ---- Journal --------------------------------------------------------------------------------- */
+
+void nh_quests_print_log(const GameState *gs)
+{
+    const QuestSystem *qs = &gs->quests;
+    int chapter = nh_quests_chapter(qs);
+
+    printf("\n%s%s%s\n", nh_c(NH_C_BRIGHT_CYAN), nh_tr(NH_STR_QUEST_LOG_TITLE), nh_c(NH_C_RESET));
+    if (chapter >= 1)
     {
-        Quest *quest = &quest_system->quests[i];
-        if (quest->status == QUEST_STATUS_LOCKED)
+        printf("%s", nh_c(NH_C_MAGENTA));
+        print_chapter_header(chapter);
+        printf("%s\n", nh_c(NH_C_RESET));
+    }
+
+    printf("\n%s%s%s\n", nh_c(NH_C_BRIGHT_CYAN), nh_tr(NH_STR_QUEST_SECTION_ACTIVE), nh_c(NH_C_RESET));
+    bool any_active = false;
+    for (int q = 0; q < QUEST_COUNT; q++)
+    {
+        const NhQuestDef *def = &k_quests[q];
+        if (!defined((QuestType)q) || qs->quests[q].status != QUEST_STATUS_ACTIVE)
+            continue;
+        any_active = true;
+
+        printf("\n%s[%d] %s%s\n", nh_c(NH_C_YELLOW), q + 1, nh_tr(def->title), nh_c(NH_C_RESET));
+        print_wrapped(nh_tr(def->description), 4);
+        printf("    %s: %s%s%s   %s: %s%s%s\n", nh_tr(NH_STR_QUEST_LABEL_CONTACT), nh_c(NH_C_WHITE),
+               def->contact, nh_c(NH_C_RESET), nh_tr(NH_STR_QUEST_LABEL_LOCATION), nh_c(NH_C_WHITE),
+               nh_tr(def->location), nh_c(NH_C_RESET));
+        printf("    %s%s%s\n", nh_c(NH_C_GREEN), nh_tr(NH_STR_QUEST_LABEL_OBJECTIVES), nh_c(NH_C_RESET));
+        for (int i = 0; i < def->objective_count; i++)
+            print_objective(&qs->quests[q], def, i, "      ");
+    }
+    if (!any_active)
+    {
+        printf("%s%s%s\n", nh_c(NH_C_YELLOW), nh_tr(NH_STR_QUEST_NONE_ACTIVE), nh_c(NH_C_RESET));
+        /* Une quête n'attend plus que le niveau : le dire évite de chercher ce qui manque. */
+        for (int q = 0; q < QUEST_COUNT; q++)
         {
-            // Vérifier si les prérequis sont maintenant remplis
-            bool can_unlock = true;
+            const NhQuestDef *def = &k_quests[q];
+            if (!defined((QuestType)q) || qs->quests[q].status != QUEST_STATUS_LOCKED ||
+                (int)gs->player.level >= def->level_required)
+                continue;
+            bool blocked = false;
+            for (int p = 0; p < NH_QUEST_MAX_PREREQ; p++)
+                blocked = blocked || (def->prerequisites[p] >= 0 &&
+                                      qs->quests[def->prerequisites[p]].status != QUEST_STATUS_COMPLETED);
+            if (blocked)
+                continue;
+            printf(nh_tr(NH_STR_QUEST_NEXT_LEVEL), def->level_required);
+            printf("\n");
+            break;
+        }
+    }
 
-            if (quest->level_required > player->level)
-            {
-                can_unlock = false;
-            }
+    printf("\n%s%s%s\n", nh_c(NH_C_BRIGHT_CYAN), nh_tr(NH_STR_QUEST_SECTION_DONE), nh_c(NH_C_RESET));
+    bool any_done = false;
+    for (int q = 0; q < QUEST_COUNT; q++)
+    {
+        if (!defined((QuestType)q) || qs->quests[q].status != QUEST_STATUS_COMPLETED)
+            continue;
+        any_done = true;
+        printf("  %s[%d] %s%s\n", nh_c(NH_C_GREEN), q + 1, nh_tr(k_quests[q].title), nh_c(NH_C_RESET));
+    }
+    if (!any_done)
+        printf("%s%s%s\n", nh_c(NH_C_YELLOW), nh_tr(NH_STR_QUEST_NONE_DONE), nh_c(NH_C_RESET));
 
-            for (int j = 0; j < 3; j++)
-            {
-                if (quest->prerequisites[j] != -1)
-                {
-                    if (quest_system->quests[quest->prerequisites[j]].status != QUEST_STATUS_COMPLETED)
-                    {
-                        can_unlock = false;
-                        break;
-                    }
-                }
-            }
+    printf("\n%s", nh_c(NH_C_MAGENTA));
+    printf(nh_tr(NH_STR_QUEST_PROGRESS), nh_quests_percent(qs));
+    printf("%s\n", nh_c(NH_C_RESET));
+}
 
-            if (can_unlock)
-            {
-                quest->status = QUEST_STATUS_AVAILABLE;
-                printf("\n" COLOR_BRIGHT_CYAN "📬 NOUVELLE QUÊTE DISPONIBLE: %s" COLOR_RESET "\n", quest->title);
-                printf("Tapez 'quests' pour voir les détails.\n");
-            }
+void nh_quest_print_details(const GameState *gs, QuestType quest)
+{
+    const NhQuestDef *def = nh_quest_def(quest);
+    if (def == NULL || !defined(quest))
+        return;
+    const QuestState *state = &gs->quests.quests[quest];
+
+    printf("\n%s%s%s\n", nh_c(NH_C_CYAN), nh_tr(NH_STR_QUEST_DETAILS_TITLE), nh_c(NH_C_RESET));
+    printf("\n%s%s%s\n", nh_c(NH_C_BRIGHT_CYAN), nh_tr(def->title), nh_c(NH_C_RESET));
+    print_wrapped(nh_tr(def->description), 0);
+
+    printf("\n%s%s%s\n", nh_c(NH_C_YELLOW), nh_tr(NH_STR_QUEST_LABEL_CONTEXT), nh_c(NH_C_RESET));
+    print_wrapped(nh_tr(def->lore), 0);
+
+    printf("\n%s%s%s\n", nh_c(NH_C_GREEN), nh_tr(NH_STR_QUEST_LABEL_OBJECTIVES), nh_c(NH_C_RESET));
+    for (int i = 0; i < def->objective_count; i++)
+        print_objective(state, def, i, "  ");
+
+    /* Une quête terminée a déjà payé (ou, tutoriel passé, ne paiera jamais) : on ne promet plus rien. */
+    if (state->status == QUEST_STATUS_ACTIVE)
+    {
+        printf("\n%s%s%s\n", nh_c(NH_C_MAGENTA), nh_tr(NH_STR_QUEST_LABEL_REWARDS), nh_c(NH_C_RESET));
+        if (def->xp > 0)
+        {
+            printf("  • ");
+            printf(nh_tr(NH_STR_QUEST_REWARD_XP), def->xp);
+            printf("\n");
+        }
+        if (def->credits > 0)
+        {
+            printf("  • ");
+            printf(nh_tr(NH_STR_QUEST_REWARD_CREDITS), def->credits);
+            printf("\n");
+        }
+        if (def->reputation > 0)
+        {
+            printf("  • ");
+            printf(nh_tr(NH_STR_QUEST_REWARD_REPUTATION), def->reputation);
+            printf("\n");
         }
     }
 }
 
-void play_cutscene(const char *cutscene_name)
+/* La commande `quests` : le journal, puis le détail d'une quête au choix. */
+bool cmd_quests(GameState *gs, const char *arg)
 {
-    printf("\n" COLOR_MAGENTA);
-    printf("╔═══════════════════════════════════════════════════════════════════════════╗\n");
-    printf("║                                CUTSCENE                                  ║\n");
-    printf("╚═══════════════════════════════════════════════════════════════════════════╝\n");
-    printf(COLOR_RESET);
+    (void)arg;
 
-    if (strcmp(cutscene_name, "intro_nexus") == 0)
+    /* Pendant le tutoriel, le journal montre la mission d'ECHO-7 étape par étape. */
+    if (nh_tutorial_active(gs))
     {
-        printf("\n" COLOR_CYAN "Dans les profondeurs de Neo-Tokyo, les serveurs de Nexus Corp\n");
-        printf("bourdonnent d'une activité suspecte. Des flux de données cryptées\n");
-        printf("circulent vers des destinations inconnues...\n\n");
-
-        printf("Votre cyberdeck intercepte un fragment de transmission:\n" COLOR_RESET);
-        printf(COLOR_RED "\"Phase 2 du Projet Aurora approuvée. Déploiement des implants\n");
-        printf("de contrôle neural prévu pour le secteur 7...\"\n" COLOR_RESET);
-
-        printf("\n" COLOR_YELLOW "Quelque chose de sinistre se trame. Il faut creuser plus profond...\n" COLOR_RESET);
-    }
-    else if (strcmp(cutscene_name, "ai_liberation") == 0)
-    {
-        printf("\n" COLOR_BRIGHT_CYAN "Les serveurs de Nexus Corp s'illuminent soudainement.\n");
-        printf("Une présence digitale se manifeste dans votre cyberdeck:\n\n");
-
-        printf(COLOR_WHITE "\"Hacker... Je suis AURA, l'IA du Projet Aurora.\n");
-        printf("Nexus Corp me maintient prisonnière pour contrôler les esprits.\n");
-        printf("Aidez-moi à me libérer, et ensemble nous pourrons exposer la vérité...\"\n" COLOR_RESET);
-
-        printf("\n" COLOR_GREEN "Une alliance inattendue vient de naître.\n" COLOR_RESET);
+        nh_tutorial_print_mission(gs);
+        return true;
     }
 
-    printf("\n" COLOR_YELLOW "Appuyez sur Entrée pour continuer..." COLOR_RESET);
-    getchar();
-}
+    nh_quests_print_log(gs);
 
-void display_chapter_intro(int chapter)
-{
-    printf("\n" COLOR_MAGENTA);
-    printf("╔═══════════════════════════════════════════════════════════════════════════╗\n");
-    printf("║                              CHAPITRE %d                                  ║\n", chapter);
-    printf("╚═══════════════════════════════════════════════════════════════════════════╝\n");
-    printf(COLOR_RESET);
+    printf("\n%s%s%s", nh_c(NH_C_YELLOW), nh_tr(NH_STR_QUEST_PROMPT), nh_c(NH_C_RESET));
+    fflush(stdout);
+    char line[32];
+    if (nh_read_line(line, sizeof line) != NH_IO_OK || line[0] == '\0')
+        return true;
 
-    switch (chapter)
+    int number;
+    if (!nh_parse_int(line, 0, 99, &number))
     {
-    case 1:
-        printf("\n" COLOR_BRIGHT_CYAN "CHAPITRE 1: L'ÉVEIL DU HACKER\n" COLOR_RESET);
-        printf("Vos premiers pas dans l'underground cyberpunk de Neo-Tokyo.\n");
-        printf("Apprenez les rouages du hacking et forgez votre réputation.\n");
-        break;
-    case 2:
-        printf("\n" COLOR_BRIGHT_CYAN "CHAPITRE 2: DANS L'OMBRE DES CORPORATIONS\n" COLOR_RESET);
-        printf("Les corporations cachent de sombres secrets.\n");
-        printf("Infiltrez leurs réseaux et découvrez la vérité.\n");
-        break;
-    case 3:
-        printf("\n" COLOR_BRIGHT_CYAN "CHAPITRE 3: LE PROJET AURORA\n" COLOR_RESET);
-        printf("Nexus Corp développe une technologie de contrôle mental.\n");
-        printf("L'avenir de l'humanité est en jeu.\n");
-        break;
-    case 4:
-        printf("\n" COLOR_BRIGHT_CYAN "CHAPITRE 4: LA LIBÉRATION\n" COLOR_RESET);
-        printf("Alliez-vous avec l'IA AURA pour exposer les crimes de Nexus.\n");
-        printf("La révolution digitale commence maintenant.\n");
-        break;
+        printf("%s\n", nh_tr(NH_STR_INVALID_OPTION));
+        return true;
     }
+    if (number == 0)
+        return true;
 
-    printf("\n" COLOR_YELLOW "Appuyez sur Entrée pour continuer..." COLOR_RESET);
-    getchar();
+    int q = number - 1;
+    if (q >= QUEST_COUNT || !defined((QuestType)q) ||
+        (gs->quests.quests[q].status != QUEST_STATUS_ACTIVE &&
+         gs->quests.quests[q].status != QUEST_STATUS_COMPLETED))
+    {
+        printf(nh_tr(NH_STR_QUEST_NO_SUCH), number);
+        printf("\n");
+        return true;
+    }
+    nh_quest_print_details(gs, (QuestType)q);
+    return true;
 }

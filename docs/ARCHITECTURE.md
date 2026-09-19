@@ -15,6 +15,8 @@ src/game/          logique de jeu (GameState unique, plus aucune variable global
   game.[ch]          GameState, init_game, boucle de jeu, progression (gain_experience)
   progression.[ch]   courbe d'expérience, niveaux 1-6, déblocages, récompenses uniques ; nh_grant_xp() est le SEUL point d'entrée
   world.[ch]         le monde : graphe unique de systèmes (relais, découverte), état persistant, chances de succès, récompense unique
+  events.[ch]        bus d'événements différé : nh_event() enregistre, nh_events_flush() (fin de nh_dispatch) livre aux abonnés
+  quest_system.[ch]  quêtes : tables static const, objectifs mesurés sur l'état du jeu, récompenses uniques, journal `quests`
   alert.[ch]         alerte unique 0-100 : hausse, refroidissement, seuils, méthodes de réduction, affichage
   commands.[ch]      table de commandes, dispatch, aide, commandes système (help/status/save/quit/clear)
   menu.[ch]          menu de lancement (continuer, nouvelle partie, langue, options) et nh_start_new_game
@@ -22,9 +24,9 @@ src/game/          logique de jeu (GameState unique, plus aucune variable global
   tutorial.[ch]      tutoriel : machine à états branchée sur nh_dispatch, mission « Premiers Pas dans l'Ombre »
   save.[ch]          sauvegarde et chargement de la partie (format texte clé=valeur, versionné)
   cmd_hacking.c      commandes de hacking classiques (scan, bruteforce, decrypt, backdoor…)
-  cmd_world.c        boutique, quêtes, contacts, messages, laylow
+  cmd_world.c        boutique, contacts, messages, laylow (la commande `quests` est dans quest_system.c)
   cmd_advanced.c     hacking avancé (advhack, aiassist, neuralsync, temporalhack…)
-  shop, alert_system, quest_system, contacts, advanced_hacking   modules d'origine (à porter, phase 3)
+  shop, contacts, advanced_hacking   modules d'origine (à porter, phase 3)
 src/core/          socle neuf, testé, sans état de jeu
   platform.[ch]      pauses, mode rapide, console (Windows : UTF-8 + ANSI), détection du terminal
   io.[ch]            lecture de lignes et d'entiers sûre, EOF géré
@@ -45,7 +47,7 @@ tests/e2e/pty_hud.py   tests de l'interface fixe, du menu et du tutoriel dans un
 ```
 
 Le code neuf (`src/core`, `src/ui`, `src/i18n`, `src/main.c`, `src/game/commands.c`, `src/game/alert.c`, `src/game/progression.c`, `src/game/world.c`,
-`src/game/save.c`, `src/game/tutorial.c`, `src/game/intro.c`, `src/game/menu.c`)
+`src/game/save.c`, `src/game/tutorial.c`, `src/game/intro.c`, `src/game/menu.c`, `src/game/events.c`, `src/game/quest_system.c`)
 est compilé avec `-Wpedantic -Wshadow -Wconversion -Werror`. Le reste de `src/game/`
 (code d'origine déplacé) ne l'est pas : il porte encore ses avertissements et sera
 remplacé, pas corrigé.
@@ -114,6 +116,49 @@ remplacé, pas corrigé.
     `nh_world_adv_target()` ; les autres (`localhost`, `corp-server-01`) n'acceptent que les commandes
     classiques.
 
+## Événements et quêtes
+
+- **Bus d'événements** (`events.[ch]`) : ce qui vient de se passer dans le monde est dit *une fois*, à l'endroit où cela
+  arrive, par `nh_event(gs, type, valeur)` : système compromis (`nh_world_compromise`), fichiers extraits
+  (`nh_world_extract`), niveau gagné (`level_up`), réputation (`nh_grant_reputation`), achat (`cmd_shop`), conversation
+  (`talk_to`), jalon (`nh_milestone_claim`), quête terminée, et `NH_EV_COMMAND` à la fin de chaque commande exécutée
+  (le temps a passé : l'alerte a bougé). L'émetteur ne sait pas qui écoute.
+  - **Différé.** `nh_event()` ne fait qu'enregistrer, dans une file circulaire de 32 ; `nh_events_flush()`, appelée par
+    `nh_dispatch()` une fois la commande terminée (et l'étape du tutoriel jouée), livre dans l'ordre. Les annonces
+    (« NOUVELLE QUÊTE », « Objectif accompli ») s'affichent donc *après* le résultat de la commande et non au milieu de
+    ses lignes ; et un abonné peut émettre à son tour — une quête terminée donne de l'expérience, donc un niveau, donc une
+    autre quête — sans jamais être rappelé pendant qu'il s'exécute : ces événements sont livrés par la même boucle, pas
+    par récursion. Garde-fous : file pleine, l'événement est perdu mais compté (`dropped`) ; livraison coupée à 256. Une
+    partie finie (`quit`, game over) vide la file : pas d'annonce sur un écran de fin.
+  - **Les abonnés relisent l'état du jeu** au lieu de compter les événements ; en perdre un ne fausse donc rien. Abonnés
+    actuels : le déblocage des contacts (niveau et réputation de leur fiche ; les contacts sans fiche ou hors ligne
+    restent verrouillés jusqu'à la phase 3.3) et le moteur de quêtes.
+  - L'état du bus vit dans `GameState.events` mais n'est **jamais sauvegardé** : il est vide entre deux commandes.
+- **Quêtes** (`quest_system.[ch]`) : une table `static const` (`k_quests`) décrit chaque quête — textes (clés de
+  `strings.def`), contact, niveau requis, prérequis, chapitre, objectifs, récompenses — et l'état par quête se réduit à
+  `QuestState {status, progress[]}`. Cycle : VERROUILLÉE → ACTIVE dès que le niveau et les prérequis le permettent →
+  TERMINÉE quand **tous** les objectifs sont accomplis en même temps. Une quête sans objectif (les 5 à 9, pas encore
+  écrites) reste verrouillée. Les statuts DISPONIBLE et ÉCHOUÉE sont réservés (quêtes annexes) et jamais produits ; les
+  valeurs sont écrites dans les sauvegardes, on ne les réordonne pas.
+  - **Objectifs « à niveau »** (`measure()`) : chaque type se lit dans l'état du jeu (niveau, systèmes compromis, fichiers
+    extraits, masque d'achats `shop.bought`, `interactions_count` d'un contact, jalons, réputation, alerte). L'avancement ne
+    recule jamais — la réputation gagnée est acquise — sauf `NH_OBJ_KEEP_ALERT_BELOW`, une *condition* : vraie ou fausse à
+    l'instant où l'on conclut. Un joueur qui avait déjà tout accompli quand la quête démarre (ancienne sauvegarde, ordre
+    libre du joueur) la termine d'un coup, sans annonce d'objectif.
+  - **Récompenses une seule fois** : `nh_quest_complete()` passe le statut à TERMINÉE *avant* de payer (crédits, puis
+    `nh_grant_reputation` et `nh_grant_xp`) ; rien de ce que le paiement déclenche ne peut donc la payer une seconde fois.
+    Refusée si la quête n'est pas ACTIVE. Avec `reward = false`, la quête est close en silence (tutoriel passé).
+  - **Pas d'impasse d'expérience** : à chaque niveau, ce qu'on peut encore gagner sans le niveau suivant (scans, systèmes
+    révélés, quêtes ouvertes) doit suffire à l'atteindre. À l'origine, un joueur de niveau 2 n'avait que 45 XP à gagner
+    pour 60 requis : « Baptême du Feu » en verse 25 pour cela. `test_no_experience_dead_end` (`test_quests.c`) le
+    vérifie : toute nouvelle quête ou tout changement de la courbe repasse par lui.
+  - **Tutoriel** : `QUEST_INTRO_TUTORIAL` est la première quête, avec un objectif *manuel* que `tutorial.c` accomplit
+    (`nh_quest_complete`). Tant qu'il est actif, `quests` montre la mission d'ECHO-7 au lieu du journal.
+  - **Ajouter une quête** : une entrée dans `k_quests` et ses clés `QT_*` dans `strings.def` ; `test_quests.c` vérifie les
+    tables (traductions, prérequis acycliques, arguments d'objectifs), l'absence d'impasse et, de bout en bout, la
+    campagne des quatre premières quêtes. `tests/e2e/run.sh` la rejoue avec le vrai binaire à partir de sauvegardes
+    fabriquées (`craft_save`) pour ne pas dépendre du hasard des piratages.
+
 ## Démarrage, menu, prologue et tutoriel
 
 Ordre de `main()` : valeurs par défaut d'après l'environnement → options de la ligne de commande →
@@ -143,8 +188,8 @@ annonce du tutoriel → `game_loop`.
   l'annulation du menu) se lisent dans le jeu, donc s'enchaînent d'elles-mêmes si le joueur a pris de
   l'avance. Rien n'est bloqué : une commande inconnue, verrouillée ou ratée déclenche un rappel
   d'ECHO-7. La récompense (100 ¢, 10 de réputation) n'est versée qu'à la dernière étape, une fois
-  (`done`) ; la quête d'origine `QUEST_INTRO_TUTORIAL` est alors close avec la même comptabilité que
-  `update_quest_progress`. Un `GameState` neuf n'a *pas* de tutoriel actif : c'est le prologue qui le
+  (`done`), par le moteur de quêtes (`nh_quest_complete`, voir « Événements et quêtes ») ; le passer la clôt
+  sans rien verser. Un `GameState` neuf n'a *pas* de tutoriel actif : c'est le prologue qui le
   lance ou le passe.
 - **Ordre d'annonce** : `nh_hud_start()` repousse dans l'historique tout ce qui est déjà affiché ; la
   première consigne (`nh_tutorial_announce`) est donc émise *après* lui, sinon elle disparaîtrait
@@ -159,6 +204,10 @@ annonce du tutoriel → `game_loop`.
   tutoriel…) : les tables fixes sont reconstruites par `init_game`, une mise à jour du contenu ne
   casse donc pas les sauvegardes existantes. Pas de vidage de structure (dépendant du compilateur et
   ouvert aux indices hors tableau).
+- **Quêtes et achats** : `quest.N.status` et `quest.N.obj.M` (avancement de chaque objectif, rogné à sa cible au
+  chargement ; une quête terminée est toujours relue complète), `shop.bought` (masque des objets achetés, que les
+  quêtes lisent). Les compteurs d'origine (`quests.active`, `quests.completed`, `quest.N.done`…) ne sont plus écrits et
+  sont ignorés à la lecture : ils se déduisent des statuts.
 - **Compatibilité** : une clé absente garde sa valeur par défaut, une clé inconnue est ignorée ;
   `NH_SAVE_VERSION` ne monte que pour un changement incompatible. Une version supérieure à celle du
   jeu donne `NH_SAVE_TOO_NEW`, jamais un chargement approximatif.

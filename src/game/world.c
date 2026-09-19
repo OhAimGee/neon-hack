@@ -40,26 +40,34 @@ typedef struct
  * Valeurs de gains et de sécurité provisoires : l'équilibrage se fait en phase 5.
  */
 static const NodeDef k_nodes[NH_MAX_NODES] = {
-    {"localhost", "Independent", SECURITY_LOW, 10, 2, 5, 1, -1, -1, 1,
-     {{"user_data.txt", "Données utilisateur locales", 1, 50}}},
-    {"corp-server-01", "MegaCorp Industries", SECURITY_MEDIUM, 50, 5, 25, 2, 0, -1, 2,
-     {{"employee_records.db", "Registres des employés", 2, 200},
-      {"financial_data.xlsx", "Données financières confidentielles", 3, 500}}},
-    {"nexus-mainframe", "Nexus Corp", SECURITY_HIGH, 200, 8, 100, 3, 1, 0, 3,
-     {{"project_ghost.dat", "CLASSIFIED", 4, 1000},
-      {"neural_maps.bin", "Cartes neurales des citoyens", 5, 1500},
-      {"quantum_keys.qkey", "Clés de chiffrement quantique", 6, 2000}}},
-    {"underground-market", "Underground", SECURITY_MEDIUM, 150, 4, 30, 3, 0, 4, 1,
-     {{"black_ledger.dat", "Registre des ventes du marché noir", 2, 300}}},
-    {"research-lab", "TechDyne Research", SECURITY_HIGH, 350, 6, 60, 4, 1, 2, 1,
-     {{"prototype_specs.cad", "Plans de prototypes militaires", 4, 600}}},
-    {"banking-network", "MegaCorp Financial", SECURITY_HIGH, 600, 7, 80, 4, 3, 1, 1,
-     {{"vault_keys.enc", "Clés des chambres fortes", 5, 900}}},
-    {"gov-database", "Gouvernement de Neo-Tokyo", SECURITY_CRITICAL, 800, 9, 110, 5, 2, 3, 1,
-     {{"citizen_registry.db", "Registre de tous les citoyens", 6, 1200}}},
+    [NH_NODE_LOCALHOST] =
+        {"localhost", "Independent", SECURITY_LOW, 10, 2, 5, 1, -1, -1, 1,
+         {{"user_data.txt", "Données utilisateur locales", 1, 50}}},
+    [NH_NODE_CORP_SERVER] =
+        {"corp-server-01", "MegaCorp Industries", SECURITY_MEDIUM, 50, 5, 25, 2, NH_NODE_LOCALHOST, -1, 2,
+         {{"employee_records.db", "Registres des employés", 2, 200},
+          {"financial_data.xlsx", "Données financières confidentielles", 3, 500}}},
+    [NH_NODE_NEXUS] =
+        {"nexus-mainframe", "Nexus Corp", SECURITY_HIGH, 200, 8, 100, 3, NH_NODE_CORP_SERVER, 0, 3,
+         {{"project_ghost.dat", "CLASSIFIED", 4, 1000},
+          {"neural_maps.bin", "Cartes neurales des citoyens", 5, 1500},
+          {"quantum_keys.qkey", "Clés de chiffrement quantique", 6, 2000}}},
+    [NH_NODE_MARKET] =
+        {"underground-market", "Underground", SECURITY_MEDIUM, 150, 4, 30, 3, NH_NODE_LOCALHOST, 4, 1,
+         {{"black_ledger.dat", "Registre des ventes du marché noir", 2, 300}}},
+    [NH_NODE_LAB] =
+        {"research-lab", "TechDyne Research", SECURITY_HIGH, 350, 6, 60, 4, NH_NODE_CORP_SERVER, 2, 1,
+         {{"prototype_specs.cad", "Plans de prototypes militaires", 4, 600}}},
+    [NH_NODE_BANK] =
+        {"banking-network", "MegaCorp Financial", SECURITY_HIGH, 600, 7, 80, 4, NH_NODE_MARKET, 1, 1,
+         {{"vault_keys.enc", "Clés des chambres fortes", 5, 900}}},
+    [NH_NODE_GOV] =
+        {"gov-database", "Gouvernement de Neo-Tokyo", SECURITY_CRITICAL, 800, 9, 110, 5, NH_NODE_NEXUS, 3, 1,
+         {{"citizen_registry.db", "Registre de tous les citoyens", 6, 1200}}},
 };
 
 _Static_assert(sizeof k_nodes / sizeof k_nodes[0] == NH_MAX_NODES, "NH_MAX_NODES != table du monde");
+_Static_assert(NH_NODE_COUNT == NH_MAX_NODES, "NhNode != NH_MAX_NODES");
 
 int nh_world_count(void)
 {
@@ -291,6 +299,8 @@ int nh_world_extract(GameState *gs, int idx)
         gs->player.credits += file->credits_value;
         done++;
     }
+    if (done > 0)
+        nh_event(gs, NH_EV_FILES_EXTRACTED, done);
     return done;
 }
 
@@ -310,5 +320,6 @@ bool nh_world_compromise(GameState *gs, int idx, bool deep)
     if (deep)
         nh_world_extract(gs, idx);
     nh_grant_xp(gs, k_nodes[idx].xp);
+    nh_event(gs, NH_EV_NODE_COMPROMISED, idx);
     return true;
 }

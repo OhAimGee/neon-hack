@@ -17,7 +17,7 @@ binaires Linux, macOS et Windows.
 - [x] **Phase 2** — couche de jeu unifiée : `GameState` unique, table de commandes, alerte, HUD, progression, monde unifié,
       menu + prologue + tutoriel + sauvegarde + réglages
 - [ ] **Phase 3** — porter les modules d'origine
-  - [ ] 3.1 bus d'événements · [ ] 3.2 moteur de quêtes · [ ] 3.3 contacts et messages
+  - [x] 3.1 bus d'événements · [x] 3.2 moteur de quêtes · [ ] 3.3 contacts et messages
   - [ ] 3.4 boutique et économie · [ ] 3.5 hacking avancé et commandes, tout le code en règles strictes
 - [ ] **Phase 4** — contenu narratif (quêtes 5 à 9, épilogue, 5 contacts, fin)
 - [ ] **Phase 5** — équilibrage par simulation
@@ -27,17 +27,19 @@ binaires Linux, macOS et Windows.
 
 ## Constats de départ (vérifiés dans le code)
 
-- `update_quest_progress`, `check_quest_prerequisites`, `start_quest` et `unlock_contact` **ne sont appelés par aucun code de
-  jeu** : aucun événement de gameplay n'alimente quêtes ni contacts. C'est le trou central.
-- `init_quest_system` ne définit que **4 quêtes sur 10** (`quest_system.c` : « QUEST 5-9 seront implémentées de la même manière »).
+- ~~`update_quest_progress`, `check_quest_prerequisites`, `start_quest` et `unlock_contact` ne sont appelés par aucun code de
+  jeu : aucun événement de gameplay n'alimente quêtes ni contacts. C'est le trou central.~~ **Résolu en 3.1 + 3.2** : bus
+  d'événements, moteur de quêtes, déblocage des contacts branché (version minimale, la refonte complète est en 3.3).
+- Seules **4 quêtes sur 10** sont écrites (tutoriel, `FIRST_INFILTRATION`, `GATHER_INTEL`, `NEXUS_DATA_BREACH`) : les
+  5 à 9 et l'épilogue restent à écrire en 4.1 (elles sont verrouillées tant qu'elles n'ont pas d'objectif).
 - `use_item` (`shop.c`) est un **stub** : les 10 objets de la boutique n'ont aucun effet.
 - Contacts : 9 dans l'enum, **4 dialogues** écrits, 1 seul débloqué au départ, 5 sur un menu générique sans effet.
 - Deux commandes de furtivité pour **deux états distincts** : `stealth` (cachée) bascule `gs->stealth_mode`, `stealthmode`
   bascule `gs->advanced.stealth.is_active`, qui n'est **pas sauvegardé**.
 - ≈ 3 700 lignes d'origine non strictes (`contacts`, `advanced_hacking`, `cmd_hacking`, `quest_system`, `shop`, `cmd_world`,
   `cmd_advanced`, `game.c`), ≈ 570 lignes d'affichage (`printf`, `print_colored_text`, machine à écrire) en français en dur dans ces modules, couleurs en dur (`legacy_colors.h`),
-  au moins 7 warnings (rien que dans `contacts.c`, `quest_system.c`, `advanced_hacking.c`). Le tutoriel ferme la quête d'origine
-  à la main (`close_legacy_quest`, `tutorial.c`).
+  au moins 7 warnings (rien que dans `contacts.c`, `quest_system.c`, `advanced_hacking.c`). Le tutoriel fermait la quête d'origine
+  à la main (`close_legacy_quest`, `tutorial.c`) : **supprimé en 3.2**, comme les warnings de `quest_system.c`.
 
 ## Phase 3 — Porter les modules d'origine
 
@@ -52,12 +54,30 @@ au lieu de `strcpy` dans des `char[]` : le texte suit la langue, il n'y a rien �
    `nh_tutorial_on_command` dans `nh_dispatch`. Émis depuis les points d'entrée *uniques* déjà en place : `nh_world_compromise`
    (`world.c` : cible piratée, fichiers, crédits), `nh_grant_xp` (`progression.c` : niveau atteint), achat en boutique,
    `contact_npc`, `nh_milestone_claim` (décryptage), réputation, discrétion (alerte).
+   **Fait** : bus *différé* (`nh_event` enregistre, `nh_events_flush` livre à la fin de `nh_dispatch`, pour que les annonces
+   suivent le résultat de la commande), abonnés « à niveau » qui relisent l'état du jeu. Émetteurs : commande exécutée,
+   système compromis, fichiers extraits, niveau, réputation, achat, contact rencontré, jalon, quête terminée. La discrétion
+   n'a pas d'événement propre : l'alerte se relit à chaque `NH_EV_COMMAND`. Détail dans `ARCHITECTURE.md`.
 2. **3.2 Moteur de quêtes** (`quest_system.c`) : consomme les événements, active les quêtes par prérequis après chaque
    complétion ou montée de niveau, verse les récompenses **une seule fois** (XP via `nh_grant_xp`), journal `quests` FR/EN.
    `QUEST_INTRO_TUTORIAL` passe par le moteur, ce qui supprime `close_legacy_quest` (`tutorial.c`).
+   **Fait** : `quest_system.[ch]` réécrit et strict, quatre quêtes en tables à clés `NhStr`, journal FR/EN, `test_events.c`,
+   `test_quests.c` et un e2e « campagne » (Q1 → Q2 → Q3, alerte, anglais, rechargement). Écarts et constats :
+   - **Impasse d'expérience corrigée** : un joueur de niveau 2 n'avait que 45 XP à gagner pour 60 requis au niveau 3 (partie
+     bloquée). « Baptême du Feu » verse 25 XP ; `test_no_experience_dead_end` garde la porte.
+   - **Objectifs d'origine remis d'aplomb** : « extraire 3 fichiers » au niveau 2 était impossible (aucune commande n'extrait avant
+     le niveau 3), « TechDyne-Server » n'existe plus, 50 de réputation était hors d'atteinte (rien n'en donnait assez) : le
+     *Street Cred Booster* de la boutique (+20) est donc implémenté dès maintenant, avec la réputation du tutoriel et des quêtes.
+   - **Retiré du code d'origine, à réécrire en 4.1** : cinématiques (`play_cutscene`), fragments de lore, récompenses spéciales
+     de quête (le jeu d'origine n'appelait rien de tout cela). Les introductions de chapitre sont portées (annoncées au démarrage de la première quête du
+     chapitre, textes dans `strings.def`).
+   - `laylow` « se faire accuser » retire 5 de réputation via `nh_grant_reputation` (bornée, émise sur le bus).
+   - **Sauvegarde** : `quest.N.status`, `quest.N.obj.M` et `shop.bought` ; les anciens compteurs sont ignorés (version inchangée).
 3. **3.3 Contacts et messages** (`contacts.c`, `cmd_world.c`) : `unlock_contact` piloté par niveau, réputation et quêtes via le
    bus ; les 4 dialogues existants portés (ECHO-7 cohérent avec le tutoriel, `nh_echo_say`) ; messages ajoutés en cours de
-   partie **persistés** (aujourd'hui seul le masque « lu » des messages initiaux est sauvegardé).
+   partie **persistés** (aujourd'hui seul le masque « lu » des messages initiaux est sauvegardé). Remplace le petit abonné de
+   `events.c` (`unlock_contacts`) ; **à traiter ici** : Phoenix (contact de « L'œil du Cyclone ») et AURA sont *hors ligne* et
+   restent verrouillés, donc injoignables tant que ce lot n'est pas fait.
 4. **3.4 Boutique et économie** (`shop.c`, `cmd_shop`) : implémenter les 10 effets (furtivité, réducteur d'alerte, virus,
    proxy/VPN, IA, puce quantique → `nh_world_sync_tools`, réputation, boost d'XP sous plafond anti-farm) ; revoir le
    `.credits = 5000` provisoire (`progression.c`) ; fermer les farms de crédits par la boutique et `advhack`.
@@ -71,8 +91,9 @@ au lieu de `strcpy` dans des `char[]` : le texte suit la langue, il n'y a rien �
 ## Phase 4 — Contenu narratif (campagne complète)
 
 - **4.1** Les quêtes 5 à 9 (`UNDERGROUND_CONTACT`, `CORPORATE_SABOTAGE`, `AI_LIBERATION`, `SHADOW_BROKER`, `FINAL_SHOWDOWN`) et
-  `EPILOGUE`, en tables de données ; chapitres, cinématiques et fragments de lore (`display_chapter_intro` et `play_cutscene`
-  existent et sont à porter ; `display_lore_fragment` n'est que déclaré dans `quest_system.h`, jamais défini : à écrire).
+  `EPILOGUE`, en tables de données (`k_quests`, voir 3.2) ; cinématiques et fragments de lore à écrire (les anciennes
+  `play_cutscene` et `display_lore_fragment` ont disparu avec le code d'origine, elles étaient sans appelant ; le tag
+  `legacy-v2.087` les garde). Les chapitres sont déjà annoncés par le moteur.
 - **4.2** Les 5 contacts manquants (`SHADOW_BROKER`, `NEON_ANGEL`, `GHOST_WALKER`, `DATA_MINER`, `NEXUS_INSIDER`) : dialogues,
   services (`can_sell_items`, `can_give_missions`…), liés aux quêtes.
 - **4.3** Fin et épilogue : écran de fin avec bilan, game over cohérent avec l'histoire.
@@ -88,6 +109,9 @@ au lieu de `strcpy` dans des `char[]` : le texte suit la langue, il n'y a rien �
   la boutique, récompenses de quêtes. **Cibles chiffrées à fixer avec le propriétaire du projet** (durée de campagne, taux de
   game over) avant de régler quoi que ce soit.
 - Invariants testés : aucune boucle de commandes ne fait monter crédits ou XP sans plafond.
+- Points déjà repérés : passer le tutoriel coûte 100 ¢ et 10 de réputation, si bien que « Réseaux d'Information » (50 de
+  réputation) exige alors deux *Street Cred Booster* au lieu d'un ; l'XP disponible à chaque niveau est juste (140 XP exactement
+  pour le niveau 4 à la fin de « Réseaux d'Information ») ; les récompenses de quêtes (`k_quests`) sont provisoires.
 
 ## Phase 6 — Confort de jeu
 
@@ -116,15 +140,14 @@ Plusieurs emplacements de sauvegarde (et suppression) ; `--new` demande confirma
 **Exception recommandée** : lancer la CI macOS/Windows de la phase 8 dès la fin de la phase 3. C'est le plus gros risque
 technique (le code Windows n'a jamais été compilé) et il vaut mieux le découvrir tôt.
 
-## Prochain lot : 3.1 + 3.2
+## Prochain lot : 3.3 + 3.4 (indépendants, dans l'ordre que l'on veut)
 
-1. Créer `events.[ch]` et brancher les émetteurs dans `world.c`, `progression.c`, `cmd_shop`, `contact_npc`, `nh_milestone_claim`.
-2. Porter `quest_system.c` : table `static const` des 4 quêtes existantes à clés `NhStr`, consommation des événements, activation
-   par prérequis, récompenses uniques, journal FR/EN.
-3. Tutoriel : compléter `QUEST_INTRO_TUTORIAL` par le moteur, supprimer `close_legacy_quest`.
-4. Tests : `test_events.c`, `test_quests.c` (cycle complet d'une quête, récompense unique, prérequis, sauvegarde et rechargement),
-   e2e sur les 4 quêtes ; `save.c` étendu si un nouvel état apparaît.
-5. Ajouter les nouveaux fichiers à `STRICT_OBJ`, mettre à jour le tableau « Statut » du README et `docs/ARCHITECTURE.md`.
+1. **3.3 Contacts et messages** : `contacts.c` en table `static const` à clés `NhStr`, dialogues portés (ECHO-7 cohérent avec le
+   tutoriel), Phoenix et AURA joignables, messages persistés ; remplace `unlock_contacts` (`events.c`). Les contacts 5 à 8 n'ont pas
+   encore de fiche (4.2).
+2. **3.4 Boutique et économie** : les 9 effets restants (`use_item` est un stub ; les quêtes lisent déjà `shop.bought`), `nh_world_sync_tools`
+   pour l'IA et la puce quantique, `.credits = 5000` de `progression.c` à revoir, farms de crédits à fermer.
+3. Tests et documentation de chaque lot, comme pour 3.1 + 3.2 ; la CI macOS/Windows peut démarrer dès la fin de la phase 3.
 
 ## Risques
 

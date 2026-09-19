@@ -239,6 +239,15 @@ NhDispatch nh_dispatch(GameState *gs, const char *line)
 
     NhDispatch result = cmd->fn(gs, arg) ? NH_DISPATCH_OK : NH_DISPATCH_FAILED;
     nh_tutorial_on_command(gs, cmd->name, result); /* la mission d'ECHO-7 suit ce que le joueur vient de faire */
+
+    /* Puis les événements que la commande a provoqués (et le temps qui passe) sont livrés aux quêtes
+     * et aux contacts : leurs annonces s'affichent après le résultat, pas au milieu. Une partie
+     * finie (quit, game over) n'a plus personne à prévenir. */
+    nh_event(gs, NH_EV_COMMAND, (int)result);
+    if (gs->running && !gs->player.game_over && !nh_alert_is_game_over(&gs->alert))
+        nh_events_flush(gs);
+    else
+        nh_events_clear(gs);
     return result;
 }
 

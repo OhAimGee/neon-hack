@@ -18,6 +18,7 @@ void init_shop(CyberShop *shop)
     strcpy(shop->vendor_name, "R4Z0R");
     strcpy(shop->shop_location, "Underground Market - Sector 7");
     shop->is_open = true;
+    shop->bought = 0;
     shop->item_count = ITEM_COUNT;
 
     // Amélioration furtivité
@@ -237,6 +238,7 @@ bool buy_item(CyberShop *shop, ShopItemType item_type, int *player_credits, int 
 
     // Effectuer l'achat
     *player_credits -= item->price;
+    shop->bought |= 1u << (unsigned)item_type;
 
     printf(COLOR_GREEN "✅ Achat réussi: %s pour %d ¢" COLOR_RESET "\n", item->name, item->price);
     printf(COLOR_CYAN "💰 Crédits restants: %d ¢" COLOR_RESET "\n", *player_credits);
