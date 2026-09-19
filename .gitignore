@@ -1,0 +1,20 @@
+# Build artifacts
+*.o
+*.obj
+build/
+/neon_hack
+/neon_hack.exe
+
+# Editor / OS
+*~
+*.bak
+*.tmp
+*.swp
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Runtime
+*.log
+*.sav

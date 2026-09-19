@@ -1,0 +1,13 @@
+TestPlayer
+scan localhost
+scan localhost
+scan localhost
+scan localhost
+scan localhost
+scan localhost
+status
+help
+bruteforce localhost
+decrypt WKLV#LV#D#WHVW
+status
+quit
