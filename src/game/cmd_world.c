@@ -11,6 +11,7 @@
 #include "../core/platform.h"
 #include "../i18n/i18n.h"
 #include "legacy_colors.h"
+#include "tutorial.h"
 
 #include <ctype.h>
 #include <stdio.h>
@@ -122,6 +123,13 @@ bool cmd_lay_low(GameState *gs, const char *arg)
 bool cmd_quests(GameState *gs, const char *arg)
 {
     (void)arg;
+
+    /* Pendant le tutoriel, le journal montre la mission d'ECHO-7 étape par étape. */
+    if (nh_tutorial_active(gs))
+    {
+        nh_tutorial_print_mission(gs);
+        return true;
+    }
 
     display_quest_log(&gs->quests);
 

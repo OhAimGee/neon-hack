@@ -7,13 +7,17 @@ et les modules d'origine sont portés un par un avant d'être supprimés.
 ## Organisation actuelle
 
 ```
-src/main.c         point d'entrée : options, langue, création du GameState, boucle
+src/main.c         point d'entrée : options, réglages, création du GameState, menu, boucle
 src/game/          logique de jeu (GameState unique, plus aucune variable globale d'état)
   game.[ch]          GameState, init_game, boucle de jeu, progression (gain_experience)
   progression.[ch]   courbe d'expérience, niveaux 1-6, déblocages, récompenses uniques ; nh_grant_xp() est le SEUL point d'entrée
   world.[ch]         le monde : graphe unique de systèmes (relais, découverte), état persistant, chances de succès, récompense unique
   alert.[ch]         alerte unique 0-100 : hausse, refroidissement, seuils, méthodes de réduction, affichage
-  commands.[ch]      table de commandes, dispatch, aide, commandes système (help/status/quit/clear)
+  commands.[ch]      table de commandes, dispatch, aide, commandes système (help/status/save/quit/clear)
+  menu.[ch]          menu de lancement (continuer, nouvelle partie, langue, options) et nh_start_new_game
+  intro.[ch]         prologue d'une nouvelle partie : récit, ECHO-7, choix du nom, tutoriel ou non
+  tutorial.[ch]      tutoriel : machine à états branchée sur nh_dispatch, mission « Premiers Pas dans l'Ombre »
+  save.[ch]          sauvegarde et chargement de la partie (format texte clé=valeur, versionné)
   cmd_hacking.c      commandes de hacking classiques (scan, bruteforce, decrypt, backdoor…)
   cmd_world.c        boutique, quêtes, contacts, messages, laylow
   cmd_advanced.c     hacking avancé (advhack, aiassist, neuralsync, temporalhack…)
@@ -24,16 +28,21 @@ src/core/          socle neuf, testé, sans état de jeu
   parse.[ch]         découpe « commande argument », comparaison sans casse
   utf8.[ch]          coupe propre d'une chaîne UTF-8 tronquée
   rng.[ch]           générateur PCG32 reproductible (graine, tirages sans biais)
-  config.[ch]        options de ligne de commande, variables d'environnement
+  config.[ch]        options de ligne de commande, variables d'environnement, application des réglages enregistrés
+  kv.[ch]            format texte « clé=valeur » : analyse tolérante, entiers stricts bornés, écrivain
+  storage.[ch]       dossier de données, lecture bornée, écriture atomique (temporaire + fsync + renommage)
+  settings.[ch]      réglages du joueur (langue, couleurs, animations, HUD) dans settings.cfg
 src/ui/term.[ch]   couleurs ANSI, largeur d'affichage UTF-8, remplissage de colonnes, jauge, troncature
 src/ui/hud.[ch]    interface fixe : barres haut/bas + zone de texte défilante (région de défilement ANSI)
 src/i18n/          textes français/anglais (strings.def, i18n.[ch])
-tests/unit/        tests unitaires (un exécutable par fichier ; test_commands.c teste la couche jeu)
-tests/e2e/run.sh   tests de bout en bout du jeu compilé (sorties redirigées)
-tests/e2e/pty_hud.py   tests de l'interface fixe dans un vrai pseudo-terminal + mini-émulateur d'écran
+tests/unit/        tests unitaires (un exécutable par fichier ; test_commands.c teste la couche jeu ; nh_feed.h fournit la saisie,
+                   nh_tmp.h des dossiers temporaires : les tests ne touchent jamais aux vraies sauvegardes)
+tests/e2e/run.sh   tests de bout en bout du jeu compilé (sorties redirigées, dossier de données jetable par exécution)
+tests/e2e/pty_hud.py   tests de l'interface fixe, du menu et du tutoriel dans un vrai pseudo-terminal + mini-émulateur d'écran
 ```
 
-Le code neuf (`src/core`, `src/ui`, `src/i18n`, `src/main.c`, `src/game/commands.c`, `src/game/alert.c`, `src/game/progression.c`, `src/game/world.c`)
+Le code neuf (`src/core`, `src/ui`, `src/i18n`, `src/main.c`, `src/game/commands.c`, `src/game/alert.c`, `src/game/progression.c`, `src/game/world.c`,
+`src/game/save.c`, `src/game/tutorial.c`, `src/game/intro.c`, `src/game/menu.c`)
 est compilé avec `-Wpedantic -Wshadow -Wconversion -Werror`. Le reste de `src/game/`
 (code d'origine déplacé) ne l'est pas : il porte encore ses avertissements et sera
 remplacé, pas corrigé.
@@ -101,6 +110,69 @@ remplacé, pas corrigé.
   - Les 5 systèmes qui ont un profil de défense avancé (`AdvancedTarget`) sont reliés par
     `nh_world_adv_target()` ; les autres (`localhost`, `corp-server-01`) n'acceptent que les commandes
     classiques.
+
+## Démarrage, menu, prologue et tutoriel
+
+Ordre de `main()` : valeurs par défaut d'après l'environnement → options de la ligne de commande →
+dossier de données et `settings.cfg` → application des réglages → menu (ou `--new`) → interface fixe →
+annonce du tutoriel → `game_loop`.
+
+- **Priorité des réglages** : environnement (`$LANG`, `NO_COLOR`) < `settings.cfg` < option explicite
+  de la ligne de commande. `NhConfig` retient ce qui a été imposé (`lang_set`, `color_set`,
+  `fast_set`, `hud_set`) ; `nh_config_apply_settings()` n'applique le fichier qu'au reste. `NO_COLOR`
+  éteint les couleurs même si le fichier les allume (seul `--color` le contredit). Le menu modifie à
+  la fois la configuration de la session et les réglages enregistrés, mais ne persiste que le champ
+  qu'il vient de changer : un `--no-color` de la session n'est jamais écrit dans le fichier.
+- **Menu** (`menu.c`) : lit ses choix par `io.c` (EOF = statut `NH_START_EOF`, jamais une boucle),
+  tourne *avant* l'interface fixe. « Continuer » n'est proposé que si `nh_save_peek()` réussit ; une
+  sauvegarde illisible est signalée comme telle, et « Nouvelle partie » demande confirmation dès
+  qu'un fichier existe, lisible ou non.
+- **Prologue** (`intro.c`) : le nom du héros se choisit *dans la fiction* (ECHO-7 le demande, le confirme).
+  `nh_clean_name()` retire les caractères de contrôle (dont ESC, C1), les octets UTF-8 invalides et les
+  espaces superflus, et coupe à 20 *caractères* ; un nom vide vaut `NH_DEFAULT_NAME` (« Case »). La
+  même fonction assainit le nom relu depuis une sauvegarde : un fichier modifié à la main ne peut pas
+  injecter de séquence d'échappement dans le terminal.
+- **Tutoriel** (`tutorial.c`) : *pas un écran à part* mais la première mission, jouée dans la vraie
+  boucle. `GameState.tutorial {step, done}` est une machine à états ; `nh_dispatch()` appelle
+  `nh_tutorial_on_command()` après chaque ligne. Les étapes « lance telle commande » (`quests`, `help`,
+  `scan`, `status`) ne se valident que par la commande qui vient de réussir ; les étapes d'état (niveau 2,
+  `localhost` compromis, une réduction d'alerte **appliquée** — `AlertSystem.reductions_done`, qui ignore
+  l'annulation du menu) se lisent dans le jeu, donc s'enchaînent d'elles-mêmes si le joueur a pris de
+  l'avance. Rien n'est bloqué : une commande inconnue, verrouillée ou ratée déclenche un rappel
+  d'ECHO-7. La récompense (100 ¢, 10 de réputation) n'est versée qu'à la dernière étape, une fois
+  (`done`) ; la quête d'origine `QUEST_INTRO_TUTORIAL` est alors close avec la même comptabilité que
+  `update_quest_progress`. Un `GameState` neuf n'a *pas* de tutoriel actif : c'est le prologue qui le
+  lance ou le passe.
+- **Ordre d'annonce** : `nh_hud_start()` repousse dans l'historique tout ce qui est déjà affiché ; la
+  première consigne (`nh_tutorial_announce`) est donc émise *après* lui, sinon elle disparaîtrait
+  au-dessus de l'écran. Les répliques d'ECHO-7 sont coupées à la largeur du terminal avec retrait
+  (`nh_wrap_text`) ; sur un tube (`nh_wrap_width() == 0`) le texte reste sur une ligne.
+
+## Sauvegarde
+
+- **Format** (`save.c` + `kv.c`) : texte `clé=valeur`, une paire par ligne, lisible et éditable. La première
+  ligne porte la version (`neon-hack-save=1`), la dernière `end=1` prouve que rien n'est tronqué. On
+  n'enregistre que ce que le jeu *modifie* (joueur, indicateurs des nœuds, alerte, quêtes, contacts,
+  tutoriel…) : les tables fixes sont reconstruites par `init_game`, une mise à jour du contenu ne
+  casse donc pas les sauvegardes existantes. Pas de vidage de structure (dépendant du compilateur et
+  ouvert aux indices hors tableau).
+- **Compatibilité** : une clé absente garde sa valeur par défaut, une clé inconnue est ignorée ;
+  `NH_SAVE_VERSION` ne monte que pour un changement incompatible. Une version supérieure à celle du
+  jeu donne `NH_SAVE_TOO_NEW`, jamais un chargement approximatif.
+- **Chargement transactionnel** : partir d'un état neuf, valider chaque valeur (bornes strictes,
+  `nh_kv_int`), et ne remplacer la partie en cours qu'à la toute fin. Une valeur hors bornes donne
+  `NH_SAVE_CORRUPT` et laisse `gs` intact.
+- **Écriture atomique** (`storage.c`) : fichier temporaire, `fsync`, puis renommage (`MoveFileEx` sous
+  Windows) ; le dossier est créé au besoin. Un disque plein ou une coupure ne laisse jamais une
+  sauvegarde à moitié écrite.
+- **Quand** : après chaque commande (`game_loop`), sauf si la partie est perdue — *Continuer* reprend alors
+  la sauvegarde d'avant la commande fatale —, et à `quit` / `save`. Un échec est signalé une fois.
+  Sans `save_path` (tests, aucun dossier de données) rien n'est écrit.
+- **Emplacement** : `--data-dir` > `%APPDATA%/neon-hack` > `$XDG_DATA_HOME/neon-hack` (absolu seulement,
+  comme le veut XDG) > `~/.local/share/neon-hack`. Fichiers : `savegame.sav`, `settings.cfg`.
+- **Limites connues** : un seul emplacement ; `--new` remplace la sauvegarde sans confirmation (le menu,
+  lui, la demande) ; les branches Windows de `storage.c` n'ont jamais été compilées ; macOS utilise
+  `~/.local/share` faute d'un choix plus idiomatique.
 
 ## Interface fixe (HUD)
 

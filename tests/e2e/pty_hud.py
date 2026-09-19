@@ -15,9 +15,11 @@ import os
 import pty
 import re
 import select
+import shutil
 import signal
 import struct
 import sys
+import tempfile
 import termios
 import time
 import unicodedata
@@ -25,6 +27,21 @@ import unicodedata
 BIN = os.environ.get("NEON_HACK_BIN", "./neon_hack")
 PROMPT = "neon-terminal] $ "
 ANSI = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]")
+
+# Questions du prologue, par langue : de quoi savoir quand répondre.
+PROLOGUE = {
+    "fr": ("Votre handle", "[O/n]", "Votre choix (Entrée"),
+    "en": ("Your handle", "[Y/n]", "Your choice (Enter"),
+}
+
+# Dossiers de données jetables : jamais les vraies sauvegardes du joueur.
+_tmp_dirs = []
+
+
+def new_data_dir():
+    d = tempfile.mkdtemp(prefix="nh-pty-")
+    _tmp_dirs.append(d)
+    return d
 
 
 class Screen:
@@ -177,15 +194,16 @@ class Screen:
 
 
 class Session:
-    def __init__(self, rows, cols, args=(), env_extra=None, term="xterm-256color"):
+    def __init__(self, rows, cols, args=(), env_extra=None, term="xterm-256color", data_dir=None):
         self.screen = Screen(rows, cols)
         self.raw = ""
+        self.data_dir = data_dir or new_data_dir()
         env = dict(os.environ, TERM=term, LANG="C.UTF-8")
         env.pop("NO_COLOR", None)
         env.update(env_extra or {})
         self.pid, self.fd = pty.fork()
         if self.pid == 0:
-            os.execve(BIN, [BIN, "--lang", "fr", *args], env)
+            os.execve(BIN, [BIN, "--lang", "fr", "--data-dir", self.data_dir, *args], env)
         self.resize(rows, cols)
         self.buf = b""
         self.alive = True
@@ -226,6 +244,17 @@ class Session:
     def prompts(self):
         """Nombre de prompts affichés (les codes couleur s'intercalent dans « ]\x1b[0m $ »)."""
         return ANSI.sub("", self.raw).count(PROMPT)
+
+    def wait_text(self, text, count=1, timeout=20.0):
+        """Attend que `text` soit apparu `count` fois dans la sortie (séquences ANSI ôtées)."""
+        end = time.time() + timeout
+        while time.time() < end:
+            self._drain(0.2)
+            if ANSI.sub("", self.raw).count(text) >= count:
+                return True
+            if not self.alive:
+                return False
+        return False
 
     def wait_prompt(self, count, timeout=20.0):
         end = time.time() + timeout
@@ -278,11 +307,23 @@ def check(name, ok, detail=""):
             print("        " + detail.replace("\n", "\n        "))
 
 
-def play(rows, cols, commands, args=(), **kw):
-    """Joue une liste de commandes (le nom du joueur en premier) et retourne la session."""
-    s = Session(rows, cols, args, **kw)
+def prologue(s, name, tutorial=False, lang="fr"):
+    """Traverse le prologue d'une nouvelle partie : nom, confirmation (Entrée), tutoriel ou non."""
+    handle, confirm, choice = PROLOGUE[lang]
+    s.wait_text(handle)
+    s.send(name)
+    s.wait_text(confirm)
+    s.send("")
+    s.wait_text(choice)
+    s.send("1" if tutorial else "2")
+
+
+def play(rows, cols, commands, args=(), tutorial=False, lang="fr", **kw):
+    """Nouvelle partie (--new) : prologue, puis la liste de commandes (le nom du joueur en premier).
+    Retourne la session, une fois le dernier prompt affiché."""
+    s = Session(rows, cols, ["--new", "--fast", *args], **kw)
     s._drain(0.6)
-    s.send(commands[0])  # nom du hacker
+    prologue(s, commands[0], tutorial, lang)
     expected = 1
     for cmd in commands[1:]:
         s.wait_prompt(expected)
@@ -357,8 +398,7 @@ def main():
     check("quit : le message d'au revoir reste visible", "Merci d'avoir joué" in scr.text())
 
     # --- Langue --------------------------------------------------------------
-    s = Session(30, 100, ["--lang", "en"])
-    s._drain(0.6); s.send("Neo"); s.wait_prompt(1)
+    s = play(30, 100, ["Neo"], args=["--lang", "en"], lang="en")
     check("--lang en : barres en anglais", "Lvl 1" in s.screen.line(0) and "ALERT" in s.screen.line(0)
           and "Commands:" in s.screen.line(s.screen.rows - 1), repr(s.screen.line(0)))
     s.send("quit"); s.finish()
@@ -393,6 +433,8 @@ def main():
     top = s.screen.line(0)
     check("nom très long (accents, emoji) : la jauge d'alerte reste visible et rien ne déborde",
           "ALERTE" in top and top.count("\n") == 0, repr(top))
+    check("… le nom est limité à 20 caractères dès le prologue (les emoji de fin sont écartés)",
+          "Hackeré" in top and "🧠" not in top, repr(top))
     s.send("quit"); s.finish()
 
     # --- Redimensionnement ---------------------------------------------------------
@@ -431,9 +473,83 @@ def main():
           repr(s.screen.line(0)))
     s.send("quit"); s.finish()
 
+    # --- Menu de lancement, dans un vrai terminal ------------------------------------
+    d = new_data_dir()
+    s = Session(30, 100, ["--fast"], data_dir=d)
+    ok = s.wait_text("MENU PRINCIPAL")
+    txt = s.screen.text()
+    check("menu : affiché au lancement, avant l'interface fixe (pas de barres)",
+          ok and "Nouvelle partie" in txt and "Continuer (aucune sauvegarde)" in txt
+          and "Langue : Français" in txt and "Commandes :" not in txt and s.screen.region_resets == 0, txt[-600:])
+    s.send("3")
+    check("menu : la langue change à chaud", s.wait_text("MAIN MENU") and "Language: English" in s.screen.text())
+    s.send("0")
+    code = s.finish()
+    check("menu : Quitter rend un terminal propre et le code 0", code == 0 and "Thanks for playing" in s.screen.text(),
+          f"code={code}")
+
+    # --- Tutoriel et interface fixe -----------------------------------------------------
+    d = new_data_dir()
+    s = Session(30, 100, ["--fast"], data_dir=d)
+    s.wait_text("MENU PRINCIPAL")
+    s.send("2")
+    prologue(s, "Neo", tutorial=True)
+    s.wait_prompt(1)
+    scr = s.screen
+    body = "\n".join(scr.line(r) for r in range(1, scr.rows - 1))
+    check("tutoriel : la première consigne d'ECHO-7 est visible sous les barres, pas repoussée dans l'historique",
+          "Neo" in scr.line(0) and "Commandes :" in scr.line(scr.rows - 1)
+          and "ECHO-7 »" in body and "Tape 'quests'" in body, body[-500:])
+
+    s.send("quests"); s.wait_prompt(2)
+    scr = s.screen
+    body = "\n".join(scr.line(r) for r in range(1, scr.rows - 1))
+    check("tutoriel : « quests » affiche la mission et l'étape suivante, barres intactes",
+          "MISSION EN COURS" in body and "Objectif accompli" in body and "'help'" in body
+          and "Neo" in scr.line(0) and "Commandes :" in scr.line(scr.rows - 1), body[-600:])
+    s.send("quit"); s.finish()
+
+    # Continuer dans une nouvelle session : la sauvegarde est proposée, ECHO-7 salue et reprend.
+    s = Session(30, 100, ["--fast"], data_dir=d)
+    s.wait_text("MENU PRINCIPAL")
+    check("menu : la sauvegarde est proposée avec son résumé", "Neo · niveau 1" in s.screen.text(),
+          s.screen.text()[-500:])
+    s.send("1"); s.wait_prompt(1)
+    scr = s.screen
+    body = "\n".join(scr.line(r) for r in range(1, scr.rows - 1))
+    check("reprise : ECHO-7 salue le joueur et redonne la consigne sous les barres",
+          "Content de te revoir, Neo" in body and "'help'" in body
+          and "Neo" in scr.line(0) and "Commandes :" in scr.line(scr.rows - 1), body[-600:])
+    n = s.prompts()
+    s.send("help"); s.wait_prompt(n + 1)
+    body = "\n".join(s.screen.line(r) for r in range(1, s.screen.rows - 1))
+    check("reprise : la partie continue (help valide l'étape suivante)", "Objectif accompli" in body
+          and "'scan'" in body, body[-500:])
+    s.send("quit"); s.finish()
+
+    # --- Retour à la ligne des répliques et du récit (80 colonnes) -------------------
+    s = play(24, 80, ["Neo"], tutorial=True)
+    lines = s.screen.scrolled_off + [s.screen.line(r) for r in range(s.screen.rows)]
+    idx = next((i for i, l in enumerate(lines) if "ECHO-7 » Voici comment" in l), None)
+    ok = idx is not None and len(lines[idx]) <= 79
+    nxt = lines[idx + 1] if idx is not None and idx + 1 < len(lines) else ""
+    check("80 colonnes : la réplique d'ECHO-7 est coupée aux mots, la suite en retrait sous le texte",
+          ok and nxt.startswith(" " * 9) and not nxt.startswith(" " * 10) and len(nxt) <= 79,
+          repr(lines[idx] if idx is not None else None) + "\n" + repr(nxt))
+    start = next((i for i, l in enumerate(lines) if "Neo-Tokyo, 2087" in l), None)
+    end = next((i for i, l in enumerate(lines) if "Votre handle" in l), None)
+    too_wide = [l for l in lines[start:end] if len(l) > 79] if start is not None and end is not None else ["?"]
+    check("80 colonnes : aucune ligne du prologue ne déborde", start is not None and end is not None and not too_wide,
+          repr(too_wide[:3]))
+    s.send("quit"); s.finish()
+
     print(f"\nhud (pty) : {passed} réussi(s), {failed} échec(s)")
     return 1 if failed else 0
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    finally:
+        for d in _tmp_dirs:
+            shutil.rmtree(d, ignore_errors=True)

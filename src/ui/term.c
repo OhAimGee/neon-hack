@@ -221,6 +221,94 @@ size_t nh_pad(char *out, size_t out_size, const char *s, size_t width, NhAlign a
     return pos;
 }
 
+size_t nh_wrap_width(void)
+{
+    int cols = 0;
+    int rows = 0;
+    if (!nh_stdout_is_tty() || !nh_term_size(&cols, &rows) || cols < 20)
+        return 0;
+    return (size_t)cols - 1;
+}
+
+/* Ajoute `n` octets de `src` à `out` (borné), et retourne la nouvelle longueur. */
+static size_t put(char *out, size_t size, size_t used, const char *src, size_t n)
+{
+    if (used + n + 1 > size)
+    {
+        n = size > used + 1 ? size - used - 1 : 0;
+        /* La coupure ne doit jamais laisser la moitié d'un caractère UTF-8. */
+        while (n > 0 && ((unsigned char)src[n] & 0xC0) == 0x80)
+            n--;
+    }
+    memcpy(out + used, src, n);
+    out[used + n] = '\0';
+    return used + n;
+}
+
+size_t nh_wrap_text(char *out, size_t out_size, const char *text, size_t start_col, size_t indent,
+                    size_t width)
+{
+    if (out_size == 0)
+        return 0;
+    out[0] = '\0';
+
+    size_t used = 0;
+    size_t col = start_col;
+    size_t line_start = start_col; /* colonne à partir de laquelle la ligne courante est « vide » */
+    const char *p = text;
+
+    while (*p != '\0')
+    {
+        if (*p == '\n')
+        {
+            used = put(out, out_size, used, "\n", 1);
+            for (size_t i = 0; i < indent; i++)
+                used = put(out, out_size, used, " ", 1);
+            col = indent;
+            line_start = indent;
+            p++;
+            continue;
+        }
+        if (*p == ' ')
+        {
+            p++;
+            continue;
+        }
+
+        const char *word = p;
+        while (*p != '\0' && *p != ' ' && *p != '\n')
+            p++;
+        size_t bytes = (size_t)(p - word);
+
+        char tmp[256];
+        size_t copy = bytes < sizeof tmp - 1 ? bytes : sizeof tmp - 1;
+        memcpy(tmp, word, copy);
+        tmp[copy] = '\0';
+        size_t w = nh_display_width(tmp);
+        if (bytes > copy) /* mot démesuré : largeur au moins celle de sa partie mesurée */
+            w += bytes - copy;
+
+        bool first_on_line = col <= line_start;
+        if (width > 0 && !first_on_line && col + 1 + w > width)
+        {
+            used = put(out, out_size, used, "\n", 1);
+            for (size_t i = 0; i < indent; i++)
+                used = put(out, out_size, used, " ", 1);
+            col = indent;
+            line_start = indent;
+            first_on_line = true;
+        }
+        if (!first_on_line)
+        {
+            used = put(out, out_size, used, " ", 1);
+            col++;
+        }
+        used = put(out, out_size, used, word, bytes);
+        col += w;
+    }
+    return used;
+}
+
 void nh_typewriter(const char *text, unsigned delay_ms)
 {
     const unsigned char *s = (const unsigned char *)text;

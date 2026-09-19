@@ -118,6 +118,8 @@ NhReduceResult nh_alert_apply_reduction(AlertSystem *a, NhReduction method, int 
     int done = nh_alert_reduce(a, k_reductions[method].amount);
     if (applied != NULL)
         *applied = done;
+    if (a->reductions_done < 1000000)
+        a->reductions_done++;
     return NH_REDUCE_OK;
 }
 

@@ -33,7 +33,8 @@ CORE_OBJ := $(CORE_SRC:%.c=$(BUILD)/obj/%.o)
 TEST_BIN := $(TEST_SRC:tests/unit/%.c=$(BUILD)/tests/%)
 
 # Fichiers du dossier game/ déjà écrits au nouveau standard
-STRICT_OBJ := $(CORE_OBJ) $(MAIN_OBJ) $(BUILD)/obj/src/game/commands.o $(BUILD)/obj/src/game/alert.o $(BUILD)/obj/src/game/progression.o $(BUILD)/obj/src/game/world.o
+STRICT_OBJ := $(CORE_OBJ) $(MAIN_OBJ) $(BUILD)/obj/src/game/commands.o $(BUILD)/obj/src/game/alert.o $(BUILD)/obj/src/game/progression.o $(BUILD)/obj/src/game/world.o \
+              $(BUILD)/obj/src/game/save.o $(BUILD)/obj/src/game/tutorial.o $(BUILD)/obj/src/game/intro.o $(BUILD)/obj/src/game/menu.o
 
 all: $(BIN)
 
@@ -55,7 +56,7 @@ $(BUILD)/obj/src/core/config.o: $(BUILD)/version.stamp
 $(BUILD)/tests/test_config: $(BUILD)/version.stamp
 FORCE:
 
-$(BUILD)/tests/%: tests/unit/%.c tests/unit/nh_test.h tests/unit/nh_capture.h $(CORE_OBJ) $(GAME_OBJ)
+$(BUILD)/tests/%: tests/unit/%.c $(wildcard tests/unit/nh_*.h) $(CORE_OBJ) $(GAME_OBJ)
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(STRICT) $< $(CORE_OBJ) $(GAME_OBJ) $(LDFLAGS) -o $@
 

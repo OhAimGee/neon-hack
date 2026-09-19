@@ -14,7 +14,8 @@ Le jeu **se compile et se lance**, mais plusieurs systèmes sont affichés sans 
 |---|---|
 | Boucle de jeu, `scan`, `bruteforce`, `decrypt` | Effets des achats en boutique |
 | Niveaux et déblocage de commandes | Progression des quêtes ; 3 contacts sur 4 |
-| **Alerte 0-100** (jauge, refroidissement, boutique fermée, game over, `laylow`) ; **niveaux 1-6** avec courbe d'expérience et déblocages ; **monde unifié** (7 systèmes reliés, `exploit`, récompenses uniques) | `stealthmode`, sauvegarde |
+| **Alerte 0-100** (jauge, refroidissement, boutique fermée, game over, `laylow`) ; **niveaux 1-6** avec courbe d'expérience et déblocages ; **monde unifié** (7 systèmes reliés, `exploit`, récompenses uniques) | `stealthmode` |
+| **Menu de lancement** (continuer, nouvelle partie, langue, options) ; **sauvegarde automatique** ; **prologue et tutoriel** menés par ECHO-7, où l'on choisit le nom du héros (« Case » par défaut) | Un seul emplacement de sauvegarde ; le journal de quêtes d'origine et l'écran d'accueil sont encore en français seulement |
 | Fin d'entrée (Ctrl+D) et saisies invalides gérées ; `--seed`, `--fast`, `--lang`, tests automatisés | Équilibrage général (valeurs provisoires) ; farm de crédits par la boutique/`advhack` |
 | Ambiance, ASCII art, lore ; affichage boutique/contacts/quêtes | Texte anglais complet (aide, statut, alerte et monde sont traduits, le reste non) |
 
@@ -36,10 +37,14 @@ Options (`./neon_hack --help`) :
 |---|---|
 | `--seed N` | partie reproductible (graine aléatoire fixée) |
 | `--fast` | supprime les pauses d'animation (automatique si la sortie est redirigée) |
-| `--lang fr\|en` | langue (défaut : d'après `$LANG`) ; seuls quelques messages sont traduits pour l'instant |
+| `--lang fr\|en` | langue (défaut : le dernier choix du menu, sinon d'après `$LANG`) ; seuls quelques messages sont traduits pour l'instant |
+| `--new` | nouvelle partie tout de suite, sans menu (l'ancienne sauvegarde est remplacée à la fin du prologue) |
+| `--data-dir DIR` | dossier des sauvegardes et réglages (défaut : `$XDG_DATA_HOME/neon-hack`, sinon `~/.local/share/neon-hack` ; `%APPDATA%\neon-hack` sous Windows) |
 | `--no-hud` | désactive les barres fixes (elles n'apparaissent de toute façon que sur un vrai terminal d'au moins 80×24) |
 | `--no-color` | désactive les couleurs (aide, statut et prompt ; pas encore les écrans d'origine) |
 | `--version`, `--help` | version, aide |
+
+Une option donnée sur la ligne de commande (`--lang`, `--no-color`, `--color`, `--fast`, `--no-hud`) l'emporte, pour la session, sur les réglages enregistrés par le menu ; ceux-ci l'emportent à leur tour sur l'environnement (`$LANG`, `NO_COLOR`).
 
 ## Développement
 
@@ -54,6 +59,12 @@ Voir [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) pour l'organisation du code et
 
 Sur un terminal d'au moins 80×24, une **barre d'état** reste fixée en haut (nom, niveau, crédits, jauge d'alerte) et une **barre de commandes** en bas ; le texte défile entre les deux. Elle disparaît d'elle-même si la fenêtre devient trop petite, si la sortie est redirigée ou avec `--no-hud`.
 
+**Au lancement**, le menu propose : *Continuer* (avec le nom, le niveau et les crédits de la partie sauvegardée), *Nouvelle partie*, *Langue* (Français / English, appliquée sur-le-champ), *Options* (couleurs, animations du texte, barres fixes) et *Quitter*. Langue et options sont retenues d'une session à l'autre ; Entrée seule choisit *Continuer* s'il y a une sauvegarde, *Nouvelle partie* sinon.
+
+**Une nouvelle partie** commence par un court prologue : votre contact, **ECHO-7**, vous demande votre *handle*. C'est ainsi que se choisit le nom du héros (Entrée pour « Case », 20 caractères au plus, confirmation demandée). ECHO-7 propose ensuite un **tutoriel** : une mission pas à pas dans la vraie partie (`quests`, `help`, `scan`, `status`, atteindre le niveau 2, `bruteforce localhost`, `laylow`). Il commente chaque action, rappelle l'objectif si vous vous égarez (commande inconnue, verrouillée ou ratée) et ne bloque rien ; `quests` affiche l'avancement de la mission. La terminer rapporte 100 ¢ et 10 de réputation, une seule fois. On peut aussi répondre « Je me débrouille » et s'en passer.
+
+**Sauvegarde** : la partie est enregistrée après chaque commande (et par `quit` ou `save`) dans `savegame.sav`, un fichier texte lisible, écrit de façon atomique : une coupure en pleine écriture laisse l'ancienne sauvegarde intacte. Un fichier corrompu, tronqué ou écrit par une version plus récente est refusé sans rien charger à moitié. Une partie perdue (alerte à 100) n'écrase pas la dernière sauvegarde : *Continuer* reprend juste avant la commande fatale.
+
 Tapez `help` en jeu : l'aide n'affiche que les commandes déjà débloquées (casse et espaces ignorés ; `upload_virus`, `ai_hack`, `quantum_decrypt`, `exit` fonctionnent aussi).
 
 - **Départ** : `scan` (débloqué). Les 5 premiers scans rapportent 5, 4, 3, 2, 1 points : ils mènent au niveau 2 et débloquent `bruteforce` ; les suivants ne rapportent plus rien. L'expérience vient ensuite des hacks (chaque cible ne paie qu'une fois).
@@ -62,7 +73,7 @@ Tapez `help` en jeu : l'aide n'affiche que les commandes déjà débloquées (ca
 - **Hacking avancé** : `advhack <cible>`, `analyzedefenses`, `socialeng`, `aiassist`, `neuralsync`, `quantumdecrypt`, `temporalhack`.
 - **Le réseau** : 7 systèmes, révélés par `scan` selon votre niveau et reliés entre eux. Pour attaquer un système il faut avoir **compromis son relais** (`scan` marque `[ROUTE FERMÉE]`) ; `traceroute` nomme le relais et, une fois un système tracé, `exploit` (niveau 4) perce directement. Chaque système ne paie qu'**une fois** (crédits, expérience, fichiers) : `socialeng` y apporte des accès internes (+15 % sur toutes les attaques). Les méthodes de `advhack` exigent un outil, actif dès que vous en possédez l'équipement (ordinateur quantique, IA assistante, virus, `neuralsync`…).
 - **Monde** : `shop`, `laylow`, `quests`, `contacts`, `contact <n° ou nom>`, `messages`, `read <n°>`.
-- **Système** : `status`, `clear`, `quit`.
+- **Système** : `status`, `save`, `clear`, `quit`.
 
 Un message à décrypter pour essayer : `decrypt WKLV#LV#D#WHVW` (chiffre de César, décalage −3).
 

@@ -5,6 +5,8 @@
 #include "../ui/term.h"
 #include "legacy_colors.h"
 #include "progression.h"
+#include "save.h"
+#include "tutorial.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -81,10 +83,35 @@ static bool cmd_status(GameState *gs, const char *arg)
     return true;
 }
 
+/* Sauvegarde explicite : annonce toujours le résultat (la sauvegarde automatique, elle, se tait). */
+static bool cmd_save(GameState *gs, const char *arg)
+{
+    (void)arg;
+    switch (nh_save_game(gs))
+    {
+    case NH_SAVE_OK:
+        printf("%s\n", nh_tr(NH_STR_SAVE_OK));
+        return true;
+    case NH_SAVE_NO_PATH:
+        printf("%s\n", nh_tr(NH_STR_SAVE_UNAVAILABLE));
+        return false;
+    case NH_SAVE_IO:
+    case NH_SAVE_MISSING:
+    case NH_SAVE_CORRUPT:
+    case NH_SAVE_TOO_NEW:
+        break;
+    }
+    printf(nh_tr(NH_STR_SAVE_FAILED), gs->save_path);
+    printf("\n");
+    return false;
+}
+
 static bool cmd_quit(GameState *gs, const char *arg)
 {
     (void)arg;
     printf("%s\n", nh_tr(NH_STR_QUIT_MESSAGE));
+    if (gs->save_path[0] != '\0')
+        (void)cmd_save(gs, "");
     gs->running = false;
     return true;
 }
@@ -138,6 +165,7 @@ static const NhCommand k_commands[] = {
 
     {"status",         NULL,              NH_CAT_SYSTEM,   NO,               0, false, NH_STR_HELP_STATUS,         cmd_status},
     {"help",           NULL,              NH_CAT_SYSTEM,   NO,               0, false, NH_STR_HELP_HELP,           cmd_help},
+    {"save",           NULL,              NH_CAT_SYSTEM,   NO,               0, false, NH_STR_HELP_SAVE,           cmd_save},
     {"quit",           "exit",            NH_CAT_SYSTEM,   NO,               0, false, NH_STR_HELP_QUIT,           cmd_quit},
     {"clear",          NULL,              NH_CAT_SYSTEM,   NO,               0, false, NH_STR_HELP_CLEAR,          cmd_clear},
 };
@@ -189,6 +217,7 @@ NhDispatch nh_dispatch(GameState *gs, const char *line)
     {
         printf(nh_tr(NH_STR_UNKNOWN_COMMAND), name);
         printf("\n%s\n", nh_tr(NH_STR_HINT_HELP));
+        nh_tutorial_on_command(gs, NULL, NH_DISPATCH_UNKNOWN);
         return NH_DISPATCH_UNKNOWN;
     }
 
@@ -199,6 +228,7 @@ NhDispatch nh_dispatch(GameState *gs, const char *line)
         else
             printf("%s", nh_tr(NH_STR_CMD_LOCKED));
         printf("\n");
+        nh_tutorial_on_command(gs, cmd->name, NH_DISPATCH_LOCKED);
         return NH_DISPATCH_LOCKED;
     }
 
@@ -207,7 +237,9 @@ NhDispatch nh_dispatch(GameState *gs, const char *line)
     if (cmd->category == NH_CAT_HACK || cmd->category == NH_CAT_ADVANCED)
         nh_alert_decay(&gs->alert);
 
-    return cmd->fn(gs, arg) ? NH_DISPATCH_OK : NH_DISPATCH_FAILED;
+    NhDispatch result = cmd->fn(gs, arg) ? NH_DISPATCH_OK : NH_DISPATCH_FAILED;
+    nh_tutorial_on_command(gs, cmd->name, result); /* la mission d'ECHO-7 suit ce que le joueur vient de faire */
+    return result;
 }
 
 /* ---- Aide --------------------------------------------------------------- */

@@ -34,6 +34,26 @@ void nh_config_defaults(NhConfig *cfg, const char *env_lang, const char *env_no_
     cfg->color = !(env_no_color && env_no_color[0] != '\0'); /* convention NO_COLOR */
 }
 
+void nh_settings_from_config(NhSettings *s, const NhConfig *cfg)
+{
+    s->lang = cfg->lang;
+    s->color = cfg->color;
+    s->fast = cfg->fast;
+    s->hud = cfg->hud;
+}
+
+void nh_config_apply_settings(NhConfig *cfg, const NhSettings *s, bool env_no_color)
+{
+    if (!cfg->lang_set)
+        cfg->lang = s->lang;
+    if (!cfg->color_set)
+        cfg->color = s->color && !env_no_color;
+    if (!cfg->fast_set)
+        cfg->fast = s->fast;
+    if (!cfg->hud_set)
+        cfg->hud = s->hud;
+}
+
 void nh_print_usage(FILE *out)
 {
     fputs("Usage: neon_hack [options]\n"
@@ -47,7 +67,10 @@ void nh_print_usage(FILE *out)
           "                  screens that have not been ported to the new UI]\n"
           "  --no-hud        no fixed status/command bars (they only appear on a real\n"
           "                  terminal of at least 80x24)\n"
-          "  --new           ignore any saved game\n"
+          "  --new           start a new game right away (skips the menu; the first save\n"
+          "                  replaces the current one)\n"
+          "  --data-dir DIR  where saved games and settings live (default: the user's\n"
+          "                  data folder, e.g. ~/.local/share/neon-hack)\n"
           "  -V, --version   print version and exit\n"
           "  -h, --help      print this help and exit\n",
           out);
@@ -127,18 +150,22 @@ NhCfgResult nh_config_parse(int argc, char **argv, NhConfig *cfg,
         if (strcmp(arg, "--fast") == 0)
         {
             cfg->fast = true;
+            cfg->fast_set = true;
         }
         else if (strcmp(arg, "--color") == 0)
         {
             cfg->color = true;
+            cfg->color_set = true;
         }
         else if (strcmp(arg, "--no-color") == 0)
         {
             cfg->color = false;
+            cfg->color_set = true;
         }
         else if (strcmp(arg, "--no-hud") == 0)
         {
             cfg->hud = false;
+            cfg->hud_set = true;
         }
         else if (strcmp(arg, "--new") == 0)
         {
@@ -152,6 +179,17 @@ NhCfgResult nh_config_parse(int argc, char **argv, NhConfig *cfg,
                 set_err(err, err_size, "--lang expects 'fr' or 'en'", value);
                 return NH_CFG_ERROR;
             }
+            cfg->lang_set = true;
+        }
+        else if (strncmp(arg, "--data-dir", 10) == 0 && (arg[10] == '\0' || arg[10] == '='))
+        {
+            const char *value = option_value(arg, "--data-dir", argc, argv, &i);
+            if (value == NULL || value[0] == '\0' || strlen(value) >= sizeof cfg->data_dir)
+            {
+                set_err(err, err_size, "--data-dir expects a folder path", value);
+                return NH_CFG_ERROR;
+            }
+            snprintf(cfg->data_dir, sizeof cfg->data_dir, "%s", value);
         }
         else if (strncmp(arg, "--seed", 6) == 0 && (arg[6] == '\0' || arg[6] == '='))
         {

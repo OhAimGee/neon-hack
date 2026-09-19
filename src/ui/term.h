@@ -61,6 +61,23 @@ void nh_gauge(char *out, size_t out_size, int value, int max, int width);
  */
 size_t nh_truncate_width(char *s, size_t max_width);
 
+/*
+ * Coupe `text` aux espaces pour qu'aucune ligne ne dépasse `width` colonnes d'affichage ; les
+ * lignes suivantes commencent par `indent` espaces. `start_col` = colonnes déjà occupées sur la
+ * première ligne (un préfixe déjà affiché). Un mot plus long que la ligne reste entier sur la
+ * sienne. `width` = 0 : aucune coupure. Les "\n" du texte sont conservés. Écrit dans `out`
+ * (toujours terminé par '\0', tronqué si trop petit) et retourne la longueur en octets.
+ */
+size_t nh_wrap_text(char *out, size_t out_size, const char *text, size_t start_col, size_t indent,
+                    size_t width);
+
+/*
+ * Largeur à donner à nh_wrap_text : celle du terminal moins une colonne (pour ne pas provoquer
+ * de retour automatique), ou 0 — aucune coupure — si la sortie n'est pas un terminal (tubes,
+ * journaux : le texte reste sur une ligne, plus simple à relire et à tester).
+ */
+size_t nh_wrap_width(void);
+
 /* Affiche le texte caractère par caractère (sans pause en mode rapide). */
 void nh_typewriter(const char *text, unsigned delay_ms);
 

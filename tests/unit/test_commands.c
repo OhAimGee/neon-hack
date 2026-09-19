@@ -1,10 +1,12 @@
 #include "nh_test.h"
 
 #include "nh_capture.h"
+#include "nh_tmp.h"
 
 #include "../../src/core/platform.h"
 #include "../../src/game/commands.h"
 #include "../../src/game/progression.h"
+#include "../../src/game/save.h"
 #include "../../src/i18n/i18n.h"
 #include "../../src/ui/term.h"
 
@@ -270,6 +272,70 @@ static void test_progression(void)
     free(gs);
 }
 
+static void test_save_command(void)
+{
+    GameState *gs = new_game();
+    char out[16384];
+    nh_set_lang(NH_LANG_FR);
+    nh_term_set_color(false);
+
+    /* « save » figure dans l'aide, dans la catégorie système */
+    run_line(gs, "help", out, sizeof out);
+    CHECK(has(out, "save"));
+
+    /* sans dossier de données : dit pourquoi, n'écrit rien, et quit n'en parle pas */
+    CHECK_INT(run_line(gs, "save", out, sizeof out), NH_DISPATCH_FAILED);
+    CHECK(has(out, "Sauvegarde indisponible"));
+    CHECK_INT(run_line(gs, "quit", out, sizeof out), NH_DISPATCH_OK);
+    CHECK(has(out, "Au revoir"));
+    CHECK(!has(out, "sauvegard"));
+    CHECK(!gs->running);
+    gs->running = true;
+
+    char root[256], path[512];
+    nh_tmp_make(root, sizeof root);
+    snprintf(path, sizeof path, "%s/dossier/partie.sav", root);
+    snprintf(gs->save_path, sizeof gs->save_path, "%s", path);
+
+    CHECK_INT(run_line(gs, "save", out, sizeof out), NH_DISPATCH_OK);
+    CHECK(has(out, "Partie sauvegardée."));
+    CHECK(nh_storage_exists(path));
+
+    /* quit sauvegarde l'état courant avant de partir */
+    gs->player.credits = 4242;
+    CHECK_INT(run_line(gs, "quit", out, sizeof out), NH_DISPATCH_OK);
+    CHECK(has(out, "Au revoir"));
+    CHECK(has(out, "Partie sauvegardée."));
+    CHECK(!gs->running);
+    GameState *loaded = calloc(1, sizeof *loaded);
+    CHECK_INT(nh_load_game(loaded, path), NH_SAVE_OK);
+    CHECK_INT(loaded->player.credits, 4242);
+    free(loaded);
+
+    /* l'échec est annoncé, avec le chemin, et la commande est marquée en échec */
+    char blocker[600];
+    snprintf(blocker, sizeof blocker, "%s/bloc", root);
+    nh_tmp_write(blocker, "un fichier, pas un dossier");
+    snprintf(gs->save_path, sizeof gs->save_path, "%s/bloc/partie.sav", root);
+    gs->running = true;
+    CHECK_INT(run_line(gs, "save", out, sizeof out), NH_DISPATCH_FAILED);
+    CHECK(has(out, "Impossible de sauvegarder"));
+    CHECK(has(out, "bloc/partie.sav"));
+
+    /* quit part quand même, même si la sauvegarde échoue */
+    CHECK_INT(run_line(gs, "quit", out, sizeof out), NH_DISPATCH_OK);
+    CHECK(!gs->running);
+
+    nh_set_lang(NH_LANG_EN);
+    gs->running = true;
+    CHECK_INT(run_line(gs, "save", out, sizeof out), NH_DISPATCH_FAILED);
+    CHECK(has(out, "Could not save the game"));
+    nh_set_lang(NH_LANG_FR);
+
+    nh_tmp_remove(root);
+    free(gs);
+}
+
 int main(void)
 {
     test_table_integrity();
@@ -279,5 +345,6 @@ int main(void)
     test_dispatch();
     test_help();
     test_progression();
+    test_save_command();
     return NH_TEST_REPORT("commands");
 }

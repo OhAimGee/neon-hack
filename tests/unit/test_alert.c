@@ -149,11 +149,13 @@ static void test_reduction(void)
 
     /* Crédits insuffisants : rien ne change. */
     nh_alert_init(&a);
+    CHECK_INT(a.reductions_done, 0);
     a.level = 50;
     credits = 39;
     CHECK_INT(nh_alert_apply_reduction(&a, NH_REDUCTION_LAYLOW, &credits, NULL), NH_REDUCE_NO_CREDITS);
     CHECK_INT(credits, 39);
     CHECK_INT(a.level, 50);
+    CHECK_INT(a.reductions_done, 0); /* un refus n'est pas une réduction */
 
     /* Réduction payante. */
     credits = 100;
@@ -161,6 +163,7 @@ static void test_reduction(void)
     CHECK_INT(credits, 60);
     CHECK_INT(applied, 25);
     CHECK_INT(a.level, 25);
+    CHECK_INT(a.reductions_done, 1);
 
     /* On ne descend pas sous 0 et `applied` dit la vérité. */
     a.level = 3;
@@ -181,8 +184,10 @@ static void test_reduction(void)
     /* Ghost Protocol : consomme un exemplaire, gratuit, refusé s'il n'y en a plus. */
     credits = 0;
     a.level = 60;
+    int done_before = a.reductions_done;
     CHECK_INT(nh_alert_apply_reduction(&a, NH_REDUCTION_GHOST, &credits, NULL), NH_REDUCE_NO_GHOST);
     CHECK_INT(a.level, 60);
+    CHECK_INT(a.reductions_done, done_before);
     a.ghost_protocols_available = 1;
     CHECK_INT(nh_alert_apply_reduction(&a, NH_REDUCTION_GHOST, &credits, NULL), NH_REDUCE_OK);
     CHECK_INT(a.ghost_protocols_available, 0);
@@ -192,6 +197,12 @@ static void test_reduction(void)
     /* Attendre est gratuit, même sans crédit. */
     CHECK_INT(nh_alert_apply_reduction(&a, NH_REDUCTION_TIME, &credits, NULL), NH_REDUCE_OK);
     CHECK_INT(a.level, 22);
+
+    /* Le compteur (utilisé par le tutoriel) ne compte que les réductions réussies, et ne déborde pas. */
+    CHECK_INT(a.reductions_done, done_before + 2);
+    a.reductions_done = 1000000;
+    CHECK_INT(nh_alert_apply_reduction(&a, NH_REDUCTION_TIME, &credits, NULL), NH_REDUCE_OK);
+    CHECK_INT(a.reductions_done, 1000000);
 }
 
 static int count_of(const char *text, const char *cell)
@@ -399,10 +410,13 @@ static void test_laylow(void)
     CHECK(gs->alert.vpn_active);
     CHECK(has(out, "50 → 40/100"));
 
+    CHECK_INT(gs->alert.reductions_done, 1);
+
     /* Annuler ne change rien. */
     feed("0\n");
     CHECK_INT(run_line(gs, "laylow", out, sizeof out), NH_DISPATCH_OK);
     CHECK_INT(gs->alert.level, 40);
+    CHECK_INT(gs->alert.reductions_done, 1);
     CHECK(has(out, "Vous restez dans l'ombre"));
 
     /* Saisies invalides : rejetées proprement, rien ne bouge. */
@@ -414,6 +428,7 @@ static void test_laylow(void)
         CHECK(has(out, "Choix invalide"));
         CHECK_INT(gs->alert.level, 40);
         CHECK_INT(gs->player.credits, 80);
+        CHECK_INT(gs->alert.reductions_done, 1);
     }
 
     /* Entrée fermée pendant le menu : pas de boucle, échec propre. */

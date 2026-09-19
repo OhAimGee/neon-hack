@@ -121,6 +121,8 @@ static void test_help_and_version(void)
     slurp(out, text, sizeof text);
     CHECK(strstr(text, "Usage:") != NULL);
     CHECK(strstr(text, "--seed") != NULL);
+    CHECK(strstr(text, "--data-dir") != NULL);
+    CHECK(strstr(text, "--new") != NULL);
     fclose(out);
 
     out = tmpfile();
@@ -132,11 +134,92 @@ static void test_help_and_version(void)
     fclose(out);
 }
 
+static void test_data_dir(void)
+{
+    NhConfig cfg;
+    char err[128];
+
+    nh_config_defaults(&cfg, "en_US.UTF-8", NULL);
+    CHECK_STR(cfg.data_dir, ""); /* par défaut : dossier de l'utilisateur */
+
+    char *a1[] = {"neon_hack", "--data-dir", "/tmp/nh-données"};
+    CHECK_INT(parse(&cfg, 3, a1, err, sizeof err, stdout), NH_CFG_RUN);
+    CHECK_STR(cfg.data_dir, "/tmp/nh-données");
+
+    char *a2[] = {"neon_hack", "--data-dir=/un dossier/avec espaces"};
+    CHECK_INT(parse(&cfg, 2, a2, err, sizeof err, stdout), NH_CFG_RUN);
+    CHECK_STR(cfg.data_dir, "/un dossier/avec espaces");
+
+    char *e1[] = {"neon_hack", "--data-dir"};
+    expect_error(e1, 2, "--data-dir");
+    char *e2[] = {"neon_hack", "--data-dir="};
+    expect_error(e2, 2, "--data-dir");
+    char *e3[] = {"neon_hack", "--data-dir", ""};
+    expect_error(e3, 3, "--data-dir");
+    char *e4[] = {"neon_hack", "--data-dirs", "x"};
+    expect_error(e4, 3, "unknown option");
+
+    /* un chemin trop long pour le tampon est refusé au lieu d'être tronqué */
+    char too_long[600];
+    memset(too_long, 'a', sizeof too_long);
+    too_long[sizeof too_long - 1] = '\0';
+    char *e5[] = {"neon_hack", "--data-dir", too_long};
+    expect_error(e5, 3, "--data-dir");
+}
+
+static void test_explicit_flags_are_tracked(void)
+{
+    NhConfig cfg;
+    char err[128];
+
+    /* rien en ligne de commande : rien n'est « imposé », les réglages enregistrés s'appliqueront */
+    char *none[] = {"neon_hack"};
+    CHECK_INT(parse(&cfg, 1, none, err, sizeof err, stdout), NH_CFG_RUN);
+    CHECK(!cfg.lang_set && !cfg.color_set && !cfg.fast_set && !cfg.hud_set);
+
+    char *lang[] = {"neon_hack", "--lang", "fr"};
+    CHECK_INT(parse(&cfg, 3, lang, err, sizeof err, stdout), NH_CFG_RUN);
+    CHECK(cfg.lang_set && !cfg.color_set && !cfg.fast_set && !cfg.hud_set);
+
+    char *color[] = {"neon_hack", "--no-color"};
+    CHECK_INT(parse(&cfg, 2, color, err, sizeof err, stdout), NH_CFG_RUN);
+    CHECK(cfg.color_set && !cfg.color);
+    char *color2[] = {"neon_hack", "--color"};
+    CHECK_INT(parse(&cfg, 2, color2, err, sizeof err, stdout), NH_CFG_RUN);
+    CHECK(cfg.color_set && cfg.color);
+
+    char *fast[] = {"neon_hack", "--fast"};
+    CHECK_INT(parse(&cfg, 2, fast, err, sizeof err, stdout), NH_CFG_RUN);
+    CHECK(cfg.fast_set && cfg.fast);
+
+    char *hud[] = {"neon_hack", "--no-hud"};
+    CHECK_INT(parse(&cfg, 2, hud, err, sizeof err, stdout), NH_CFG_RUN);
+    CHECK(cfg.hud_set && !cfg.hud);
+
+    /* ces options ne touchent à aucun réglage persistant */
+    char *other[] = {"neon_hack", "--seed", "3", "--new", "--data-dir", "/tmp/x"};
+    CHECK_INT(parse(&cfg, 6, other, err, sizeof err, stdout), NH_CFG_RUN);
+    CHECK(!cfg.lang_set && !cfg.color_set && !cfg.fast_set && !cfg.hud_set);
+    CHECK(cfg.new_game);
+}
+
+static void test_new_game_default_off(void)
+{
+    NhConfig cfg;
+    char err[128];
+    char *none[] = {"neon_hack"};
+    CHECK_INT(parse(&cfg, 1, none, err, sizeof err, stdout), NH_CFG_RUN);
+    CHECK(!cfg.new_game); /* sans --new, c'est le menu qui décide */
+}
+
 int main(void)
 {
     test_locale_and_env();
     test_valid_options();
     test_errors();
     test_help_and_version();
+    test_data_dir();
+    test_explicit_flags_are_tracked();
+    test_new_game_default_off();
     return NH_TEST_REPORT("config");
 }

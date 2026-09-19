@@ -296,3 +296,145 @@ NH_STR(NH_STR_EXPLOIT_STEP2, "Contournement des relais...", "Bypassing the relay
 NH_STR(NH_STR_EXPLOIT_OK, "✓ Faille exploitée : brèche ouverte !", "✓ Flaw exploited: breach opened!")
 NH_STR(NH_STR_EXPLOIT_FAIL, "✗ Exploit contré : le correctif est déjà en place.",
        "✗ Exploit countered: the patch is already in place.")
+
+/* ---- Menu principal (src/game/menu.c) ---- */
+NH_STR(NH_STR_MENU_TITLE, "MENU PRINCIPAL", "MAIN MENU")
+NH_STR(NH_STR_MENU_CONTINUE, "Continuer", "Continue")
+NH_STR(NH_STR_MENU_CONTINUE_INFO, "%s · niveau %d (%s) · %d ¢", "%s · level %d (%s) · %d ¢")
+NH_STR(NH_STR_MENU_CONTINUE_NONE, "Continuer (aucune sauvegarde)", "Continue (no saved game)")
+NH_STR(NH_STR_MENU_CONTINUE_BAD, "Continuer (sauvegarde illisible)", "Continue (unreadable saved game)")
+NH_STR(NH_STR_MENU_NEW, "Nouvelle partie", "New game")
+NH_STR(NH_STR_MENU_LANGUAGE, "Langue : %s", "Language: %s")
+NH_STR(NH_STR_MENU_OPTIONS, "Options", "Options")
+NH_STR(NH_STR_MENU_QUIT, "Quitter", "Quit")
+NH_STR(NH_STR_MENU_PROMPT, "Votre choix : ", "Your choice: ")
+NH_STR(NH_STR_MENU_NO_SAVE,
+       "Aucune sauvegarde à charger : lancez une nouvelle partie.",
+       "No saved game to load: start a new game.")
+NH_STR(NH_STR_MENU_OVERWRITE,
+       "Une sauvegarde existe déjà. Une nouvelle partie la remplacera. Continuer ? [o/N] ",
+       "A saved game already exists. A new game will replace it. Continue? [y/N] ")
+NH_STR(NH_STR_MENU_LOAD_IO,
+       "Sauvegarde illisible : le fichier est inaccessible.",
+       "Could not read the saved game: the file is not accessible.")
+NH_STR(NH_STR_MENU_LOAD_CORRUPT,
+       "Sauvegarde corrompue : impossible de la charger.",
+       "Corrupted saved game: it cannot be loaded.")
+NH_STR(NH_STR_MENU_LOAD_VERSION,
+       "Cette sauvegarde vient d'une version plus récente du jeu.",
+       "This saved game comes from a newer version of the game.")
+NH_STR(NH_STR_MENU_NO_STORAGE,
+       "Aucun dossier de données trouvé : la partie ne pourra pas être sauvegardée.",
+       "No data folder found: the game cannot be saved.")
+NH_STR(NH_STR_OPT_TITLE, "OPTIONS", "OPTIONS")
+NH_STR(NH_STR_OPT_COLOR, "Couleurs : %s", "Colors: %s")
+NH_STR(NH_STR_OPT_ANIM, "Animations du texte : %s", "Text animations: %s")
+NH_STR(NH_STR_OPT_HUD, "Interface fixe (barres haut et bas) : %s", "Fixed interface (top and bottom bars): %s")
+NH_STR(NH_STR_OPT_BACK, "Retour", "Back")
+NH_STR(NH_STR_OPT_HUD_NOTE,
+       "L'interface fixe demande un terminal d'au moins 80x24 et s'applique au lancement de la partie.",
+       "The fixed interface needs a terminal of at least 80x24 and applies when the game starts.")
+
+/* ---- Sauvegarde (src/game/save.c, commande save) ---- */
+NH_STR(NH_STR_HELP_SAVE,
+       "Sauvegarder la partie (automatique après chaque commande)",
+       "Save the game (automatic after every command)")
+NH_STR(NH_STR_SAVE_OK, "Partie sauvegardée.", "Game saved.")
+NH_STR(NH_STR_SAVE_FAILED, "Impossible de sauvegarder la partie dans %s", "Could not save the game to %s")
+NH_STR(NH_STR_SAVE_UNAVAILABLE,
+       "Sauvegarde indisponible : aucun dossier de données.",
+       "Saving is unavailable: no data folder.")
+
+/* ---- Prologue (src/game/intro.c) ---- */
+NH_STR(NH_STR_INTRO_TITLE, "PROLOGUE", "PROLOGUE")
+NH_STR(NH_STR_INTRO_NARR_1,
+       "Neo-Tokyo, 2087. Le secteur 7 dort sous une pluie acide qui fait vibrer les néons.",
+       "Neo-Tokyo, 2087. Sector 7 sleeps under an acid rain that makes the neon signs hum.")
+NH_STR(NH_STR_INTRO_NARR_2,
+       "Dans un studio de dix mètres carrés, un vieux cyberdeck se rallume tout seul.",
+       "In a ten-square-meter studio, an old cyberdeck boots up on its own.")
+NH_STR(NH_STR_INTRO_NARR_3,
+       "À l'écran, une seule ligne : CANAL CRYPTÉ #7 - CONNEXION ENTRANTE.",
+       "On the screen, a single line: ENCRYPTED CHANNEL #7 - INCOMING CONNECTION.")
+NH_STR(NH_STR_INTRO_ECHO_1,
+       "Enfin. Je commençais à croire que tu ne te réveillerais jamais, rookie.",
+       "Finally. I was starting to think you'd never wake up, rookie.")
+NH_STR(NH_STR_INTRO_ECHO_2,
+       "Avant de te lâcher dans le réseau, il me faut un nom. Un handle. Pas ton vrai nom : jamais ton vrai nom.",
+       "Before I let you loose on the net, I need a name. A handle. Not your real name: never your real name.")
+NH_STR(NH_STR_INTRO_NAME_PROMPT,
+       "Votre handle (Entrée pour « %s ») : ",
+       "Your handle (Enter for \"%s\"): ")
+NH_STR(NH_STR_INTRO_ECHO_CONFIRM,
+       "« %s », donc. Je le grave dans le réseau ? [O/n] ",
+       "\"%s\", then. Shall I carve it into the net? [Y/n] ")
+NH_STR(NH_STR_INTRO_ECHO_RETRY,
+       "Alors reprenons. Comment tu t'appelles ?",
+       "Then let's try again. What do they call you?")
+NH_STR(NH_STR_INTRO_ECHO_NAMED,
+       "C'est gravé. %s... Le réseau s'en souviendra, ou pas si tu es doué.",
+       "It's done. %s... The net will remember it, or not if you're any good.")
+NH_STR(NH_STR_INTRO_ECHO_OFFER,
+       "Deux options : je te montre les ficelles, ou tu te débrouilles seul.",
+       "Two options: I show you the ropes, or you go it alone.")
+NH_STR(NH_STR_INTRO_CHOICE_TUTORIAL, "Montre-moi les ficelles (tutoriel)", "Show me the ropes (tutorial)")
+NH_STR(NH_STR_INTRO_CHOICE_SKIP, "Je me débrouille", "I'll manage")
+NH_STR(NH_STR_INTRO_CHOICE_PROMPT, "Votre choix (Entrée = 1) : ", "Your choice (Enter = 1): ")
+NH_STR(NH_STR_INTRO_ECHO_TUTORIAL,
+       "Bonne décision. Reste concentré et fais exactement ce que je te dis.",
+       "Good call. Stay focused and do exactly what I tell you.")
+NH_STR(NH_STR_INTRO_ECHO_SKIP,
+       "Comme tu veux. Ne viens pas pleurer quand l'alerte grimpera.",
+       "Suit yourself. Don't come crying when your alert level climbs.")
+
+/* ---- Tutoriel : la mission « Premiers pas » (src/game/tutorial.c) ---- */
+NH_STR(NH_STR_TUT_MISSION_TITLE, "Premiers Pas dans l'Ombre", "First Steps in the Shadows")
+NH_STR(NH_STR_TUT_LOG_TITLE, "=== MISSION EN COURS ===", "=== CURRENT MISSION ===")
+NH_STR(NH_STR_TUT_LOG_CONTACT, "Contact", "Contact")
+NH_STR(NH_STR_TUT_LOG_REWARD, "Récompense : %d ¢ et %d de réputation", "Reward: %d ¢ and %d reputation")
+NH_STR(NH_STR_TUT_STEP_DONE, "✔ Objectif accompli : %s", "✔ Objective complete: %s")
+NH_STR(NH_STR_TUT_REMINDER, "Concentre-toi, rookie. Ton objectif : %s", "Focus, rookie. Your objective: %s")
+NH_STR(NH_STR_TUT_RESUME,
+       "Content de te revoir, %s. On reprend là où on s'était arrêtés.",
+       "Good to see you again, %s. Let's pick up where we left off.")
+NH_STR(NH_STR_TUT_DONE_BANNER, "*** MISSION ACCOMPLIE : %s ***", "*** MISSION COMPLETE: %s ***")
+NH_STR(NH_STR_TUT_DONE_1,
+       "Pas mal du tout, %s. Tu tiens debout, et le réseau ne t'a pas encore avalé.",
+       "Not bad at all, %s. You're still standing, and the net hasn't swallowed you yet.")
+NH_STR(NH_STR_TUT_DONE_2,
+       "Voilà pour ton premier boulot. Continue à scanner : de nouveaux systèmes apparaîtront à mesure que tu montes en niveau.",
+       "That's for your first job. Keep scanning: new systems will show up as you level up.")
+NH_STR(NH_STR_TUT_DONE_3,
+       "Et méfie-toi de Nexus Corp. Ils préparent quelque chose de gros...",
+       "And watch out for Nexus Corp. They're planning something big...")
+NH_STR(NH_STR_TUT_REWARD_REP, "[+%d réputation]", "[+%d reputation]")
+
+NH_STR(NH_STR_TUT_OBJ_QUESTS, "Ouvrir le journal de mission (quests)", "Open the mission log (quests)")
+NH_STR(NH_STR_TUT_OBJ_HELP, "Consulter l'aide (help)", "Check the help (help)")
+NH_STR(NH_STR_TUT_OBJ_SCAN, "Scanner le réseau (scan)", "Scan the network (scan)")
+NH_STR(NH_STR_TUT_OBJ_STATUS, "Consulter votre fiche (status)", "Check your sheet (status)")
+NH_STR(NH_STR_TUT_OBJ_LEVELUP, "Atteindre le niveau 2 (scan)", "Reach level 2 (scan)")
+NH_STR(NH_STR_TUT_OBJ_BRUTEFORCE, "Pirater votre poste (bruteforce localhost)", "Hack your own machine (bruteforce localhost)")
+NH_STR(NH_STR_TUT_OBJ_LAYLOW, "Faire baisser l'alerte (laylow)", "Lower your alert (laylow)")
+
+NH_STR(NH_STR_TUT_SAY_QUESTS,
+       "Voici comment ça marche, rookie : tout se fait pas à pas. Tape 'quests' pour ouvrir ton journal de mission et voir ce qui t'attend.",
+       "Here's how it works, rookie: everything happens step by step. Type 'quests' to open your mission log and see what lies ahead.")
+NH_STR(NH_STR_TUT_SAY_HELP,
+       "Bien. Maintenant, apprends ce que ton deck sait faire : tape 'help'. Seules les commandes que tu maîtrises y figurent, la liste s'allongera avec ton niveau.",
+       "Good. Now learn what your deck can do: type 'help'. Only the commands you have mastered are listed, and the list grows as you level up.")
+NH_STR(NH_STR_TUT_SAY_SCAN,
+       "Un hacker observe avant d'agir. 'scan' cartographie les systèmes à ta portée. Lance-en un.",
+       "A hacker looks before acting. 'scan' maps the systems within your reach. Run one.")
+NH_STR(NH_STR_TUT_SAY_STATUS,
+       "Chaque action laisse une trace : c'est l'ALERTE. Tape 'status' pour voir ta fiche : niveau, expérience, crédits et alerte. Si l'alerte atteint 100, la sécurité te retrouve et la partie est perdue.",
+       "Every action leaves a trace: that's the ALERT. Type 'status' to see your sheet: level, experience, credits and alert. If the alert hits 100, security finds you and the game is lost.")
+NH_STR(NH_STR_TUT_SAY_LEVELUP,
+       "Un scan ne suffit pas à cartographier le réseau. Chaque nouveau scan t'apprend un peu moins que le précédent, mais te fait progresser. Refais 'scan' jusqu'au niveau 2 : de nouvelles commandes s'ouvriront à toi.",
+       "One scan won't map the network. Each new scan teaches you a little less than the last, but you still progress. Keep running 'scan' until level 2: new commands will open up.")
+NH_STR(NH_STR_TUT_SAY_BRUTEFORCE,
+       "Niveau 2 : 'bruteforce' est à toi. Entraîne-toi sur ton propre poste avec 'bruteforce localhost'. Ça peut échouer, alors réessaie : c'est le principe de la force brute, mais chaque échec fait grimper l'alerte.",
+       "Level 2: 'bruteforce' is yours. Practice on your own machine with 'bruteforce localhost'. It can fail, so try again: that's how brute force works, but every failure raises your alert.")
+NH_STR(NH_STR_TUT_SAY_LAYLOW,
+       "Joli. Mais tu as laissé des traces. 'laylow' ouvre un menu pour faire redescendre l'alerte : choisis une méthode et applique-la (attendre est gratuit). Apprends à t'en servir avant d'en avoir besoin.",
+       "Nice. But you left traces. 'laylow' opens a menu to bring your alert back down: pick a method and apply it (waiting is free). Learn it before you need it.")

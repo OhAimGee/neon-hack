@@ -106,6 +106,84 @@ static void test_read_line_truncates_on_char_boundary(void)
     fclose(fp);
 }
 
+static void test_clean_name(void)
+{
+    char out[64];
+
+    CHECK_INT(nh_clean_name("Case", out, sizeof out, NH_NAME_MAX_CHARS), 4);
+    CHECK_STR(out, "Case");
+
+    /* rien de présentable : longueur 0, sortie vide (l'appelant prend « Case ») */
+    CHECK_INT(nh_clean_name("", out, sizeof out, NH_NAME_MAX_CHARS), 0);
+    CHECK_STR(out, "");
+    CHECK_INT(nh_clean_name("   \t  ", out, sizeof out, NH_NAME_MAX_CHARS), 0);
+    CHECK_INT(nh_clean_name("\x01\x02\x7f", out, sizeof out, NH_NAME_MAX_CHARS), 0);
+    CHECK_INT(nh_clean_name(NULL, out, sizeof out, NH_NAME_MAX_CHARS), 0);
+    CHECK_STR(out, "");
+
+    /* espaces : bords supprimés, répétitions réduites, tabulation = espace */
+    nh_clean_name("  Jean \t  Luc  ", out, sizeof out, NH_NAME_MAX_CHARS);
+    CHECK_STR(out, "Jean Luc");
+
+    /* contrôles C0/DEL/C1 supprimés : jamais d'échappement ANSI dans un nom */
+    nh_clean_name("\x1b[31mRed\x07\x7f", out, sizeof out, NH_NAME_MAX_CHARS);
+    CHECK_STR(out, "[31mRed");
+    nh_clean_name("A\xc2\x9b" "31mB", out, sizeof out, NH_NAME_MAX_CHARS); /* CSI codé sur un caractère C1 */
+    CHECK_STR(out, "A31mB");
+
+    /* UTF-8 valide conservé, octets invalides écartés */
+    nh_clean_name("Zoë ☃", out, sizeof out, NH_NAME_MAX_CHARS);
+    CHECK_STR(out, "Zoë ☃");
+    nh_clean_name("a\xff" "b\xc3" "c", out, sizeof out, NH_NAME_MAX_CHARS);
+    CHECK_STR(out, "abc");
+
+    /* limite en CARACTÈRES, pas en octets, sans couper un caractère en deux */
+    CHECK_INT(nh_clean_name("abcdefghij", out, sizeof out, 5), 5);
+    CHECK_STR(out, "abcde");
+    CHECK_INT(nh_clean_name("ééééééé", out, sizeof out, 3), 6);
+    CHECK_STR(out, "ééé");
+
+    /* la limite compte les espaces conservés, et ne laisse pas d'espace final */
+    nh_clean_name("ab cd", out, sizeof out, 3);
+    CHECK_STR(out, "ab");
+    nh_clean_name("ab cd", out, sizeof out, 4);
+    CHECK_STR(out, "ab c");
+
+    /* tampon de sortie trop petit : tronqué proprement, toujours terminé */
+    char tiny[5];
+    CHECK_INT(nh_clean_name("abcdefgh", tiny, sizeof tiny, 20), 4);
+    CHECK_STR(tiny, "abcd");
+    char tiny2[4];
+    nh_clean_name("aéé", tiny2, sizeof tiny2, 20); /* 3 octets utiles : « a » et un seul « é » */
+    CHECK_STR(tiny2, "aé");
+    CHECK_INT(nh_clean_name("x", tiny2, 0, 20), 0);
+}
+
+static void test_parse_yes_no(void)
+{
+    CHECK(nh_parse_yes_no("o", false));
+    CHECK(nh_parse_yes_no("O", false));
+    CHECK(nh_parse_yes_no("oui", false));
+    CHECK(nh_parse_yes_no("  OUI  ", false));
+    CHECK(nh_parse_yes_no("y", false));
+    CHECK(nh_parse_yes_no("Yes", false));
+
+    CHECK(!nh_parse_yes_no("n", true));
+    CHECK(!nh_parse_yes_no("N", true));
+    CHECK(!nh_parse_yes_no("non", true));
+    CHECK(!nh_parse_yes_no(" No ", true));
+
+    /* vide ou incompréhensible : la valeur par défaut */
+    CHECK(nh_parse_yes_no("", true));
+    CHECK(!nh_parse_yes_no("", false));
+    CHECK(nh_parse_yes_no("   ", true));
+    CHECK(nh_parse_yes_no("peut-être", true));
+    CHECK(!nh_parse_yes_no("peut-être", false));
+    CHECK(!nh_parse_yes_no("ouiii", false));
+    CHECK(nh_parse_yes_no(NULL, true));
+    CHECK(!nh_parse_yes_no("un très long texte sans rapport", false));
+}
+
 int main(void)
 {
     test_split();
@@ -113,5 +191,7 @@ int main(void)
     test_nocase();
     test_trim_incomplete();
     test_read_line_truncates_on_char_boundary();
+    test_clean_name();
+    test_parse_yes_no();
     return NH_TEST_REPORT("parse");
 }

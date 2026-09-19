@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 
+#include "../core/storage.h"
 #include "advanced_hacking.h"
 #include "alert.h"
 #include "contacts.h"
@@ -37,11 +38,14 @@ typedef struct GameState
     QuestSystem quests;
     ContactSystem contacts;
     AdvancedHackingSystem advanced;
+
+    /* Tutoriel et sauvegarde */
+    TutorialState tutorial;
+    char save_path[NH_PATH_MAX + 32]; /* fichier de sauvegarde ; "" = aucune sauvegarde (tests, pas de dossier) */
 } GameState;
 
 /* Cycle de vie */
-void init_game(GameState *gs); /* état initial, sans aucune entrée/sortie */
-void display_intro(GameState *gs); /* présentation + demande du nom du hacker */
+void init_game(GameState *gs); /* état initial (héros « Case », sans tutoriel), sans aucune entrée/sortie */
 void game_loop(GameState *gs);
 
 /* Progression */

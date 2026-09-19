@@ -9,6 +9,9 @@
 #define MAX_INPUT_LENGTH 100
 #define MAX_COMMANDS 12
 
+// Nom du héros tant que le joueur n'en a pas choisi un autre (prologue, voir intro.c)
+#define NH_DEFAULT_NAME "Case"
+
 // Énumérations
 typedef enum
 {
@@ -91,6 +94,13 @@ typedef struct
     int backdoors_active;
     time_t last_hack_time;
 } Player;
+
+// Avancement de la mission-tutoriel (voir tutorial.c)
+typedef struct
+{
+    int step;  // étape en cours (NhTutStep) ; 0 = pas de tutoriel en cours
+    bool done; // terminé ou passé : il ne reviendra plus
+} TutorialState;
 
 typedef struct
 {

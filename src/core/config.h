@@ -25,8 +25,24 @@ typedef struct
     bool fast;     /* pas de pauses d'animation */
     bool color;    /* couleurs ANSI (nouvelle UI) */
     bool hud;      /* interface fixe (barres haut/bas) si le terminal le permet */
-    bool new_game; /* ignorer une éventuelle sauvegarde */
+    bool new_game; /* --new : nouvelle partie tout de suite, sans passer par le menu */
+    char data_dir[512]; /* --data-dir : dossier des sauvegardes et réglages ("" = dossier par défaut) */
+
+    /* Vrai quand l'option vient de la ligne de commande : elle l'emporte alors sur les réglages enregistrés. */
+    bool lang_set;
+    bool color_set;
+    bool fast_set;
+    bool hud_set;
 } NhConfig;
+
+/* Réglages qui survivent d'une session à l'autre (fichier settings.cfg, voir settings.h). */
+typedef struct
+{
+    NhLang lang;
+    bool color;
+    bool fast; /* animations désactivées */
+    bool hud;
+} NhSettings;
 
 typedef enum
 {
@@ -44,6 +60,16 @@ void nh_config_defaults(NhConfig *cfg, const char *env_lang, const char *env_no_
 /* Analyse argv. Écrit l'aide / la version sur `out` quand demandées. */
 NhCfgResult nh_config_parse(int argc, char **argv, NhConfig *cfg,
                             char *err, size_t err_size, FILE *out);
+
+/* Les réglages actuels de `cfg`, pour les enregistrer ou les modifier. */
+void nh_settings_from_config(NhSettings *s, const NhConfig *cfg);
+
+/*
+ * Applique les réglages enregistrés à `cfg`, sauf ce que la ligne de commande a fixé.
+ * `env_no_color` : la variable NO_COLOR est définie ; elle éteint les couleurs même si un réglage
+ * enregistré les allume (seul --color la contredit).
+ */
+void nh_config_apply_settings(NhConfig *cfg, const NhSettings *s, bool env_no_color);
 
 void nh_print_usage(FILE *out);
 const char *nh_version(void);

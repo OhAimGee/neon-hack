@@ -1,9 +1,9 @@
 /*
  * État de partie, introduction, boucle de jeu et progression.
  *
- * init_game / display_intro viennent
- * du code d'origine (neon_hack.c v2.087), adaptés à GameState. La boucle de
- * jeu et le dispatch des commandes sont neufs (voir commands.c).
+ * init_game vient du code d'origine (neon_hack.c v2.087), adapté à GameState. La boucle de
+ * jeu et le dispatch des commandes sont neufs (voir commands.c) ; l'introduction est dans
+ * intro.c, le menu dans menu.c, la sauvegarde dans save.c.
  */
 #include "game.h"
 #include "world.h"
@@ -14,6 +14,7 @@
 #include "../ui/term.h"
 #include "commands.h"
 #include "legacy_colors.h"
+#include "save.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -53,7 +54,7 @@ void init_game(GameState *gs)
     memset(gs, 0, sizeof(*gs));
     gs->running = true;
 
-    strcpy(gs->player.name, "Anonymous");
+    strcpy(gs->player.name, NH_DEFAULT_NAME);
     gs->player.level = LEVEL_NOVICE;
     gs->player.experience = 0;
     gs->player.game_over = false;
@@ -93,33 +94,6 @@ void init_game(GameState *gs)
 
 }
 
-void display_intro(GameState *gs)
-{
-    printf("\n");
-    print_colored_text("╔══════════════════════════════════════════════════════════════════╗\n", COLOR_CYAN);
-    print_colored_text("║                           NEON HACK                             ║\n", COLOR_BRIGHT_CYAN);
-    print_colored_text("║                    Terminal de Hacking v2.087                   ║\n", COLOR_CYAN);
-    print_colored_text("╚══════════════════════════════════════════════════════════════════╝\n", COLOR_CYAN);
-
-    print_typing_effect("\n=== NEON HACK - ANNÉE 2087 ===\n", 50);
-    print_typing_effect("Neo-Tokyo brille sous les néons, mais l'obscurité règne dans les réseaux...\n", 30);
-    print_typing_effect("Vous êtes un hacker novice avec un vieux terminal et de grands rêves.\n", 30);
-    print_typing_effect("Votre mission : infiltrer Nexus Corp et découvrir leurs secrets.\n", 30);
-
-    printf("\n");
-    print_colored_text("Entrez votre nom de hacker : ", COLOR_YELLOW);
-    nh_read_line(gs->player.name, MAX_NAME_LENGTH);
-    if (gs->player.name[0] == '\0')
-    {
-        strcpy(gs->player.name, "Anonymous");
-    }
-
-    printf("\nBienvenue dans l'ombre, %s%s%s.\n", COLOR_BRIGHT_CYAN, gs->player.name, COLOR_RESET);
-    printf("\n");
-    print_colored_text("Tapez 'help' pour voir les commandes disponibles.\n", COLOR_CYAN);
-    printf("\n");
-}
-
 static void init_virus_library(GameState *gs)
 {
     // Initialisation de la bibliothèque de virus
@@ -147,6 +121,7 @@ static void init_virus_library(GameState *gs)
 void game_loop(GameState *gs)
 {
     char input[MAX_INPUT_LENGTH];
+    bool save_warned = false;
 
     while (gs->running && !gs->player.game_over)
     {
@@ -167,6 +142,14 @@ void game_loop(GameState *gs)
             printf("\n%s%s%s\n", nh_c(NH_C_RED), nh_tr(NH_STR_GAME_OVER_TITLE), nh_c(NH_C_RESET));
             printf("%s\n", nh_tr(NH_STR_GAME_OVER_DETECTED));
             gs->player.game_over = true;
+        }
+        else if (gs->running && gs->save_path[0] != '\0' && nh_save_game(gs) != NH_SAVE_OK && !save_warned)
+        {
+            /* Sauvegarde automatique après chaque commande ; une seule alerte si elle échoue. Une
+             * partie perdue n'est pas enregistrée : « Continuer » reprend la dernière sauvegarde. */
+            printf(nh_tr(NH_STR_SAVE_FAILED), gs->save_path);
+            printf("\n");
+            save_warned = true;
         }
     }
 }

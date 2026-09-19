@@ -29,6 +29,7 @@ typedef struct
     bool vpn_active;
     bool proxy_active;
     int ghost_protocols_available;
+    int reductions_done; /* nombre de fois où une méthode de réduction a été appliquée (le tutoriel s'y fie) */
 } AlertSystem;
 
 typedef enum
