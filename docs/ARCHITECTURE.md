@@ -24,13 +24,15 @@ src/game/          logique de jeu (GameState unique, plus aucune variable global
   tutorial.[ch]      tutoriel : machine à états branchée sur nh_dispatch, mission « Premiers Pas dans l'Ombre »
   save.[ch]          sauvegarde et chargement de la partie (format texte clé=valeur, versionné)
   cmd_hacking.c      commandes de hacking classiques (scan, bruteforce, decrypt, backdoor…)
+  complete.[ch]      ce que TAB propose à l'invite : commandes disponibles maintenant, puis l'argument selon NhCommand.arg
+  shop_view.[ch]     vitrine de la boutique : composition pure (largeur, budget de lignes), 2 colonnes quand l'écran le permet
   cmd_world.c        boutique, contacts, messages, laylow (la commande `quests` est dans quest_system.c)
   cmd_advanced.c     hacking avancé (advhack, aiassist, neuralsync, temporalhack…)
-  shop, contacts, advanced_hacking   modules d'origine (à porter, phase 3)
+  shop, contacts, advanced_hacking   modules d'origine (à porter, phase 3) ; l'affichage de shop est déjà dans shop_view
 src/core/          socle neuf, testé, sans état de jeu
   platform.[ch]      pauses, mode rapide, console (Windows : UTF-8 + ANSI), détection du terminal
-  io.[ch]            lecture de lignes et d'entiers sûre, EOF géré
-  parse.[ch]         découpe « commande argument », comparaison sans casse
+  io.[ch]            lecture de lignes et d'entiers sûre, EOF géré ; nh_io_uses_stdin() dit si l'entrée est la vraie
+  parse.[ch]         découpe « commande argument », comparaison et préfixe sans casse
   utf8.[ch]          coupe propre d'une chaîne UTF-8 tronquée
   rng.[ch]           générateur PCG32 reproductible (graine, tirages sans biais)
   config.[ch]        options de ligne de commande, variables d'environnement, application des réglages enregistrés
@@ -39,15 +41,18 @@ src/core/          socle neuf, testé, sans état de jeu
   settings.[ch]      réglages du joueur (langue, couleurs, animations, HUD) dans settings.cfg
 src/ui/term.[ch]   couleurs ANSI, largeur d'affichage UTF-8, remplissage de colonnes, jauge, troncature
 src/ui/hud.[ch]    interface fixe : barres haut/bas + zone de texte défilante (région de défilement ANSI)
+src/ui/lineedit.[ch]   saisie d'une ligne : édition, historique, complétion par TAB (cœur pur + mode brut termios)
 src/i18n/          textes français/anglais (strings.def, i18n.[ch])
 tests/unit/        tests unitaires (un exécutable par fichier ; test_commands.c teste la couche jeu ; nh_feed.h fournit la saisie,
                    nh_tmp.h des dossiers temporaires : les tests ne touchent jamais aux vraies sauvegardes)
 tests/e2e/run.sh   tests de bout en bout du jeu compilé (sorties redirigées, dossier de données jetable par exécution)
-tests/e2e/pty_hud.py   tests de l'interface fixe, du menu et du tutoriel dans un vrai pseudo-terminal + mini-émulateur d'écran
+tests/e2e/pty_hud.py   tests de l'interface fixe, du menu, du tutoriel, de la boutique et de la saisie (TAB, édition, historique)
+                   dans un vrai pseudo-terminal + mini-émulateur d'écran
 ```
 
 Le code neuf (`src/core`, `src/ui`, `src/i18n`, `src/main.c`, `src/game/commands.c`, `src/game/alert.c`, `src/game/progression.c`, `src/game/world.c`,
-`src/game/save.c`, `src/game/tutorial.c`, `src/game/intro.c`, `src/game/menu.c`, `src/game/events.c`, `src/game/quest_system.c`)
+`src/game/save.c`, `src/game/tutorial.c`, `src/game/intro.c`, `src/game/menu.c`, `src/game/events.c`, `src/game/quest_system.c`,
+`src/game/shop_view.c`, `src/game/complete.c`)
 est compilé avec `-Wpedantic -Wshadow -Wconversion -Werror`. Le reste de `src/game/`
 (code d'origine déplacé) ne l'est pas : il porte encore ses avertissements et sera
 remplacé, pas corrigé.
@@ -67,7 +72,9 @@ remplacé, pas corrigé.
 - **`nh_dispatch()`** renvoie `NH_DISPATCH_OK / FAILED / EMPTY / UNKNOWN / LOCKED` ;
   la casse et les espaces autour de la ligne sont ignorés.
 - Ajouter une commande = une ligne dans la table + une clé `HELP_<nom>` dans
-  `strings.def` (sans elle, le projet ne compile pas).
+  `strings.def` (sans elle, le projet ne compile pas). Le dernier champ, `arg` (`NhArgKind` :
+  `NH_ARG_NONE`, `_SYSTEM`, `_CONTACT`, `_MESSAGE`), dit ce que TAB doit proposer après le nom de la
+  commande (voir « Saisie de ligne et complétion »).
 - **Alerte** (`alert.c`) : une seule valeur, `gs->alert.level`, de 0 à 100 (l'ancien code en avait
   trois qui s'écrasaient). Les fonctions `nh_alert_add/reduce/decay` ne font ni affichage ni tirage
   aléatoire ; `nh_alert_raise()` ajoute *et* annonce. Le temps passe à chaque action de hacking
@@ -159,6 +166,29 @@ remplacé, pas corrigé.
     campagne des quatre premières quêtes. `tests/e2e/run.sh` la rejoue avec le vrai binaire à partir de sauvegardes
     fabriquées (`craft_save`) pour ne pas dépendre du hasard des piratages.
 
+## Boutique : la vitrine
+
+L'ancien affichage de la boutique faisait ≈ 85 lignes (une carte de 7 lignes par objet) dans une zone de texte de
+22 lignes : le début du catalogue sortait par le haut, et le joueur devait remonter dans l'historique du terminal, ce
+qui emporte aussi les barres du HUD (elles font partie de l'écran normal, seul le texte défile dans la région). Le
+catalogue doit maintenant tenir **entièrement** dans la zone de texte.
+
+- **`shop_view.c` est pur** : `nh_shop_compose(out, size, shop, credits, level, cols, max_lines)` écrit dans un tampon et ne
+  lit rien sur le terminal ; `nh_shop_show()` n'est que la colle (largeur et hauteur du terminal, moins les deux barres
+  quand le HUD est actif, moins la ligne de la question posée juste après). Sortie redirigée : 80 colonnes, sans limite.
+- **Trois mises en page**, la plus confortable qui tient étant retenue : cartes aérées (bandeau, mot de bienvenue, une ligne
+  vide entre les rangées : 28 lignes pour 10 objets sur deux colonnes), cartes serrées (20 lignes), puis liste d'une ligne par
+  objet (13 lignes). Une carte fait 3 lignes. À partir de 71 colonnes utiles (largeur plafonnée à 100), les objets se
+  répartissent sur **deux colonnes**, dans l'ordre de lecture par colonne (1 à 5, puis 6 à 10). À 80×24 avec le HUD (21 lignes
+  disponibles) : deux colonnes de cartes serrées.
+- Une case : `[NN] nom … prix` / résumé / `type · état`. L'état suit l'ordre de `buy_item()` (épuisé, niveau, crédits) pour
+  que l'écran n'annonce jamais ce que l'achat refuserait autrement. Aucune ligne ne dépasse `cols - 1` colonnes (on n'écrit
+  pas dans la dernière colonne) ; les textes trop longs sont coupés par `…` sans casser un caractère UTF-8.
+- Les textes (titre, états, 10 résumés) sont dans `strings.def` (`SHOP_*`). `ShopItem.description` (texte français en dur)
+  a disparu. `buy_item`/`use_item` ne sont pas touchés : leurs messages et 9 des 10 effets restent à faire en 3.4.
+- `test_shop_view.c` balaie les largeurs et hauteurs (chaque ligne tient, chaque objet est présent, FR et EN, couleurs ou
+  non) ; `pty_hud.py` vérifie sur un vrai pseudo-terminal que tous les objets sont à l'écran et que les barres n'ont pas bougé.
+
 ## Démarrage, menu, prologue et tutoriel
 
 Ordre de `main()` : valeurs par défaut d'après l'environnement → options de la ligne de commande →
@@ -242,13 +272,56 @@ seul entre les barres, sans bibliothèque (pas de ncurses). Le module ne connaî
   SIGINT/SIGTERM) rétablit la région de défilement, sinon le terminal resterait figé.
 - **`clear`** n'efface que la zone de texte. Au démarrage le contenu déjà affiché est repoussé dans
   l'historique du terminal plutôt qu'effacé.
+- **Défilement de l'historique** : les barres appartiennent à l'écran normal du terminal ; remonter avec la molette ou
+  Maj+PgUp les fait défiler avec le reste (rien n'est faisable côté jeu). D'où la règle : *un écran affiché d'un seul tenant
+  doit tenir dans la zone de texte* (la vitrine de la boutique calcule son budget avec `nh_hud_active()` et
+  `nh_term_size()`), pour que le joueur n'ait pas besoin de remonter le lire.
 - **Limite connue** : un panneau *à droite* du texte n'est pas possible avec cette technique (la
   région de défilement occupe toute la largeur) ; il demanderait un historique de texte tenu par le
   jeu (option B du plan). Le code Windows (`nh_term_size`) n'a jamais été compilé.
 
+## Saisie de ligne et complétion (TAB)
+
+`src/ui/lineedit.[ch]` remplace la lecture de la ligne de commande par une saisie « comme dans un vrai terminal » :
+flèches gauche/droite, Début/Fin, Suppr, Ctrl+A/E/B/F, Ctrl+U/K/W, historique (↑/↓, Ctrl+P/N) et complétion par TAB à la
+manière de bash. Deux couches :
+
+- **Le cœur est pur** (`nh_le_*`) : il reçoit des octets (`nh_le_feed`), tient la ligne à jour et *écrit dans un tampon* ce
+  qu'il faut afficher. Aucune entrée-sortie : `test_lineedit.c` le joue octet par octet, sans terminal.
+- **La colle** (`nh_lineedit_read`) passe le terminal en mode brut pendant *la seule durée d'une lecture* (`ICANON`, `ECHO`
+  et `IEXTEN` coupés, `ISIG` gardé : Ctrl+C et Ctrl+Z gardent leur effet), lit avec `read`, écrit avec `write`, et **rétablit
+  toujours le terminal** (fin normale, Ctrl+D, et gestionnaires SIGINT/SIGTERM/SIGHUP qui restaurent puis passent la main au
+  gestionnaire précédent, dont celui du HUD). Un ESC isolé est distingué d'une séquence de touche par un délai de 40 ms.
+- **Repli** : si l'entrée ou la sortie n'est pas un terminal, si `TERM=dumb`, si l'entrée est un flux de test
+  (`nh_io_uses_stdin()` faux) ou sous Windows, `nh_lineedit_read` appelle `nh_read_line` : rien ne change pour les tubes, les
+  scripts et les tests e2e (un TAB y est un caractère comme un autre). C'est la seule exception à la règle « pas de lecture
+  directe de `stdin` » ci-dessous.
+- **Affichage sans jamais remonter le curseur** : la ligne tient toujours sur *une* rangée ; trop longue, la fenêtre visible
+  défile pour garder le curseur en vue. Un redessin est `\r`, avance au-delà du prompt, la partie visible, `ESC[K`, puis
+  repositionnement ; il ne réécrit pas le prompt, n'écrit jamais dans la dernière colonne (pas de retour automatique) et
+  compte en largeur d'affichage (UTF-8, caractères larges). Pas d'« effacer jusqu'en bas » : il emporterait la barre du bas
+  du HUD. Le prompt est d'abord ramené en début de rangée (astuce `PROMPT_SP` de zsh : `cols-1` espaces puis `\r`), car des
+  messages comme `[ALERTE +1]` laissent le curseur en milieu de ligne.
+- **TAB** : un seul candidat → il est complété (avec une espace après un nom de commande) ; plusieurs → on avance jusqu'au plus
+  long préfixe commun ; sans progression possible, une sonnerie, puis au TAB suivant la liste des candidats en colonnes
+  (comme `ls`), le prompt étant ré-affiché en dessous. La casse tapée est ignorée, le mot inséré prend celle du candidat.
+- **Les candidats viennent du jeu** (`complete.c`, `nh_complete_line`), pas du module d'édition : au premier mot, les commandes
+  disponibles *maintenant* — mêmes règles que `help` et que la barre du bas (niveau, déblocage, pas les commandes cachées) ;
+  un alias n'est proposé que si aucun nom officiel ne convient. À l'argument, selon `NhCommand.arg` : systèmes découverts par
+  `scan` (`bruteforce`, `traceroute`…), contacts débloqués (`contact`), numéros des messages reçus (`read`). L'argument est
+  *tout* le reste de la ligne (un contact peut avoir une espace dans son nom). Le joueur ne se voit jamais proposer ce qu'il
+  ne peut pas utiliser, ni découvre par TAB ce qu'il n'a pas encore trouvé.
+- **Historique** : `NH_LE_HISTORY` lignes (32), propre à la session, jamais sauvegardé ; les lignes vides et les doublons
+  consécutifs sont ignorés ; la ligne en cours de frappe est mise de côté pendant qu'on le parcourt.
+- **Ajouter une commande avec argument** : renseigner `arg` dans sa ligne de `k_commands` ; un nouveau genre d'argument =
+  une valeur de `NhArgKind` et un `case` dans `complete_argument()` (le compilateur signale l'oubli).
+- Les questions du menu, du prologue et de la boutique restent lues par `nh_read_line` : seule l'invite de la boucle de jeu
+  est éditable.
+
 ## Règles du socle
 
-- **Aucune lecture directe de `stdin`** dans le nouveau code : tout passe par `io.c`.
+- **Aucune lecture directe de `stdin`** dans le nouveau code : tout passe par `io.c` (seule exception : le mode brut de
+  `lineedit.c`, qui n'est utilisé que sur un vrai terminal et retombe sur `io.c` sinon).
   Une entrée fermée (EOF) est un statut à traiter, jamais une boucle infinie.
 - **Aucune pause directe** (`sleep`, `usleep`) : `nh_sleep_ms()` respecte `--fast` et
   se désactive seul quand la sortie n'est pas un terminal.

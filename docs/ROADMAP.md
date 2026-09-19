@@ -18,7 +18,8 @@ binaires Linux, macOS et Windows.
       menu + prologue + tutoriel + sauvegarde + réglages
 - [ ] **Phase 3** — porter les modules d'origine
   - [x] 3.1 bus d'événements · [x] 3.2 moteur de quêtes · [ ] 3.3 contacts et messages
-  - [ ] 3.4 boutique et économie · [ ] 3.5 hacking avancé et commandes, tout le code en règles strictes
+  - [ ] 3.4 boutique et économie (l'*affichage* est fait, voir « Hors lot ») · [ ] 3.5 hacking avancé et commandes, tout le code en règles strictes
+  - [x] Hors lot : vitrine de la boutique lisible (2 colonnes) et saisie avec complétion par TAB
 - [ ] **Phase 4** — contenu narratif (quêtes 5 à 9, épilogue, 5 contacts, fin)
 - [ ] **Phase 5** — équilibrage par simulation
 - [ ] **Phase 6** — confort de jeu
@@ -87,6 +88,21 @@ au lieu de `strcpy` dans des `char[]` : le texte suit la langue, il n'y a rien �
 
 *Fin de phase* : `make test` et `make asan` verts ; plus aucun littéral français accentué dans `src/game` hors `strings.def`
 (un test le vérifie) ; sauvegarde relue à l'identique à chaque lot.
+
+**Hors lot (fait après 3.2, à la demande du propriétaire du projet)** — deux défauts d'usage constatés en jouant :
+
+- **Vitrine de la boutique** (`shop_view.[ch]`, strict) : l'ancien affichage (≈ 85 lignes) débordait de la zone de texte du HUD,
+  le début du catalogue sortait par le haut et il fallait remonter dans l'historique du terminal (ce qui déplace aussi les
+  barres). Le catalogue tient maintenant en entier, sur 2 colonnes dès 72 colonnes de terminal, en trois mises en page selon la place. Les
+  textes de la boutique sont dans `strings.def` (FR+EN) et `ShopItem.description` a disparu. C'est la partie *affichage* de 3.4 ;
+  restent les messages de `buy_item`/`use_item` (encore en français en dur) et les 9 effets.
+- **Saisie avec complétion par TAB** (`ui/lineedit.[ch]` et `game/complete.[ch]`, stricts) : édition de la ligne, historique et
+  TAB « comme bash » à l'invite de commandes ; les candidats sont les commandes disponibles maintenant, puis systèmes découverts,
+  contacts débloqués ou numéros de messages selon `NhCommand.arg`. Sans terminal (tubes, tests, Windows), retour à `nh_read_line`.
+  Ajouter une commande à argument = renseigner son `arg` dans `k_commands`. Les questions du menu, du prologue et de la boutique
+  restent en lecture simple.
+- Suites possibles, non planifiées : complétion des noms d'objets de la boutique, Ctrl+R (recherche dans l'historique),
+  historique enregistré entre les sessions, saisie éditable sous Windows (`ReadConsoleInput`, phase 8).
 
 ## Phase 4 — Contenu narratif (campagne complète)
 
