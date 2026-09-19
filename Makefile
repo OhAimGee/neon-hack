@@ -33,7 +33,7 @@ CORE_OBJ := $(CORE_SRC:%.c=$(BUILD)/obj/%.o)
 TEST_BIN := $(TEST_SRC:tests/unit/%.c=$(BUILD)/tests/%)
 
 # Fichiers du dossier game/ déjà écrits au nouveau standard
-STRICT_OBJ := $(CORE_OBJ) $(MAIN_OBJ) $(BUILD)/obj/src/game/commands.o $(BUILD)/obj/src/game/alert.o
+STRICT_OBJ := $(CORE_OBJ) $(MAIN_OBJ) $(BUILD)/obj/src/game/commands.o $(BUILD)/obj/src/game/alert.o $(BUILD)/obj/src/game/progression.o
 
 all: $(BIN)
 

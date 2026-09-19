@@ -1,7 +1,7 @@
 /*
  * État de partie, introduction, boucle de jeu et progression.
  *
- * init_game / display_intro / gain_experience viennent
+ * init_game / display_intro viennent
  * du code d'origine (neon_hack.c v2.087), adaptés à GameState. La boucle de
  * jeu et le dispatch des commandes sont neufs (voir commands.c).
  */
@@ -180,57 +180,6 @@ void display_intro(GameState *gs)
     printf("\n");
     print_colored_text("Tapez 'help' pour voir les commandes disponibles.\n", COLOR_CYAN);
     printf("\n");
-}
-
-void gain_experience(GameState *gs, int exp)
-{
-    gs->player.experience += exp;
-    printf("%s[+%d EXP]%s ", COLOR_GREEN, exp, COLOR_RESET);
-
-    // Système de progression plus équilibré
-    int required_exp = gs->player.level * 25; // Réduit de 100 à 25
-    if (gs->player.experience >= required_exp)
-    {
-        gs->player.level++;
-        print_colored_text("\n*** NIVEAU SUPÉRIEUR ! ***\n", COLOR_BRIGHT_GREEN);
-        printf("Vous êtes maintenant niveau %d !\n", gs->player.level);
-
-        // Déblocage des commandes par niveau
-        if (gs->player.level == LEVEL_APPRENTICE)
-        {
-            gs->player.commands_unlocked[CMD_BRUTEFORCE] = true;
-            printf("Nouvelle commande débloquée: %sbruteforce%s\n", COLOR_YELLOW, COLOR_RESET);
-        }
-        else if (gs->player.level == LEVEL_HACKER)
-        {
-            gs->player.commands_unlocked[CMD_DECRYPT] = true;
-            gs->player.commands_unlocked[CMD_BACKDOOR] = true;
-            printf("Nouvelles commandes débloquées: %sdecrypt, backdoor%s\n", COLOR_YELLOW, COLOR_RESET);
-            gs->player.virus_library_size = 1; // Accès aux virus de base
-        }
-        else if (gs->player.level == LEVEL_EXPERT)
-        {
-            gs->player.commands_unlocked[CMD_EXPLOIT] = true;
-            gs->player.commands_unlocked[CMD_TRACE_ROUTE] = true;
-            gs->player.commands_unlocked[CMD_UPLOAD_VIRUS] = true;
-            printf("Nouvelles commandes débloquées: %sexploit, traceroute, uploadvirus%s\n", COLOR_YELLOW, COLOR_RESET);
-            gs->player.virus_library_size = 2; // Plus de virus disponibles
-            gs->player.stealth_rating += 2;    // Amélioration furtivité
-        }
-        else if (gs->player.level == LEVEL_MASTER)
-        {
-            gs->player.commands_unlocked[CMD_AI_HACK] = true;
-            gs->player.commands_unlocked[CMD_QUANTUM_DECRYPT] = true;
-            printf("Nouvelles commandes MAÎTRE débloquées: %saihack, quantumdecrypt%s\n", COLOR_BRIGHT_GREEN, COLOR_RESET);
-            gs->player.has_ai_assistant = true;
-            gs->player.has_quantum_computer = true;
-            gs->player.virus_library_size = 3; // Arsenal complet
-            gs->player.stealth_rating += 3;    // Furtivité maximale
-            gs->player.credits += 5000;        // Bonus crédits maître
-            printf("FÉLICITATIONS ! Vous avez atteint le niveau MAÎTRE !\n");
-            printf("Équipement débloqué: IA Assistante + Ordinateur Quantique\n");
-        }
-    }
 }
 
 static void init_virus_library(GameState *gs)

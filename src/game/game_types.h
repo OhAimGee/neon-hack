@@ -16,7 +16,8 @@ typedef enum
     LEVEL_APPRENTICE = 2,
     LEVEL_HACKER = 3,
     LEVEL_EXPERT = 4,
-    LEVEL_MASTER = 5
+    LEVEL_MASTER = 5,
+    LEVEL_LEGEND = 6
 } HackerLevel;
 
 typedef enum
@@ -75,6 +76,8 @@ typedef struct
     char name[MAX_NAME_LENGTH];
     HackerLevel level;
     int experience;
+    int scans_done;      // scans déjà comptés pour l'expérience (voir progression.c)
+    unsigned milestones; // récompenses uniques déjà obtenues (bits NhMilestone)
     int credits;
     int reputation;
     int stealth_rating;

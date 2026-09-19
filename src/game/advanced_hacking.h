@@ -136,6 +136,7 @@ typedef struct
     int player_hacking_level;
     int neural_interface_sync;
     bool god_mode_unlocked;
+    int pending_xp; // expérience gagnée, à verser via nh_grant_xp() par l'appelant (cmd_advanced.c)
 } AdvancedHackingSystem;
 
 // Prototypes des fonctions

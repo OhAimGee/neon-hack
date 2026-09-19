@@ -46,7 +46,6 @@ void display_intro(GameState *gs); /* présentation + demande du nom du hacker *
 void game_loop(GameState *gs);
 
 /* Progression */
-void gain_experience(GameState *gs, int exp);
 
 /* Affichage (couleurs d'origine) */
 void print_colored_text(const char *text, const char *color);

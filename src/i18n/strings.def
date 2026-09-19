@@ -226,3 +226,28 @@ NH_STR(NH_STR_HUD_LEVEL, "Niv", "Lvl")
 NH_STR(NH_STR_HUD_ALERT, "ALERTE", "ALERT")
 NH_STR(NH_STR_HUD_STEALTH, "FURTIF", "STEALTH")
 NH_STR(NH_STR_HUD_COMMANDS, "Commandes :", "Commands:")
+
+/* ---- Progression (src/game/progression.c) ---- */
+NH_STR(NH_STR_LEVEL_NAME_1, "Novice", "Novice")
+NH_STR(NH_STR_LEVEL_NAME_2, "Apprenti", "Apprentice")
+NH_STR(NH_STR_LEVEL_NAME_3, "Hacker", "Hacker")
+NH_STR(NH_STR_LEVEL_NAME_4, "Expert", "Expert")
+NH_STR(NH_STR_LEVEL_NAME_5, "Maître", "Master")
+NH_STR(NH_STR_LEVEL_NAME_6, "Légende", "Legend")
+NH_STR(NH_STR_PROG_XP_GAIN, "[+%d EXP]", "[+%d XP]")
+NH_STR(NH_STR_PROG_LEVEL_UP, "*** NIVEAU SUPÉRIEUR ! ***", "*** LEVEL UP! ***")
+NH_STR(NH_STR_PROG_LEVEL_NOW, "Vous êtes maintenant niveau %d : %s !", "You are now level %d: %s!")
+NH_STR(NH_STR_PROG_NEW_COMMANDS, "Nouvelles commandes débloquées : %s%s%s",
+       "New commands unlocked: %s%s%s")
+NH_STR(NH_STR_PROG_EQUIPMENT, "Équipement débloqué : IA assistante + ordinateur quantique.",
+       "Equipment unlocked: AI assistant + quantum computer.")
+NH_STR(NH_STR_PROG_CREDITS, "[+%d crédits]", "[+%d credits]")
+NH_STR(NH_STR_PROG_MAX_LEVEL, "Niveau maximum atteint : il n'y a plus rien au-dessus de vous.",
+       "Maximum level reached: there is nothing above you now.")
+NH_STR(NH_STR_PROG_SCAN_DONE, "Réseau déjà cartographié : ce scan ne vous apprend plus rien.",
+       "Network already mapped: this scan teaches you nothing new.")
+NH_STR(NH_STR_PROG_ALREADY_CLAIMED, "(Vous avez déjà obtenu cette récompense.)",
+       "(You already claimed this reward.)")
+NH_STR(NH_STR_PROG_ALREADY_TRACED, "(Route déjà tracée : rien de nouveau à apprendre.)",
+       "(Route already traced: nothing new to learn.)")
+NH_STR(NH_STR_STATUS_XP_MAX, "MAX", "MAX")

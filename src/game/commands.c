@@ -4,6 +4,7 @@
 #include "../ui/hud.h"
 #include "../ui/term.h"
 #include "legacy_colors.h"
+#include "progression.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -26,6 +27,11 @@ static void status_line(const char *label, NhColor color, const char *fmt, int v
     printf("%s: %s%s%s\n", label, nh_c(color), text, nh_c(NH_C_RESET));
 }
 
+static void status_text(const char *label, NhColor color, const char *text)
+{
+    printf("%s: %s%s%s\n", label, nh_c(color), text, nh_c(NH_C_RESET));
+}
+
 static void status_flag(const char *label, bool yes, const char *yes_text, const char *no_text,
                         NhColor yes_color, NhColor no_color)
 {
@@ -41,8 +47,15 @@ static bool cmd_status(GameState *gs, const char *arg)
     printf("\n%s%s%s\n", nh_c(NH_C_BRIGHT_CYAN), nh_tr(NH_STR_STATUS_TITLE), nh_c(NH_C_RESET));
     printf("%s: %s%s%s\n", nh_tr(NH_STR_STATUS_NAME), nh_c(NH_C_BRIGHT_GREEN), p->name,
            nh_c(NH_C_RESET));
-    status_line(nh_tr(NH_STR_STATUS_LEVEL), NH_C_YELLOW, "%d", (int)p->level);
-    status_line(nh_tr(NH_STR_STATUS_XP), NH_C_CYAN, "%d", p->experience);
+    char text[64];
+    snprintf(text, sizeof text, "%d (%s)", (int)p->level, nh_level_name((int)p->level));
+    status_text(nh_tr(NH_STR_STATUS_LEVEL), NH_C_YELLOW, text);
+    int next_xp = nh_level_xp_required((int)p->level + 1);
+    if (next_xp < 0)
+        snprintf(text, sizeof text, "%d (%s)", p->experience, nh_tr(NH_STR_STATUS_XP_MAX));
+    else
+        snprintf(text, sizeof text, "%d/%d", p->experience, next_xp);
+    status_text(nh_tr(NH_STR_STATUS_XP), NH_C_CYAN, text);
     status_line(nh_tr(NH_STR_STATUS_CREDITS), NH_C_BRIGHT_GREEN, "%d", p->credits);
     status_line(nh_tr(NH_STR_STATUS_REPUTATION), NH_C_MAGENTA, "%d", p->reputation);
     status_line(nh_tr(NH_STR_STATUS_STEALTH), NH_C_BLUE, "%d/10", p->stealth_rating);

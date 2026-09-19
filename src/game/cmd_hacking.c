@@ -9,7 +9,9 @@
 
 #include "../core/io.h"
 #include "../core/platform.h"
+#include "../i18n/i18n.h"
 #include "legacy_colors.h"
+#include "progression.h"
 
 #include <ctype.h>
 #include <stdio.h>
@@ -64,7 +66,13 @@ bool cmd_scan_network(GameState *gs, const char *arg)
     }
 
     gs->discovered_nodes = max_nodes;
-    gain_experience(gs, 5);
+    int scan_xp = nh_scan_xp(gs->player.scans_done);
+    if (gs->player.scans_done < 1000000)
+        gs->player.scans_done++;
+    if (scan_xp > 0)
+        nh_grant_xp(gs, scan_xp);
+    else
+        printf("\n%s\n", nh_tr(NH_STR_PROG_SCAN_DONE));
     nh_alert_raise(&gs->alert, 1);
 
     return true;
@@ -128,7 +136,7 @@ bool cmd_bruteforce(GameState *gs, const char *target)
             printf("\nAccès obtenu à %s !\n", target);
             printf("Données récupérées: %d credits\n", node->data_value);
 
-            gain_experience(gs, node->data_value / 2);
+            nh_grant_xp(gs, node->data_value / 2);
             nh_alert_raise(&gs->alert, node->security * 5);
 
             // Débloquer bruteforce après le premier hack réussi
@@ -193,7 +201,10 @@ bool cmd_decrypt(GameState *gs, const char *encrypted_data)
     if (strstr(decrypted, "THIS IS A TEST") != NULL)
     {
         printf("\nMessage de test décodé avec succès !\n");
-        gain_experience(gs, 20);
+        if (nh_milestone_claim(&gs->player, NH_MS_DECRYPT_TEST))
+            nh_grant_xp(gs, 20);
+        else
+            printf("%s\n", nh_tr(NH_STR_PROG_ALREADY_CLAIMED));
     }
 
     return true;
@@ -247,7 +258,7 @@ bool cmd_backdoor(GameState *gs, const char *target)
         node->has_backdoor = true;
         gs->player.backdoors_active++;
         print_colored_text("✓ Backdoor installée avec succès !\n", COLOR_GREEN);
-        gain_experience(gs, 15);
+        nh_grant_xp(gs, 15);
 
         // Bonus de crédits pour backdoor réussie
         gs->player.credits += 500;
@@ -298,6 +309,7 @@ bool cmd_trace_route(GameState *gs, const char *target)
     if (target_index != -1)
     {
         NetworkNode *node = &gs->nodes[target_index];
+        bool first_trace = !node->is_traced;
         node->is_traced = true;
 
         printf("Route trouvée ! Informations système révélées :\n");
@@ -305,7 +317,10 @@ bool cmd_trace_route(GameState *gs, const char *target)
         printf("  Force firewall: %d/10\n", node->firewall_strength);
         printf("  Fichiers secrets: %d détectés\n", node->file_count);
 
-        gain_experience(gs, 8);
+        if (first_trace)
+            nh_grant_xp(gs, 8);
+        else
+            printf("%s\n", nh_tr(NH_STR_PROG_ALREADY_TRACED));
         nh_alert_raise(&gs->alert, 3);
         return true;
     }
@@ -394,7 +409,7 @@ bool cmd_upload_virus(GameState *gs, const char *target)
                 node->firewall_strength = 0;
         }
 
-        gain_experience(gs, 20);
+        nh_grant_xp(gs, 20);
         gs->player.credits += chosen_virus->damage * 10;
         printf("[+%d crédits]\n", chosen_virus->damage * 10);
 
@@ -469,6 +484,12 @@ bool cmd_ai_hack(GameState *gs, const char *target)
 
     NetworkNode *node = &gs->nodes[target_index];
 
+    if (node->is_compromised)
+    {
+        printf("Système déjà compromis.\n");
+        return false;
+    }
+
     printf("Lancement de l'attaque IA sur %s...\n", target);
     print_colored_text(">>> IA NOVA EN LIGNE <<<\n", COLOR_MAGENTA);
     print_typing_effect("Analyse des patterns de sécurité...", 300);
@@ -493,7 +514,7 @@ bool cmd_ai_hack(GameState *gs, const char *target)
             gs->player.credits += node->secret_files[i].credits_value;
         }
 
-        gain_experience(gs, 35);
+        nh_grant_xp(gs, 35);
         nh_alert_raise(&gs->alert, 5); // L'IA est très discrète
         return true;
     }
@@ -543,8 +564,13 @@ bool cmd_quantum_decrypt(GameState *gs, const char *data)
         print_colored_text("║  Budget: 50 000 000 crédits                                     ║\n", COLOR_RED);
         print_colored_text("╚══════════════════════════════════════════════════════════════════╝\n", COLOR_RED);
 
-        gs->player.credits += 10000;
-        printf("[+10000 crédits bonus !]\n");
+        if (nh_milestone_claim(&gs->player, NH_MS_CLASSIFIED_DOC))
+        {
+            gs->player.credits += 10000;
+            printf("[+10000 crédits bonus !]\n");
+        }
+        else
+            printf("%s\n", nh_tr(NH_STR_PROG_ALREADY_CLAIMED));
     }
     else
     {
@@ -572,9 +598,14 @@ bool cmd_quantum_decrypt(GameState *gs, const char *data)
         printf("\n");
     }
 
-    gain_experience(gs, 50);
-    gs->player.credits += 2000;
-    printf("[+2000 crédits]\n");
+    if (nh_milestone_claim(&gs->player, NH_MS_QUANTUM_FIRST))
+    {
+        nh_grant_xp(gs, 50);
+        gs->player.credits += 2000;
+        printf("[+2000 crédits]\n");
+    }
+    else
+        printf("%s\n", nh_tr(NH_STR_PROG_ALREADY_CLAIMED));
 
     // Le quantique génère moins d'alertes mais consomme beaucoup d'énergie
     nh_alert_raise(&gs->alert, 2);

@@ -472,7 +472,7 @@ bool attempt_advanced_hack(AdvancedHackingSystem *system, int target_id, HackTyp
 
         // Récompenses
         player->credits += target->data_value;
-        player->experience += target->data_value / 10; // Consommer l'énergie de l'outil
+        system->pending_xp += target->data_value / 10;
         if (selected_method->requires_tool)
         {
             system->tools[selected_method->required_tool].battery_life -= selected_method->energy_cost;
@@ -591,7 +591,7 @@ bool temporal_hack_attempt(AdvancedHackingSystem *system, int target_id, Player 
     {
         printf("\n%sHACK TEMPOREL RÉUSSI!%s\n", COLOR_GREEN, COLOR_RESET);
         printf("Les défenses ont été contournées via manipulation temporelle!\n");
-        player->experience += 200;
+        system->pending_xp += 200;
         player->credits += target->data_value * 2;
         return true;
     }
@@ -665,7 +665,7 @@ bool social_engineering_attack(AdvancedHackingSystem *system, int target_id, Pla
     {
         printf("\n%sINGÉNIERIE SOCIALE RÉUSSIE!%s\n", COLOR_GREEN, COLOR_RESET);
         printf("Informations d'accès obtenues via manipulation humaine!\n");
-        player->experience += 100;
+        system->pending_xp += 100;
         return true;
     }
     else

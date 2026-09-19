@@ -4,6 +4,7 @@
 
 #include "../../src/core/platform.h"
 #include "../../src/game/commands.h"
+#include "../../src/game/progression.h"
 #include "../../src/i18n/i18n.h"
 #include "../../src/ui/term.h"
 
@@ -179,6 +180,8 @@ static void test_dispatch(void)
     gs->player.commands_unlocked[CMD_DECRYPT] = true;
     CHECK_INT(run_line(gs, "DECRYPT WKLV#LV#D#WHVW", out, sizeof out), NH_DISPATCH_OK);
     CHECK(has(out, "THIS IS A TEST"));
+    CHECK_INT(gs->player.level, LEVEL_APPRENTICE); /* le message de test rapporte 20 XP : niveau 2 */
+    gs->player.level = LEVEL_NOVICE;               /* on revient au niveau 1 pour tester les verrous */
 
     /* quit / exit arrêtent la partie. */
     CHECK(gs->running);
@@ -253,12 +256,12 @@ static void test_progression(void)
     char out[4096];
 
     NhCapture cap = nh_capture_begin();
-    gain_experience(gs, 24);
+    nh_grant_xp(gs, 14);
     nh_capture_end(&cap, out, sizeof out);
     CHECK_INT(gs->player.level, LEVEL_NOVICE);
 
     cap = nh_capture_begin();
-    gain_experience(gs, 1);
+    nh_grant_xp(gs, 1);
     nh_capture_end(&cap, out, sizeof out);
     CHECK_INT(gs->player.level, LEVEL_APPRENTICE);
     CHECK(gs->player.commands_unlocked[CMD_BRUTEFORCE]);

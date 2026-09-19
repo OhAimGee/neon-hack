@@ -14,8 +14,8 @@ Le jeu **se compile et se lance**, mais plusieurs systèmes sont affichés sans 
 |---|---|
 | Boucle de jeu, `scan`, `bruteforce`, `decrypt` | Effets des achats en boutique |
 | Niveaux et déblocage de commandes | Progression des quêtes ; 3 contacts sur 4 |
-| **Alerte 0-100** (jauge, refroidissement, boutique fermée, game over, `laylow`) | `exploit`, `stealthmode`, sauvegarde |
-| Fin d'entrée (Ctrl+D) et saisies invalides gérées ; `--seed`, `--fast`, `--lang`, tests automatisés | Équilibrage (progression trop rapide, scan sans coût) |
+| **Alerte 0-100** (jauge, refroidissement, boutique fermée, game over, `laylow`) ; **niveaux 1-6** avec courbe d'expérience et déblocages | `exploit`, `stealthmode`, sauvegarde |
+| Fin d'entrée (Ctrl+D) et saisies invalides gérées ; `--seed`, `--fast`, `--lang`, tests automatisés | Équilibrage général (valeurs provisoires) ; farm de crédits par la boutique/`advhack` |
 | Ambiance, ASCII art, lore ; affichage boutique/contacts/quêtes | Texte anglais complet (aide, statut et alerte sont traduits, le reste non) |
 
 La refonte (architecture unifiée, tests, sauvegarde, français/anglais, releases binaires) se déroule sur la branche `refonte/v1`. La version d'origine reste consultable via le tag `legacy-v2.087`.
@@ -56,7 +56,8 @@ Sur un terminal d'au moins 80×24, une **barre d'état** reste fixée en haut (n
 
 Tapez `help` en jeu : l'aide n'affiche que les commandes déjà débloquées (casse et espaces ignorés ; `upload_virus`, `ai_hack`, `quantum_decrypt`, `exit` fonctionnent aussi).
 
-- **Départ** : `scan` (débloqué), puis répétez-le pour gagner de l'expérience ; 5 scans mènent au niveau 2 et débloquent `bruteforce`.
+- **Départ** : `scan` (débloqué). Les 5 premiers scans rapportent 5, 4, 3, 2, 1 points : ils mènent au niveau 2 et débloquent `bruteforce` ; les suivants ne rapportent plus rien. L'expérience vient ensuite des hacks (chaque cible ne paie qu'une fois).
+- **Niveaux** (expérience cumulée) : 1 Novice · 2 Apprenti (15) · 3 Hacker (60) · 4 Expert (140) · 5 Maître (260) · 6 Légende (420, niveau maximal, débloque `temporalhack`). `status` affiche la progression ; chaque montée annonce les commandes débloquées.
 - **Hacking** : `scan`, `bruteforce <cible>`, `decrypt <texte>`, `backdoor`, `traceroute`, `uploadvirus`.
 - **Hacking avancé** : `advhack <cible>`, `analyzedefenses`, `socialeng`, `aiassist`, `neuralsync`, `quantumdecrypt`, `temporalhack`.
 - **Monde** : `shop`, `laylow`, `quests`, `contacts`, `contact <n° ou nom>`, `messages`, `read <n°>`.

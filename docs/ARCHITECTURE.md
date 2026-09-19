@@ -10,6 +10,7 @@ et les modules d'origine sont portés un par un avant d'être supprimés.
 src/main.c         point d'entrée : options, langue, création du GameState, boucle
 src/game/          logique de jeu (GameState unique, plus aucune variable globale d'état)
   game.[ch]          GameState, init_game, boucle de jeu, progression (gain_experience)
+  progression.[ch]   courbe d'expérience, niveaux 1-6, déblocages, récompenses uniques ; nh_grant_xp() est le SEUL point d'entrée
   alert.[ch]         alerte unique 0-100 : hausse, refroidissement, seuils, méthodes de réduction, affichage
   commands.[ch]      table de commandes, dispatch, aide, commandes système (help/status/quit/clear)
   cmd_hacking.c      commandes de hacking classiques (scan, bruteforce, decrypt, backdoor…)
@@ -31,7 +32,7 @@ tests/e2e/run.sh   tests de bout en bout du jeu compilé (sorties redirigées)
 tests/e2e/pty_hud.py   tests de l'interface fixe dans un vrai pseudo-terminal + mini-émulateur d'écran
 ```
 
-Le code neuf (`src/core`, `src/ui`, `src/i18n`, `src/main.c`, `src/game/commands.c`, `src/game/alert.c`)
+Le code neuf (`src/core`, `src/ui`, `src/i18n`, `src/main.c`, `src/game/commands.c`, `src/game/alert.c`, `src/game/progression.c`)
 est compilé avec `-Wpedantic -Wshadow -Wconversion -Werror`. Le reste de `src/game/`
 (code d'origine déplacé) ne l'est pas : il porte encore ses avertissements et sera
 remplacé, pas corrigé.
@@ -60,6 +61,16 @@ remplacé, pas corrigé.
   Seuils : 30 attention, 50 niveau élevé, 70 danger, 80 boutique fermée, 100 game over. Malus sur
   les chances de réussite : -5 dès 30, -10 dès 50, -20 dès 80 (bruteforce, backdoor, virus, IA).
   Valeurs provisoires : l'équilibrage se fait en phase 5.
+- **Progression** (`progression.c`) : toute expérience passe par `nh_grant_xp()`, qui applique autant
+  de montées de niveau que la courbe le permet (cumulé : 15 / 60 / 140 / 260 / 420 pour les niveaux
+  2 à 6) avec leurs déblocages, décrits dans la table `k_rewards`. Les commandes « nouvellement
+  disponibles » annoncées sont déduites de la table de commandes avant/après (jamais d'écart avec
+  `help`). Le hacking avancé n'écrit plus l'expérience directement : il la dépose dans
+  `AdvancedHackingSystem.pending_xp`, versée par `cmd_advanced.c` (provisoire, jusqu'au résolveur unique).
+  **Règle anti-farm** : une source d'expérience ou de crédits doit être limitée par un état — un
+  budget (scans : 5+4+3+2+1), un drapeau sur le nœud (traceroute, système déjà compromis) ou un jalon
+  à usage unique (`nh_milestone_claim` : message de test, premier décryptage quantique, document
+  ultra-secret). Toute nouvelle récompense répétable doit suivre cette règle.
 - `exploit` n'est volontairement pas dans la table : elle n'a pas de handler
   (phase 3). Une commande non implémentée n'est pas listée plutôt que d'être fantôme.
 

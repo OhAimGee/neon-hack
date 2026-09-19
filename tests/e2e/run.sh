@@ -188,6 +188,20 @@ run 'T\ndecrypt WKLV#LV#D#WHVW\nquit\n' --fast
 if contains "Commande non disponible"; then pass "decrypt verrouillée au départ"
 else fail "decrypt verrouillée"; fi
 
+# --- Progression ------------------------------------------------------------------
+
+# Avant : 30 scans menaient au niveau 8 (aucun plafond, scan sans limite d'expérience).
+SCANS30='T\n'$(printf 'scan\\n%.0s' $(seq 1 30))'status\nquit\n'
+run "$SCANS30" --fast
+if contains "Niveau: 2 (Apprenti)" && contains "Expérience: 15/60" && contains "déjà cartographié"; then
+    pass "30 scans : niveau 2 et 15 XP, pas d'expérience infinie"
+else fail "scan sans limite" "$(printf '%s' "$OUT" | grep -E 'Niveau:|Expérience:' | tr '\n' ' ')"; fi
+
+run 'T\nscan\nscan\nscan\nscan\nscan\nstatus\nquit\n' --fast --lang en
+if contains "LEVEL UP" && contains "level 2: Apprentice" && contains "New commands unlocked" && contains "bruteforce"; then
+    pass "montée de niveau annoncée en anglais avec les commandes débloquées"
+else fail "montée de niveau (en)"; fi
+
 # --- Alerte (échelle unique 0-100) ---------------------------------------------
 
 # Bug d'origine : trois scans affichaient « alerte 0/100 » car la valeur était réécrasée.

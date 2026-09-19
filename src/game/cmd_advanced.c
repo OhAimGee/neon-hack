@@ -9,7 +9,9 @@
 
 #include "../core/io.h"
 #include "../core/platform.h"
+#include "../i18n/i18n.h"
 #include "legacy_colors.h"
+#include "progression.h"
 
 #include <ctype.h>
 #include <stdio.h>
@@ -17,6 +19,15 @@
 #include <string.h>
 #include <time.h>
 
+
+/* Les fonctions d'advanced_hacking.c accumulent l'expérience dans pending_xp : on la verse ici,
+ * par le point d'entrée unique, pour que les montées de niveau et déblocages aient lieu. */
+static void flush_advanced_xp(GameState *gs)
+{
+    int xp = gs->advanced.pending_xp;
+    gs->advanced.pending_xp = 0;
+    nh_grant_xp(gs, xp);
+}
 
 bool cmd_advanced_hack(GameState *gs, const char *target_name)
 {
@@ -58,7 +69,9 @@ bool cmd_advanced_hack(GameState *gs, const char *target_name)
     }
 
     HackType hack_type = (HackType)method_choice;
-    return attempt_advanced_hack(&gs->advanced, target_id, hack_type, &gs->player, &gs->alert);
+    bool ok = attempt_advanced_hack(&gs->advanced, target_id, hack_type, &gs->player, &gs->alert);
+    flush_advanced_xp(gs);
+    return ok;
 }
 
 bool cmd_stealth_mode_toggle(GameState *gs, const char *arg)
@@ -192,7 +205,9 @@ bool cmd_social_engineer(GameState *gs, const char *target_name)
         return false;
     }
 
-    return social_engineering_attack(&gs->advanced, target_id, &gs->player, &gs->alert);
+    bool ok = social_engineering_attack(&gs->advanced, target_id, &gs->player, &gs->alert);
+    flush_advanced_xp(gs);
+    return ok;
 }
 
 bool cmd_temporal_hack(GameState *gs, const char *target_name)
@@ -229,7 +244,9 @@ bool cmd_temporal_hack(GameState *gs, const char *target_name)
         return false;
     }
 
-    return temporal_hack_attempt(&gs->advanced, target_id, &gs->player, &gs->alert);
+    bool ok = temporal_hack_attempt(&gs->advanced, target_id, &gs->player, &gs->alert);
+    flush_advanced_xp(gs);
+    return ok;
 }
 
 /*
