@@ -24,6 +24,7 @@ typedef struct
     uint64_t seed;
     bool fast;     /* pas de pauses d'animation */
     bool color;    /* couleurs ANSI (nouvelle UI) */
+    bool hud;      /* interface fixe (barres haut/bas) si le terminal le permet */
     bool new_game; /* ignorer une éventuelle sauvegarde */
 } NhConfig;
 

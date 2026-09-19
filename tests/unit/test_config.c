@@ -26,6 +26,7 @@ static void test_locale_and_env(void)
     CHECK(!cfg.has_seed);
     CHECK(!cfg.fast);
     CHECK(!cfg.new_game);
+    CHECK(cfg.hud); /* interface fixe activée par défaut (si le terminal le permet) */
 
     nh_config_defaults(&cfg, NULL, "1");
     CHECK(!cfg.color); /* NO_COLOR défini et non vide */
@@ -61,6 +62,11 @@ static void test_valid_options(void)
     char *a5[] = {"neon_hack"};
     CHECK_INT(parse(&cfg, 1, a5, err, sizeof err, stdout), NH_CFG_RUN);
     CHECK_STR(err, "");
+    CHECK(cfg.hud);
+
+    char *a6[] = {"neon_hack", "--no-hud"};
+    CHECK_INT(parse(&cfg, 2, a6, err, sizeof err, stdout), NH_CFG_RUN);
+    CHECK(!cfg.hud);
 }
 
 static void expect_error(char **argv, int argc, const char *needle)

@@ -6,6 +6,7 @@
 #include "core/platform.h"
 #include "game/game.h"
 #include "i18n/i18n.h"
+#include "ui/hud.h"
 #include "ui/term.h"
 
 int main(int argc, char **argv)
@@ -47,10 +48,12 @@ int main(int argc, char **argv)
 
     init_game(gs);
     display_intro(gs);
+    nh_hud_start(!config.hud);
     game_loop(gs);
 
     printf("\n%s\n", nh_tr(NH_STR_BYE_1));
     printf("%s\n", nh_tr(NH_STR_BYE_2));
+    nh_hud_stop();
 
     free(gs);
     return 0;

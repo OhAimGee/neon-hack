@@ -64,4 +64,10 @@ NhDispatch nh_dispatch(GameState *gs, const char *line);
 /* Aide : uniquement les commandes disponibles, groupées par catégorie. */
 void nh_print_help(const GameState *gs, FILE *out);
 
+/*
+ * Met à jour l'interface fixe (barres haut/bas) d'après l'état du jeu : joueur, alerte,
+ * commandes disponibles. Sans effet si le HUD n'est pas actif.
+ */
+void nh_refresh_hud(const GameState *gs);
+
 #endif /* NH_COMMANDS_H */

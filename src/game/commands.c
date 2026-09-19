@@ -1,6 +1,7 @@
 #include "commands.h"
 
 #include "../core/parse.h"
+#include "../ui/hud.h"
 #include "../ui/term.h"
 #include "legacy_colors.h"
 
@@ -79,7 +80,10 @@ static bool cmd_clear(GameState *gs, const char *arg)
 {
     (void)gs;
     (void)arg;
-    printf("\033[2J\033[H");
+    if (nh_hud_active())
+        nh_hud_clear_body(); /* n'efface que la zone de texte : les barres restent */
+    else
+        printf("\033[2J\033[H");
     print_colored_text("╔══════════════════════════════════════════════════════════════════╗\n", COLOR_CYAN);
     print_colored_text("║                           NEON HACK                             ║\n", COLOR_BRIGHT_CYAN);
     print_colored_text("╚══════════════════════════════════════════════════════════════════╝\n", COLOR_CYAN);
@@ -231,4 +235,38 @@ void nh_print_help(const GameState *gs, FILE *out)
             fprintf(out, "  %-16s- %s\n", cmd->name, nh_tr(cmd->help));
         }
     }
+}
+
+void nh_refresh_hud(const GameState *gs)
+{
+    if (!nh_hud_active())
+        return;
+
+    /* `help` d'abord (jamais coupée), puis les commandes utilisables, dans l'ordre de la table. */
+    enum { MAX_NAMES = 64 };
+    const char *names[MAX_NAMES];
+    size_t n = 0;
+    names[n++] = "help";
+
+    size_t count;
+    const NhCommand *table = nh_commands(&count);
+    for (size_t i = 0; i < count && n < MAX_NAMES; i++)
+    {
+        if (table[i].hidden || table[i].category == NH_CAT_SYSTEM ||
+            !nh_command_available(gs, &table[i]))
+            continue;
+        names[n++] = table[i].name;
+    }
+
+    NhHudData data = {
+        .name = gs->player.name,
+        .level = (int)gs->player.level,
+        .credits = gs->player.credits,
+        .alert = gs->alert.level,
+        .alert_color = nh_alert_color(gs->alert.level),
+        .stealth = gs->stealth_mode,
+        .commands = names,
+        .command_count = n,
+    };
+    nh_hud_refresh(&data);
 }

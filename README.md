@@ -37,6 +37,7 @@ Options (`./neon_hack --help`) :
 | `--seed N` | partie reproductible (graine aléatoire fixée) |
 | `--fast` | supprime les pauses d'animation (automatique si la sortie est redirigée) |
 | `--lang fr\|en` | langue (défaut : d'après `$LANG`) ; seuls quelques messages sont traduits pour l'instant |
+| `--no-hud` | désactive les barres fixes (elles n'apparaissent de toute façon que sur un vrai terminal d'au moins 80×24) |
 | `--no-color` | désactive les couleurs (aide, statut et prompt ; pas encore les écrans d'origine) |
 | `--version`, `--help` | version, aide |
 
@@ -50,6 +51,8 @@ make asan   # les mêmes, compilés avec AddressSanitizer + UBSan
 Voir [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) pour l'organisation du code et les règles de la refonte.
 
 ## Jouer
+
+Sur un terminal d'au moins 80×24, une **barre d'état** reste fixée en haut (nom, niveau, crédits, jauge d'alerte) et une **barre de commandes** en bas ; le texte défile entre les deux. Elle disparaît d'elle-même si la fenêtre devient trop petite, si la sortie est redirigée ou avec `--no-hud`.
 
 Tapez `help` en jeu : l'aide n'affiche que les commandes déjà débloquées (casse et espaces ignorés ; `upload_virus`, `ai_hack`, `quantum_decrypt`, `exit` fonctionnent aussi).
 

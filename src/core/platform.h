@@ -16,4 +16,7 @@ void nh_sleep_ms(unsigned ms);
 /* La sortie standard est-elle un terminal interactif ? */
 bool nh_stdout_is_tty(void);
 
+/* Taille du terminal en colonnes x lignes. Faux si elle est inconnue (pas un terminal). */
+bool nh_term_size(int *cols, int *rows);
+
 #endif /* NH_PLATFORM_H */

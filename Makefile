@@ -67,6 +67,9 @@ unit: $(TEST_BIN)
 
 e2e: $(BIN)
 	NEON_HACK_BIN=./$(BIN) tests/e2e/run.sh
+	@if command -v python3 >/dev/null 2>&1; then \
+	  NEON_HACK_BIN=./$(BIN) python3 tests/e2e/pty_hud.py </dev/null; \
+	else echo "python3 absent : tests de l'interface fixe (pty) ignorés"; fi
 
 test: unit e2e
 

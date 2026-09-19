@@ -220,3 +220,9 @@ NH_STR(NH_STR_GAME_OVER_TITLE, "=== GAME OVER ===", "=== GAME OVER ===")
 NH_STR(NH_STR_GAME_OVER_DETECTED,
        "Vous avez été détecté par les systèmes de sécurité corporate !",
        "You were detected by the corporate security systems!")
+
+/* ---- HUD (src/ui/hud.c) ---- */
+NH_STR(NH_STR_HUD_LEVEL, "Niv", "Lvl")
+NH_STR(NH_STR_HUD_ALERT, "ALERTE", "ALERT")
+NH_STR(NH_STR_HUD_STEALTH, "FURTIF", "STEALTH")
+NH_STR(NH_STR_HUD_COMMANDS, "Commandes :", "Commands:")

@@ -47,6 +47,20 @@ size_t nh_display_width(const char *utf8);
  */
 size_t nh_pad(char *out, size_t out_size, const char *s, size_t width, NhAlign align);
 
+/*
+ * Jauge de `width` cases (« ██████░░░░ ») pour `value` sur `max` : au moins une case
+ * pleine dès que value > 0, valeurs hors bornes ramenées dans [0, max].
+ * Tient dans out_size sans jamais couper un caractère.
+ */
+void nh_gauge(char *out, size_t out_size, int value, int max, int width);
+
+/*
+ * Coupe `s` (texte brut, sans séquences ANSI) pour qu'il tienne dans `max_width`
+ * colonnes, sans jamais couper un caractère UTF-8 en deux ni un emoji large.
+ * Retourne la largeur obtenue.
+ */
+size_t nh_truncate_width(char *s, size_t max_width);
+
 /* Affiche le texte caractère par caractère (sans pause en mode rapide). */
 void nh_typewriter(const char *text, unsigned delay_ms);
 

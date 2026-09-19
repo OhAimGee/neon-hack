@@ -123,25 +123,7 @@ NhReduceResult nh_alert_apply_reduction(AlertSystem *a, NhReduction method, int 
 
 void nh_alert_bar(char *out, size_t out_size, int level, int width)
 {
-    if (out_size == 0)
-        return;
-    out[0] = '\0';
-    if (width < 1)
-        return;
-
-    int lvl = clamp_level(level);
-    int filled = (lvl * width + NH_ALERT_MAX - 1) / NH_ALERT_MAX;
-    size_t used = 0;
-    for (int i = 0; i < width; i++)
-    {
-        const char *cell = (i < filled) ? "█" : "░";
-        size_t n = strlen(cell);
-        if (used + n + 1 > out_size)
-            break;
-        memcpy(out + used, cell, n);
-        used += n;
-    }
-    out[used] = '\0';
+    nh_gauge(out, out_size, level, NH_ALERT_MAX, width);
 }
 
 NhColor nh_alert_color(int level)

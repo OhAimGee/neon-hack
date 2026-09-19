@@ -6,6 +6,7 @@
 #include <io.h>
 #include <windows.h>
 #else
+#include <sys/ioctl.h>
 #include <time.h>
 #include <unistd.h>
 #endif
@@ -43,6 +44,18 @@ void nh_sleep_ms(unsigned ms)
 
 bool nh_stdout_is_tty(void) { return _isatty(_fileno(stdout)) != 0; }
 
+/* Non compilé ni testé sous Windows à ce jour (pas de chaîne de compilation croisée locale). */
+bool nh_term_size(int *cols, int *rows)
+{
+    CONSOLE_SCREEN_BUFFER_INFO info;
+    HANDLE out = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (out == INVALID_HANDLE_VALUE || !GetConsoleScreenBufferInfo(out, &info))
+        return false;
+    *cols = info.srWindow.Right - info.srWindow.Left + 1;
+    *rows = info.srWindow.Bottom - info.srWindow.Top + 1;
+    return *cols > 0 && *rows > 0;
+}
+
 #else
 
 void nh_platform_init(void) {}
@@ -63,5 +76,15 @@ void nh_sleep_ms(unsigned ms)
 }
 
 bool nh_stdout_is_tty(void) { return isatty(STDOUT_FILENO) != 0; }
+
+bool nh_term_size(int *cols, int *rows)
+{
+    struct winsize ws;
+    if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) != 0 || ws.ws_col == 0 || ws.ws_row == 0)
+        return false;
+    *cols = ws.ws_col;
+    *rows = ws.ws_row;
+    return true;
+}
 
 #endif

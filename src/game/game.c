@@ -263,6 +263,7 @@ void game_loop(GameState *gs)
 
     while (gs->running && !gs->player.game_over)
     {
+        nh_refresh_hud(gs);
         printf("%s[%s@neon-terminal]%s $ ", nh_c(NH_C_BRIGHT_GREEN), gs->player.name, nh_c(NH_C_RESET));
 
         if (nh_read_line(input, sizeof(input)) != NH_IO_OK)

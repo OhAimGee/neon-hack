@@ -145,6 +145,50 @@ size_t nh_display_width(const char *utf8)
     return width;
 }
 
+void nh_gauge(char *out, size_t out_size, int value, int max, int width)
+{
+    if (out_size == 0)
+        return;
+    out[0] = '\0';
+    if (width < 1 || max < 1)
+        return;
+
+    long v = value < 0 ? 0 : (value > max ? max : value);
+    long filled = (v * width + max - 1) / max;
+    size_t used = 0;
+    for (int i = 0; i < width; i++)
+    {
+        const char *cell = (i < filled) ? "█" : "░";
+        size_t n = strlen(cell);
+        if (used + n + 1 > out_size)
+            break;
+        memcpy(out + used, cell, n);
+        used += n;
+    }
+    out[used] = '\0';
+}
+
+size_t nh_truncate_width(char *s, size_t max_width)
+{
+    const unsigned char *p = (const unsigned char *)s;
+    size_t width = 0;
+
+    while (*p)
+    {
+        size_t len;
+        uint32_t cp = decode_utf8(p, &len);
+        size_t w = (size_t)cp_width(cp);
+        if (width + w > max_width)
+        {
+            s[(const char *)p - s] = '\0';
+            return width;
+        }
+        width += w;
+        p += len;
+    }
+    return width;
+}
+
 size_t nh_pad(char *out, size_t out_size, const char *s, size_t width, NhAlign align)
 {
     if (out_size == 0)

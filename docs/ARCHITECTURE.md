@@ -23,10 +23,12 @@ src/core/          socle neuf, testé, sans état de jeu
   utf8.[ch]          coupe propre d'une chaîne UTF-8 tronquée
   rng.[ch]           générateur PCG32 reproductible (graine, tirages sans biais)
   config.[ch]        options de ligne de commande, variables d'environnement
-src/ui/term.[ch]   couleurs ANSI, largeur d'affichage UTF-8, remplissage de colonnes
+src/ui/term.[ch]   couleurs ANSI, largeur d'affichage UTF-8, remplissage de colonnes, jauge, troncature
+src/ui/hud.[ch]    interface fixe : barres haut/bas + zone de texte défilante (région de défilement ANSI)
 src/i18n/          textes français/anglais (strings.def, i18n.[ch])
 tests/unit/        tests unitaires (un exécutable par fichier ; test_commands.c teste la couche jeu)
-tests/e2e/run.sh   tests de bout en bout du jeu compilé
+tests/e2e/run.sh   tests de bout en bout du jeu compilé (sorties redirigées)
+tests/e2e/pty_hud.py   tests de l'interface fixe dans un vrai pseudo-terminal + mini-émulateur d'écran
 ```
 
 Le code neuf (`src/core`, `src/ui`, `src/i18n`, `src/main.c`, `src/game/commands.c`, `src/game/alert.c`)
@@ -60,6 +62,26 @@ remplacé, pas corrigé.
   Valeurs provisoires : l'équilibrage se fait en phase 5.
 - `exploit` n'est volontairement pas dans la table : elle n'a pas de handler
   (phase 3). Une commande non implémentée n'est pas listée plutôt que d'être fantôme.
+
+## Interface fixe (HUD)
+
+`src/ui/hud.c` réserve la première et la dernière ligne du terminal pour deux barres et confie
+le reste à la **région de défilement** ANSI (`ESC[2;N r`) : le terminal fait défiler le texte tout
+seul entre les barres, sans bibliothèque (pas de ncurses). Le module ne connaît pas le jeu :
+`nh_refresh_hud()` (commands.c) lui passe un `NhHudData` avant chaque prompt.
+
+- **Activation** : vrai terminal (`isatty`), au moins 80×24, `TERM` ≠ `dumb`, pas de `--no-hud`.
+  Sinon toutes les fonctions `nh_hud_*` sont sans effet et le jeu se comporte comme avant
+  (c'est ce qui laisse les tests e2e sur tube et `--fast` inchangés).
+- **Redimensionnement** : la taille est relue avant chaque prompt ; sous 80×24 le HUD se coupe.
+  Pendant l'attente d'une saisie, la fenêtre n'est redessinée qu'à la prochaine validation.
+- **Sortie propre** : `nh_hud_stop()` (appelé en fin de partie, par `atexit`, et par un gestionnaire
+  SIGINT/SIGTERM) rétablit la région de défilement, sinon le terminal resterait figé.
+- **`clear`** n'efface que la zone de texte. Au démarrage le contenu déjà affiché est repoussé dans
+  l'historique du terminal plutôt qu'effacé.
+- **Limite connue** : un panneau *à droite* du texte n'est pas possible avec cette technique (la
+  région de défilement occupe toute la largeur) ; il demanderait un historique de texte tenu par le
+  jeu (option B du plan). Le code Windows (`nh_term_size`) n'a jamais été compilé.
 
 ## Règles du socle
 

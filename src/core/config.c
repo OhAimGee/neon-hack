@@ -30,6 +30,7 @@ void nh_config_defaults(NhConfig *cfg, const char *env_lang, const char *env_no_
 {
     memset(cfg, 0, sizeof *cfg);
     cfg->lang = nh_lang_from_locale(env_lang);
+    cfg->hud = true;
     cfg->color = !(env_no_color && env_no_color[0] != '\0'); /* convention NO_COLOR */
 }
 
@@ -44,6 +45,8 @@ void nh_print_usage(FILE *out)
           "  --color         force ANSI colors on\n"
           "  --no-color      disable ANSI colors (also: NO_COLOR) [not yet applied to\n"
           "                  screens that have not been ported to the new UI]\n"
+          "  --no-hud        no fixed status/command bars (they only appear on a real\n"
+          "                  terminal of at least 80x24)\n"
           "  --new           ignore any saved game\n"
           "  -V, --version   print version and exit\n"
           "  -h, --help      print this help and exit\n",
@@ -132,6 +135,10 @@ NhCfgResult nh_config_parse(int argc, char **argv, NhConfig *cfg,
         else if (strcmp(arg, "--no-color") == 0)
         {
             cfg->color = false;
+        }
+        else if (strcmp(arg, "--no-hud") == 0)
+        {
+            cfg->hud = false;
         }
         else if (strcmp(arg, "--new") == 0)
         {
