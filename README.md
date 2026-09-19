@@ -37,7 +37,7 @@ Options (`./neon_hack --help`) :
 | `--seed N` | partie reproductible (graine aléatoire fixée) |
 | `--fast` | supprime les pauses d'animation (automatique si la sortie est redirigée) |
 | `--lang fr\|en` | langue (défaut : d'après `$LANG`) ; seuls quelques messages sont traduits pour l'instant |
-| `--no-color` | désactive les couleurs (pas encore appliqué aux écrans d'origine) |
+| `--no-color` | désactive les couleurs (aide, statut et prompt ; pas encore les écrans d'origine) |
 | `--version`, `--help` | version, aide |
 
 ## Développement
@@ -51,7 +51,7 @@ Voir [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) pour l'organisation du code et
 
 ## Jouer
 
-Tapez `help` en jeu : l'aide n'affiche que les commandes déjà débloquées.
+Tapez `help` en jeu : l'aide n'affiche que les commandes déjà débloquées (casse et espaces ignorés ; `upload_virus`, `ai_hack`, `quantum_decrypt`, `exit` fonctionnent aussi).
 
 - **Départ** : `scan` (débloqué), puis répétez-le pour gagner de l'expérience ; 5 scans mènent au niveau 2 et débloquent `bruteforce`.
 - **Hacking** : `scan`, `bruteforce <cible>`, `decrypt <texte>`, `backdoor`, `traceroute`, `uploadvirus`.
@@ -64,9 +64,9 @@ Un message à décrypter pour essayer : `decrypt WKLV#LV#D#WHVW` (chiffre de Cé
 ## Structure
 
 ```
-neon_hack.c        boucle de jeu et commandes (code d'origine, en cours de réécriture)
-src/game/          modules d'origine : boutique, alerte, quêtes, contacts, hacking avancé
-src/core/, ui/, i18n/   nouveau socle testé (entrées/sorties, options, RNG, terminal, textes)
+src/main.c         point d'entrée
+src/game/          état de jeu unique, table de commandes, commandes ; modules d'origine (boutique, alerte, quêtes, contacts) en cours de portage
+src/core/, ui/, i18n/   socle testé (entrées/sorties, options, RNG, terminal, textes FR/EN)
 tests/             tests unitaires (unit/) et de bout en bout (e2e/)
 docs/              architecture ; docs/legacy/ = rapports générés à l'époque (peu fiables)
 ```

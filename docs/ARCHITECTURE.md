@@ -7,22 +7,50 @@ et les modules d'origine sont portés un par un avant d'être supprimés.
 ## Organisation actuelle
 
 ```
-neon_hack.c        code d'origine : boucle de jeu et commandes   (à réécrire, phases 2-3)
-src/game/          modules d'origine : boutique, alerte, quêtes, contacts, hacking avancé
+src/main.c         point d'entrée : options, langue, création du GameState, boucle
+src/game/          logique de jeu (GameState unique, plus aucune variable globale d'état)
+  game.[ch]          GameState, init_game, boucle de jeu, progression (gain_experience, alerte)
+  commands.[ch]      table de commandes, dispatch, aide, commandes système (help/status/quit/clear)
+  cmd_hacking.c      commandes de hacking classiques (scan, bruteforce, decrypt, backdoor…)
+  cmd_world.c        boutique, quêtes, contacts, messages, laylow
+  cmd_advanced.c     hacking avancé (advhack, aiassist, neuralsync, temporalhack…)
+  shop, alert_system, quest_system, contacts, advanced_hacking   modules d'origine (à porter, phase 3)
 src/core/          socle neuf, testé, sans état de jeu
   platform.[ch]      pauses, mode rapide, console (Windows : UTF-8 + ANSI), détection du terminal
   io.[ch]            lecture de lignes et d'entiers sûre, EOF géré
+  parse.[ch]         découpe « commande argument », comparaison sans casse
+  utf8.[ch]          coupe propre d'une chaîne UTF-8 tronquée
   rng.[ch]           générateur PCG32 reproductible (graine, tirages sans biais)
   config.[ch]        options de ligne de commande, variables d'environnement
 src/ui/term.[ch]   couleurs ANSI, largeur d'affichage UTF-8, remplissage de colonnes
 src/i18n/          textes français/anglais (strings.def, i18n.[ch])
-tests/unit/        tests unitaires du socle (un exécutable par fichier)
+tests/unit/        tests unitaires (un exécutable par fichier ; test_commands.c teste la couche jeu)
 tests/e2e/run.sh   tests de bout en bout du jeu compilé
 ```
 
-Le code neuf est compilé avec `-Wpedantic -Wshadow -Wconversion -Werror`. Le code
-d'origine ne l'est pas (il porte encore ses avertissements) : il sera remplacé,
-pas corrigé.
+Le code neuf (`src/core`, `src/ui`, `src/i18n`, `src/main.c`, `src/game/commands.c`)
+est compilé avec `-Wpedantic -Wshadow -Wconversion -Werror`. Le reste de `src/game/`
+(code d'origine déplacé) ne l'est pas : il porte encore ses avertissements et sera
+remplacé, pas corrigé.
+
+## État de jeu et commandes
+
+- **`GameState`** (`src/game/game.h`) regroupe tout : joueur, nœuds réseau, boutique,
+  alerte, quêtes, contacts, hacking avancé. Il est alloué par `main()` et passé à
+  chaque handler ; il n'y a plus de variable globale d'état. Deux `GameState` peuvent
+  donc coexister (les tests unitaires en créent un par cas).
+- **Table de commandes** (`k_commands[]` dans `commands.c`) : *une seule source de
+  vérité* pour le nom, l'alias, la catégorie, la condition de déblocage (drapeau
+  `CMD_*` ou niveau minimum), l'aide (clé i18n) et le handler
+  `bool fn(GameState *, const char *arg)`. Le dispatch, l'aide et les messages de
+  verrouillage en sortent tous : une commande affichée dans `help` est exécutable par
+  construction, et `test_commands.c` le vérifie.
+- **`nh_dispatch()`** renvoie `NH_DISPATCH_OK / FAILED / EMPTY / UNKNOWN / LOCKED` ;
+  la casse et les espaces autour de la ligne sont ignorés.
+- Ajouter une commande = une ligne dans la table + une clé `HELP_<nom>` dans
+  `strings.def` (sans elle, le projet ne compile pas).
+- `exploit` n'est volontairement pas dans la table : elle n'a pas de handler
+  (phase 3). Une commande non implémentée n'est pas listée plutôt que d'être fantôme.
 
 ## Règles du socle
 
@@ -53,5 +81,6 @@ make asan         # idem avec AddressSanitizer + UBSan
   même garantie de complétude, moins de duplication.
 - **Makefile conservé** (au lieu de CMake) tant que le projet n'a qu'un exécutable ;
   à réévaluer pour la matrice Windows/macOS de la phase 8.
-- Le mode `--no-color` n'est pas encore appliqué aux écrans d'origine : leurs couleurs
-  sont des constantes de compilation. Il le sera au fur et à mesure du portage.
+- Le mode `--no-color` est appliqué à la couche commandes (aide, statut, prompt) mais pas
+  encore aux écrans d'origine (logo, boutique, contacts…) : leurs couleurs sont des
+  constantes de compilation (`legacy_colors.h`). Il le sera au fur et à mesure du portage.

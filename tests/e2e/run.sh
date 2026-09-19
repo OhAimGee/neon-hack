@@ -30,7 +30,8 @@ ESC=$(printf '\033')
 strip_ansi() { sed "s/${ESC}\[[0-9;]*m//g"; }
 
 # run <entrée> [options...] : met la sortie (stdout+stderr, sans couleurs, bornée)
-# dans $OUT et le code de retour du jeu dans $CODE.
+# dans $OUT et le code de retour du jeu dans $CODE. Le français est la langue par
+# défaut des tests (indépendant de $LANG) ; un test peut la surcharger avec --lang.
 #
 # La sortie est bornée par `head -c` : si le jeu se remet à boucler à l'infini,
 # il reçoit SIGPIPE (code 141) au lieu de remplir le disque.
@@ -38,7 +39,7 @@ run() {
     local input=$1 tmp
     shift
     tmp=$(mktemp)
-    printf '%b' "$input" | timeout "$LIMIT" "$BIN" "$@" 2>&1 | head -c "$MAX_BYTES" >"$tmp"
+    printf '%b' "$input" | timeout "$LIMIT" "$BIN" --lang fr "$@" 2>&1 | head -c "$MAX_BYTES" >"$tmp"
     CODE=${PIPESTATUS[1]}
     OUT=$(strip_ansi <"$tmp")
     rm -f "$tmp"
@@ -124,6 +125,68 @@ unknown=$(printf '%s' "$OUT" | grep -c "Commande inconnue")
 if [ "$CODE" -eq 0 ] && [ "$unknown" -eq 1 ] && contains "Niveau: 1"; then
     pass "ligne de 500 caractères : tronquée sans polluer la commande suivante"
 else fail "ligne trop longue" "code=$CODE commandes_inconnues=$unknown"; fi
+
+# --- Couche de commandes (table unique) -------------------------------------
+
+run 'T\nSCAN\n  scan  \nquit\n' --fast
+if [ "$CODE" -eq 0 ] && ! contains "Commande inconnue"; then
+    pass "commandes insensibles à la casse et aux espaces"
+else fail "casse/espaces" "code=$CODE"; fi
+
+run 'T\nfoobar\nquit\n' --fast
+if contains "Commande inconnue: foobar" && contains "help"; then
+    pass "commande inconnue : message et renvoi vers help"
+else fail "commande inconnue"; fi
+
+run 'T\nbruteforce localhost\nquit\n' --fast
+if contains "Commande non disponible à votre niveau." && ! contains "Commande inconnue"; then
+    pass "commande verrouillée : message distinct d'une commande inconnue"
+else fail "commande verrouillée"; fi
+
+run 'T\nadvhack x\nsocialeng x\nquit\n' --fast
+if contains "niveau 3 requis" && contains "niveau 2 requis"; then
+    pass "commande à niveau minimum : le niveau requis est annoncé"
+else fail "niveau requis"; fi
+
+run 'T\nadvhack x\nquit\n' --fast --lang en
+if contains "level 3 required"; then pass "niveau requis annoncé en anglais"
+else fail "niveau requis (en)"; fi
+
+run 'T\nhelp\nquit\n' --fast
+if contains "COMMANDES DISPONIBLES" && contains "scan" && ! contains "bruteforce" && ! contains "advhack"; then
+    pass "help : seulement les commandes débloquées"
+else fail "help au niveau 1"; fi
+
+run 'T\nscan\nscan\nscan\nscan\nscan\nhelp\nquit\n' --fast
+if contains "bruteforce"; then pass "help : bruteforce apparaît une fois débloquée"
+else fail "help après déblocage"; fi
+
+run 'T\nhelp\nquit\n' --fast --lang en
+if contains "AVAILABLE COMMANDS" && contains "Scan the network"; then pass "help en anglais"
+else fail "help (en)"; fi
+
+# Les écrans d'origine (logo, intro) ont encore des couleurs codées en dur : on ne
+# vérifie ici que la partie déjà migrée (de l'aide jusqu'à la fin du statut).
+raw=$(printf 'T\nhelp\nstatus\nquit\n' | "$BIN" --fast --lang fr --no-color 2>&1 \
+    | awk '/COMMANDES DISPONIBLES/{on=1} on{print} /Niveau d.alerte/{on=0}' | grep -c "$ESC")
+if [ "$raw" -eq 0 ]; then pass "--no-color : aucune séquence d'échappement dans help/status"
+else fail "--no-color help/status" "$raw lignes avec ESC"; fi
+
+run 'T\nstatus\nquit\n' --fast --lang en
+if contains "Level: 1" || contains "Level:"; then pass "status en anglais"
+else fail "status (en)"; fi
+
+run 'T\nexit\n' --fast
+if [ "$CODE" -eq 0 ] && contains "Merci d'avoir joué"; then pass "exit : alias de quit"
+else fail "alias exit"; fi
+
+run 'T\nEXIT\n' --fast
+if [ "$CODE" -eq 0 ] && contains "Merci d'avoir joué"; then pass "EXIT en majuscules"
+else fail "EXIT"; fi
+
+run 'T\ndecrypt WKLV#LV#D#WHVW\nquit\n' --fast
+if contains "Commande non disponible"; then pass "decrypt verrouillée au départ"
+else fail "decrypt verrouillée"; fi
 
 # --- Reproductibilité et rapidité -------------------------------------------
 
