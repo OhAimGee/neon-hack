@@ -18,7 +18,16 @@ jobs:
       - name: Build
         run: make CC=${{ matrix.cc }}
       - name: Unit + end-to-end tests
-        run: make CC=${{ matrix.cc }} test
+        run: |
+          set +e
+          make CC=${{ matrix.cc }} test 2>&1 | tee test.log
+          status=${PIPESTATUS[0]}
+          if [ "$status" -ne 0 ]; then
+            # Le journal complet n'est lisible que connecté : on remonte l'essentiel en annotation.
+            summary=$(grep -E "error|warning|FAIL|échec|Error|Traceback" test.log | grep -v " 0 échec" | head -25 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+            echo "::error title=tests (${{ matrix.cc }})::${summary}"
+          fi
+          exit "$status"
 
   sanitizers:
     name: tests under ASan + UBSan
