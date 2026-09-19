@@ -3,7 +3,6 @@
 #include <string.h>
 #include <time.h>
 #include <stdbool.h>
-#include <unistd.h>
 #include <ctype.h>
 
 // Includes des nouveaux modules
@@ -13,6 +12,12 @@
 #include "src/game/quest_system.h"
 #include "src/game/contacts.h"
 #include "src/game/advanced_hacking.h"
+
+// Socle (entrées/sorties, options, plateforme, textes)
+#include "src/core/config.h"
+#include "src/core/io.h"
+#include "src/core/platform.h"
+#include "src/i18n/i18n.h"
 
 // Constantes
 #define MAX_NAME_LENGTH 50
@@ -119,14 +124,12 @@ void print_typing_effect(char *text, int delay_ms)
     {
         printf("%c", text[i]);
         fflush(stdout);
-        usleep(delay_ms * 1000);
+        nh_sleep_ms((unsigned)delay_ms);
     }
 }
 
 void init_game(void)
 {
-    srand(time(NULL));
-
     strcpy(game_player.name, "Anonymous");
     game_player.level = LEVEL_NOVICE;
     game_player.experience = 0;
@@ -254,8 +257,11 @@ void display_intro(void)
 
     printf("\n");
     print_colored_text("Entrez votre nom de hacker : ", COLOR_YELLOW);
-    fgets(game_player.name, MAX_NAME_LENGTH, stdin);
-    game_player.name[strcspn(game_player.name, "\n")] = 0;
+    nh_read_line(game_player.name, MAX_NAME_LENGTH);
+    if (game_player.name[0] == '\0')
+    {
+        strcpy(game_player.name, "Anonymous");
+    }
 
     printf("\nBienvenue dans l'ombre, %s%s%s.\n", COLOR_BRIGHT_CYAN, game_player.name, COLOR_RESET);
     printf("\n");
@@ -271,14 +277,16 @@ void game_loop(void)
     {
         printf("%s[%s@neon-terminal]%s $ ", COLOR_BRIGHT_GREEN, game_player.name, COLOR_RESET);
 
-        if (fgets(input, sizeof(input), stdin) != NULL)
+        if (nh_read_line(input, sizeof(input)) != NH_IO_OK)
         {
-            input[strcspn(input, "\n")] = 0;
+            // Entrée fermée (Ctrl+D, fichier épuisé) : on quitte au lieu de boucler.
+            printf("\n%s\n", nh_tr(NH_STR_INPUT_CLOSED));
+            break;
+        }
 
-            if (strlen(input) > 0)
-            {
-                process_command(input);
-            }
+        if (strlen(input) > 0)
+        {
+            process_command(input);
         }
 
         if (game_player.alert_level >= 100)
@@ -652,7 +660,7 @@ bool cmd_scan_network(void)
     {
         printf(".");
         fflush(stdout);
-        usleep(500000);
+        nh_sleep_ms(500);
     }
     printf("\n\nSystèmes détectés:\n");
 
@@ -739,7 +747,7 @@ bool cmd_bruteforce(char *target)
         {
             printf(".");
             fflush(stdout);
-            usleep(300000);
+            nh_sleep_ms(300);
         }
 
         int success_chance = 80 - (node->security * 15);
@@ -1040,7 +1048,7 @@ bool cmd_trace_route(char *target)
     for (int i = 1; i <= hops; i++)
     {
         printf("%d   192.168.%d.%d   %dms\n", i, rand() % 255, rand() % 255, rand() % 100 + 10);
-        usleep(200000); // 200ms delay
+        nh_sleep_ms(200); // 200ms delay
     }
 
     // Chercher le nœud cible
@@ -1356,7 +1364,7 @@ bool cmd_shop(void)
 
     char input[10];
     printf("\nEntrez le numéro de l'objet à acheter (0 pour quitter): ");
-    fgets(input, sizeof(input), stdin);
+    nh_read_line(input, sizeof(input));
     input[strcspn(input, "\n")] = 0;
 
     int choice = atoi(input);
@@ -1390,7 +1398,7 @@ bool cmd_lay_low(void)
 
     char input[10];
     printf("\nChoisissez une méthode (0 pour annuler): ");
-    fgets(input, sizeof(input), stdin);
+    nh_read_line(input, sizeof(input));
     input[strcspn(input, "\n")] = 0;
 
     int choice = atoi(input);
@@ -1445,7 +1453,7 @@ bool cmd_quests(void)
 
     printf("\nVoulez-vous voir les détails d'une quête ? (tapez le numéro ou 0 pour sortir): ");
     char input[10];
-    fgets(input, sizeof(input), stdin);
+    nh_read_line(input, sizeof(input));
     input[strcspn(input, "\n")] = 0;
 
     int quest_id = atoi(input);
@@ -1463,7 +1471,7 @@ bool cmd_contacts(void)
 
     printf("\nVoulez-vous parler à un contact ? (tapez le numéro ou 0 pour sortir): ");
     char input[10];
-    fgets(input, sizeof(input), stdin);
+    nh_read_line(input, sizeof(input));
     input[strcspn(input, "\n")] = 0;
 
     int contact_id = atoi(input);
@@ -1605,7 +1613,7 @@ bool cmd_advanced_hack(char *target_name)
 
     printf("\nChoisissez une méthode de hack (1-8): ");
     char input[10];
-    fgets(input, sizeof(input), stdin);
+    nh_read_line(input, sizeof(input));
     int method_choice = atoi(input) - 1;
 
     if (method_choice < 0 || method_choice >= 8)
@@ -1688,7 +1696,7 @@ bool cmd_neural_sync(void)
     {
         printf("⚡");
         fflush(stdout);
-        usleep(800000);
+        nh_sleep_ms(800);
     }
 
     global_advanced_system.neural_interface_sync += 10;
@@ -1797,8 +1805,30 @@ bool cmd_temporal_hack(char *target_name)
     return temporal_hack_attempt(&global_advanced_system, target_id, &game_player);
 }
 
-int main(void)
+int main(int argc, char **argv)
 {
+    NhConfig config;
+    char err[128];
+
+    nh_config_defaults(&config, getenv("LANG"), getenv("NO_COLOR"));
+    switch (nh_config_parse(argc, argv, &config, err, sizeof(err), stdout))
+    {
+    case NH_CFG_EXIT_OK:
+        return 0;
+    case NH_CFG_ERROR:
+        fprintf(stderr, "neon_hack: %s\n", err);
+        nh_print_usage(stderr);
+        return 2;
+    case NH_CFG_RUN:
+        break;
+    }
+
+    nh_platform_init();
+    nh_set_lang(config.lang);
+    // Sans terminal (sortie redirigée), les animations n'ont aucun intérêt.
+    nh_set_fast(config.fast || !nh_stdout_is_tty());
+    srand(config.has_seed ? (unsigned)config.seed : (unsigned)time(NULL));
+
     printf("\n");
     print_cyberpunk_art();
     printf("\n");
@@ -1806,8 +1836,8 @@ int main(void)
     init_game();
     game_loop();
 
-    printf("\nMerci d'avoir joué à Neon Hack !\n");
-    printf("Gardez vos secrets... dans l'ombre.\n");
+    printf("\n%s\n", nh_tr(NH_STR_BYE_1));
+    printf("%s\n", nh_tr(NH_STR_BYE_2));
 
     return 0;
 }

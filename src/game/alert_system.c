@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <unistd.h>
+#include "../core/platform.h"
 #include <time.h>
 
 // Codes couleur
@@ -166,7 +166,7 @@ bool attempt_alert_reduction(AlertSystem *alert, AlertReductionMethod method, in
     {
     case REDUCTION_TIME:
         printf(COLOR_CYAN "⏰ Vous attendez dans l'ombre..." COLOR_RESET "\n");
-        sleep(1);
+        nh_sleep_ms(1000);
         decrease_alert(alert, 1 + rand() % 2, "Attente stratégique");
         alert->time_since_last_activity += 2;
         return true;

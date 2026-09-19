@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <unistd.h>
+#include "../core/platform.h"
 
 // Codes couleur ANSI
 #define COLOR_RESET "\033[0m"
@@ -453,7 +453,7 @@ bool attempt_advanced_hack(AdvancedHackingSystem *system, int target_id, HackTyp
     {
         printf("█");
         fflush(stdout);
-        usleep(selected_method->time_required * 1000); // Conversion en microsecondes
+        nh_sleep_ms((unsigned)selected_method->time_required);
     }
     printf("\n");
 
@@ -583,7 +583,7 @@ bool temporal_hack_attempt(AdvancedHackingSystem *system, int target_id, Player 
     {
         printf(".");
         fflush(stdout);
-        usleep(500000);
+        nh_sleep_ms(500);
     }
 
     int success_chance = 30 + (player->level * 5) + system->quantum.processing_power;
@@ -658,7 +658,7 @@ bool social_engineering_attack(AdvancedHackingSystem *system, int target_id, Pla
     {
         printf(".");
         fflush(stdout);
-        usleep(800000);
+        nh_sleep_ms(800);
     }
     int success_chance = 60 + (player->reputation * 2) - (target->security_rating * 5);
     int roll = rand() % 100;
@@ -870,7 +870,7 @@ bool activate_quantum_hack(QuantumSystem *quantum, char *target_data)
     {
         printf("⚛️ ");
         fflush(stdout);
-        usleep(300000);
+        nh_sleep_ms(300);
     }
     printf("\n");
 

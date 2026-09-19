@@ -1,4 +1,5 @@
 #include "contacts.h"
+#include "../core/io.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -444,9 +445,9 @@ void echo7_interaction(ContactSystem *contact_system, Player *player)
 
     printf("\nVotre choix (1-5): ");
 
-    int choice;
-    scanf("%d", &choice);
-    getchar(); // Consommer le \n
+    int choice = 0;
+    if (nh_read_int(&choice, 1, 99) != NH_IO_OK)
+        choice = 0; // saisie invalide ou entrée fermée : option invalide
 
     switch (choice)
     {
@@ -493,9 +494,9 @@ void r4z0r_interaction(ContactSystem *contact_system, Player *player)
 
     printf("\nVotre choix (1-5): ");
 
-    int choice;
-    scanf("%d", &choice);
-    getchar();
+    int choice = 0;
+    if (nh_read_int(&choice, 1, 99) != NH_IO_OK)
+        choice = 0; // saisie invalide ou entrée fermée : option invalide
 
     switch (choice)
     {
@@ -556,9 +557,9 @@ void phoenix_interaction(ContactSystem *contact_system, Player *player)
 
     printf("\nVotre choix (1-4): ");
 
-    int choice;
-    scanf("%d", &choice);
-    getchar();
+    int choice = 0;
+    if (nh_read_int(&choice, 1, 99) != NH_IO_OK)
+        choice = 0; // saisie invalide ou entrée fermée : option invalide
 
     switch (choice)
     {
@@ -603,9 +604,9 @@ void aura_interaction(ContactSystem *contact_system, Player *player)
 
     printf("\nVotre choix (1-4): ");
 
-    int choice;
-    scanf("%d", &choice);
-    getchar();
+    int choice = 0;
+    if (nh_read_int(&choice, 1, 99) != NH_IO_OK)
+        choice = 0; // saisie invalide ou entrée fermée : option invalide
 
     switch (choice)
     {
