@@ -1,0 +1,4 @@
+# Fins de ligne normalisées en LF (le projet mélangeait CRLF et LF)
+* text=auto eol=lf
+*.sh text eol=lf
+*.png binary

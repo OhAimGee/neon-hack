@@ -1797,7 +1797,7 @@ bool cmd_temporal_hack(char *target_name)
     return temporal_hack_attempt(&global_advanced_system, target_id, &game_player);
 }
 
-int main()
+int main(void)
 {
     printf("\n");
     print_cyberpunk_art();
