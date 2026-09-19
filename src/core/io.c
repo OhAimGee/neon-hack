@@ -1,5 +1,7 @@
 #include "io.h"
 
+#include "utf8.h"
+
 #include <ctype.h>
 #include <errno.h>
 #include <limits.h>
@@ -38,6 +40,9 @@ NhIoStatus nh_read_line(char *buf, size_t size)
         while ((c = getc(in)) != EOF && c != '\n')
         {
         }
+        /* La coupure a pu tomber au milieu d'un caractère accentué. */
+        nh_utf8_trim_incomplete(buf);
+        len = strlen(buf);
     }
     /* Sinon : dernière ligne sans "\n" avant EOF, on la garde telle quelle. */
 
