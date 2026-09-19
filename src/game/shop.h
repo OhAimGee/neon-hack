@@ -45,6 +45,5 @@ void display_shop(const CyberShop *shop, int player_credits, int player_level);
 void display_shop_welcome(void);
 bool buy_item(CyberShop *shop, ShopItemType item_type, int *player_credits, int player_level);
 void use_item(ShopItemType item_type, void *player_data);
-bool is_shop_available(int player_level, int alert_level);
 
 #endif // SHOP_H

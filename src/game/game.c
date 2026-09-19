@@ -1,7 +1,7 @@
 /*
  * État de partie, introduction, boucle de jeu et progression.
  *
- * init_game / display_intro / gain_experience / increase_alert_level viennent
+ * init_game / display_intro / gain_experience viennent
  * du code d'origine (neon_hack.c v2.087), adaptés à GameState. La boucle de
  * jeu et le dispatch des commandes sont neufs (voir commands.c).
  */
@@ -55,7 +55,6 @@ void init_game(GameState *gs)
     strcpy(gs->player.name, "Anonymous");
     gs->player.level = LEVEL_NOVICE;
     gs->player.experience = 0;
-    gs->player.alert_level = 0;
     gs->player.game_over = false;
 
     // Nouvelles propriétés du joueur
@@ -79,7 +78,7 @@ void init_game(GameState *gs)
 
     // Initialiser les nouveaux modules
     init_shop(&gs->shop);
-    init_alert_system(&gs->alert);
+    nh_alert_init(&gs->alert);
     init_quest_system(&gs->quests);
     init_contact_system(&gs->contacts);
     init_advanced_hacking_system(&gs->advanced);
@@ -234,38 +233,6 @@ void gain_experience(GameState *gs, int exp)
     }
 }
 
-void increase_alert_level(GameState *gs, int amount)
-{
-    // Synchroniser avec le nouveau AlertSystem
-    increase_alert(&gs->alert, amount / 10, "Action du joueur");
-
-    // Maintenir l'ancien système pour compatibilité
-    gs->player.alert_level += amount;
-    if (gs->player.alert_level > 100)
-    {
-        gs->player.alert_level = 100;
-    }
-
-    // Synchroniser bidirectionnellement
-    gs->player.alert_level = gs->alert.current_level * 10;
-    if (gs->player.alert_level > 100)
-        gs->player.alert_level = 100;
-
-    if (amount > 0)
-    {
-        printf("%s[ALERTE +%d]%s ", COLOR_RED, amount, COLOR_RESET);
-
-        if (gs->player.alert_level >= 80)
-        {
-            printf("%s[DANGER CRITIQUE !]%s ", COLOR_RED, COLOR_RESET);
-        }
-        else if (gs->player.alert_level >= 50)
-        {
-            printf("%s[NIVEAU D'ALERTE ÉLEVÉ]%s ", COLOR_YELLOW, COLOR_RESET);
-        }
-    }
-}
-
 static void init_virus_library(GameState *gs)
 {
     // Initialisation de la bibliothèque de virus
@@ -307,10 +274,10 @@ void game_loop(GameState *gs)
 
         nh_dispatch(gs, input);
 
-        if (gs->player.alert_level >= 100)
+        if (nh_alert_is_game_over(&gs->alert))
         {
-            print_colored_text("\n=== GAME OVER ===\n", COLOR_RED);
-            printf("Vous avez été détecté par les systèmes de sécurité corporate !\n");
+            printf("\n%s%s%s\n", nh_c(NH_C_RED), nh_tr(NH_STR_GAME_OVER_TITLE), nh_c(NH_C_RESET));
+            printf("%s\n", nh_tr(NH_STR_GAME_OVER_DETECTED));
             gs->player.game_over = true;
         }
     }

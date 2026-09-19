@@ -12,11 +12,11 @@ Le jeu **se compile et se lance**, mais plusieurs systèmes sont affichés sans 
 
 | Fonctionne | Ne fonctionne pas encore |
 |---|---|
-| Boucle de jeu, `scan`, `bruteforce`, `decrypt` | Niveau d'alerte réel (il reste à 0) |
-| Niveaux et déblocage de commandes | Effets des achats en boutique |
-| Fin d'entrée (Ctrl+D) et saisies invalides gérées | Progression des quêtes ; 3 contacts sur 4 |
-| Options `--seed`, `--fast`, `--lang`, tests automatisés | `exploit`, `stealthmode`, sauvegarde |
-| Ambiance, ASCII art, lore ; affichage boutique/contacts/quêtes | Texte anglais (seuls quelques messages sont traduits) |
+| Boucle de jeu, `scan`, `bruteforce`, `decrypt` | Effets des achats en boutique |
+| Niveaux et déblocage de commandes | Progression des quêtes ; 3 contacts sur 4 |
+| **Alerte 0-100** (jauge, refroidissement, boutique fermée, game over, `laylow`) | `exploit`, `stealthmode`, sauvegarde |
+| Fin d'entrée (Ctrl+D) et saisies invalides gérées ; `--seed`, `--fast`, `--lang`, tests automatisés | Équilibrage (progression trop rapide, scan sans coût) |
+| Ambiance, ASCII art, lore ; affichage boutique/contacts/quêtes | Texte anglais complet (aide, statut et alerte sont traduits, le reste non) |
 
 La refonte (architecture unifiée, tests, sauvegarde, français/anglais, releases binaires) se déroule sur la branche `refonte/v1`. La version d'origine reste consultable via le tag `legacy-v2.087`.
 

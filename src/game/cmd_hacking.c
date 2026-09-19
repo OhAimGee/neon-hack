@@ -65,7 +65,7 @@ bool cmd_scan_network(GameState *gs, const char *arg)
 
     gs->discovered_nodes = max_nodes;
     gain_experience(gs, 5);
-    increase_alert_level(gs, 1);
+    nh_alert_raise(&gs->alert, 1);
 
     return true;
 }
@@ -119,7 +119,7 @@ bool cmd_bruteforce(GameState *gs, const char *target)
             nh_sleep_ms(300);
         }
 
-        int success_chance = 80 - (node->security * 15);
+        int success_chance = 80 - (node->security * 15) - nh_alert_success_penalty(&gs->alert);
         if (rand() % 100 < success_chance)
         {
             printf(" %sSUCCÈS !%s\n", COLOR_GREEN, COLOR_RESET);
@@ -129,7 +129,7 @@ bool cmd_bruteforce(GameState *gs, const char *target)
             printf("Données récupérées: %d credits\n", node->data_value);
 
             gain_experience(gs, node->data_value / 2);
-            increase_alert_level(gs, node->security * 5);
+            nh_alert_raise(&gs->alert, node->security * 5);
 
             // Débloquer bruteforce après le premier hack réussi
             if (!gs->player.commands_unlocked[CMD_BRUTEFORCE] && target_index == 0)
@@ -149,7 +149,7 @@ bool cmd_bruteforce(GameState *gs, const char *target)
     }
 
     printf("\nAttaque brute force échouée.\n");
-    increase_alert_level(gs, node->security * 8);
+    nh_alert_raise(&gs->alert, node->security * 8);
     return false;
 }
 
@@ -238,7 +238,7 @@ bool cmd_backdoor(GameState *gs, const char *target)
     print_typing_effect("Masquage des traces...", 500);
 
     // Calcul de succès basé sur le niveau et la sécurité
-    int success_chance = 70 + (gs->player.level * 10) - (node->security * 15);
+    int success_chance = 70 + (gs->player.level * 10) - (node->security * 15) - nh_alert_success_penalty(&gs->alert);
     if (gs->stealth_mode)
         success_chance += 20;
 
@@ -254,13 +254,13 @@ bool cmd_backdoor(GameState *gs, const char *target)
         printf("[+500 crédits]\n");
 
         // Risque d'alerte réduit si en mode furtif
-        increase_alert_level(gs, gs->stealth_mode ? 5 : 10);
+        nh_alert_raise(&gs->alert, gs->stealth_mode ? 5 : 10);
         return true;
     }
     else
     {
         print_colored_text("✗ Échec de l'installation - Système protégé\n", COLOR_RED);
-        increase_alert_level(gs, 20);
+        nh_alert_raise(&gs->alert, 20);
         return false;
     }
 }
@@ -306,7 +306,7 @@ bool cmd_trace_route(GameState *gs, const char *target)
         printf("  Fichiers secrets: %d détectés\n", node->file_count);
 
         gain_experience(gs, 8);
-        increase_alert_level(gs, 3);
+        nh_alert_raise(&gs->alert, 3);
         return true;
     }
     else
@@ -374,7 +374,7 @@ bool cmd_upload_virus(GameState *gs, const char *target)
     print_typing_effect("Activation du payload...", 400);
 
     // Calcul de succès
-    int success_chance = 60 + chosen_virus->stealth_rating - (node->security * 10);
+    int success_chance = 60 + chosen_virus->stealth_rating - (node->security * 10) - nh_alert_success_penalty(&gs->alert);
     if (node->has_backdoor)
         success_chance += 30;
 
@@ -398,14 +398,14 @@ bool cmd_upload_virus(GameState *gs, const char *target)
         gs->player.credits += chosen_virus->damage * 10;
         printf("[+%d crédits]\n", chosen_virus->damage * 10);
 
-        increase_alert_level(gs, 15 - chosen_virus->stealth_rating);
+        nh_alert_raise(&gs->alert, 15 - chosen_virus->stealth_rating);
         return true;
     }
     else
     {
         print_colored_text("✗ Upload échoué - Antivirus détecté\n", COLOR_RED);
         chosen_virus->is_detected = true;
-        increase_alert_level(gs, 25);
+        nh_alert_raise(&gs->alert, 25);
         return false;
     }
 }
@@ -476,7 +476,7 @@ bool cmd_ai_hack(GameState *gs, const char *target)
     print_typing_effect("Exécution de l'attaque neuromorphe...", 300);
 
     // L'IA a un taux de succès très élevé
-    int success_chance = 85 + (gs->player.level * 5);
+    int success_chance = 85 + (gs->player.level * 5) - nh_alert_success_penalty(&gs->alert);
     if (node->security == SECURITY_CRITICAL)
         success_chance -= 20;
 
@@ -494,13 +494,13 @@ bool cmd_ai_hack(GameState *gs, const char *target)
         }
 
         gain_experience(gs, 35);
-        increase_alert_level(gs, 5); // L'IA est très discrète
+        nh_alert_raise(&gs->alert, 5); // L'IA est très discrète
         return true;
     }
     else
     {
         print_colored_text("✗ IA repoussée par des contre-mesures adaptatives\n", COLOR_RED);
-        increase_alert_level(gs, 30);
+        nh_alert_raise(&gs->alert, 30);
         return false;
     }
 }
@@ -577,7 +577,7 @@ bool cmd_quantum_decrypt(GameState *gs, const char *data)
     printf("[+2000 crédits]\n");
 
     // Le quantique génère moins d'alertes mais consomme beaucoup d'énergie
-    increase_alert_level(gs, 2);
+    nh_alert_raise(&gs->alert, 2);
 
     return true;
 }

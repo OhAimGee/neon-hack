@@ -4,7 +4,7 @@
 #include <stdbool.h>
 
 #include "advanced_hacking.h"
-#include "alert_system.h"
+#include "alert.h"
 #include "contacts.h"
 #include "game_types.h"
 #include "quest_system.h"
@@ -47,7 +47,6 @@ void game_loop(GameState *gs);
 
 /* Progression */
 void gain_experience(GameState *gs, int exp);
-void increase_alert_level(GameState *gs, int amount);
 
 /* Affichage (couleurs d'origine) */
 void print_colored_text(const char *text, const char *color);

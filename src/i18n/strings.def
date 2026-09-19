@@ -161,3 +161,62 @@ NH_STR(NH_STR_VALUE_OFF, "DÉSACTIVÉ", "OFF")
 NH_STR(NH_STR_ALERT_SAFE, "SÉCURISÉ", "SAFE")
 NH_STR(NH_STR_ALERT_WARNING, "ATTENTION", "WARNING")
 NH_STR(NH_STR_ALERT_DANGER, "DANGER", "DANGER")
+
+/* ---- Alerte (src/game/alert.c, cmd_world.c) ---- */
+NH_STR(NH_STR_ALERT_RAISED, "[ALERTE +%d]", "[ALERT +%d]")
+NH_STR(NH_STR_ALERT_TAG_CRITICAL, "[DANGER CRITIQUE !]", "[CRITICAL DANGER!]")
+NH_STR(NH_STR_ALERT_TAG_ELEVATED, "[NIVEAU D'ALERTE ÉLEVÉ]", "[HIGH ALERT LEVEL]")
+NH_STR(NH_STR_ALERT_TITLE, "STATUT D'ALERTE", "ALERT STATUS")
+NH_STR(NH_STR_ALERT_MAX_REACHED, "Maximum atteint : %d/100", "Highest reached: %d/100")
+NH_STR(NH_STR_ALERT_PROTECTION, "Protections actives :", "Active protections:")
+NH_STR(NH_STR_ALERT_CONSEQUENCE_WARNING,
+       "⚠️  Surveillance renforcée : vos hacks sont un peu moins sûrs.",
+       "⚠️  Increased surveillance: your hacks are slightly less safe.")
+NH_STR(NH_STR_ALERT_CONSEQUENCE_DANGER,
+       "⚠️  Traçage actif : la sécurité vous cherche, vos hacks sont nettement moins sûrs.",
+       "⚠️  Active trace: security is hunting you, your hacks are much less safe.")
+NH_STR(NH_STR_ALERT_CONSEQUENCE_CRITICAL,
+       "⚠️  Lockdown : boutique fermée, hacks très risqués. À 100 la partie est perdue.",
+       "⚠️  Lockdown: shop closed, hacks very risky. At 100 the game is lost.")
+NH_STR(NH_STR_ALERT_MENU_TITLE, "RÉDUCTION D'ALERTE", "ALERT REDUCTION")
+NH_STR(NH_STR_ALERT_MENU_FREE, "%s (gratuit) - alerte -%d", "%s (free) - alert -%d")
+NH_STR(NH_STR_ALERT_MENU_PAID, "%s (%d ¢) - alerte -%d", "%s (%d ¢) - alert -%d")
+NH_STR(NH_STR_ALERT_MENU_UNAVAILABLE, "%s (indisponible)", "%s (unavailable)")
+NH_STR(NH_STR_ALERT_MENU_BACK, "Retour", "Back")
+NH_STR(NH_STR_ALERT_METHOD_TIME, "Attendre", "Wait")
+NH_STR(NH_STR_ALERT_METHOD_VPN, "Activer un VPN (+ refroidissement)", "Enable a VPN (+ cooldown)")
+NH_STR(NH_STR_ALERT_METHOD_PROXY, "Chaîne de proxies (+ refroidissement)",
+       "Proxy chain (+ cooldown)")
+NH_STR(NH_STR_ALERT_METHOD_GHOST, "Ghost Protocol", "Ghost Protocol")
+NH_STR(NH_STR_ALERT_METHOD_LAYLOW, "Se faire discret", "Lay low")
+NH_STR(NH_STR_ALERT_METHOD_FRAME, "Faire accuser quelqu'un d'autre", "Frame someone else")
+NH_STR(NH_STR_ALERT_PROMPT, "Choisissez une méthode (0 pour annuler) : ",
+       "Pick a method (0 to cancel): ")
+NH_STR(NH_STR_ALERT_STAY_HIDDEN, "Vous restez dans l'ombre pour le moment...",
+       "You stay in the shadows for now...")
+NH_STR(NH_STR_ALERT_INVALID_CHOICE, "Choix invalide.", "Invalid choice.")
+NH_STR(NH_STR_ALERT_NO_CREDITS, "❌ Crédits insuffisants (%d ¢ requis)",
+       "❌ Not enough credits (%d ¢ required)")
+NH_STR(NH_STR_ALERT_NO_GHOST, "❌ Aucun Ghost Protocol disponible !",
+       "❌ No Ghost Protocol available!")
+NH_STR(NH_STR_ALERT_DONE_TIME, "⏰ Vous attendez dans l'ombre...", "⏰ You wait in the shadows...")
+NH_STR(NH_STR_ALERT_DONE_VPN, "🔒 VPN activé - le refroidissement s'accélère.",
+       "🔒 VPN enabled - cooldown is faster.")
+NH_STR(NH_STR_ALERT_DONE_PROXY, "🔀 Proxies configurés - anonymat renforcé.",
+       "🔀 Proxies set up - anonymity improved.")
+NH_STR(NH_STR_ALERT_DONE_GHOST, "👻 Ghost Protocol activé - disparition numérique.",
+       "👻 Ghost Protocol engaged - digital vanishing act.")
+NH_STR(NH_STR_ALERT_DONE_LAYLOW, "🤫 Vous vous faites discret dans les bas-fonds...",
+       "🤫 You keep a low profile in the undercity...")
+NH_STR(NH_STR_ALERT_DONE_FRAME, "🎭 Vous faites porter le chapeau à un autre...",
+       "🎭 You pin it on someone else...")
+NH_STR(NH_STR_ALERT_KARMA, "⚠️  Karma négatif : votre réputation baisse.",
+       "⚠️  Negative karma: your reputation drops.")
+NH_STR(NH_STR_ALERT_NOW, "Niveau d'alerte : %d → %d/100", "Alert level: %d → %d/100")
+NH_STR(NH_STR_SHOP_CLOSED,
+       "🚨 MARCHÉ FERMÉ - niveau d'alerte trop élevé (%d/100) ! Revenez quand ça se sera calmé...",
+       "🚨 MARKET CLOSED - alert level too high (%d/100)! Come back when things cool down...")
+NH_STR(NH_STR_GAME_OVER_TITLE, "=== GAME OVER ===", "=== GAME OVER ===")
+NH_STR(NH_STR_GAME_OVER_DETECTED,
+       "Vous avez été détecté par les systèmes de sécurité corporate !",
+       "You were detected by the corporate security systems!")

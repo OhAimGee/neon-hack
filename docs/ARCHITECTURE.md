@@ -9,7 +9,8 @@ et les modules d'origine sont portés un par un avant d'être supprimés.
 ```
 src/main.c         point d'entrée : options, langue, création du GameState, boucle
 src/game/          logique de jeu (GameState unique, plus aucune variable globale d'état)
-  game.[ch]          GameState, init_game, boucle de jeu, progression (gain_experience, alerte)
+  game.[ch]          GameState, init_game, boucle de jeu, progression (gain_experience)
+  alert.[ch]         alerte unique 0-100 : hausse, refroidissement, seuils, méthodes de réduction, affichage
   commands.[ch]      table de commandes, dispatch, aide, commandes système (help/status/quit/clear)
   cmd_hacking.c      commandes de hacking classiques (scan, bruteforce, decrypt, backdoor…)
   cmd_world.c        boutique, quêtes, contacts, messages, laylow
@@ -28,7 +29,7 @@ tests/unit/        tests unitaires (un exécutable par fichier ; test_commands.c
 tests/e2e/run.sh   tests de bout en bout du jeu compilé
 ```
 
-Le code neuf (`src/core`, `src/ui`, `src/i18n`, `src/main.c`, `src/game/commands.c`)
+Le code neuf (`src/core`, `src/ui`, `src/i18n`, `src/main.c`, `src/game/commands.c`, `src/game/alert.c`)
 est compilé avec `-Wpedantic -Wshadow -Wconversion -Werror`. Le reste de `src/game/`
 (code d'origine déplacé) ne l'est pas : il porte encore ses avertissements et sera
 remplacé, pas corrigé.
@@ -49,6 +50,14 @@ remplacé, pas corrigé.
   la casse et les espaces autour de la ligne sont ignorés.
 - Ajouter une commande = une ligne dans la table + une clé `HELP_<nom>` dans
   `strings.def` (sans elle, le projet ne compile pas).
+- **Alerte** (`alert.c`) : une seule valeur, `gs->alert.level`, de 0 à 100 (l'ancien code en avait
+  trois qui s'écrasaient). Les fonctions `nh_alert_add/reduce/decay` ne font ni affichage ni tirage
+  aléatoire ; `nh_alert_raise()` ajoute *et* annonce. Le temps passe à chaque action de hacking
+  (`nh_dispatch`) : l'alerte se refroidit de 1 (+1 VPN, +1 proxy) avant que l'action n'ajoute la
+  sienne ; consulter l'aide, le statut, la boutique ou les quêtes ne la fait pas baisser.
+  Seuils : 30 attention, 50 niveau élevé, 70 danger, 80 boutique fermée, 100 game over. Malus sur
+  les chances de réussite : -5 dès 30, -10 dès 50, -20 dès 80 (bruteforce, backdoor, virus, IA).
+  Valeurs provisoires : l'équilibrage se fait en phase 5.
 - `exploit` n'est volontairement pas dans la table : elle n'a pas de handler
   (phase 3). Une commande non implémentée n'est pas listée plutôt que d'être fantôme.
 

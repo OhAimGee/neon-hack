@@ -58,7 +58,7 @@ bool cmd_advanced_hack(GameState *gs, const char *target_name)
     }
 
     HackType hack_type = (HackType)method_choice;
-    return attempt_advanced_hack(&gs->advanced, target_id, hack_type, &gs->player);
+    return attempt_advanced_hack(&gs->advanced, target_id, hack_type, &gs->player, &gs->alert);
 }
 
 bool cmd_stealth_mode_toggle(GameState *gs, const char *arg)
@@ -192,7 +192,7 @@ bool cmd_social_engineer(GameState *gs, const char *target_name)
         return false;
     }
 
-    return social_engineering_attack(&gs->advanced, target_id, &gs->player);
+    return social_engineering_attack(&gs->advanced, target_id, &gs->player, &gs->alert);
 }
 
 bool cmd_temporal_hack(GameState *gs, const char *target_name)
@@ -229,7 +229,7 @@ bool cmd_temporal_hack(GameState *gs, const char *target_name)
         return false;
     }
 
-    return temporal_hack_attempt(&gs->advanced, target_id, &gs->player);
+    return temporal_hack_attempt(&gs->advanced, target_id, &gs->player, &gs->alert);
 }
 
 /*

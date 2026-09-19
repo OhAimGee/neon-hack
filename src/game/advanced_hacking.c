@@ -4,6 +4,7 @@
 #include <string.h>
 #include <time.h>
 #include "../core/platform.h"
+#include "../i18n/i18n.h"
 
 // Codes couleur ANSI
 #define COLOR_RESET "\033[0m"
@@ -397,7 +398,7 @@ void display_hacking_menu(AdvancedHackingSystem *system)
     printf("  temporalhack <cible>       - Hack temporel (expérimental)\n");
 }
 
-bool attempt_advanced_hack(AdvancedHackingSystem *system, int target_id, HackType method, Player *player)
+bool attempt_advanced_hack(AdvancedHackingSystem *system, int target_id, HackType method, Player *player, AlertSystem *alert)
 {
     if (target_id < 0 || target_id >= system->target_count)
     {
@@ -489,7 +490,7 @@ bool attempt_advanced_hack(AdvancedHackingSystem *system, int target_id, HackTyp
     {
         printf("\n%s❌ HACK ÉCHOUÉ ❌%s\n", COLOR_RED, COLOR_RESET); // Gestion de la détection
         int detection_severity = (selected_method->detection_risk + (100 - final_success_rate)) / 20;
-        handle_detection(target, player, detection_severity);
+        handle_detection(target, alert, detection_severity);
 
         return false;
     }
@@ -555,7 +556,7 @@ int calculate_hack_success_rate(const AdvancedHackingSystem *system, HackingMeth
 
 // ===== FONCTIONS MANQUANTES =====
 
-bool temporal_hack_attempt(AdvancedHackingSystem *system, int target_id, Player *player)
+bool temporal_hack_attempt(AdvancedHackingSystem *system, int target_id, Player *player, AlertSystem *alert)
 {
     if (player->level < 6)
     {
@@ -597,7 +598,7 @@ bool temporal_hack_attempt(AdvancedHackingSystem *system, int target_id, Player 
     else
     {
         printf("\n%sÉchec du hack temporel! Paradoxe temporel détecté!%s\n", COLOR_RED, COLOR_RESET);
-        player->alert_level += 20;
+        nh_alert_raise(alert, 20);
         return false;
     }
 }
@@ -628,7 +629,7 @@ void display_defense_analysis(AdvancedTarget *target)
     }
 }
 
-bool social_engineering_attack(AdvancedHackingSystem *system, int target_id, Player *player)
+bool social_engineering_attack(AdvancedHackingSystem *system, int target_id, Player *player, AlertSystem *alert)
 {
     if (target_id < 0 || target_id >= system->target_count)
     {
@@ -670,7 +671,7 @@ bool social_engineering_attack(AdvancedHackingSystem *system, int target_id, Pla
     else
     {
         printf("\n%sÉchec de l'ingénierie sociale! Suspicion éveillée!%s\n", COLOR_RED, COLOR_RESET);
-        // Augmenter l'alerte du système
+        nh_alert_raise(alert, 10);
         return false;
     }
 }
@@ -898,28 +899,31 @@ void train_ai_assistant(AIAssistant *ai, int experience_points)
            COLOR_GREEN, ai->name, ai->intelligence_level, COLOR_RESET);
 }
 
-void handle_detection(AdvancedTarget *target, Player *player, int severity)
+void handle_detection(AdvancedTarget *target, AlertSystem *alert, int severity)
 {
     printf("\n%s⚠️  DÉTECTION DE SÉCURITÉ ⚠️%s\n", COLOR_RED, COLOR_RESET);
     printf("Niveau de sévérité: %d\n", severity);
+    int old_alert = alert->level;
 
     if (severity >= 5)
     {
         printf("%s🚨 ALERTE MAXIMALE - CONTRE-ATTAQUE ACTIVÉE! 🚨%s\n", COLOR_RED, COLOR_RESET);
-        player->alert_level += 30;
+        nh_alert_raise(alert, 30);
         printf("Votre position a été compromise!\n");
     }
     else if (severity >= 3)
     {
         printf("%s⚠️  Intrusion détectée - Sécurité renforcée%s\n", COLOR_YELLOW, COLOR_RESET);
-        player->alert_level += 15;
+        nh_alert_raise(alert, 15);
         target->security_rating += 1;
     }
     else if (severity >= 1)
     {
         printf("%s👁️  Activité suspecte notée%s\n", COLOR_YELLOW, COLOR_RESET);
-        player->alert_level += 5;
+        nh_alert_raise(alert, 5);
     }
 
-    printf("Niveau d'alerte global: %d/100\n", player->alert_level);
+    printf("\n");
+    printf(nh_tr(NH_STR_ALERT_NOW), old_alert, alert->level);
+    printf("\n");
 }

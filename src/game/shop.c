@@ -262,25 +262,6 @@ void use_item(ShopItemType item_type, void *player_data)
     printf(COLOR_CYAN "🔧 Activation de l'objet..." COLOR_RESET "\n");
 }
 
-bool is_shop_available(int player_level, int alert_level)
-{
-    // La boutique est fermée si le niveau d'alerte est trop élevé
-    if (alert_level >= 8)
-    {
-        printf(COLOR_RED "🚨 MARCHÉ FERMÉ - Niveau d'alerte trop élevé! Revenez plus tard..." COLOR_RESET "\n");
-        return false;
-    }
-
-    // Nécessite au moins le niveau 1
-    if (player_level < 1)
-    {
-        printf(COLOR_RED "❌ Accès refusé - Niveau minimum requis." COLOR_RESET "\n");
-        return false;
-    }
-
-    return true;
-}
-
 void display_shop_welcome()
 {
     printf("\n" COLOR_MAGENTA);

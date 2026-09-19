@@ -60,20 +60,10 @@ static bool cmd_status(GameState *gs, const char *arg)
     status_flag(nh_tr(NH_STR_STATUS_STEALTH_MODE), gs->stealth_mode, nh_tr(NH_STR_VALUE_ON),
                 nh_tr(NH_STR_VALUE_OFF), NH_C_GREEN, NH_C_YELLOW);
 
-    NhColor alert_color = NH_C_RED;
-    NhStr alert_label = NH_STR_ALERT_DANGER;
-    if (p->alert_level < 30)
-    {
-        alert_color = NH_C_GREEN;
-        alert_label = NH_STR_ALERT_SAFE;
-    }
-    else if (p->alert_level < 70)
-    {
-        alert_color = NH_C_YELLOW;
-        alert_label = NH_STR_ALERT_WARNING;
-    }
-    printf("%s: %s%d/100%s [%s]\n", nh_tr(NH_STR_STATUS_ALERT), nh_c(alert_color), p->alert_level,
-           nh_c(NH_C_RESET), nh_tr(alert_label));
+    char bar[128];
+    nh_alert_bar(bar, sizeof bar, gs->alert.level, 20);
+    printf("%s: %s%s %d/100%s [%s]\n", nh_tr(NH_STR_STATUS_ALERT), nh_c(nh_alert_color(gs->alert.level)),
+           bar, gs->alert.level, nh_c(NH_C_RESET), nh_tr(nh_alert_label(gs->alert.level)));
     return true;
 }
 
@@ -193,6 +183,11 @@ NhDispatch nh_dispatch(GameState *gs, const char *line)
         printf("\n");
         return NH_DISPATCH_LOCKED;
     }
+
+    /* Le temps passe à chaque action de hacking : l'alerte se refroidit un peu avant qu'elle
+     * n'ajoute la sienne. Consulter la boutique ou l'aide ne fait pas baisser l'alerte. */
+    if (cmd->category == NH_CAT_HACK || cmd->category == NH_CAT_ADVANCED)
+        nh_alert_decay(&gs->alert);
 
     return cmd->fn(gs, arg) ? NH_DISPATCH_OK : NH_DISPATCH_FAILED;
 }

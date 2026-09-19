@@ -1,6 +1,7 @@
 #ifndef ADVANCED_HACKING_H
 #define ADVANCED_HACKING_H
 
+#include "alert.h"
 #include "game_types.h"
 #include <stdbool.h>
 #include <time.h>
@@ -140,7 +141,7 @@ typedef struct
 // Prototypes des fonctions
 void init_advanced_hacking_system(AdvancedHackingSystem *system);
 void display_hacking_menu(AdvancedHackingSystem *system);
-bool attempt_advanced_hack(AdvancedHackingSystem *system, int target_id, HackType method, Player *player);
+bool attempt_advanced_hack(AdvancedHackingSystem *system, int target_id, HackType method, Player *player, AlertSystem *alert);
 void display_available_tools(AdvancedHackingSystem *system);
 bool use_hacking_tool(AdvancedHackingSystem *system, HackingTool tool, Player *player);
 void update_stealth_system(StealthSystem *stealth);
@@ -151,9 +152,9 @@ bool install_backdoor_advanced(AdvancedHackingSystem *system, int target_id, Pla
 bool upload_advanced_virus(AdvancedHackingSystem *system, int target_id, char *virus_type, Player *player);
 void display_defense_analysis(AdvancedTarget *target);
 int calculate_hack_success_rate(const AdvancedHackingSystem *system, HackingMethod *method, AdvancedTarget *target, Player *player);
-void handle_detection(AdvancedTarget *target, Player *player, int severity);
-bool social_engineering_attack(AdvancedHackingSystem *system, int target_id, Player *player);
+void handle_detection(AdvancedTarget *target, AlertSystem *alert, int severity);
+bool social_engineering_attack(AdvancedHackingSystem *system, int target_id, Player *player, AlertSystem *alert);
 void display_neural_interface_status(AdvancedHackingSystem *system);
-bool temporal_hack_attempt(AdvancedHackingSystem *system, int target_id, Player *player);
+bool temporal_hack_attempt(AdvancedHackingSystem *system, int target_id, Player *player, AlertSystem *alert);
 
 #endif

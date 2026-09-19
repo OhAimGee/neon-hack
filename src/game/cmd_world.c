@@ -9,6 +9,7 @@
 
 #include "../core/io.h"
 #include "../core/platform.h"
+#include "../i18n/i18n.h"
 #include "legacy_colors.h"
 
 #include <ctype.h>
@@ -23,8 +24,10 @@ bool cmd_shop(GameState *gs, const char *arg)
     (void)arg;
 
     // Vérifier si la boutique est accessible
-    if (!is_shop_available(gs->player.level, gs->alert.current_level))
+    if (nh_alert_shop_closed(&gs->alert))
     {
+        printf(nh_tr(NH_STR_SHOP_CLOSED), gs->alert.level);
+        printf("\n");
         return false;
     }
 
@@ -64,57 +67,55 @@ bool cmd_lay_low(GameState *gs, const char *arg)
 {
     (void)arg;
 
-    display_alert_status(&gs->alert);
-    display_alert_reduction_menu(&gs->alert);
+    nh_alert_print_status(&gs->alert);
+    nh_alert_print_menu(&gs->alert);
 
-    char input[10];
-    printf("\nChoisissez une méthode (0 pour annuler): ");
-    nh_read_line(input, sizeof(input));
-    input[strcspn(input, "\n")] = 0;
+    char input[16];
+    printf("\n%s", nh_tr(NH_STR_ALERT_PROMPT));
+    if (nh_read_line(input, sizeof(input)) != NH_IO_OK)
+        return false;
 
-    int choice = atoi(input);
-    if (choice == 0)
+    int choice = 0;
+    if (!nh_parse_int(input, 0, NH_REDUCTION_COUNT, &choice))
     {
-        printf("Vous restez dans l'ombre pour le moment...\n");
-        return true;
-    }
-
-    AlertReductionMethod method;
-    switch (choice)
-    {
-    case 1:
-        method = REDUCTION_TIME;
-        break;
-    case 2:
-        method = REDUCTION_VPN;
-        break;
-    case 3:
-        method = REDUCTION_PROXY;
-        break;
-    case 4:
-        method = REDUCTION_GHOST;
-        break;
-    case 5:
-        method = REDUCTION_LAYLOW;
-        break;
-    case 6:
-        method = REDUCTION_FRAME;
-        break;
-    default:
-        printf("Choix invalide.\n");
+        printf("%s\n", nh_tr(NH_STR_ALERT_INVALID_CHOICE));
         return false;
     }
 
-    if (attempt_alert_reduction(&gs->alert, method, &gs->player.credits))
+    if (choice == 0)
     {
-        // Synchroniser le niveau d'alerte du joueur avec le système
-        gs->player.alert_level = gs->alert.current_level * 10;
-        if (gs->player.alert_level > 100)
-            gs->player.alert_level = 100;
+        printf("%s\n", nh_tr(NH_STR_ALERT_STAY_HIDDEN));
+        return true;
+    }
+    static const NhStr k_done[NH_REDUCTION_COUNT] = {
+        [NH_REDUCTION_TIME] = NH_STR_ALERT_DONE_TIME,     [NH_REDUCTION_VPN] = NH_STR_ALERT_DONE_VPN,
+        [NH_REDUCTION_PROXY] = NH_STR_ALERT_DONE_PROXY,   [NH_REDUCTION_GHOST] = NH_STR_ALERT_DONE_GHOST,
+        [NH_REDUCTION_LAYLOW] = NH_STR_ALERT_DONE_LAYLOW, [NH_REDUCTION_FRAME] = NH_STR_ALERT_DONE_FRAME,
+    };
 
-        printf("\nNiveau d'alerte synchronisé: %d/100\n", gs->player.alert_level);
+    NhReduction method = (NhReduction)(choice - 1);
+    int before = gs->alert.level;
+    switch (nh_alert_apply_reduction(&gs->alert, method, &gs->player.credits, NULL))
+    {
+    case NH_REDUCE_NO_CREDITS:
+        printf(nh_tr(NH_STR_ALERT_NO_CREDITS), nh_alert_reduction_cost(method));
+        printf("\n");
+        return false;
+    case NH_REDUCE_NO_GHOST:
+        printf("%s\n", nh_tr(NH_STR_ALERT_NO_GHOST));
+        return false;
+    case NH_REDUCE_OK:
+        break;
     }
 
+    printf("%s\n", nh_tr(k_done[method]));
+    if (method == NH_REDUCTION_FRAME)
+    {
+        gs->player.reputation -= 5;
+        printf("%s\n", nh_tr(NH_STR_ALERT_KARMA));
+    }
+    printf(nh_tr(NH_STR_ALERT_NOW), before, gs->alert.level);
+    printf("\n");
     return true;
 }
 

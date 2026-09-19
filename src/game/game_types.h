@@ -75,7 +75,6 @@ typedef struct
     char name[MAX_NAME_LENGTH];
     HackerLevel level;
     int experience;
-    int alert_level;
     int credits;
     int reputation;
     int stealth_rating;

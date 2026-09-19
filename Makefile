@@ -33,7 +33,7 @@ CORE_OBJ := $(CORE_SRC:%.c=$(BUILD)/obj/%.o)
 TEST_BIN := $(TEST_SRC:tests/unit/%.c=$(BUILD)/tests/%)
 
 # Fichiers du dossier game/ déjà écrits au nouveau standard
-STRICT_OBJ := $(CORE_OBJ) $(MAIN_OBJ) $(BUILD)/obj/src/game/commands.o
+STRICT_OBJ := $(CORE_OBJ) $(MAIN_OBJ) $(BUILD)/obj/src/game/commands.o $(BUILD)/obj/src/game/alert.o
 
 all: $(BIN)
 
@@ -46,7 +46,16 @@ $(BUILD)/obj/%.o: %.c
 
 $(STRICT_OBJ): override CFLAGS += $(STRICT)
 
-$(BUILD)/tests/%: tests/unit/%.c tests/unit/nh_test.h $(CORE_OBJ) $(GAME_OBJ)
+# NH_VERSION est passé par -D : make ne voit pas ce changement (nouveau commit) et
+# garderait un config.o périmé. Le fichier-témoin n'est réécrit que si la version change.
+$(BUILD)/version.stamp: FORCE
+	@mkdir -p $(dir $@)
+	@echo '$(VERSION)' | cmp -s - $@ || echo '$(VERSION)' > $@
+$(BUILD)/obj/src/core/config.o: $(BUILD)/version.stamp
+$(BUILD)/tests/test_config: $(BUILD)/version.stamp
+FORCE:
+
+$(BUILD)/tests/%: tests/unit/%.c tests/unit/nh_test.h tests/unit/nh_capture.h $(CORE_OBJ) $(GAME_OBJ)
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(STRICT) $< $(CORE_OBJ) $(GAME_OBJ) $(LDFLAGS) -o $@
 
@@ -54,7 +63,7 @@ run: $(BIN)
 	./$(BIN)
 
 unit: $(TEST_BIN)
-	@status=0; for t in $(TEST_BIN); do ./$$t || status=1; done; exit $$status
+	@status=0; for t in $(TEST_BIN); do ./$$t </dev/null || status=1; done; exit $$status
 
 e2e: $(BIN)
 	NEON_HACK_BIN=./$(BIN) tests/e2e/run.sh

@@ -188,6 +188,32 @@ run 'T\ndecrypt WKLV#LV#D#WHVW\nquit\n' --fast
 if contains "Commande non disponible"; then pass "decrypt verrouillée au départ"
 else fail "decrypt verrouillée"; fi
 
+# --- Alerte (échelle unique 0-100) ---------------------------------------------
+
+# Bug d'origine : trois scans affichaient « alerte 0/100 » car la valeur était réécrasée.
+# Le scan ajoute 1 ; le refroidissement (1 par action de hacking) le retire à l'action
+# suivante : le niveau reste bas mais l'annonce et la jauge existent.
+run 'T\nscan\nstatus\nquit\n' --fast
+if contains "[ALERTE +1]" && contains "Niveau d'alerte:" && contains "1/100"; then
+    pass "un scan annonce +1 et le statut affiche 1/100 (l'alerte n'est plus écrasée)"
+else fail "alerte après un scan"; fi
+
+run 'T\nscan\nstatus\nquit\n' --fast --lang en
+if contains "[ALERT +1]" && contains "Alert level:" && contains "1/100"; then
+    pass "alerte en anglais"
+else fail "alerte (en)"; fi
+
+run 'T\nlaylow\n1\nlaylow\n0\nlaylow\nabc\nlaylow\n9\nquit\n' --fast
+if [ "$CODE" -eq 0 ] && contains "RÉDUCTION D'ALERTE" && contains "Vous restez dans l'ombre" \
+    && [ "$(printf '%s' "$OUT" | grep -c 'Choix invalide')" -eq 2 ]; then
+    pass "laylow : menu, annulation et saisies invalides"
+else fail "laylow" "code=$CODE"; fi
+
+run 'T\nlaylow\n' --fast
+if [ "$CODE" -eq 0 ] && [ "${#OUT}" -lt 10000 ]; then
+    pass "laylow : fin d'entrée dans le menu sans boucle"
+else fail "laylow EOF" "code=$CODE"; fi
+
 # --- Reproductibilité et rapidité -------------------------------------------
 
 BRUTE='T\nscan\nscan\nscan\nscan\nscan\nbruteforce localhost\nbruteforce localhost\nquit\n'
