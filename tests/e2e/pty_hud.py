@@ -273,6 +273,27 @@ class Session:
     def send(self, line):
         os.write(self.fd, (line + "\n").encode())
 
+    def type(self, keys):
+        """Frappe brute, sans Entrée : TAB, flèches (ESC [ A…), Ctrl+touche."""
+        os.write(self.fd, keys.encode())
+
+    def wait_screen(self, predicate, timeout=5.0):
+        """Attend qu'une condition sur l'écran reconstitué soit vraie (la saisie est réaffichée octet par octet)."""
+        end = time.time() + timeout
+        while time.time() < end:
+            self._drain(0.1)
+            if predicate(self.screen):
+                return True
+        return predicate(self.screen)
+
+    def tty_flags(self):
+        """(canonique, écho) du terminal du jeu : faux, faux tant que la saisie est en mode brut."""
+        try:
+            lflag = termios.tcgetattr(self.fd)[3]
+        except termios.error:
+            return None
+        return bool(lflag & termios.ICANON), bool(lflag & termios.ECHO)
+
     def finish(self, timeout=5.0):
         end = time.time() + timeout
         code = None
@@ -318,9 +339,10 @@ def prologue(s, name, tutorial=False, lang="fr"):
     s.send("1" if tutorial else "2")
 
 
-def play(rows, cols, commands, args=(), tutorial=False, lang="fr", **kw):
+def play(rows, cols, commands, args=(), tutorial=False, lang="fr", until=None, **kw):
     """Nouvelle partie (--new) : prologue, puis la liste de commandes (le nom du joueur en premier).
-    Retourne la session, une fois le dernier prompt affiché."""
+    Retourne la session, une fois le dernier prompt affiché — ou, avec `until`, une fois ce texte
+    affiché (une commande qui pose une question, comme `shop`, n'affiche pas de prompt avant la réponse)."""
     s = Session(rows, cols, ["--new", "--fast", *args], **kw)
     s._drain(0.6)
     prologue(s, commands[0], tutorial, lang)
@@ -329,7 +351,10 @@ def play(rows, cols, commands, args=(), tutorial=False, lang="fr", **kw):
         s.wait_prompt(expected)
         s.send(cmd)
         expected += 1
-    s.wait_prompt(expected)
+    if until is None:
+        s.wait_prompt(expected)
+    else:
+        s.wait_text(until)
     return s
 
 
@@ -542,6 +567,177 @@ def main():
     check("80 colonnes : aucune ligne du prologue ne déborde", start is not None and end is not None and not too_wide,
           repr(too_wide[:3]))
     s.send("quit"); s.finish()
+
+    # --- Boutique : tout le catalogue tient dans la zone de texte -------------------------------
+    shop_names = ["Stealth Module v2.0", "Ghost Protocol", "Malware Arsenal", "Proxy Chain Pro",
+                  "Quantum Encryption Key", "Neural Assistant v3.1", "Quantum Processing Chip",
+                  "Street Cred Booster", "Neural Accelerator", "Dark Web VPN"]
+
+    def shop_screen(rows, cols, lang="fr", args=(), question="Numéro de l'objet"):
+        session = play(rows, cols, ["Neo", "shop"], args=["--lang", lang, *args], lang=lang, until=question)
+        scr = session.screen
+        body = "\n".join(scr.line(r) for r in range(scr.rows))
+        return session, scr, body
+
+    def all_visible(text):
+        return all(n in text for n in shop_names) and all(f"[{i:02d}]" in text for i in range(1, 11))
+
+    s, scr, body = shop_screen(24, 80)
+    inner = [scr.line(r) for r in range(1, scr.rows - 1)]
+    check("boutique 80x24 : les 10 objets et leurs résumés sont tous visibles, sans avoir à défiler",
+          all_visible("\n".join(inner)) and "définitivement" in body and "il manque" not in body, body)
+    check("boutique 80x24 : deux colonnes (1 face à 6, 5 face à 10)",
+          any("[01]" in l and "[06]" in l for l in inner) and any("[05]" in l and "[10]" in l for l in inner))
+    check("boutique 80x24 : les barres n'ont pas bougé", "Neo" in scr.line(0) and "ALERTE" in scr.line(0)
+          and "Commandes :" in scr.line(scr.rows - 1), repr(scr.line(0)) + "\n" + repr(scr.line(scr.rows - 1)))
+    check("boutique 80x24 : la question est sur la dernière ligne de la zone de texte",
+          "Numéro de l'objet" in scr.line(scr.rows - 2), repr(scr.line(scr.rows - 2)))
+    check("boutique 80x24 : la commande tapée reste affichée au-dessus de la vitrine",
+          "$ shop" in "\n".join(inner[:3]), "\n".join(inner[:3]))
+    check("boutique 80x24 : aucune ligne ne déborde de l'écran",
+          all(len(scr.line(r)) <= 79 for r in range(scr.rows)))
+    top_before = scr.line(0)
+    s.send("0"); s.wait_prompt(2)
+    check("boutique : « 0 » quitte, la partie reprend et les barres sont toujours en place",
+          "À bientôt dans l'ombre" in s.screen.text() and s.screen.line(0) == top_before
+          and "Commandes :" in s.screen.line(s.screen.rows - 1))
+    s.send("quit"); s.finish()
+
+    s, scr, body = shop_screen(24, 80, lang="en", question="Item number to buy")
+    inner = "\n".join(scr.line(r) for r in range(1, scr.rows - 1))
+    check("boutique 80x24 en anglais : tout est visible et traduit",
+          all_visible(inner) and "BLACK MARKET" in inner and "level 2 required" in inner
+          and "Passively lowers alert" in inner and "Crédits" not in inner and "niveau" not in inner, body)
+    s.send("0"); s.send("quit"); s.finish()
+
+    s, scr, body = shop_screen(40, 120)
+    inner = "\n".join(scr.line(r) for r in range(1, scr.rows - 1))
+    check("boutique 120x40 : mise en page aérée (bandeau), catalogue complet, barres en place",
+          "█▀▀" in inner and all_visible(inner) and "Neo" in scr.line(0)
+          and "Commandes :" in scr.line(scr.rows - 1), body)
+    s.send("0"); s.send("quit"); s.finish()
+
+    s, scr, body = shop_screen(24, 80, args=["--no-hud"])
+    check("boutique sans HUD (--no-hud, 24 lignes) : catalogue complet à l'écran", all_visible(body), body)
+    s.send("0"); s.send("quit"); s.finish()
+
+    s, scr, body = shop_screen(20, 100)
+    check("boutique sur un terminal de 20 lignes (sans HUD) : liste d'une ligne par objet, catalogue complet",
+          all_visible(body) and "Numéro de l'objet" in body, body)
+    s.send("0"); s.send("quit"); s.finish()
+
+    s, scr, body = shop_screen(24, 80, args=["--no-color"])
+    check("boutique --no-color : l'état de chaque objet reste lisible en clair",
+          "unique · niveau 2 requis" in body and "consommable · disponible" in body
+          and "\x1b[3" not in s.raw.split("MARCHÉ NOIR")[-1], body)
+    s.send("0"); s.send("quit"); s.finish()
+
+    # --- Saisie : complétion par TAB, historique, édition ----------------------------------------
+    def prompt_line(scr):
+        """La ligne du dernier prompt affiché (la saisie en cours y est réaffichée)."""
+        hits = [scr.line(r) for r in range(scr.rows) if PROMPT in scr.line(r)]
+        return hits[-1] if hits else ""
+
+    def typed(scr):
+        return prompt_line(scr).split(PROMPT, 1)[-1] if PROMPT in prompt_line(scr) else ""
+
+    s = play(24, 80, ["Neo"])
+    check("saisie : le jeu est en mode brut pendant la lecture (ni ligne canonique ni écho du terminal)",
+          s.tty_flags() == (False, False), repr(s.tty_flags()))
+    s.type("sca\t")
+    check("TAB : « sca » devient « scan »",
+          s.wait_screen(lambda sc: typed(sc) == "scan"), repr(typed(s.screen)))
+    s.type("x")  # l'espace ajoutée par TAB est invisible à l'écran : la frappe suivante la révèle
+    check("TAB : … suivi d'une espace (la frappe suivante s'écrit après elle)",
+          s.wait_screen(lambda sc: typed(sc) == "scan x"), repr(typed(s.screen)))
+    n = s.prompts()
+    s.type("\x7f\n"); s.wait_prompt(n + 1)
+    check("TAB : la ligne complétée s'exécute (résultat du scan à l'écran)",
+          "localhost" in "\n".join(s.screen.line(r) for r in range(1, s.screen.rows - 1)))
+    check("TAB : les barres n'ont pas bougé", "Neo" in s.screen.line(0) and "Commandes :" in s.screen.line(s.screen.rows - 1))
+    rows = [s.screen.line(r) for r in range(s.screen.rows)]
+    tag = next((l for l in rows if "[ALERTE +1]" in l), "")
+    check("le prompt passe à la ligne suivante quand la sortie s'arrête au milieu d'une ligne (« [ALERTE +1] »)",
+          tag != "" and PROMPT not in tag and s.screen.line(s.screen.rows - 2).startswith("[Neo@neon-terminal] $"),
+          "\n".join(rows[-4:]))
+
+    # Ambiguïté : le premier TAB sonne (rien ne change), le second liste les candidats sous la ligne.
+    n = s.prompts()
+    s.type("s\t")
+    s._drain(0.4)
+    check("TAB ambigu : le premier TAB n'ajoute rien", typed(s.screen) == "s" and "\a" in s.raw[-40:], repr(typed(s.screen)))
+    s.type("\t")
+    check("TAB ambigu : le second liste les commandes qui commencent par « s »",
+          s.wait_screen(lambda sc: any("scan" in sc.line(r) and "shop" in sc.line(r) and "status" in sc.line(r)
+                                       for r in range(1, sc.rows - 1))),
+          "\n".join(s.screen.line(r) for r in range(1, s.screen.rows - 1))[-500:])
+    check("TAB ambigu : la ligne est réaffichée sous la liste, et les barres sont intactes",
+          typed(s.screen) == "s" and s.screen.line(s.screen.rows - 2).startswith("[Neo@neon-terminal] $ s")
+          and "Neo" in s.screen.line(0) and "Commandes :" in s.screen.line(s.screen.rows - 1),
+          repr(s.screen.line(s.screen.rows - 2)))
+
+    # Argument : un contact, un système découvert, avec la casse du jeu.
+    s.type("\x15contact e\t")
+    check("TAB : « contact e » devient « contact ECHO-7 »",
+          s.wait_screen(lambda sc: typed(sc) == "contact ECHO-7"), repr(typed(s.screen)))
+    s.type("\x15analyzedefenses lo\t")
+    check("TAB : « analyzedefenses lo » devient « analyzedefenses localhost »",
+          s.wait_screen(lambda sc: typed(sc) == "analyzedefenses localhost"), repr(typed(s.screen)))
+
+    # Une commande qui n'est pas encore débloquée n'est pas proposée.
+    s.type("\x15brute\t")
+    s._drain(0.4)
+    check("TAB : une commande verrouillée n'est pas complétée", typed(s.screen) == "brute", repr(typed(s.screen)))
+
+    # Édition et historique.
+    n = s.prompts()
+    s.type("\x15helq\x7fp\n"); s.wait_prompt(n + 1)
+    check("édition : le retour arrière corrige la saisie (« helq » → « help »)",
+          "COMMANDES DISPONIBLES" in ANSI.sub("", s.raw), s.screen.text()[-300:])
+    n = s.prompts()
+    s.type("\x1b[A")
+    check("historique : la flèche haut rappelle la dernière commande",
+          s.wait_screen(lambda sc: typed(sc) == "help"), repr(typed(s.screen)))
+    s.type("\x1b[A")
+    check("historique : … puis la précédente", s.wait_screen(lambda sc: typed(sc) == "scan"), repr(typed(s.screen)))
+    s.type("\x1b[B\x1b[B")
+    check("historique : la flèche bas revient à la ligne vide", s.wait_screen(lambda sc: typed(sc) == ""),
+          repr(typed(s.screen)))
+    s.type("st\x1b[D\x1b[Dxx\x1b[3~\x01>\x05?")
+    check("édition : flèches, Suppr, Début et Fin (« st » → « >xxt? » après insertions)",
+          s.wait_screen(lambda sc: typed(sc) == ">xxt?"), repr(typed(s.screen)))
+    s.type("\x15quit\n")
+    code = s.finish()
+    check("après quit : le terminal est de nouveau canonique, avec écho", s.tty_flags() == (True, True), repr(s.tty_flags()))
+    check("après quit : code de retour 0", code == 0, f"code={code}")
+
+    # Une ligne plus longue que l'écran défile au lieu de passer à la ligne : les barres ne bougent pas.
+    s = play(24, 80, ["Neo"])
+    s.type("x" * 100)
+    s._drain(0.5)
+    check("ligne longue : la saisie défile, jamais de retour à la ligne (le prompt reste seul sur sa ligne)",
+          sum(1 for r in range(1, s.screen.rows - 1) if "x" * 5 in s.screen.line(r)) == 1
+          and "Neo" in s.screen.line(0) and "Commandes :" in s.screen.line(s.screen.rows - 1)
+          and all(len(s.screen.line(r)) <= 79 for r in range(s.screen.rows)),
+          "\n".join(s.screen.line(r) for r in range(1, s.screen.rows - 1))[-300:])
+    n = s.prompts()
+    s.type("\x15help\n"); s.wait_prompt(n + 1)
+    s.type("\x04")  # Ctrl+D sur une ligne vide : fin de saisie
+    code = s.finish()
+    check("Ctrl+D à l'invite (mode brut) : sortie propre et terminal rétabli",
+          code == 0 and s.tty_flags() == (True, True) and s.screen.region_resets >= 1, f"code={code} {s.tty_flags()}")
+
+    s = play(24, 80, ["Neo"])
+    os.kill(s.pid, signal.SIGINT)
+    s.finish()
+    check("Ctrl+C à l'invite (mode brut) : terminal rendu (mode canonique, écho, région de défilement)",
+          s.tty_flags() == (True, True) and s.screen.region_resets >= 1 and s.screen.top == 0)
+
+    s = play(24, 80, ["Neo"], args=["--no-hud"])
+    s.type("sca\t")
+    check("TAB sans HUD : la complétion marche aussi",
+          s.wait_screen(lambda sc: typed(sc) == "scan"), repr(typed(s.screen)))
+    s.type("\x15quit\n"); s.finish()
 
     print(f"\nhud (pty) : {passed} réussi(s), {failed} échec(s)")
     return 1 if failed else 0

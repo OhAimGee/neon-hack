@@ -57,6 +57,14 @@ bool nh_str_eq_nocase(const char *a, const char *b)
     return *a == *b;
 }
 
+bool nh_str_has_prefix_nocase(const char *s, const char *prefix)
+{
+    for (; *prefix != '\0'; prefix++, s++)
+        if (*s == '\0' || lower(*s) != lower(*prefix))
+            return false;
+    return true;
+}
+
 /* Longueur (1 à 4) de la séquence UTF-8 valide qui commence en `s`, ou 0 si elle est invalide. */
 static size_t utf8_seq_len(const unsigned char *s)
 {

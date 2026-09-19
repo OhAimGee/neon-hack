@@ -62,6 +62,20 @@ static void test_nocase(void)
     CHECK(nh_str_eq_nocase("upload_virus", "UPLOAD_VIRUS"));
 }
 
+static void test_prefix_nocase(void)
+{
+    CHECK(nh_str_has_prefix_nocase("scan", "sc"));
+    CHECK(nh_str_has_prefix_nocase("scan", "SC"));
+    CHECK(nh_str_has_prefix_nocase("ScAn", "sCaN"));
+    CHECK(nh_str_has_prefix_nocase("scan", "")); /* un préfixe vide convient à tout */
+    CHECK(nh_str_has_prefix_nocase("", ""));
+    CHECK(!nh_str_has_prefix_nocase("scan", "scans")); /* préfixe plus long que le mot */
+    CHECK(!nh_str_has_prefix_nocase("", "a"));
+    CHECK(!nh_str_has_prefix_nocase("scan", "sh"));
+    CHECK(nh_str_has_prefix_nocase("R4Z0R", "r4z"));
+    CHECK(nh_str_has_prefix_nocase("\xC3\xA9t\xC3\xA9", "\xC3\xA9")); /* UTF-8 : octet par octet, sans changer la casse */
+}
+
 static void test_trim_incomplete(void)
 {
     char a[] = "abc";
@@ -189,6 +203,7 @@ int main(void)
     test_split();
     test_split_truncation();
     test_nocase();
+    test_prefix_nocase();
     test_trim_incomplete();
     test_read_line_truncates_on_char_boundary();
     test_clean_name();

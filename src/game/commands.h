@@ -23,6 +23,15 @@ typedef enum
 
 typedef bool (*NhCommandFn)(GameState *gs, const char *arg);
 
+/* Ce que la commande attend comme argument : c'est ce que la touche TAB propose (voir complete.h). */
+typedef enum
+{
+    NH_ARG_NONE,    /* aucun, ou un texte libre (decrypt) : rien à proposer */
+    NH_ARG_SYSTEM,  /* un système découvert par `scan` */
+    NH_ARG_CONTACT, /* un contact débloqué */
+    NH_ARG_MESSAGE  /* le numéro d'un message de la boîte de réception */
+} NhArgKind;
+
 /*
  * Une commande du jeu. La table (commands.c) est l'unique source de vérité :
  * l'aide, le déblocage par niveau et le dispatch en sont tous dérivés, si bien
@@ -38,6 +47,7 @@ typedef struct
     bool hidden;       /* accepté mais absent de l'aide */
     NhStr help;        /* clé de la description (i18n) */
     NhCommandFn fn;
+    NhArgKind arg;     /* nature de l'argument (NH_ARG_NONE si omis dans la table) */
 } NhCommand;
 
 typedef enum

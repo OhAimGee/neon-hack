@@ -13,6 +13,7 @@
 #include "../i18n/i18n.h"
 #include "legacy_colors.h"
 #include "progression.h"
+#include "shop_view.h"
 
 #include <ctype.h>
 #include <stdio.h>
@@ -33,41 +34,40 @@ bool cmd_shop(GameState *gs, const char *arg)
         return false;
     }
 
-    display_shop_welcome();
-    display_shop(&gs->shop, gs->player.credits, gs->player.level);
+    nh_shop_show(&gs->shop, gs->player.credits, gs->player.level);
 
-    char input[10];
-    printf("\nEntrez le numéro de l'objet à acheter (0 pour quitter): ");
-    nh_read_line(input, sizeof(input));
-    input[strcspn(input, "\n")] = 0;
+    char input[16];
+    printf("%s%s%s", nh_c(NH_C_MAGENTA), nh_tr(NH_STR_SHOP_PROMPT), nh_c(NH_C_RESET));
+    if (nh_read_line(input, sizeof input) != NH_IO_OK)
+        return false;
 
-    int choice = atoi(input);
+    // Entrée seule, comme 0 : on quitte.
+    int choice = 0;
+    bool blank = input[strspn(input, " \t")] == '\0';
+    if (!blank && !nh_parse_int(input, 0, ITEM_COUNT, &choice))
+    {
+        printf("%s\n", nh_tr(NH_STR_SHOP_INVALID));
+        return true;
+    }
     if (choice == 0)
     {
-        printf("À bientôt dans l'ombre...\n");
+        printf("%s\n", nh_tr(NH_STR_SHOP_BYE));
         return true;
     }
 
-    if (choice >= 1 && choice <= ITEM_COUNT)
+    ShopItemType item_type = (ShopItemType)(choice - 1);
+    if (buy_item(&gs->shop, item_type, &gs->player.credits, gs->player.level))
     {
-        ShopItemType item_type = (ShopItemType)(choice - 1);
-        if (buy_item(&gs->shop, item_type, &gs->player.credits, gs->player.level))
+        nh_event(gs, NH_EV_ITEM_BOUGHT, (int)item_type);
+        // Utiliser l'objet acheté immédiatement si applicable. Seul le boost de réputation a un
+        // effet pour l'instant (une quête en dépend) ; les autres arrivent avec la phase 3.4.
+        if (item_type == ITEM_REPUTATION_BOOST)
         {
-            nh_event(gs, NH_EV_ITEM_BOUGHT, (int)item_type);
-            // Utiliser l'objet acheté immédiatement si applicable. Seul le boost de réputation a un
-            // effet pour l'instant (une quête en dépend) ; les autres arrivent avec la phase 3.4.
-            if (item_type == ITEM_REPUTATION_BOOST)
-            {
-                nh_grant_reputation(gs, 20);
-                printf("\n");
-            }
-            else
-                use_item(item_type, &gs->player);
+            nh_grant_reputation(gs, 20);
+            printf("\n");
         }
-    }
-    else
-    {
-        printf("Numéro d'objet invalide.\n");
+        else
+            use_item(item_type, &gs->player);
     }
 
     return true;

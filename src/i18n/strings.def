@@ -219,6 +219,37 @@ NH_STR(NH_STR_ALERT_NOW, "Niveau d'alerte : %d → %d/100", "Alert level: %d →
 NH_STR(NH_STR_SHOP_CLOSED,
        "🚨 MARCHÉ FERMÉ - niveau d'alerte trop élevé (%d/100) ! Revenez quand ça se sera calmé...",
        "🚨 MARKET CLOSED - alert level too high (%d/100)! Come back when things cool down...")
+
+/* ---- Boutique de R4Z0R (game/shop_view.c) ----
+ * Les résumés des objets (SHOP_BLURB_*) tiennent en 33 colonnes : une case de 2 colonnes sur
+ * 80 colonnes en fait 38, moins 5 de retrait sous « [01] ». test_shop_view.c le vérifie. */
+NH_STR(NH_STR_SHOP_TITLE, "MARCHÉ NOIR DE %s", "%s'S BLACK MARKET")
+NH_STR(NH_STR_SHOP_WALLET, "Crédits : %d ¢ · Niveau %d", "Credits: %d ¢ · Level %d")
+NH_STR(NH_STR_SHOP_WELCOME, "Bienvenue dans le marché noir du deep web...",
+       "Welcome to the deep web's black market...")
+NH_STR(NH_STR_SHOP_TAGLINE, "Ici, les crédits parlent et l'anonymat règne.",
+       "Here credits talk and anonymity reigns.")
+NH_STR(NH_STR_SHOP_KIND_UNIQUE, "unique", "one-time")
+NH_STR(NH_STR_SHOP_KIND_CONSUMABLE, "consommable", "consumable")
+NH_STR(NH_STR_SHOP_STATE_OK, "disponible", "available")
+NH_STR(NH_STR_SHOP_STATE_LEVEL, "niveau %d requis", "level %d required")
+NH_STR(NH_STR_SHOP_STATE_CREDITS, "il manque %d ¢", "need %d more ¢")
+NH_STR(NH_STR_SHOP_STATE_SOLD, "épuisé", "sold out")
+NH_STR(NH_STR_SHOP_PROMPT, "Numéro de l'objet à acheter (0 pour quitter) : ",
+       "Item number to buy (0 to leave): ")
+NH_STR(NH_STR_SHOP_BYE, "À bientôt dans l'ombre...", "See you in the shadows...")
+NH_STR(NH_STR_SHOP_INVALID, "Numéro d'objet invalide.", "Invalid item number.")
+NH_STR(NH_STR_SHOP_BLURB_STEALTH, "+2 furtivité, définitivement", "+2 stealth, permanently")
+NH_STR(NH_STR_SHOP_BLURB_ALERT, "Réduit l'alerte de 2 points", "Lowers alert by 2 points")
+NH_STR(NH_STR_SHOP_BLURB_VIRUS, "Pack de 3 virus puissants", "Pack of 3 powerful viruses")
+NH_STR(NH_STR_SHOP_BLURB_PROXY, "Anonymat x1,5 pendant 5 hacks", "Anonymity x1.5 for 5 hacks")
+NH_STR(NH_STR_SHOP_BLURB_KEY, "Déchiffre les fichiers niv. 1-2", "Decrypts level 1-2 files")
+NH_STR(NH_STR_SHOP_BLURB_AI, "IA de hacking automatisé", "Automated hacking AI assistant")
+NH_STR(NH_STR_SHOP_BLURB_QUANTUM, "Crypto-analyse quantique portable", "Portable quantum cryptanalysis")
+NH_STR(NH_STR_SHOP_BLURB_REPUTATION, "Réputation +20 points", "+20 reputation points")
+NH_STR(NH_STR_SHOP_BLURB_XP, "XP doublée pendant 3 hacks", "Double XP for 3 hacks")
+NH_STR(NH_STR_SHOP_BLURB_VPN, "Réduit l'alerte passivement", "Passively lowers alert")
+
 NH_STR(NH_STR_GAME_OVER_TITLE, "=== GAME OVER ===", "=== GAME OVER ===")
 NH_STR(NH_STR_GAME_OVER_DETECTED,
        "Vous avez été détecté par les systèmes de sécurité corporate !",
