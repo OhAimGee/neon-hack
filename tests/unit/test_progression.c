@@ -104,20 +104,78 @@ static void test_scan_xp(void)
 
 static void test_milestones(void)
 {
-    Player p;
-    memset(&p, 0, sizeof p);
+    GameState *gs = new_game();
     for (int m = 0; m < NH_MS_COUNT; m++)
     {
-        CHECK(nh_milestone_claim(&p, (NhMilestone)m));
-        CHECK(!nh_milestone_claim(&p, (NhMilestone)m)); /* une seule fois */
+        CHECK(nh_milestone_claim(gs, (NhMilestone)m));
+        CHECK(!nh_milestone_claim(gs, (NhMilestone)m)); /* une seule fois */
     }
-    CHECK(!nh_milestone_claim(&p, NH_MS_COUNT));
-    CHECK(!nh_milestone_claim(&p, (NhMilestone)-1));
+    CHECK(!nh_milestone_claim(gs, NH_MS_COUNT));
+    CHECK(!nh_milestone_claim(gs, (NhMilestone)-1));
+    /* Un événement par jalon obtenu, aucun pour les refus. */
+    CHECK_INT(nh_events_emitted(gs, NH_EV_MILESTONE), NH_MS_COUNT);
+    free(gs);
 
     /* Les jalons sont indépendants. */
-    memset(&p, 0, sizeof p);
-    CHECK(nh_milestone_claim(&p, NH_MS_QUANTUM_FIRST));
-    CHECK(nh_milestone_claim(&p, NH_MS_DECRYPT_TEST));
+    gs = new_game();
+    CHECK(nh_milestone_claim(gs, NH_MS_QUANTUM_FIRST));
+    CHECK(nh_milestone_claim(gs, NH_MS_DECRYPT_TEST));
+    CHECK_INT(nh_events_emitted(gs, NH_EV_MILESTONE), 2);
+    free(gs);
+}
+
+/* La réputation : bornée, affichée seulement quand elle monte, et annoncée sur le bus. */
+static void test_reputation(void)
+{
+    GameState *gs = new_game();
+    char out[512];
+    nh_set_lang(NH_LANG_FR);
+    nh_term_set_color(false);
+
+    NhCapture cap = nh_capture_begin();
+    nh_grant_reputation(gs, 20);
+    nh_capture_end(&cap, out, sizeof out);
+    CHECK(has(out, "[+20 réputation]"));
+    CHECK_INT(gs->player.reputation, 20);
+    CHECK_INT(nh_events_emitted(gs, NH_EV_REPUTATION), 1);
+
+    /* Une perte est silencieuse à l'écran (le message est celui de l'action), mais signalée. */
+    cap = nh_capture_begin();
+    nh_grant_reputation(gs, -5);
+    nh_capture_end(&cap, out, sizeof out);
+    CHECK_STR(out, "");
+    CHECK_INT(gs->player.reputation, 15);
+    CHECK_INT(nh_events_emitted(gs, NH_EV_REPUTATION), 2);
+
+    /* Zéro : rien du tout. */
+    nh_grant_reputation(gs, 0);
+    CHECK_INT(nh_events_emitted(gs, NH_EV_REPUTATION), 2);
+
+    /* Plafonds dans les deux sens, sans débordement d'entier. */
+    cap = nh_capture_begin();
+    nh_grant_reputation(gs, INT_MAX);
+    nh_capture_end(&cap, out, sizeof out);
+    CHECK_INT(gs->player.reputation, NH_REPUTATION_CAP);
+    nh_grant_reputation(gs, INT_MIN);
+    CHECK_INT(gs->player.reputation, -NH_REPUTATION_CAP);
+    free(gs);
+}
+
+/* La montée de niveau est un événement : une fois par niveau franchi. */
+static void test_level_up_event(void)
+{
+    GameState *gs = new_game();
+    char out[4096];
+    nh_set_fast(true);
+    grant(gs, 15, out, sizeof out);
+    CHECK_INT(nh_events_emitted(gs, NH_EV_LEVEL_UP), 1);
+    grant(gs, 500, out, sizeof out); /* 515 : niveau 6, soit 4 niveaux d'un coup */
+    CHECK_INT(nh_events_emitted(gs, NH_EV_LEVEL_UP), 5);
+    NhEventRecord rec;
+    CHECK(nh_events_peek(gs, 0, &rec));
+    CHECK_INT(rec.type, NH_EV_LEVEL_UP);
+    CHECK_INT(rec.value, 2);
+    free(gs);
 }
 
 static void test_grant_basic(void)
@@ -421,6 +479,8 @@ int main(void)
     test_names();
     test_scan_xp();
     test_milestones();
+    test_reputation();
+    test_level_up_event();
     test_grant_basic();
     test_unlocks_per_level();
     test_status_shows_progress();

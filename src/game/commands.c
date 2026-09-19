@@ -135,39 +135,39 @@ static bool cmd_clear(GameState *gs, const char *arg)
 #define NO NH_NO_UNLOCK
 
 static const NhCommand k_commands[] = {
-    /* nom             alias              catégorie        déblocage         niv. caché aide                            gestionnaire */
-    {"scan",           NULL,              NH_CAT_HACK,     CMD_SCAN,         0, false, NH_STR_HELP_SCAN,           cmd_scan_network},
-    {"bruteforce",     NULL,              NH_CAT_HACK,     CMD_BRUTEFORCE,   0, false, NH_STR_HELP_BRUTEFORCE,     cmd_bruteforce},
-    {"decrypt",        NULL,              NH_CAT_HACK,     CMD_DECRYPT,      0, false, NH_STR_HELP_DECRYPT,        cmd_decrypt},
-    {"backdoor",       NULL,              NH_CAT_HACK,     CMD_BACKDOOR,     0, false, NH_STR_HELP_BACKDOOR,       cmd_backdoor},
-    {"traceroute",     NULL,              NH_CAT_HACK,     CMD_TRACE_ROUTE,  0, false, NH_STR_HELP_TRACEROUTE,     cmd_trace_route},
-    {"exploit",        NULL,              NH_CAT_HACK,     CMD_EXPLOIT,      0, false, NH_STR_HELP_EXPLOIT,        cmd_exploit},
-    {"uploadvirus",    "upload_virus",    NH_CAT_HACK,     CMD_UPLOAD_VIRUS, 0, false, NH_STR_HELP_UPLOADVIRUS,    cmd_upload_virus},
-    {"stealth",        NULL,              NH_CAT_HACK,     NO,               0, true,  NH_STR_HELP_STEALTH,        cmd_stealth_mode},
-    {"aihack",         "ai_hack",         NH_CAT_HACK,     CMD_AI_HACK,      0, false, NH_STR_HELP_AIHACK,         cmd_ai_hack},
-    {"quantumdecrypt", "quantum_decrypt", NH_CAT_HACK,     CMD_QUANTUM_DECRYPT, 0, false, NH_STR_HELP_QUANTUMDECRYPT, cmd_quantum_decrypt},
+    /* nom             alias              catégorie        déblocage         niv. caché aide                            gestionnaire  [argument] */
+    {"scan",           NULL,              NH_CAT_HACK,     CMD_SCAN,         0, false, NH_STR_HELP_SCAN,           cmd_scan_network, NH_ARG_NONE},
+    {"bruteforce",     NULL,              NH_CAT_HACK,     CMD_BRUTEFORCE,   0, false, NH_STR_HELP_BRUTEFORCE,     cmd_bruteforce, NH_ARG_SYSTEM},
+    {"decrypt",        NULL,              NH_CAT_HACK,     CMD_DECRYPT,      0, false, NH_STR_HELP_DECRYPT,        cmd_decrypt, NH_ARG_NONE},
+    {"backdoor",       NULL,              NH_CAT_HACK,     CMD_BACKDOOR,     0, false, NH_STR_HELP_BACKDOOR,       cmd_backdoor, NH_ARG_SYSTEM},
+    {"traceroute",     NULL,              NH_CAT_HACK,     CMD_TRACE_ROUTE,  0, false, NH_STR_HELP_TRACEROUTE,     cmd_trace_route, NH_ARG_SYSTEM},
+    {"exploit",        NULL,              NH_CAT_HACK,     CMD_EXPLOIT,      0, false, NH_STR_HELP_EXPLOIT,        cmd_exploit, NH_ARG_SYSTEM},
+    {"uploadvirus",    "upload_virus",    NH_CAT_HACK,     CMD_UPLOAD_VIRUS, 0, false, NH_STR_HELP_UPLOADVIRUS,    cmd_upload_virus, NH_ARG_SYSTEM},
+    {"stealth",        NULL,              NH_CAT_HACK,     NO,               0, true,  NH_STR_HELP_STEALTH,        cmd_stealth_mode, NH_ARG_NONE},
+    {"aihack",         "ai_hack",         NH_CAT_HACK,     CMD_AI_HACK,      0, false, NH_STR_HELP_AIHACK,         cmd_ai_hack, NH_ARG_SYSTEM},
+    {"quantumdecrypt", "quantum_decrypt", NH_CAT_HACK,     CMD_QUANTUM_DECRYPT, 0, false, NH_STR_HELP_QUANTUMDECRYPT, cmd_quantum_decrypt, NH_ARG_NONE},
 
-    {"shop",           NULL,              NH_CAT_WORLD,    NO,               0, false, NH_STR_HELP_SHOP,           cmd_shop},
-    {"laylow",         NULL,              NH_CAT_WORLD,    NO,               0, false, NH_STR_HELP_LAYLOW,         cmd_lay_low},
-    {"quests",         NULL,              NH_CAT_WORLD,    NO,               0, false, NH_STR_HELP_QUESTS,         cmd_quests},
-    {"contacts",       NULL,              NH_CAT_WORLD,    NO,               0, false, NH_STR_HELP_CONTACTS,       cmd_contacts},
-    {"contact",        NULL,              NH_CAT_WORLD,    NO,               0, false, NH_STR_HELP_CONTACT,        cmd_interact_contact},
-    {"messages",       NULL,              NH_CAT_WORLD,    NO,               0, false, NH_STR_HELP_MESSAGES,       cmd_messages},
-    {"read",           NULL,              NH_CAT_WORLD,    NO,               0, false, NH_STR_HELP_READ,           cmd_read},
+    {"shop",           NULL,              NH_CAT_WORLD,    NO,               0, false, NH_STR_HELP_SHOP,           cmd_shop, NH_ARG_NONE},
+    {"laylow",         NULL,              NH_CAT_WORLD,    NO,               0, false, NH_STR_HELP_LAYLOW,         cmd_lay_low, NH_ARG_NONE},
+    {"quests",         NULL,              NH_CAT_WORLD,    NO,               0, false, NH_STR_HELP_QUESTS,         cmd_quests, NH_ARG_NONE},
+    {"contacts",       NULL,              NH_CAT_WORLD,    NO,               0, false, NH_STR_HELP_CONTACTS,       cmd_contacts, NH_ARG_NONE},
+    {"contact",        NULL,              NH_CAT_WORLD,    NO,               0, false, NH_STR_HELP_CONTACT,        cmd_interact_contact, NH_ARG_CONTACT},
+    {"messages",       NULL,              NH_CAT_WORLD,    NO,               0, false, NH_STR_HELP_MESSAGES,       cmd_messages, NH_ARG_NONE},
+    {"read",           NULL,              NH_CAT_WORLD,    NO,               0, false, NH_STR_HELP_READ,           cmd_read, NH_ARG_MESSAGE},
 
-    {"advhack",        NULL,              NH_CAT_ADVANCED, NO,               3, false, NH_STR_HELP_ADVHACK,        cmd_advanced_hack},
-    {"aiassist",       NULL,              NH_CAT_ADVANCED, NO,               3, false, NH_STR_HELP_AIASSIST,       cmd_ai_assist_hack},
-    {"socialeng",      NULL,              NH_CAT_ADVANCED, NO,               2, false, NH_STR_HELP_SOCIALENG,      cmd_social_engineer},
-    {"stealthmode",    NULL,              NH_CAT_ADVANCED, NO,               0, false, NH_STR_HELP_STEALTHMODE,    cmd_stealth_mode_toggle},
-    {"analyzedefenses", NULL,             NH_CAT_ADVANCED, NO,               0, false, NH_STR_HELP_ANALYZEDEFENSES, cmd_analyze_defenses},
-    {"neuralsync",     NULL,              NH_CAT_ADVANCED, NO,               5, false, NH_STR_HELP_NEURALSYNC,     cmd_neural_sync},
-    {"temporalhack",   NULL,              NH_CAT_ADVANCED, NO,               6, false, NH_STR_HELP_TEMPORALHACK,   cmd_temporal_hack},
+    {"advhack",        NULL,              NH_CAT_ADVANCED, NO,               3, false, NH_STR_HELP_ADVHACK,        cmd_advanced_hack, NH_ARG_SYSTEM},
+    {"aiassist",       NULL,              NH_CAT_ADVANCED, NO,               3, false, NH_STR_HELP_AIASSIST,       cmd_ai_assist_hack, NH_ARG_SYSTEM},
+    {"socialeng",      NULL,              NH_CAT_ADVANCED, NO,               2, false, NH_STR_HELP_SOCIALENG,      cmd_social_engineer, NH_ARG_SYSTEM},
+    {"stealthmode",    NULL,              NH_CAT_ADVANCED, NO,               0, false, NH_STR_HELP_STEALTHMODE,    cmd_stealth_mode_toggle, NH_ARG_NONE},
+    {"analyzedefenses", NULL,             NH_CAT_ADVANCED, NO,               0, false, NH_STR_HELP_ANALYZEDEFENSES, cmd_analyze_defenses, NH_ARG_SYSTEM},
+    {"neuralsync",     NULL,              NH_CAT_ADVANCED, NO,               5, false, NH_STR_HELP_NEURALSYNC,     cmd_neural_sync, NH_ARG_NONE},
+    {"temporalhack",   NULL,              NH_CAT_ADVANCED, NO,               6, false, NH_STR_HELP_TEMPORALHACK,   cmd_temporal_hack, NH_ARG_SYSTEM},
 
-    {"status",         NULL,              NH_CAT_SYSTEM,   NO,               0, false, NH_STR_HELP_STATUS,         cmd_status},
-    {"help",           NULL,              NH_CAT_SYSTEM,   NO,               0, false, NH_STR_HELP_HELP,           cmd_help},
-    {"save",           NULL,              NH_CAT_SYSTEM,   NO,               0, false, NH_STR_HELP_SAVE,           cmd_save},
-    {"quit",           "exit",            NH_CAT_SYSTEM,   NO,               0, false, NH_STR_HELP_QUIT,           cmd_quit},
-    {"clear",          NULL,              NH_CAT_SYSTEM,   NO,               0, false, NH_STR_HELP_CLEAR,          cmd_clear},
+    {"status",         NULL,              NH_CAT_SYSTEM,   NO,               0, false, NH_STR_HELP_STATUS,         cmd_status, NH_ARG_NONE},
+    {"help",           NULL,              NH_CAT_SYSTEM,   NO,               0, false, NH_STR_HELP_HELP,           cmd_help, NH_ARG_NONE},
+    {"save",           NULL,              NH_CAT_SYSTEM,   NO,               0, false, NH_STR_HELP_SAVE,           cmd_save, NH_ARG_NONE},
+    {"quit",           "exit",            NH_CAT_SYSTEM,   NO,               0, false, NH_STR_HELP_QUIT,           cmd_quit, NH_ARG_NONE},
+    {"clear",          NULL,              NH_CAT_SYSTEM,   NO,               0, false, NH_STR_HELP_CLEAR,          cmd_clear, NH_ARG_NONE},
 };
 
 #undef NO
@@ -239,6 +239,15 @@ NhDispatch nh_dispatch(GameState *gs, const char *line)
 
     NhDispatch result = cmd->fn(gs, arg) ? NH_DISPATCH_OK : NH_DISPATCH_FAILED;
     nh_tutorial_on_command(gs, cmd->name, result); /* la mission d'ECHO-7 suit ce que le joueur vient de faire */
+
+    /* Puis les événements que la commande a provoqués (et le temps qui passe) sont livrés aux quêtes
+     * et aux contacts : leurs annonces s'affichent après le résultat, pas au milieu. Une partie
+     * finie (quit, game over) n'a plus personne à prévenir. */
+    nh_event(gs, NH_EV_COMMAND, (int)result);
+    if (gs->running && !gs->player.game_over && !nh_alert_is_game_over(&gs->alert))
+        nh_events_flush(gs);
+    else
+        nh_events_clear(gs);
     return result;
 }
 

@@ -17,8 +17,12 @@
  * Le tutoriel n'est PAS actif dans un GameState neuf (init_game) : c'est le prologue (intro.c)
  * qui le démarre ou le passe. Il fait partie de la sauvegarde.
  *
- * Anti-farm : l'état ne peut qu'avancer et la récompense n'est versée qu'à la dernière étape,
- * une fois (`done`). Elle ne donne pas d'expérience : les étapes en rapportent déjà par le jeu.
+ * La mission est la première quête du journal (QUEST_INTRO_TUTORIAL, voir quest_system.h) : la
+ * terminer passe par nh_quest_complete(), qui annonce et verse la récompense.
+ *
+ * Anti-farm : l'état ne peut qu'avancer, et une quête ne se termine qu'une fois : la récompense
+ * n'est versée qu'à la dernière étape, une seule fois. Elle ne donne pas d'expérience : les étapes
+ * en rapportent déjà par le jeu.
  */
 
 #include <stdbool.h>

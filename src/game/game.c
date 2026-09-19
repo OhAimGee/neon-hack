@@ -11,8 +11,10 @@
 #include "../core/io.h"
 #include "../core/platform.h"
 #include "../i18n/i18n.h"
+#include "../ui/lineedit.h"
 #include "../ui/term.h"
 #include "commands.h"
+#include "complete.h"
 #include "legacy_colors.h"
 #include "save.h"
 
@@ -81,7 +83,7 @@ void init_game(GameState *gs)
     // Initialiser les nouveaux modules
     init_shop(&gs->shop);
     nh_alert_init(&gs->alert);
-    init_quest_system(&gs->quests);
+    nh_quests_init(&gs->quests);
     init_contact_system(&gs->contacts);
     init_advanced_hacking_system(&gs->advanced);
 
@@ -126,9 +128,12 @@ void game_loop(GameState *gs)
     while (gs->running && !gs->player.game_over)
     {
         nh_refresh_hud(gs);
-        printf("%s[%s@neon-terminal]%s $ ", nh_c(NH_C_BRIGHT_GREEN), gs->player.name, nh_c(NH_C_RESET));
+        char prompt[192];
+        snprintf(prompt, sizeof prompt, "%s[%s@neon-terminal]%s $ ", nh_c(NH_C_BRIGHT_GREEN), gs->player.name,
+                 nh_c(NH_C_RESET));
 
-        if (nh_read_line(input, sizeof(input)) != NH_IO_OK)
+        /* Sur un vrai terminal : édition, historique et complétion par TAB ; sinon, une simple lecture de ligne. */
+        if (nh_lineedit_read(prompt, input, sizeof(input), nh_complete_line, gs) != NH_IO_OK)
         {
             // Entrée fermée (Ctrl+D, fichier épuisé) : on quitte au lieu de boucler.
             printf("\n%s\n", nh_tr(NH_STR_INPUT_CLOSED));

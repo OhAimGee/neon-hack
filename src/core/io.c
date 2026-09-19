@@ -14,6 +14,8 @@ static FILE *input(void) { return g_in ? g_in : stdin; }
 
 void nh_io_set_input(FILE *in) { g_in = in; }
 
+bool nh_io_uses_stdin(void) { return g_in == NULL || g_in == stdin; }
+
 NhIoStatus nh_read_line(char *buf, size_t size)
 {
     if (size == 0)

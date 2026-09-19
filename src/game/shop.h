@@ -22,8 +22,7 @@ typedef enum
 typedef struct
 {
     ShopItemType type;
-    char name[50];
-    char description[200];
+    char name[50]; // nom propre (marque) : identique dans les deux langues ; le résumé est dans shop_view.c
     int price;
     int level_required;
     bool is_consumable;
@@ -35,14 +34,13 @@ typedef struct
     ShopItem items[ITEM_COUNT];
     int item_count;
     bool is_open;
+    unsigned bought; // bit i : l'objet i a déjà été acheté au moins une fois (sauvegardé ; lu par les quêtes)
     char vendor_name[50];
     char shop_location[100];
 } CyberShop;
 
-// Fonctions de la boutique
+// Fonctions de la boutique (l'affichage est dans shop_view.[ch])
 void init_shop(CyberShop *shop);
-void display_shop(const CyberShop *shop, int player_credits, int player_level);
-void display_shop_welcome(void);
 bool buy_item(CyberShop *shop, ShopItemType item_type, int *player_credits, int player_level);
 void use_item(ShopItemType item_type, void *player_data);
 

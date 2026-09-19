@@ -137,7 +137,7 @@ bool cmd_decrypt(GameState *gs, const char *encrypted_data)
     if (strlen(encrypted_data) == 0)
     {
         printf("Usage: decrypt <message_crypté>\n");
-        printf("Essayez: decrypt WKLV#IS#D#TEZT\n");
+        printf("Essayez: decrypt WKLV#LV#D#WHVW\n");
         return false;
     }
 
@@ -172,7 +172,7 @@ bool cmd_decrypt(GameState *gs, const char *encrypted_data)
     if (strstr(decrypted, "THIS IS A TEST") != NULL)
     {
         printf("\nMessage de test décodé avec succès !\n");
-        if (nh_milestone_claim(&gs->player, NH_MS_DECRYPT_TEST))
+        if (nh_milestone_claim(gs, NH_MS_DECRYPT_TEST))
             nh_grant_xp(gs, 20);
         else
             printf("%s\n", nh_tr(NH_STR_PROG_ALREADY_CLAIMED));
@@ -525,7 +525,7 @@ bool cmd_quantum_decrypt(GameState *gs, const char *data)
         print_colored_text("║  Budget: 50 000 000 crédits                                     ║\n", COLOR_RED);
         print_colored_text("╚══════════════════════════════════════════════════════════════════╝\n", COLOR_RED);
 
-        if (nh_milestone_claim(&gs->player, NH_MS_CLASSIFIED_DOC))
+        if (nh_milestone_claim(gs, NH_MS_CLASSIFIED_DOC))
         {
             gs->player.credits += 10000;
             printf("[+10000 crédits bonus !]\n");
@@ -559,7 +559,7 @@ bool cmd_quantum_decrypt(GameState *gs, const char *data)
         printf("\n");
     }
 
-    if (nh_milestone_claim(&gs->player, NH_MS_QUANTUM_FIRST))
+    if (nh_milestone_claim(gs, NH_MS_QUANTUM_FIRST))
     {
         nh_grant_xp(gs, 50);
         gs->player.credits += 2000;

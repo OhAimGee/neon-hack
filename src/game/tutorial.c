@@ -43,31 +43,6 @@ void nh_echo_say(const char *text, bool newline, unsigned delay_ms)
 
 bool nh_tutorial_active(const GameState *gs) { return gs->tutorial.step != NH_TUT_NONE; }
 
-/* ---- Lien avec l'ancien journal de quêtes ---------------------------------------------------- */
-
-/*
- * « Premiers Pas dans l'Ombre » existait déjà dans le journal d'origine (jamais mis à jour par le
- * jeu). Une fois le tutoriel terminé ou passé, on la clôt là aussi avec la même comptabilité que
- * update_quest_progress(), pour que le journal et les prérequis des quêtes suivantes restent justes.
- */
-static void close_legacy_quest(GameState *gs)
-{
-    Quest *q = &gs->quests.quests[QUEST_INTRO_TUTORIAL];
-    if (q->status != QUEST_STATUS_ACTIVE)
-        return;
-
-    q->status = QUEST_STATUS_COMPLETED;
-    for (int i = 0; i < q->objective_count; i++)
-    {
-        q->objectives[i].current_value = q->objectives[i].target_value;
-        q->objectives[i].is_completed = true;
-    }
-    if (gs->quests.active_quest_count > 0)
-        gs->quests.active_quest_count--;
-    gs->quests.completed_quest_count++;
-    gs->quests.global_story_progress += 100 / QUEST_COUNT;
-}
-
 /* ---- Cycle de vie ---------------------------------------------------------------------------- */
 
 void nh_tutorial_start(GameState *gs)
@@ -80,7 +55,7 @@ void nh_tutorial_skip(GameState *gs)
 {
     gs->tutorial.step = NH_TUT_NONE;
     gs->tutorial.done = true;
-    close_legacy_quest(gs);
+    nh_quest_complete(gs, QUEST_INTRO_TUTORIAL, false); /* close en silence : sans récompense */
 }
 
 void nh_tutorial_announce(const GameState *gs, bool resumed)
@@ -169,25 +144,17 @@ static void finish(GameState *gs)
 {
     gs->tutorial.step = NH_TUT_NONE;
     gs->tutorial.done = true;
-    close_legacy_quest(gs);
-
-    printf("\n%s", nh_c(NH_C_BRIGHT_GREEN));
-    printf(nh_tr(NH_STR_TUT_DONE_BANNER), nh_tr(NH_STR_TUT_MISSION_TITLE));
-    printf("%s\n\n", nh_c(NH_C_RESET));
 
     char line[256];
+    printf("\n");
     snprintf(line, sizeof line, nh_tr(NH_STR_TUT_DONE_1), gs->player.name);
     nh_echo_say(line, true, 0);
     nh_echo_say(nh_tr(NH_STR_TUT_DONE_2), true, 0);
     nh_echo_say(nh_tr(NH_STR_TUT_DONE_3), true, 0);
 
-    gs->player.credits += NH_TUT_REWARD_CREDITS;
-    gs->player.reputation += NH_TUT_REWARD_REPUTATION;
-    printf("\n%s", nh_c(NH_C_BRIGHT_GREEN));
-    printf(nh_tr(NH_STR_PROG_CREDITS), NH_TUT_REWARD_CREDITS);
-    printf(" ");
-    printf(nh_tr(NH_STR_TUT_REWARD_REP), NH_TUT_REWARD_REPUTATION);
-    printf("%s\n", nh_c(NH_C_RESET));
+    /* La mission est la première quête du journal : la terminer l'annonce, verse la récompense
+     * (NH_TUT_REWARD_*, une seule fois) et débloque la suite. */
+    nh_quest_complete(gs, QUEST_INTRO_TUTORIAL, true);
 }
 
 /* Valide l'étape en cours, puis annonce la suivante (ou termine la mission). */

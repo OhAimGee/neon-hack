@@ -16,6 +16,9 @@ typedef enum
 /* Source d'entrée (tests). NULL restaure stdin. */
 void nh_io_set_input(FILE *in);
 
+/* Vrai tant que l'entrée est le vrai stdin (aucun flux de test installé par nh_io_set_input). */
+bool nh_io_uses_stdin(void);
+
 /*
  * Lit une ligne dans buf (taille size >= 1), sans le "\r\n" final.
  * Une ligne trop longue est tronquée et le reste est ignoré : il ne

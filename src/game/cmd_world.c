@@ -1,5 +1,6 @@
 /*
- * Commandes du monde : boutique, alerte, quêtes, contacts, messages.
+ * Commandes du monde : boutique, alerte, contacts, messages (le journal de quêtes, `quests`, est
+ * dans quest_system.c).
  *
  * Code d'origine (neon_hack.c, v2.087) déplacé tel quel et adapté à GameState :
  * les variables globales sont devenues des champs de `gs`. La logique sera
@@ -11,7 +12,8 @@
 #include "../core/platform.h"
 #include "../i18n/i18n.h"
 #include "legacy_colors.h"
-#include "tutorial.h"
+#include "progression.h"
+#include "shop_view.h"
 
 #include <ctype.h>
 #include <stdio.h>
@@ -32,33 +34,40 @@ bool cmd_shop(GameState *gs, const char *arg)
         return false;
     }
 
-    display_shop_welcome();
-    display_shop(&gs->shop, gs->player.credits, gs->player.level);
+    nh_shop_show(&gs->shop, gs->player.credits, gs->player.level);
 
-    char input[10];
-    printf("\nEntrez le numéro de l'objet à acheter (0 pour quitter): ");
-    nh_read_line(input, sizeof(input));
-    input[strcspn(input, "\n")] = 0;
+    char input[16];
+    printf("%s%s%s", nh_c(NH_C_MAGENTA), nh_tr(NH_STR_SHOP_PROMPT), nh_c(NH_C_RESET));
+    if (nh_read_line(input, sizeof input) != NH_IO_OK)
+        return false;
 
-    int choice = atoi(input);
+    // Entrée seule, comme 0 : on quitte.
+    int choice = 0;
+    bool blank = input[strspn(input, " \t")] == '\0';
+    if (!blank && !nh_parse_int(input, 0, ITEM_COUNT, &choice))
+    {
+        printf("%s\n", nh_tr(NH_STR_SHOP_INVALID));
+        return true;
+    }
     if (choice == 0)
     {
-        printf("À bientôt dans l'ombre...\n");
+        printf("%s\n", nh_tr(NH_STR_SHOP_BYE));
         return true;
     }
 
-    if (choice >= 1 && choice <= ITEM_COUNT)
+    ShopItemType item_type = (ShopItemType)(choice - 1);
+    if (buy_item(&gs->shop, item_type, &gs->player.credits, gs->player.level))
     {
-        ShopItemType item_type = (ShopItemType)(choice - 1);
-        if (buy_item(&gs->shop, item_type, &gs->player.credits, gs->player.level))
+        nh_event(gs, NH_EV_ITEM_BOUGHT, (int)item_type);
+        // Utiliser l'objet acheté immédiatement si applicable. Seul le boost de réputation a un
+        // effet pour l'instant (une quête en dépend) ; les autres arrivent avec la phase 3.4.
+        if (item_type == ITEM_REPUTATION_BOOST)
         {
-            // Utiliser l'objet acheté immédiatement si applicable
-            use_item(item_type, &gs->player);
+            nh_grant_reputation(gs, 20);
+            printf("\n");
         }
-    }
-    else
-    {
-        printf("Numéro d'objet invalide.\n");
+        else
+            use_item(item_type, &gs->player);
     }
 
     return true;
@@ -112,7 +121,7 @@ bool cmd_lay_low(GameState *gs, const char *arg)
     printf("%s\n", nh_tr(k_done[method]));
     if (method == NH_REDUCTION_FRAME)
     {
-        gs->player.reputation -= 5;
+        nh_grant_reputation(gs, -5);
         printf("%s\n", nh_tr(NH_STR_ALERT_KARMA));
     }
     printf(nh_tr(NH_STR_ALERT_NOW), before, gs->alert.level);
@@ -120,31 +129,13 @@ bool cmd_lay_low(GameState *gs, const char *arg)
     return true;
 }
 
-bool cmd_quests(GameState *gs, const char *arg)
+/* Parle à un contact ; une conversation qui a eu lieu est un événement (les quêtes le comptent). */
+static bool talk_to(GameState *gs, ContactType id)
 {
-    (void)arg;
-
-    /* Pendant le tutoriel, le journal montre la mission d'ECHO-7 étape par étape. */
-    if (nh_tutorial_active(gs))
-    {
-        nh_tutorial_print_mission(gs);
-        return true;
-    }
-
-    display_quest_log(&gs->quests);
-
-    printf("\nVoulez-vous voir les détails d'une quête ? (tapez le numéro ou 0 pour sortir): ");
-    char input[10];
-    nh_read_line(input, sizeof(input));
-    input[strcspn(input, "\n")] = 0;
-
-    int quest_id = atoi(input);
-    if (quest_id > 0 && quest_id <= gs->quests.active_quest_count)
-    {
-        display_quest_details(&gs->quests.quests[quest_id - 1]);
-    }
-
-    return true;
+    bool ok = contact_npc(&gs->contacts, id, &gs->player);
+    if (ok)
+        nh_event(gs, NH_EV_CONTACT_MET, (int)id);
+    return ok;
 }
 
 bool cmd_contacts(GameState *gs, const char *arg)
@@ -162,7 +153,7 @@ bool cmd_contacts(GameState *gs, const char *arg)
     if (contact_id > 0 && contact_id <= gs->contacts.active_contacts)
     {
         ContactType id = (ContactType)(contact_id - 1);
-        contact_npc(&gs->contacts, id, &gs->player);
+        talk_to(gs, id);
     }
 
     return true;
@@ -236,7 +227,7 @@ bool cmd_interact_contact(GameState *gs, const char *argument)
                 if (current_number == contact_number)
                 {
                     ContactType id = (ContactType)i;
-                    contact_npc(&gs->contacts, id, &gs->player);
+                    talk_to(gs, id);
                     return true;
                 }
                 current_number++;
@@ -256,7 +247,7 @@ bool cmd_interact_contact(GameState *gs, const char *argument)
                 if (strcmp(gs->contacts.contacts[i].name, argument) == 0)
                 {
                     ContactType id = (ContactType)i;
-                    contact_npc(&gs->contacts, id, &gs->player);
+                    talk_to(gs, id);
                     return true;
                 }
             }

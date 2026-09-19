@@ -22,6 +22,23 @@
 
 #include "game.h"
 
+/*
+ * Indices des systèmes dans gs->nodes (l'ordre de la table de world.c, garanti par ses
+ * initialiseurs désignés) : le code de jeu, les quêtes en tête, nomme un système sans le
+ * chercher par son texte.
+ */
+typedef enum
+{
+    NH_NODE_LOCALHOST,
+    NH_NODE_CORP_SERVER,
+    NH_NODE_NEXUS,
+    NH_NODE_MARKET,
+    NH_NODE_LAB,
+    NH_NODE_BANK,
+    NH_NODE_GOV,
+    NH_NODE_COUNT
+} NhNode;
+
 /* Méthodes d'attaque « classiques » : leurs formules de chance vivent toutes dans world.c. */
 typedef enum
 {
@@ -101,10 +118,11 @@ int nh_world_locked_files(const NetworkNode *node);
 /*
  * Compromet le système `idx` : verse UNE fois ses crédits et son expérience (via nh_grant_xp).
  * Avec `deep`, extrait aussi tous ses fichiers. Renvoie false, sans rien verser, s'il l'était déjà.
+ * Émet NH_EV_NODE_COMPROMISED (et NH_EV_FILES_EXTRACTED si des fichiers sont extraits).
  */
 bool nh_world_compromise(GameState *gs, int idx, bool deep);
 
-/* Extrait les fichiers restants d'un système ; verse leurs crédits ; renvoie combien. */
+/* Extrait les fichiers restants d'un système ; verse leurs crédits ; renvoie combien (et émet NH_EV_FILES_EXTRACTED). */
 int nh_world_extract(GameState *gs, int idx);
 
 #endif /* NH_WORLD_H */

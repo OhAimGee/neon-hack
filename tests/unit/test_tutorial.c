@@ -6,6 +6,7 @@
 #include "../../src/core/platform.h"
 #include "../../src/game/commands.h"
 #include "../../src/game/progression.h"
+#include "../../src/game/quest_system.h"
 #include "../../src/game/tutorial.h"
 #include "../../src/game/world.h"
 #include "../../src/i18n/i18n.h"
@@ -142,8 +143,12 @@ static void test_full_walkthrough(void)
     CHECK(!nh_tutorial_active(gs));
     CHECK(gs->tutorial.done);
     CHECK_INT(gs->tutorial.step, NH_TUT_NONE);
-    CHECK(has(out, "MISSION ACCOMPLIE"));
+    CHECK(has(out, "QUÊTE TERMINÉE"));
     CHECK(has(out, "Testeur")); /* ECHO-7 s'adresse au joueur par son nom */
+    CHECK_INT(gs->quests.quests[QUEST_INTRO_TUTORIAL].status, QUEST_STATUS_COMPLETED);
+    /* le niveau 2 est atteint et le tutoriel terminé : la première vraie quête démarre dans la foulée */
+    CHECK_INT(gs->quests.quests[QUEST_FIRST_INFILTRATION].status, QUEST_STATUS_ACTIVE);
+    CHECK(has(out, "NOUVELLE QUÊTE"));
     CHECK_INT(gs->player.reputation, rep0 + NH_TUT_REWARD_REPUTATION);
     /* les crédits comprennent la récompense (le coût éventuel de la méthode est déjà décompté) */
     CHECK(gs->player.credits >= credits_before + NH_TUT_REWARD_CREDITS - 100);
@@ -156,8 +161,9 @@ static void test_full_walkthrough(void)
     run(gs, "quests", out, sizeof out);
     CHECK_INT(gs->player.credits, credits_done);
     CHECK_INT(gs->player.reputation, rep_done);
-    CHECK(!has(out, "ECHO-7"));
-    CHECK(has(out, "Voulez-vous voir")); /* le journal d'origine est de retour */
+    CHECK(!has(out, "MISSION EN COURS"));
+    CHECK(has(out, "JOURNAL DE QUÊTES")); /* le journal des quêtes est de retour */
+    CHECK(has(out, "Baptême du Feu"));
 
     free(gs);
 }
@@ -289,41 +295,49 @@ static void test_no_reminder_when_step_progresses(void)
 static void test_skip(void)
 {
     GameState *gs = new_tutorial();
+    char out[8192];
     int credits0 = gs->player.credits;
-    int completed0 = gs->quests.completed_quest_count;
-    int active0 = gs->quests.active_quest_count;
+    int rep0 = gs->player.reputation;
+    int completed0 = nh_quests_count(&gs->quests, QUEST_STATUS_COMPLETED);
+    int active0 = nh_quests_count(&gs->quests, QUEST_STATUS_ACTIVE);
     CHECK_INT(gs->quests.quests[QUEST_INTRO_TUTORIAL].status, QUEST_STATUS_ACTIVE);
 
+    NhCapture cap = nh_capture_begin();
     nh_tutorial_skip(gs);
+    nh_capture_end(&cap, out, sizeof out);
     CHECK(gs->tutorial.done);
     CHECK(!nh_tutorial_active(gs));
     CHECK_INT(gs->player.credits, credits0); /* passer le tutoriel ne rapporte rien */
+    CHECK_INT(gs->player.reputation, rep0);
+    CHECK(!has(out, "QUÊTE TERMINÉE")); /* et se fait en silence */
     CHECK_INT(gs->quests.quests[QUEST_INTRO_TUTORIAL].status, QUEST_STATUS_COMPLETED);
-    CHECK_INT(gs->quests.completed_quest_count, completed0 + 1);
-    CHECK_INT(gs->quests.active_quest_count, active0 - 1);
+    CHECK_INT(nh_quests_count(&gs->quests, QUEST_STATUS_COMPLETED), completed0 + 1);
+    CHECK_INT(nh_quests_count(&gs->quests, QUEST_STATUS_ACTIVE), active0 - 1);
 
     /* rejouer skip ne double pas la comptabilité */
     nh_tutorial_skip(gs);
-    CHECK_INT(gs->quests.completed_quest_count, completed0 + 1);
-    CHECK_INT(gs->quests.active_quest_count, active0 - 1);
+    CHECK_INT(nh_quests_count(&gs->quests, QUEST_STATUS_COMPLETED), completed0 + 1);
+    CHECK_INT(nh_quests_count(&gs->quests, QUEST_STATUS_ACTIVE), active0 - 1);
     free(gs);
 }
 
-static void test_legacy_quest_closed_on_finish(void)
+/* Fin du tutoriel : la quête de l'aventure est fermée par le moteur de quêtes, objectif compris. */
+static void test_quest_closed_on_finish(void)
 {
     GameState *gs = new_tutorial();
     char out[16384];
-    int completed0 = gs->quests.completed_quest_count;
+    int completed0 = nh_quests_count(&gs->quests, QUEST_STATUS_COMPLETED);
     gs->tutorial.step = NH_TUT_LAYLOW;
     gs->alert.reductions_done = 1;
 
     run(gs, "status", out, sizeof out);
     CHECK(gs->tutorial.done);
-    Quest *q = &gs->quests.quests[QUEST_INTRO_TUTORIAL];
-    CHECK_INT(q->status, QUEST_STATUS_COMPLETED);
-    for (int i = 0; i < q->objective_count; i++)
-        CHECK(q->objectives[i].is_completed);
-    CHECK_INT(gs->quests.completed_quest_count, completed0 + 1);
+    CHECK_INT(gs->quests.quests[QUEST_INTRO_TUTORIAL].status, QUEST_STATUS_COMPLETED);
+    const NhQuestDef *def = nh_quest_def(QUEST_INTRO_TUTORIAL);
+    for (int i = 0; i < def->objective_count; i++)
+        CHECK(nh_quest_objective_done(&gs->quests, QUEST_INTRO_TUTORIAL, i));
+    CHECK_INT(nh_quests_count(&gs->quests, QUEST_STATUS_COMPLETED), completed0 + 1);
+    CHECK_INT(nh_events_emitted(gs, NH_EV_QUEST_COMPLETED), 1);
     free(gs);
 }
 
@@ -422,7 +436,7 @@ int main(void)
     test_reminders();
     test_no_reminder_when_step_progresses();
     test_skip();
-    test_legacy_quest_closed_on_finish();
+    test_quest_closed_on_finish();
     test_ignored_when_game_stopped();
     test_announce();
     test_english();

@@ -44,8 +44,16 @@ typedef enum
     NH_MS_COUNT
 } NhMilestone;
 
-/* Vrai la première fois seulement (et enregistre le jalon). */
-bool nh_milestone_claim(Player *player, NhMilestone milestone);
+/* Vrai la première fois seulement (et enregistre le jalon, puis émet NH_EV_MILESTONE). */
+bool nh_milestone_claim(GameState *gs, NhMilestone milestone);
+
+/*
+ * Modifie la réputation de `amount` (négatif : elle baisse) et émet NH_EV_REPUTATION. Un gain
+ * est annoncé (« [+20 réputation] », ligne laissée ouverte comme nh_grant_xp) ; une perte est
+ * silencieuse : à l'appelant de la raconter. Bornée à ±NH_REPUTATION_CAP. 0 : sans effet.
+ */
+#define NH_REPUTATION_CAP 1000000
+void nh_grant_reputation(GameState *gs, int amount);
 
 /*
  * Ajoute `amount` (> 0) d'expérience, annonce le gain, puis applique autant de montées de

@@ -572,10 +572,11 @@ run_in "$DATA/tuto0b" 'Neo\n\n\nquests\nquit\n' --new
 if contains "=== MISSION EN COURS ==="; then pass "tutoriel : Entrée au choix = tutoriel (par défaut)"
 else fail "tutoriel par défaut"; fi
 
-# « Je me débrouille » : pas de tutoriel, le journal de quêtes d'origine.
+# « Je me débrouille » : pas de tutoriel, le journal de quêtes (le tutoriel y figure comme terminé).
 run_in "$DATA/tuto1" 'Neo\n\n2\nquests\n0\nquit\n' --new
-if [ "$CODE" -eq 0 ] && ! contains "MISSION EN COURS" && contains "Voulez-vous voir les détails"; then
-    pass "tutoriel passé : aucune consigne, journal de quêtes d'origine"
+if [ "$CODE" -eq 0 ] && ! contains "MISSION EN COURS" && contains "JOURNAL DE QUÊTES" && contains "Détails d'une quête" \
+    && contains "[1] Premiers Pas dans l'Ombre" && contains "Prochaine quête : atteignez le niveau 2."; then
+    pass "tutoriel passé : aucune consigne, journal de quêtes"
 else fail "tutoriel passé" "code=$CODE"; fi
 
 # Rappels : commande inconnue, verrouillée ou ratée.
@@ -596,19 +597,22 @@ FULL="${TUTO_HEAD}quests\nhelp\nscan\nstatus\nscan\nscan\nscan\nscan\nbruteforce
 ok_seed=""
 for seed in 1 2 3 4 5 6 7 8; do
     run_in "$DATA/tuto-full$seed" "$FULL" --new --seed "$seed"
-    if contains "MISSION ACCOMPLIE"; then ok_seed=$seed; break; fi
+    if contains "QUÊTE TERMINÉE"; then ok_seed=$seed; break; fi
 done
 steps=$(printf '%s' "$OUT" | grep -c "Objectif accompli")
 if [ -n "$ok_seed" ] && [ "$steps" -eq 7 ] && contains "Pas mal du tout, Neo" && contains "[+100 crédits]" \
-    && contains "[+10 réputation]" && contains "Réputation: 10" && contains "Niveau: 2 (Apprenti)"; then
-    pass "tutoriel : les 7 étapes, mission accomplie, récompense versée (graine $ok_seed)"
+    && contains "[+10 réputation]" && contains "Réputation: 10" && contains "Niveau: 2 (Apprenti)" \
+    && contains "QUÊTE TERMINÉE : Premiers Pas dans l'Ombre" && contains "NOUVELLE QUÊTE : Baptême du Feu" \
+    && contains "NOUVEAU CONTACT DÉBLOQUÉ: R4Z0R"; then
+    pass "tutoriel : les 7 étapes, quête terminée, récompense versée, quête suivante et contact débloqués (graine $ok_seed)"
 else fail "parcours complet" "graine=${ok_seed:-aucune} étapes=$steps"; fi
 
 # La récompense n'est versée qu'une fois, et la mission terminée se retrouve au menu suivant.
 D="$DATA/tuto-full$ok_seed"
 if [ -n "$ok_seed" ]; then
     run_in "$D" '1\nquests\n0\nstatus\nquit\n'
-    if contains "Voulez-vous voir les détails" && ! contains "MISSION EN COURS" && ! contains "Content de te revoir" \
+    if contains "Détails d'une quête" && contains "Baptême du Feu" && ! contains "MISSION EN COURS" \
+        && ! contains "QUÊTE TERMINÉE" && ! contains "Content de te revoir" \
         && contains "Réputation: 10" && contains "Nom: Neo"; then
         pass "tutoriel terminé : rechargé sans reprise de mission, récompense non redoublée"
     else fail "reprise après tutoriel terminé"; fi
@@ -628,6 +632,109 @@ run_in "$DATA/tuto-en" 'Neo\n\n1\nxyzzy\nquit\n' --new --lang en
 if contains "Focus, rookie" && contains "Open the mission log" && contains "Type 'quests'"; then
     pass "tutoriel en anglais"
 else fail "tutoriel (en)"; fi
+
+# --- Quêtes : la campagne de bout en bout ---------------------------------------------------------
+#
+# Chaque étape part d'une sauvegarde fabriquée (le format est du texte lisible : craft_save) pour ne
+# pas dépendre du hasard des piratages, puis se joue avec les vraies commandes du jeu.
+
+# craft_save <dossier> <clé=valeur>... : une partie neuve (héros Neo, tutoriel passé, écrite par le jeu
+# lui-même) dont on force quelques clés ; de quoi jouer une étape de l'aventure sans les précédentes.
+craft_save() {
+    local dir=$1 kv key
+    shift
+    run_in "$dir" 'Neo\n\n2\nquit\n' --new
+    for kv in "$@"; do
+        key=${kv%%=*}
+        if ! grep -q "^${key}=" "$dir/savegame.sav"; then
+            fail "craft_save" "clé absente : $key"
+            return 1
+        fi
+        sed "s/^${key}=.*/${kv}/" "$dir/savegame.sav" >"$dir/savegame.tmp" && mv "$dir/savegame.tmp" "$dir/savegame.sav"
+    done
+}
+
+credits_of() { printf '%s' "$OUT" | grep -o 'Crédits: [0-9]*' | head -1; }
+
+# Niveau 3, 75 XP (scans 15 + localhost 5 + corp-server 25 + marché 30), trois systèmes piratés, mais
+# « Baptême du Feu » encore en cours : l'alerte (60) est au-dessus de la limite de 50.
+# Masque de commandes du niveau 3 : scan(1) + bruteforce(2) + decrypt(4) + backdoor(16) = 23.
+CAMP="$DATA/campagne"
+craft_save "$CAMP" player.level=3 player.experience=75 player.scans_done=5 player.credits=400 \
+    player.reputation=10 player.unlocked=23 node.0.flags=3 node.1.flags=3 node.3.flags=3 \
+    alert.level=60 alert.max=60 quest.1.status=2 quest.1.obj.0=1
+
+# 1. Le système est piraté mais l'alerte est trop haute : la quête reste ouverte, et le dit.
+run_in "$CAMP" '1\nquests\n0\nlaylow\n1\nquests\n0\nquit\n'
+n=$(printf '%s' "$OUT" | grep -c "\[ \] Maintenir l'alerte sous 50")
+if [ "$CODE" -eq 0 ] && [ "$n" -eq 2 ] && contains "[x] Infiltrer corp-server-01" && contains "Niveau d'alerte : 60 → 52/100" \
+    && ! contains "QUÊTE TERMINÉE" && contains "NOUVEAU CONTACT DÉBLOQUÉ: R4Z0R"; then
+    pass "quêtes : objectif d'alerte non rempli, la quête reste ouverte (et R4Z0R se débloque)"
+else fail "condition d'alerte" "code=$CODE lignes=$n"; fi
+
+# 2. L'alerte redescend sous 50 : la quête se conclut, paie, et démarre la suivante (chapitre 2).
+run_in "$CAMP" '1\nlaylow\n1\nquit\n'
+if [ "$CODE" -eq 0 ] && contains "Niveau d'alerte : 52 → 44/100" && contains "QUÊTE TERMINÉE : Baptême du Feu" \
+    && contains "[+200 crédits]" && contains "[+25 réputation]" && contains "[+25 EXP]" \
+    && contains "CHAPITRE 2 : DANS L'OMBRE DES CORPORATIONS" && contains "NOUVELLE QUÊTE : Réseaux d'Information"; then
+    pass "quêtes : Baptême du Feu se conclut quand l'alerte redescend, récompenses versées, chapitre 2 annoncé"
+else fail "conclusion de Baptême du Feu" "code=$CODE"; fi
+if file_has "$CAMP/savegame.sav" "quest.1.status=3" && file_has "$CAMP/savegame.sav" "quest.2.status=2"; then
+    pass "quêtes : les statuts sont dans la sauvegarde"
+else fail "statuts sauvegardés"; fi
+
+# 3. Réseaux d'Information : contact, deux achats (dont le Street Cred Booster qui fait passer la
+#    réputation à 55), puis le décryptage secret. Chaque objectif est annoncé quand il s'accomplit.
+run_in "$CAMP" '1\ncontact R4Z0R\n0\nshop\n1\nshop\n8\nquests\n0\ndecrypt WKLV#LV#D#WHVW\nquit\n'
+if [ "$CODE" -eq 0 ] && contains "Objectif accompli : Contacter R4Z0R" && contains "Objectif accompli : Acheter le Stealth Module" \
+    && contains "Objectif accompli : Atteindre 50 points de réputation" && contains "[+20 réputation]" \
+    && contains "[ ] ??? (objectif secret)" && contains "Objectif accompli : Décrypter la transmission interceptée" \
+    && contains "QUÊTE TERMINÉE : Réseaux d'Information" && contains "NIVEAU SUPÉRIEUR" \
+    && contains "CHAPITRE 3 : LE PROJET AURORA" && contains "NOUVELLE QUÊTE : L'œil du Cyclone"; then
+    pass "quêtes : Réseaux d'Information (objectif secret compris), niveau 4 et chapitre 3 dans la foulée"
+else fail "Réseaux d'Information" "code=$CODE"; fi
+
+# 4. L'œil du Cyclone : la clé de chiffrement, puis Nexus percé par `advhack` (exploit zero-day, choix 7).
+#    Le piratage est aléatoire : on cherche une graine qui réussit, sur une copie de la partie.
+ok_seed=""
+for seed in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16; do
+    rm -rf "$DATA/campagne-q3"
+    cp -r "$CAMP" "$DATA/campagne-q3"
+    run_in "$DATA/campagne-q3" '1\nshop\n5\nscan\nadvhack nexus-mainframe\n7\nstatus\nquests\n0\nquit\n' --seed "$seed"
+    if contains "QUÊTE TERMINÉE : L'œil du Cyclone"; then ok_seed=$seed; break; fi
+done
+if [ -n "$ok_seed" ] && contains "Objectif accompli : Acquérir un équipement de haut niveau" \
+    && contains "Objectif accompli : Percer les défenses de nexus-mainframe" \
+    && contains "Objectif accompli : Extraire les données du Projet Aurora" && contains "[+1000 crédits]" \
+    && contains "[+100 réputation]" && contains "Progression globale : 40 %" && contains "Aucune quête active." \
+    && ! contains "Prochaine quête"; then
+    pass "quêtes : L'œil du Cyclone (graine $ok_seed), quatre quêtes terminées, aucune suivante pas encore écrite"
+else fail "L'œil du Cyclone" "graine=${ok_seed:-aucune}"; fi
+
+# 5. La partie rechargée ne rejoue rien : ni annonce, ni récompense.
+if [ -n "$ok_seed" ]; then
+    D="$DATA/campagne-q3"
+    run_in "$D" '1\nstatus\nquit\n'
+    before=$(credits_of)
+    run_in "$D" '1\nstatus\nquests\n0\nlaylow\n1\nstatus\nquit\n'
+    after=$(credits_of)
+    if [ "$CODE" -eq 0 ] && [ -n "$before" ] && [ "$before" = "$after" ] && ! contains "QUÊTE TERMINÉE" \
+        && ! contains "NOUVELLE QUÊTE" && contains "Progression globale : 40 %"; then
+        pass "quêtes : rechargée, la campagne ne rejoue ni annonce ni récompense ($before)"
+    else fail "rechargement de la campagne" "avant='$before' après='$after'"; fi
+fi
+
+# 6. Le même passage en anglais : textes du journal, annonces et chapitres traduits.
+craft_save "$DATA/campagne-en" player.level=3 player.experience=75 player.scans_done=5 player.credits=400 \
+    player.reputation=10 player.unlocked=23 node.0.flags=3 node.1.flags=3 node.3.flags=3 \
+    alert.level=52 alert.max=60 quest.1.status=2 quest.1.obj.0=1
+run_in "$DATA/campagne-en" '1\nquests\n0\nlaylow\n1\nquit\n' --lang en
+if [ "$CODE" -eq 0 ] && contains "=== QUEST LOG ===" && contains "[ ] Keep your alert below 50" \
+    && contains "Quest details? (its number, or 0 to leave)" && contains "QUEST COMPLETE: Baptism of Fire" \
+    && contains "CHAPTER 2: IN THE SHADOW OF THE CORPORATIONS" && contains "NEW QUEST: Information Networks" \
+    && ! contains "QUÊTE" && ! contains "Objectifs"; then
+    pass "quêtes en anglais : journal, annonces et chapitres"
+else fail "quêtes (en)" "code=$CODE"; fi
 
 # --- Bilan -------------------------------------------------------------------
 

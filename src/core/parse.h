@@ -17,6 +17,9 @@ bool nh_split_command(const char *line, char *cmd, size_t cmd_size, char *arg, s
 /* Égalité sans tenir compte de la casse (ASCII uniquement, indépendant de la locale). */
 bool nh_str_eq_nocase(const char *a, const char *b);
 
+/* `s` commence-t-il par `prefix`, sans tenir compte de la casse ? Un préfixe vide convient à tout. */
+bool nh_str_has_prefix_nocase(const char *s, const char *prefix);
+
 /* Nombre maximal de caractères (pas d'octets) du nom du héros. */
 #define NH_NAME_MAX_CHARS 20
 
