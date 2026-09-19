@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "refonte/**"]
+  pull_request:
+
+jobs:
+  build-and-test:
+    name: build + tests (${{ matrix.cc }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        cc: [gcc, clang]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: make CC=${{ matrix.cc }}
+      - name: Unit + end-to-end tests
+        run: make CC=${{ matrix.cc }} test
+
+  sanitizers:
+    name: tests under ASan + UBSan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tests with sanitizers
+        run: make asan

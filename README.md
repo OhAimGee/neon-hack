@@ -14,10 +14,9 @@ Le jeu **se compile et se lance**, mais plusieurs systèmes sont affichés sans 
 |---|---|
 | Boucle de jeu, `scan`, `bruteforce`, `decrypt` | Niveau d'alerte réel (il reste à 0) |
 | Niveaux et déblocage de commandes | Effets des achats en boutique |
-| Ambiance, ASCII art, lore | Progression des quêtes ; 3 contacts sur 4 |
-| Boutique, contacts, quêtes : affichage | `exploit`, `stealthmode`, sauvegarde |
-
-**Bug connu :** fermer l'entrée (Ctrl+D) fait tourner le jeu en boucle. Quittez avec `quit`.
+| Fin d'entrée (Ctrl+D) et saisies invalides gérées | Progression des quêtes ; 3 contacts sur 4 |
+| Options `--seed`, `--fast`, `--lang`, tests automatisés | `exploit`, `stealthmode`, sauvegarde |
+| Ambiance, ASCII art, lore ; affichage boutique/contacts/quêtes | Texte anglais (seuls quelques messages sont traduits) |
 
 La refonte (architecture unifiée, tests, sauvegarde, français/anglais, releases binaires) se déroule sur la branche `refonte/v1`. La version d'origine reste consultable via le tag `legacy-v2.087`.
 
@@ -30,6 +29,25 @@ make        # compile
 ./neon_hack # lance le jeu
 make run    # compile puis lance
 ```
+
+Options (`./neon_hack --help`) :
+
+| Option | Effet |
+|---|---|
+| `--seed N` | partie reproductible (graine aléatoire fixée) |
+| `--fast` | supprime les pauses d'animation (automatique si la sortie est redirigée) |
+| `--lang fr\|en` | langue (défaut : d'après `$LANG`) ; seuls quelques messages sont traduits pour l'instant |
+| `--no-color` | désactive les couleurs (pas encore appliqué aux écrans d'origine) |
+| `--version`, `--help` | version, aide |
+
+## Développement
+
+```bash
+make test   # tests unitaires du socle + tests de bout en bout du jeu
+make asan   # les mêmes, compilés avec AddressSanitizer + UBSan
+```
+
+Voir [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) pour l'organisation du code et les règles de la refonte.
 
 ## Jouer
 
@@ -46,10 +64,11 @@ Un message à décrypter pour essayer : `decrypt WKLV#LV#D#WHVW` (chiffre de Cé
 ## Structure
 
 ```
-neon_hack.c        boucle de jeu et commandes (code d'origine)
+neon_hack.c        boucle de jeu et commandes (code d'origine, en cours de réécriture)
 src/game/          modules d'origine : boutique, alerte, quêtes, contacts, hacking avancé
-tests/, *.sh       scripts d'origine (sans assertions, à remplacer)
-docs/legacy/       rapports générés à l'époque (peu fiables, gardés pour mémoire)
+src/core/, ui/, i18n/   nouveau socle testé (entrées/sorties, options, RNG, terminal, textes)
+tests/             tests unitaires (unit/) et de bout en bout (e2e/)
+docs/              architecture ; docs/legacy/ = rapports générés à l'époque (peu fiables)
 ```
 
 ## Licence
