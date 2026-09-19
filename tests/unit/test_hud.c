@@ -87,7 +87,7 @@ static void test_top_bar(void)
     static const char *const cmds[] = {"help", "scan"};
     char out[1024];
 
-    const char *names[] = {"Neo", "", "Hacker" "éééééééééééééééééééééééééééééééééé",
+    const char *names[] = {"Neo", "", "Hackerééééééééééééééééééééééééééééééééé",
                            "🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠"};
     NhLang langs[] = {NH_LANG_FR, NH_LANG_EN};
     int alerts[] = {0, 1, 50, 99, 100, -5, 400};
