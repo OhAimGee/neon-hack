@@ -17,32 +17,38 @@ CFLAGS  ?= -g -O2
 override CFLAGS += -std=c11 -D_DEFAULT_SOURCE -Wall -Wextra \
                    -DNH_VERSION=\"$(VERSION)\" -MMD -MP
 
-# Nouveau code (socle) : aucun warning toléré. Le code d'origine (neon_hack.c,
-# src/game/) n'est pas encore soumis à ces règles, il sera réécrit.
+# Code neuf : aucun warning toléré. Le code d'origine encore en place
+# (src/game/cmd_*.c, game.c, modules historiques) n'est pas soumis à ces règles :
+# il sera réécrit phase par phase, pas corrigé.
 STRICT  := -Wpedantic -Wshadow -Wconversion -Werror
 
-LEGACY_SRC := neon_hack.c $(wildcard src/game/*.c)
-CORE_SRC   := $(wildcard src/core/*.c src/ui/*.c src/i18n/*.c)
-TEST_SRC   := $(wildcard tests/unit/test_*.c)
+MAIN_SRC := src/main.c
+GAME_SRC := $(wildcard src/game/*.c)
+CORE_SRC := $(wildcard src/core/*.c src/ui/*.c src/i18n/*.c)
+TEST_SRC := $(wildcard tests/unit/test_*.c)
 
-LEGACY_OBJ := $(LEGACY_SRC:%.c=$(BUILD)/obj/%.o)
-CORE_OBJ   := $(CORE_SRC:%.c=$(BUILD)/obj/%.o)
-TEST_BIN   := $(TEST_SRC:tests/unit/%.c=$(BUILD)/tests/%)
+MAIN_OBJ := $(MAIN_SRC:%.c=$(BUILD)/obj/%.o)
+GAME_OBJ := $(GAME_SRC:%.c=$(BUILD)/obj/%.o)
+CORE_OBJ := $(CORE_SRC:%.c=$(BUILD)/obj/%.o)
+TEST_BIN := $(TEST_SRC:tests/unit/%.c=$(BUILD)/tests/%)
+
+# Fichiers du dossier game/ déjà écrits au nouveau standard
+STRICT_OBJ := $(CORE_OBJ) $(MAIN_OBJ) $(BUILD)/obj/src/game/commands.o
 
 all: $(BIN)
 
-$(BIN): $(LEGACY_OBJ) $(CORE_OBJ)
+$(BIN): $(MAIN_OBJ) $(GAME_OBJ) $(CORE_OBJ)
 	$(CC) $^ $(LDFLAGS) -o $@
 
 $(BUILD)/obj/%.o: %.c
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(CORE_OBJ): override CFLAGS += $(STRICT)
+$(STRICT_OBJ): override CFLAGS += $(STRICT)
 
-$(BUILD)/tests/%: tests/unit/%.c tests/unit/nh_test.h $(CORE_OBJ)
+$(BUILD)/tests/%: tests/unit/%.c tests/unit/nh_test.h $(CORE_OBJ) $(GAME_OBJ)
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) $(STRICT) $< $(CORE_OBJ) $(LDFLAGS) -o $@
+	$(CC) $(CFLAGS) $(STRICT) $< $(CORE_OBJ) $(GAME_OBJ) $(LDFLAGS) -o $@
 
 run: $(BIN)
 	./$(BIN)
@@ -72,6 +78,6 @@ help:
 	@echo "make asan     tests avec ASan + UBSan"
 	@echo "make clean    nettoie"
 
--include $(LEGACY_OBJ:.o=.d) $(CORE_OBJ:.o=.d)
+-include $(MAIN_OBJ:.o=.d) $(GAME_OBJ:.o=.d) $(CORE_OBJ:.o=.d)
 
 .PHONY: all run unit e2e test asan clean rebuild help

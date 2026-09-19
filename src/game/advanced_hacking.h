@@ -144,29 +144,16 @@ bool attempt_advanced_hack(AdvancedHackingSystem *system, int target_id, HackTyp
 void display_available_tools(AdvancedHackingSystem *system);
 bool use_hacking_tool(AdvancedHackingSystem *system, HackingTool tool, Player *player);
 void update_stealth_system(StealthSystem *stealth);
-bool activate_quantum_hack(QuantumSystem *quantum, char *target_data);
+bool activate_quantum_hack(QuantumSystem *quantum, const char *target_data);
 void train_ai_assistant(AIAssistant *ai, int experience_points);
 void display_advanced_targets(AdvancedHackingSystem *system);
 bool install_backdoor_advanced(AdvancedHackingSystem *system, int target_id, Player *player);
 bool upload_advanced_virus(AdvancedHackingSystem *system, int target_id, char *virus_type, Player *player);
 void display_defense_analysis(AdvancedTarget *target);
-int calculate_hack_success_rate(HackingMethod *method, AdvancedTarget *target, Player *player);
+int calculate_hack_success_rate(const AdvancedHackingSystem *system, HackingMethod *method, AdvancedTarget *target, Player *player);
 void handle_detection(AdvancedTarget *target, Player *player, int severity);
 bool social_engineering_attack(AdvancedHackingSystem *system, int target_id, Player *player);
 void display_neural_interface_status(AdvancedHackingSystem *system);
 bool temporal_hack_attempt(AdvancedHackingSystem *system, int target_id, Player *player);
-
-// Commandes de hacking avancées
-bool cmd_advanced_hack(char *target_name);
-bool cmd_stealth_mode_toggle(void);
-bool cmd_quantum_decrypt_advanced(char *encrypted_data);
-bool cmd_ai_assist_hack(char *target_name);
-bool cmd_neural_sync(void);
-bool cmd_analyze_defenses(char *target_name);
-bool cmd_social_engineer(char *target_name);
-bool cmd_temporal_hack(char *target_name);
-
-// Variables globales
-extern AdvancedHackingSystem global_advanced_system;
 
 #endif

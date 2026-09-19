@@ -20,3 +20,144 @@ NH_STR(NH_STR_INVALID_OPTION,
 NH_STR(NH_STR_UNKNOWN_COMMAND,
        "Commande inconnue: %s",
        "Unknown command: %s")
+
+/* ---- Couche commandes : aide, dispatch, statut ---- */
+NH_STR(NH_STR_HINT_HELP,
+       "Tapez 'help' pour voir les commandes disponibles.",
+       "Type 'help' to list the available commands.")
+NH_STR(NH_STR_CMD_LOCKED,
+       "Commande non disponible à votre niveau.",
+       "Command not available at your level.")
+NH_STR(NH_STR_CMD_NEEDS_LEVEL,
+       "Commande non disponible : niveau %d requis.",
+       "Command not available: level %d required.")
+NH_STR(NH_STR_QUIT_MESSAGE,
+       "Au revoir, hacker...",
+       "Goodbye, hacker...")
+
+NH_STR(NH_STR_HELP_TITLE,
+       "=== COMMANDES DISPONIBLES ===",
+       "=== AVAILABLE COMMANDS ===")
+NH_STR(NH_STR_HELP_CAT_HACK,
+       "Commandes de hacking :",
+       "Hacking commands:")
+NH_STR(NH_STR_HELP_CAT_ADVANCED,
+       "Commandes de hacking avancé :",
+       "Advanced hacking commands:")
+NH_STR(NH_STR_HELP_CAT_WORLD,
+       "Commandes spéciales :",
+       "World commands:")
+NH_STR(NH_STR_HELP_CAT_SYSTEM,
+       "Commandes système :",
+       "System commands:")
+
+NH_STR(NH_STR_HELP_SCAN,
+       "Scanner le réseau pour trouver des cibles",
+       "Scan the network for targets")
+NH_STR(NH_STR_HELP_BRUTEFORCE,
+       "Attaque par force brute sur un système",
+       "Brute-force attack on a system")
+NH_STR(NH_STR_HELP_DECRYPT,
+       "Décrypter des messages codés",
+       "Decrypt coded messages")
+NH_STR(NH_STR_HELP_BACKDOOR,
+       "Installer un accès clandestin sur un système",
+       "Install a covert access on a system")
+NH_STR(NH_STR_HELP_TRACEROUTE,
+       "Suivre le chemin des paquets vers une cible",
+       "Trace the route of packets to a target")
+NH_STR(NH_STR_HELP_UPLOADVIRUS,
+       "Télécharger un virus sur un système distant",
+       "Upload a virus to a remote system")
+NH_STR(NH_STR_HELP_STEALTH,
+       "Activer le mode furtif (ancien système)",
+       "Toggle stealth (legacy system)")
+NH_STR(NH_STR_HELP_AIHACK,
+       "Lancer une attaque avancée avec l'IA",
+       "Launch an advanced AI-driven attack")
+NH_STR(NH_STR_HELP_QUANTUMDECRYPT,
+       "Décrypter des données avec un décryptage quantique",
+       "Decrypt data using quantum decryption")
+
+NH_STR(NH_STR_HELP_ADVHACK,
+       "Lancer un hack avancé avec méthodes spécialisées",
+       "Launch an advanced hack with specialised methods")
+NH_STR(NH_STR_HELP_AIASSIST,
+       "Utiliser l'assistant IA pour un hack",
+       "Use the AI assistant for a hack")
+NH_STR(NH_STR_HELP_SOCIALENG,
+       "Attaque par ingénierie sociale",
+       "Social engineering attack")
+NH_STR(NH_STR_HELP_STEALTHMODE,
+       "Basculer le mode furtif",
+       "Toggle stealth mode")
+NH_STR(NH_STR_HELP_ANALYZEDEFENSES,
+       "Analyser les défenses d'une cible",
+       "Analyze a target's defenses")
+NH_STR(NH_STR_HELP_NEURALSYNC,
+       "Synchroniser l'interface neurale",
+       "Synchronize the neural interface")
+NH_STR(NH_STR_HELP_TEMPORALHACK,
+       "Hack temporel (expérimental)",
+       "Temporal hack (experimental)")
+
+NH_STR(NH_STR_HELP_SHOP,
+       "Accéder au marché noir cyberpunk",
+       "Visit the cyberpunk black market")
+NH_STR(NH_STR_HELP_LAYLOW,
+       "Réduire votre niveau d'alerte",
+       "Lower your alert level")
+NH_STR(NH_STR_HELP_QUESTS,
+       "Afficher le journal de quêtes",
+       "Show the quest log")
+NH_STR(NH_STR_HELP_CONTACTS,
+       "Gérer vos contacts dans l'ombre",
+       "Manage your underground contacts")
+NH_STR(NH_STR_HELP_CONTACT,
+       "Parler directement à un contact (numéro ou nom)",
+       "Talk to a contact directly (number or name)")
+NH_STR(NH_STR_HELP_MESSAGES,
+       "Consulter vos messages cryptés",
+       "Read your encrypted messages")
+NH_STR(NH_STR_HELP_READ,
+       "Lire un message spécifique",
+       "Read a specific message")
+
+NH_STR(NH_STR_HELP_STATUS,
+       "Affiche votre statut actuel",
+       "Show your current status")
+NH_STR(NH_STR_HELP_HELP,
+       "Affiche cette aide",
+       "Show this help")
+NH_STR(NH_STR_HELP_QUIT,
+       "Quitte le jeu",
+       "Quit the game")
+NH_STR(NH_STR_HELP_CLEAR,
+       "Efface l'écran",
+       "Clear the screen")
+
+NH_STR(NH_STR_STATUS_TITLE,
+       "=== STATUT DU HACKER ===",
+       "=== HACKER STATUS ===")
+NH_STR(NH_STR_STATUS_NAME, "Nom", "Name")
+NH_STR(NH_STR_STATUS_LEVEL, "Niveau", "Level")
+NH_STR(NH_STR_STATUS_XP, "Expérience", "Experience")
+NH_STR(NH_STR_STATUS_CREDITS, "Crédits", "Credits")
+NH_STR(NH_STR_STATUS_REPUTATION, "Réputation", "Reputation")
+NH_STR(NH_STR_STATUS_STEALTH, "Furtivité", "Stealth")
+NH_STR(NH_STR_STATUS_EQUIPMENT_TITLE, "=== ÉQUIPEMENT ===", "=== EQUIPMENT ===")
+NH_STR(NH_STR_STATUS_AI, "IA Assistante", "AI Assistant")
+NH_STR(NH_STR_STATUS_QUANTUM, "Ordinateur Quantique", "Quantum Computer")
+NH_STR(NH_STR_STATUS_VIRUS_LIBRARY, "Bibliothèque Virus", "Virus Library")
+NH_STR(NH_STR_STATUS_VIRUS_UNIT, "virus", "viruses")
+NH_STR(NH_STR_STATUS_BACKDOORS, "Backdoors Actives", "Active Backdoors")
+NH_STR(NH_STR_STATUS_SECURITY_TITLE, "=== SÉCURITÉ ===", "=== SECURITY ===")
+NH_STR(NH_STR_STATUS_STEALTH_MODE, "Mode Furtif", "Stealth Mode")
+NH_STR(NH_STR_STATUS_ALERT, "Niveau d'alerte", "Alert level")
+NH_STR(NH_STR_VALUE_AVAILABLE, "DISPONIBLE", "AVAILABLE")
+NH_STR(NH_STR_VALUE_UNAVAILABLE, "NON DISPONIBLE", "NOT AVAILABLE")
+NH_STR(NH_STR_VALUE_ON, "ACTIVÉ", "ON")
+NH_STR(NH_STR_VALUE_OFF, "DÉSACTIVÉ", "OFF")
+NH_STR(NH_STR_ALERT_SAFE, "SÉCURISÉ", "SAFE")
+NH_STR(NH_STR_ALERT_WARNING, "ATTENTION", "WARNING")
+NH_STR(NH_STR_ALERT_DANGER, "DANGER", "DANGER")

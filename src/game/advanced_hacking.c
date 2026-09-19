@@ -16,9 +16,6 @@
 #define COLOR_BRIGHT_GREEN "\033[92m"
 #define COLOR_BRIGHT_CYAN "\033[96m"
 
-// Variable globale
-AdvancedHackingSystem global_advanced_system;
-
 void init_advanced_hacking_system(AdvancedHackingSystem *system)
 {
     // Initialiser les méthodes de hacking
@@ -458,7 +455,7 @@ bool attempt_advanced_hack(AdvancedHackingSystem *system, int target_id, HackTyp
     printf("\n");
 
     // Calcul du taux de succès
-    int final_success_rate = calculate_hack_success_rate(selected_method, target, player);
+    int final_success_rate = calculate_hack_success_rate(system, selected_method, target, player);
     int roll = rand() % 100;
 
     printf("\n%sAnalyse des défenses...%s\n", COLOR_YELLOW, COLOR_RESET);
@@ -498,7 +495,7 @@ bool attempt_advanced_hack(AdvancedHackingSystem *system, int target_id, HackTyp
     }
 }
 
-int calculate_hack_success_rate(HackingMethod *method, AdvancedTarget *target, Player *player)
+int calculate_hack_success_rate(const AdvancedHackingSystem *system, HackingMethod *method, AdvancedTarget *target, Player *player)
 {
     int base_rate = method->success_rate;
 
@@ -514,27 +511,27 @@ int calculate_hack_success_rate(HackingMethod *method, AdvancedTarget *target, P
     // Bonus des outils
     if (method->requires_tool)
     {
-        CyberTool *tool = &global_advanced_system.tools[method->required_tool];
+        const CyberTool *tool = &system->tools[method->required_tool];
         base_rate += tool->power_level / 10;
         base_rate += tool->upgrade_level * 5;
     }
 
     // Bonus de furtivité
-    if (global_advanced_system.stealth.ghost_mode_active)
+    if (system->stealth.ghost_mode_active)
     {
         base_rate += 15;
     }
 
     // Bonus quantique
-    if (global_advanced_system.quantum.entanglement_active)
+    if (system->quantum.entanglement_active)
     {
         base_rate += 20;
     }
 
     // Bonus IA
-    if (global_advanced_system.ai_assistant.is_loyal)
+    if (system->ai_assistant.is_loyal)
     {
-        base_rate += global_advanced_system.ai_assistant.hack_assistance_bonus;
+        base_rate += system->ai_assistant.hack_assistance_bonus;
     }
 
     // Malus des défenses adaptatives
@@ -854,7 +851,7 @@ void update_stealth_system(StealthSystem *stealth)
     }
 }
 
-bool activate_quantum_hack(QuantumSystem *quantum, char *target_data)
+bool activate_quantum_hack(QuantumSystem *quantum, const char *target_data)
 {
     if (quantum->quantum_cores == 0)
     {
