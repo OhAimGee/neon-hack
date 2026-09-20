@@ -97,13 +97,72 @@ static void test_decay(void)
     CHECK_INT(a.level, 9);
     a.vpn_active = true;
     CHECK_INT(nh_alert_decay(&a), 2);
-    a.proxy_active = true;
-    CHECK_INT(nh_alert_decay(&a), 3);
-    CHECK_INT(a.level, 4); /* 10 - 1 - 2 - 3 */
-    CHECK_INT(nh_alert_decay(&a), 3);
+    CHECK_INT(a.level, 7);
+    a.proxy_hacks_left = 3; /* le proxy ne refroidit pas : il réduit les hausses (test_proxy) */
+    CHECK_INT(nh_alert_decay(&a), 2);
+    CHECK_INT(a.level, 5);
+    CHECK_INT(nh_alert_decay(&a), 2);
+    CHECK_INT(nh_alert_decay(&a), 2);
     CHECK_INT(nh_alert_decay(&a), 1); /* ne descend pas sous 0 : seule la baisse réelle est retournée */
     CHECK_INT(a.level, 0);
     CHECK_INT(nh_alert_decay(&a), 0);
+}
+
+static void test_proxy(void)
+{
+    /* Une hausse sous proxy est réduite d'un tiers, arrondie au-dessus, jamais nulle. */
+    CHECK_INT(nh_alert_proxied(0), 0);
+    CHECK_INT(nh_alert_proxied(1), 1);
+    CHECK_INT(nh_alert_proxied(2), 2);
+    CHECK_INT(nh_alert_proxied(3), 2);
+    CHECK_INT(nh_alert_proxied(5), 4);
+    CHECK_INT(nh_alert_proxied(15), 10);
+    CHECK_INT(nh_alert_proxied(30), 20);
+    for (int n = 1; n <= 100; n++)
+        CHECK(nh_alert_proxied(n) >= 1 && nh_alert_proxied(n) <= n);
+
+    AlertSystem a;
+    nh_alert_init(&a);
+    nh_set_lang(NH_LANG_FR);
+    nh_term_set_color(false);
+    char out[256];
+    NhCapture cap = nh_capture_begin();
+    nh_alert_raise(&a, 15);
+    nh_capture_end(&cap, out, sizeof out);
+    CHECK_INT(a.level, 15); /* sans proxy : pleine hausse */
+
+    a.proxy_hacks_left = 2;
+    cap = nh_capture_begin();
+    nh_alert_raise(&a, 15);
+    nh_capture_end(&cap, out, sizeof out);
+    CHECK_INT(a.level, 25); /* +10 au lieu de +15 */
+    CHECK(has(out, "[ALERTE +10]")); /* l'annonce dit la hausse réelle */
+    CHECK_INT(nh_alert_add(&a, 15), 15); /* nh_alert_add reste brut : seul nh_alert_raise applique le proxy */
+
+    /* Chaque action de hacking use un hack ; jamais sous zéro. */
+    nh_alert_end_action(&a);
+    CHECK_INT(a.proxy_hacks_left, 1);
+    nh_alert_end_action(&a);
+    CHECK_INT(a.proxy_hacks_left, 0);
+    nh_alert_end_action(&a);
+    CHECK_INT(a.proxy_hacks_left, 0);
+
+    /* Le panneau d'état montre ce qui reste. */
+    char status[4096];
+    a.proxy_hacks_left = 3;
+    a.vpn_active = true;
+    nh_set_lang(NH_LANG_FR);
+    cap = nh_capture_begin();
+    nh_alert_print_status(&a);
+    nh_capture_end(&cap, status, sizeof status);
+    CHECK(has(status, "Proxy: ACTIVÉ (3 piratage(s) restant(s))"));
+    CHECK(has(status, "VPN: ACTIVÉ\n"));
+    a.proxy_hacks_left = 0;
+    cap = nh_capture_begin();
+    nh_alert_print_status(&a);
+    nh_capture_end(&cap, status, sizeof status);
+    CHECK(has(status, "Proxy: DÉSACTIVÉ\n"));
+    nh_term_set_color(true);
 }
 
 static void test_thresholds(void)
@@ -171,14 +230,17 @@ static void test_reduction(void)
     CHECK_INT(a.level, 0);
     CHECK_INT(applied, 3);
 
-    /* VPN et proxy : activent la protection passive. */
-    CHECK(!a.vpn_active && !a.proxy_active);
+    /* VPN et proxy du menu : de simples réductions payantes. Les protections durables s'achètent en boutique. */
+    CHECK(!a.vpn_active && a.proxy_hacks_left == 0);
     credits = 100;
+    a.level = 50;
     CHECK_INT(nh_alert_apply_reduction(&a, NH_REDUCTION_VPN, &credits, NULL), NH_REDUCE_OK);
-    CHECK(a.vpn_active);
+    CHECK(!a.vpn_active);
+    CHECK_INT(a.level, 40);
     CHECK_INT(credits, 80);
     CHECK_INT(nh_alert_apply_reduction(&a, NH_REDUCTION_PROXY, &credits, NULL), NH_REDUCE_OK);
-    CHECK(a.proxy_active);
+    CHECK_INT(a.proxy_hacks_left, 0);
+    CHECK_INT(a.level, 25);
     CHECK_INT(credits, 50);
 
     /* Ghost Protocol : consomme un exemplaire, gratuit, refusé s'il n'y en a plus. */
@@ -335,22 +397,26 @@ static void test_turn_passes_only_for_hacks(void)
     nh_term_set_color(false);
     nh_set_fast(true);
 
-    /* VPN + proxy : refroidissement de 3 avant l'action ; scan ajoute 1. */
+    /* VPN : refroidissement de 2 avant l'action ; scan ajoute 1 (un proxy le laisse à 1). */
     gs->alert.level = 10;
-    gs->alert.vpn_active = gs->alert.proxy_active = true;
+    gs->alert.vpn_active = true;
+    gs->alert.proxy_hacks_left = 2;
     CHECK_INT(run_line(gs, "scan", out, sizeof out), NH_DISPATCH_OK);
-    CHECK_INT(gs->alert.level, 8);
+    CHECK_INT(gs->alert.level, 9);
+    CHECK_INT(gs->alert.proxy_hacks_left, 1); /* le hack a usé un proxy */
 
     /* Aide, statut, quêtes : le temps ne passe pas, l'alerte ne bouge pas. */
     run_line(gs, "help", out, sizeof out);
     run_line(gs, "status", out, sizeof out);
     run_line(gs, "quests", out, sizeof out);
-    CHECK_INT(gs->alert.level, 8);
+    CHECK_INT(gs->alert.level, 9);
+    CHECK_INT(gs->alert.proxy_hacks_left, 1); /* ni l'aide ni le statut n'usent un proxy */
 
     /* Une commande verrouillée ou inconnue ne fait pas non plus passer le temps. */
     CHECK_INT(run_line(gs, "bruteforce localhost", out, sizeof out), NH_DISPATCH_LOCKED);
     CHECK_INT(run_line(gs, "nope", out, sizeof out), NH_DISPATCH_UNKNOWN);
-    CHECK_INT(gs->alert.level, 8);
+    CHECK_INT(gs->alert.level, 9);
+    CHECK_INT(gs->alert.proxy_hacks_left, 1);
     free(gs);
 }
 
@@ -401,13 +467,13 @@ static void test_laylow(void)
     nh_term_set_color(false);
     nh_set_fast(true);
 
-    /* VPN : coûte 20 ¢, baisse l'alerte, active la protection. */
+    /* VPN : coûte 20 ¢ et baisse l'alerte, une fois (le VPN durable s'achète en boutique). */
     gs->alert.level = 50;
     feed("2\n");
     CHECK_INT(run_line(gs, "laylow", out, sizeof out), NH_DISPATCH_OK);
     CHECK_INT(gs->alert.level, 40);
     CHECK_INT(gs->player.credits, 80);
-    CHECK(gs->alert.vpn_active);
+    CHECK(!gs->alert.vpn_active);
     CHECK(has(out, "50 → 40/100"));
 
     CHECK_INT(gs->alert.reductions_done, 1);
@@ -546,6 +612,7 @@ int main(void)
 {
     test_add_reduce();
     test_decay();
+    test_proxy();
     test_thresholds();
     test_reduction();
     test_bar();

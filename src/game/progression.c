@@ -90,12 +90,13 @@ typedef struct
     int unlock_count;
     int virus_library; /* taille de la bibliothèque de virus (0 = inchangée) */
     int stealth_bonus;
-    int credits;
-    bool ai_assistant;
-    bool quantum_computer;
 } LevelReward;
 
-/* Ce que chaque niveau accorde en plus des commandes à niveau minimum (voir la table de commandes). */
+/*
+ * Ce que chaque niveau accorde en plus des commandes à niveau minimum (voir la table de commandes).
+ * Plus de crédits ni d'équipement offerts : l'IA et la puce quantique s'achètent chez R4Z0R, dont le
+ * catalogue s'élargit avec le niveau (le gain de niveau l'annonce).
+ */
 static const LevelReward k_rewards[NH_LEVEL_MAX + 1] = {
     [2] = {.unlocks = {CMD_BRUTEFORCE}, .unlock_count = 1},
     [3] = {.unlocks = {CMD_DECRYPT, CMD_BACKDOOR}, .unlock_count = 2, .virus_library = 1},
@@ -103,13 +104,7 @@ static const LevelReward k_rewards[NH_LEVEL_MAX + 1] = {
            .unlock_count = 3,
            .virus_library = 2,
            .stealth_bonus = 2},
-    [5] = {.unlocks = {CMD_AI_HACK, CMD_QUANTUM_DECRYPT},
-           .unlock_count = 2,
-           .virus_library = 3,
-           .stealth_bonus = 3,
-           .credits = 5000, /* provisoire : à revoir avec l'économie (phase 3.4 / 5) */
-           .ai_assistant = true,
-           .quantum_computer = true},
+    [5] = {.unlocks = {CMD_AI_HACK, CMD_QUANTUM_DECRYPT}, .unlock_count = 2, .virus_library = 3, .stealth_bonus = 3},
 };
 
 enum { MAX_TRACKED = 64 };
@@ -134,11 +129,6 @@ static void level_up(GameState *gs)
     if (r->virus_library > 0)
         p->virus_library_size = r->virus_library;
     p->stealth_rating += r->stealth_bonus;
-    p->credits += r->credits;
-    if (r->ai_assistant)
-        p->has_ai_assistant = true;
-    if (r->quantum_computer)
-        p->has_quantum_computer = true;
 
     nh_event(gs, NH_EV_LEVEL_UP, level);
 
@@ -163,27 +153,51 @@ static void level_up(GameState *gs)
         printf(nh_tr(NH_STR_PROG_NEW_COMMANDS), nh_c(NH_C_YELLOW), list, nh_c(NH_C_RESET));
         printf("\n");
     }
-    if (r->ai_assistant || r->quantum_computer)
-        printf("%s\n", nh_tr(NH_STR_PROG_EQUIPMENT));
-    if (r->credits > 0)
+
+    /* Ce que R4Z0R met en vente à ce niveau. */
+    char wares[256] = "";
+    size_t shown = 0;
+    for (int i = 0; i < gs->shop.item_count && i < ITEM_COUNT; i++)
     {
-        printf(nh_tr(NH_STR_PROG_CREDITS), r->credits);
+        const ShopItem *item = &gs->shop.items[i];
+        if (item->level_required != level || !item->is_available)
+            continue;
+        int n = snprintf(wares + shown, sizeof wares - shown, "%s%s", shown > 0 ? ", " : "", item->name);
+        if (n < 0 || (size_t)n >= sizeof wares - shown)
+            break;
+        shown += (size_t)n;
+    }
+    if (shown > 0)
+    {
+        printf(nh_tr(NH_STR_PROG_SHOP_NEW), wares);
         printf("\n");
     }
     if (level == NH_LEVEL_MAX)
         printf("%s\n", nh_tr(NH_STR_PROG_MAX_LEVEL));
 }
 
-int nh_grant_xp(GameState *gs, int amount)
+static int grant_xp(GameState *gs, int amount, bool boosted)
 {
     if (amount <= 0)
         return 0;
+    if (amount > NH_XP_CAP)
+        amount = NH_XP_CAP; /* pas de dépassement d'entier en y ajoutant le bonus */
 
     Player *p = &gs->player;
-    p->experience = (p->experience > NH_XP_CAP - amount) ? NH_XP_CAP : p->experience + amount;
+    int bonus = 0;
+    if (boosted && p->xp_boost > 0)
+    {
+        p->xp_boost--;
+        bonus = amount < NH_XP_BOOST_BONUS_CAP ? amount : NH_XP_BOOST_BONUS_CAP;
+    }
+    int total = amount + bonus;
+    p->experience = (p->experience > NH_XP_CAP - total) ? NH_XP_CAP : p->experience + total;
 
     printf("%s", nh_c(NH_C_GREEN));
-    printf(nh_tr(NH_STR_PROG_XP_GAIN), amount);
+    if (bonus > 0)
+        printf(nh_tr(NH_STR_PROG_XP_BOOSTED), total, bonus);
+    else
+        printf(nh_tr(NH_STR_PROG_XP_GAIN), total);
     printf("%s ", nh_c(NH_C_RESET));
 
     int gained = 0;
@@ -194,4 +208,14 @@ int nh_grant_xp(GameState *gs, int amount)
         gained++;
     }
     return gained;
+}
+
+int nh_grant_xp(GameState *gs, int amount)
+{
+    return grant_xp(gs, amount, true);
+}
+
+int nh_grant_xp_flat(GameState *gs, int amount)
+{
+    return grant_xp(gs, amount, false);
 }

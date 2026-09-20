@@ -59,8 +59,8 @@ static void complete_argument(const GameState *gs, NhArgKind kind, const char *p
     case NH_ARG_CONTACT:
         for (int i = 0; i < CONTACT_COUNT; i++)
             if (gs->contacts.contacts[i].is_unlocked &&
-                nh_str_has_prefix_nocase(gs->contacts.contacts[i].name, prefix))
-                add(out, gs->contacts.contacts[i].name);
+                nh_str_has_prefix_nocase(nh_contact_name((ContactType)i), prefix))
+                add(out, nh_contact_name((ContactType)i));
         break;
     case NH_ARG_MESSAGE:
         for (int n = 1; n <= gs->contacts.inbox_count; n++)

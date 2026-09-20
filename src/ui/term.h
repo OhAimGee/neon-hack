@@ -81,4 +81,11 @@ size_t nh_wrap_width(void);
 /* Affiche le texte caractère par caractère (sans pause en mode rapide). */
 void nh_typewriter(const char *text, unsigned delay_ms);
 
+/*
+ * Une réplique de personnage : « NOM » » en couleur, puis le texte coupé à la largeur du terminal,
+ * la suite en retrait sous le premier mot (les "\n" du texte sont conservés). `newline` faux : la
+ * ligne reste ouverte (une question posée au joueur). `delay_ms` > 0 : effet machine à écrire.
+ */
+void nh_speak(const char *name, NhColor color, const char *text, bool newline, unsigned delay_ms);
+
 #endif /* NH_TERM_H */

@@ -60,7 +60,8 @@ static bool cmd_status(GameState *gs, const char *arg)
     status_text(nh_tr(NH_STR_STATUS_XP), NH_C_CYAN, text);
     status_line(nh_tr(NH_STR_STATUS_CREDITS), NH_C_BRIGHT_GREEN, "%d", p->credits);
     status_line(nh_tr(NH_STR_STATUS_REPUTATION), NH_C_MAGENTA, "%d", p->reputation);
-    status_line(nh_tr(NH_STR_STATUS_STEALTH), NH_C_BLUE, "%d/10", p->stealth_rating);
+    snprintf(text, sizeof text, "%d/%d", p->stealth_rating, NH_STEALTH_MAX);
+    status_text(nh_tr(NH_STR_STATUS_STEALTH), NH_C_BLUE, text);
 
     printf("\n%s%s%s\n", nh_c(NH_C_YELLOW), nh_tr(NH_STR_STATUS_EQUIPMENT_TITLE), nh_c(NH_C_RESET));
     status_flag(nh_tr(NH_STR_STATUS_AI), p->has_ai_assistant, nh_tr(NH_STR_VALUE_AVAILABLE),
@@ -71,10 +72,21 @@ static bool cmd_status(GameState *gs, const char *arg)
     printf("%s: %s%d %s%s\n", nh_tr(NH_STR_STATUS_VIRUS_LIBRARY), nh_c(NH_C_CYAN),
            p->virus_library_size, nh_tr(NH_STR_STATUS_VIRUS_UNIT), nh_c(NH_C_RESET));
     status_line(nh_tr(NH_STR_STATUS_BACKDOORS), NH_C_YELLOW, "%d", p->backdoors_active);
+    /* Ce qui vient de la boutique n'apparaît qu'une fois acheté : l'écran reste court en début de partie. */
+    if (p->has_encryption_key)
+        status_text(nh_tr(NH_STR_STATUS_KEY), NH_C_GREEN, nh_tr(NH_STR_VALUE_AVAILABLE));
+    if (gs->alert.ghost_protocols_available > 0)
+        status_line(nh_tr(NH_STR_STATUS_GHOST), NH_C_CYAN, "%d", gs->alert.ghost_protocols_available);
+    if (p->xp_boost > 0)
+        status_line(nh_tr(NH_STR_STATUS_XP_BOOST), NH_C_CYAN, "%d", p->xp_boost);
 
     printf("\n%s%s%s\n", nh_c(NH_C_RED), nh_tr(NH_STR_STATUS_SECURITY_TITLE), nh_c(NH_C_RESET));
     status_flag(nh_tr(NH_STR_STATUS_STEALTH_MODE), gs->stealth_mode, nh_tr(NH_STR_VALUE_ON),
                 nh_tr(NH_STR_VALUE_OFF), NH_C_GREEN, NH_C_YELLOW);
+    if (gs->alert.vpn_active)
+        status_text(nh_tr(NH_STR_STATUS_VPN), NH_C_GREEN, nh_tr(NH_STR_VALUE_ON));
+    if (gs->alert.proxy_hacks_left > 0)
+        status_line(nh_tr(NH_STR_STATUS_PROXY), NH_C_GREEN, "%d", gs->alert.proxy_hacks_left);
 
     char bar[128];
     nh_alert_bar(bar, sizeof bar, gs->alert.level, 20);
@@ -233,11 +245,15 @@ NhDispatch nh_dispatch(GameState *gs, const char *line)
     }
 
     /* Le temps passe à chaque action de hacking : l'alerte se refroidit un peu avant qu'elle
-     * n'ajoute la sienne. Consulter la boutique ou l'aide ne fait pas baisser l'alerte. */
-    if (cmd->category == NH_CAT_HACK || cmd->category == NH_CAT_ADVANCED)
+     * n'ajoute la sienne, et un proxy acheté en boutique s'use d'un hack. Consulter la boutique ou
+     * l'aide ne fait pas baisser l'alerte. */
+    bool hacking = cmd->category == NH_CAT_HACK || cmd->category == NH_CAT_ADVANCED;
+    if (hacking)
         nh_alert_decay(&gs->alert);
 
     NhDispatch result = cmd->fn(gs, arg) ? NH_DISPATCH_OK : NH_DISPATCH_FAILED;
+    if (hacking)
+        nh_alert_end_action(&gs->alert);
     nh_tutorial_on_command(gs, cmd->name, result); /* la mission d'ECHO-7 suit ce que le joueur vient de faire */
 
     /* Puis les événements que la commande a provoqués (et le temps qui passe) sont livrés aux quêtes

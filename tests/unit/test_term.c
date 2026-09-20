@@ -1,5 +1,8 @@
 #include "nh_test.h"
 
+#include "nh_capture.h"
+
+#include "../../src/core/platform.h"
 #include "../../src/ui/term.h"
 
 static void test_width(void)
@@ -147,6 +150,67 @@ static void test_wrap_width_without_terminal(void)
     CHECK_INT(nh_wrap_width(), 0);
 }
 
+static void test_speak(void)
+{
+    char out[256];
+
+    /* « NOM » texte », la ligne fermée par défaut. */
+    nh_term_set_color(false);
+    NhCapture cap = nh_capture_begin();
+    nh_speak("ECHO-7", NH_C_CYAN, "Salut, rookie.", true, 0);
+    nh_capture_end(&cap, out, sizeof out);
+    CHECK_STR(out, "ECHO-7 » Salut, rookie.\n");
+
+    /* Sans retour à la ligne, la ligne reste ouverte (une question posée au joueur). */
+    cap = nh_capture_begin();
+    nh_speak("AURA", NH_C_MAGENTA, "Prêt ?", false, 0);
+    nh_capture_end(&cap, out, sizeof out);
+    CHECK_STR(out, "AURA » Prêt ?");
+
+    /* Un "\n" du texte est conservé, et la suite se met en retrait sous le premier mot :
+     * largeur du nom (en colonnes, pas en octets) + « » ». */
+    cap = nh_capture_begin();
+    nh_speak("R4Z0R", NH_C_YELLOW, "un\ndeux", true, 0);
+    nh_capture_end(&cap, out, sizeof out);
+    CHECK_STR(out, "R4Z0R » un\n        deux\n");
+    cap = nh_capture_begin();
+    nh_speak("Éa", NH_C_YELLOW, "un\ndeux", true, 0);
+    nh_capture_end(&cap, out, sizeof out);
+    CHECK_STR(out, "Éa » un\n     deux\n");
+
+    /* Le nom seul est en couleur ; hors couleur, aucune séquence n'est émise (test précédent). */
+    nh_term_set_color(true);
+    cap = nh_capture_begin();
+    nh_speak("ECHO-7", NH_C_CYAN, "Salut.", true, 0);
+    nh_capture_end(&cap, out, sizeof out);
+    CHECK_STR(out, "\033[36mECHO-7\033[0m » Salut.\n");
+    nh_term_set_color(false);
+
+    /* Avec un délai, c'est le même texte (le mode rapide supprime l'attente). */
+    nh_set_fast(true);
+    cap = nh_capture_begin();
+    nh_speak("ECHO-7", NH_C_CYAN, "Salut, rookie.", true, 20);
+    nh_capture_end(&cap, out, sizeof out);
+    CHECK_STR(out, "ECHO-7 » Salut, rookie.\n");
+
+    /* Texte vide ou trop long pour le tampon interne : pas de plantage, la ligne est bornée. */
+    cap = nh_capture_begin();
+    nh_speak("X", NH_C_CYAN, "", true, 0);
+    nh_capture_end(&cap, out, sizeof out);
+    CHECK_STR(out, "X » \n");
+    static char big[8192];
+    memset(big, 'a', sizeof big - 1);
+    big[sizeof big - 1] = '\0';
+    static char big_out[16384];
+    cap = nh_capture_begin();
+    nh_speak("X", NH_C_CYAN, big, true, 0);
+    nh_capture_end(&cap, big_out, sizeof big_out);
+    CHECK(strlen(big_out) > 100 && strlen(big_out) < 4096);
+    CHECK(strncmp(big_out, "X » aaaa", strlen("X » aaaa")) == 0);
+
+    nh_term_set_color(true);
+}
+
 int main(void)
 {
     test_width();
@@ -155,5 +219,6 @@ int main(void)
     test_wrap();
     test_wrap_truncation();
     test_wrap_width_without_terminal();
+    test_speak();
     return NH_TEST_REPORT("term");
 }

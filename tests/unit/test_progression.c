@@ -249,21 +249,28 @@ static void test_unlocks_per_level(void)
     CHECK(has(out, "uploadvirus"));
     CHECK(has(out, "exploit")); /* enfin implémentée : annoncée avec les autres */
     CHECK(!gs->player.has_ai_assistant);
+    /* Le matériel ne se donne plus : le niveau 4 annonce ce qui arrive chez R4Z0R. */
+    CHECK(has(out, "Nouveau chez R4Z0R"));
+    CHECK(has(out, "Malware Arsenal"));
+    CHECK(has(out, "Neural Assistant v3.1"));
 
     int credits = gs->player.credits;
     stealth = gs->player.stealth_rating;
     grant(gs, 120, out, sizeof out); /* 260 : niveau 5 */
     CHECK_INT(gs->player.level, LEVEL_MASTER);
-    CHECK(gs->player.has_ai_assistant);
-    CHECK(gs->player.has_quantum_computer);
+    /* Ni IA, ni ordinateur quantique, ni crédits offerts : ils s'achètent (lot 3.4). */
+    CHECK(!gs->player.has_ai_assistant);
+    CHECK(!gs->player.has_quantum_computer);
     CHECK_INT(gs->player.virus_library_size, 3);
     CHECK_INT(gs->player.stealth_rating, stealth + 3);
-    CHECK_INT(gs->player.credits, credits + 5000);
+    CHECK_INT(gs->player.credits, credits);
+    CHECK(gs->player.commands_unlocked[CMD_AI_HACK]);
+    CHECK(gs->player.commands_unlocked[CMD_QUANTUM_DECRYPT]);
     CHECK(has(out, "aihack"));
     CHECK(has(out, "quantumdecrypt"));
     CHECK(has(out, "neuralsync"));
-    CHECK(has(out, "Équipement débloqué"));
-    CHECK(has(out, "[+5000 crédits]"));
+    CHECK(has(out, "Quantum Processing Chip"));
+    CHECK(!has(out, "crédits]"));
     CHECK(!has(out, "temporalhack"));
 
     /* Niveau 6 : plafond. temporalhack (niveau minimum 6) devient utilisable. */

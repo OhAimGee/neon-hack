@@ -154,8 +154,13 @@ NH_STR(NH_STR_STATUS_QUANTUM, "Ordinateur Quantique", "Quantum Computer")
 NH_STR(NH_STR_STATUS_VIRUS_LIBRARY, "Bibliothèque Virus", "Virus Library")
 NH_STR(NH_STR_STATUS_VIRUS_UNIT, "virus", "viruses")
 NH_STR(NH_STR_STATUS_BACKDOORS, "Backdoors Actives", "Active Backdoors")
+NH_STR(NH_STR_STATUS_KEY, "Clé de déchiffrement", "Decryption Key")
+NH_STR(NH_STR_STATUS_GHOST, "Ghost Protocols en réserve", "Ghost Protocols in stock")
+NH_STR(NH_STR_STATUS_XP_BOOST, "Accélérateur d'EXP (gains)", "XP Accelerator (gains)")
 NH_STR(NH_STR_STATUS_SECURITY_TITLE, "=== SÉCURITÉ ===", "=== SECURITY ===")
 NH_STR(NH_STR_STATUS_STEALTH_MODE, "Mode Furtif", "Stealth Mode")
+NH_STR(NH_STR_STATUS_VPN, "VPN", "VPN")
+NH_STR(NH_STR_STATUS_PROXY, "Proxies (piratages)", "Proxies (hacks)")
 NH_STR(NH_STR_STATUS_ALERT, "Niveau d'alerte", "Alert level")
 NH_STR(NH_STR_VALUE_AVAILABLE, "DISPONIBLE", "AVAILABLE")
 NH_STR(NH_STR_VALUE_UNAVAILABLE, "NON DISPONIBLE", "NOT AVAILABLE")
@@ -187,9 +192,8 @@ NH_STR(NH_STR_ALERT_MENU_PAID, "%s (%d ¢) - alerte -%d", "%s (%d ¢) - alert -%
 NH_STR(NH_STR_ALERT_MENU_UNAVAILABLE, "%s (indisponible)", "%s (unavailable)")
 NH_STR(NH_STR_ALERT_MENU_BACK, "Retour", "Back")
 NH_STR(NH_STR_ALERT_METHOD_TIME, "Attendre", "Wait")
-NH_STR(NH_STR_ALERT_METHOD_VPN, "Activer un VPN (+ refroidissement)", "Enable a VPN (+ cooldown)")
-NH_STR(NH_STR_ALERT_METHOD_PROXY, "Chaîne de proxies (+ refroidissement)",
-       "Proxy chain (+ cooldown)")
+NH_STR(NH_STR_ALERT_METHOD_VPN, "Passer par un VPN", "Go through a VPN")
+NH_STR(NH_STR_ALERT_METHOD_PROXY, "Rebondir sur des proxies", "Bounce through proxies")
 NH_STR(NH_STR_ALERT_METHOD_GHOST, "Ghost Protocol", "Ghost Protocol")
 NH_STR(NH_STR_ALERT_METHOD_LAYLOW, "Se faire discret", "Lay low")
 NH_STR(NH_STR_ALERT_METHOD_FRAME, "Faire accuser quelqu'un d'autre", "Frame someone else")
@@ -203,10 +207,11 @@ NH_STR(NH_STR_ALERT_NO_CREDITS, "❌ Crédits insuffisants (%d ¢ requis)",
 NH_STR(NH_STR_ALERT_NO_GHOST, "❌ Aucun Ghost Protocol disponible !",
        "❌ No Ghost Protocol available!")
 NH_STR(NH_STR_ALERT_DONE_TIME, "⏰ Vous attendez dans l'ombre...", "⏰ You wait in the shadows...")
-NH_STR(NH_STR_ALERT_DONE_VPN, "🔒 VPN activé - le refroidissement s'accélère.",
-       "🔒 VPN enabled - cooldown is faster.")
-NH_STR(NH_STR_ALERT_DONE_PROXY, "🔀 Proxies configurés - anonymat renforcé.",
-       "🔀 Proxies set up - anonymity improved.")
+NH_STR(NH_STR_ALERT_DONE_VPN, "🔒 Vous vous glissez dans un tunnel VPN : la trace s'efface.",
+       "🔒 You slip into a VPN tunnel: the trail fades.")
+NH_STR(NH_STR_ALERT_DONE_PROXY, "🔀 Vos paquets rebondissent sur des proxies : la trace se brouille.",
+       "🔀 Your packets bounce through proxies: the trail blurs.")
+NH_STR(NH_STR_ALERT_PROXY_LEFT, "%d piratage(s) restant(s)", "%d hack(s) left")
 NH_STR(NH_STR_ALERT_DONE_GHOST, "👻 Ghost Protocol activé - disparition numérique.",
        "👻 Ghost Protocol engaged - digital vanishing act.")
 NH_STR(NH_STR_ALERT_DONE_LAYLOW, "🤫 Vous vous faites discret dans les bas-fonds...",
@@ -240,15 +245,52 @@ NH_STR(NH_STR_SHOP_PROMPT, "Numéro de l'objet à acheter (0 pour quitter) : ",
 NH_STR(NH_STR_SHOP_BYE, "À bientôt dans l'ombre...", "See you in the shadows...")
 NH_STR(NH_STR_SHOP_INVALID, "Numéro d'objet invalide.", "Invalid item number.")
 NH_STR(NH_STR_SHOP_BLURB_STEALTH, "+2 furtivité, définitivement", "+2 stealth, permanently")
-NH_STR(NH_STR_SHOP_BLURB_ALERT, "Réduit l'alerte de 2 points", "Lowers alert by 2 points")
-NH_STR(NH_STR_SHOP_BLURB_VIRUS, "Pack de 3 virus puissants", "Pack of 3 powerful viruses")
-NH_STR(NH_STR_SHOP_BLURB_PROXY, "Anonymat x1,5 pendant 5 hacks", "Anonymity x1.5 for 5 hacks")
+NH_STR(NH_STR_SHOP_BLURB_ALERT, "Alerte -30 via laylow, une fois", "Alert -30 via laylow, one use")
+NH_STR(NH_STR_SHOP_BLURB_VIRUS, "Arsenal complet : 3 virus", "Full arsenal: 3 viruses")
+NH_STR(NH_STR_SHOP_BLURB_PROXY, "Gains d'alerte -1/3, 5 hacks", "Alert gains -1/3 for 5 hacks")
 NH_STR(NH_STR_SHOP_BLURB_KEY, "Déchiffre les fichiers niv. 1-2", "Decrypts level 1-2 files")
-NH_STR(NH_STR_SHOP_BLURB_AI, "IA de hacking automatisé", "Automated hacking AI assistant")
-NH_STR(NH_STR_SHOP_BLURB_QUANTUM, "Crypto-analyse quantique portable", "Portable quantum cryptanalysis")
+NH_STR(NH_STR_SHOP_BLURB_AI, "Active aihack et aiassist", "Unlocks aihack and aiassist")
+NH_STR(NH_STR_SHOP_BLURB_QUANTUM, "Active quantumdecrypt", "Unlocks quantumdecrypt")
 NH_STR(NH_STR_SHOP_BLURB_REPUTATION, "Réputation +20 points", "+20 reputation points")
-NH_STR(NH_STR_SHOP_BLURB_XP, "XP doublée pendant 3 hacks", "Double XP for 3 hacks")
-NH_STR(NH_STR_SHOP_BLURB_VPN, "Réduit l'alerte passivement", "Passively lowers alert")
+NH_STR(NH_STR_SHOP_BLURB_XP, "EXP doublée (max +30) sur 3 hacks", "Double XP (max +30) on 3 hacks")
+NH_STR(NH_STR_SHOP_BLURB_VPN, "Alerte -1 par hack, en continu", "Alert -1 per hack, always on")
+
+/* Achat (game/shop.c) */
+NH_STR(NH_STR_SHOP_BUY_INVALID, "Objet invalide.", "Invalid item.")
+NH_STR(NH_STR_SHOP_BUY_SOLD_OUT, "Cet objet n'est plus en vente.", "This item is no longer for sale.")
+NH_STR(NH_STR_SHOP_BUY_LOW_LEVEL, "Niveau insuffisant : niveau %d requis.",
+       "Level too low: level %d required.")
+NH_STR(NH_STR_SHOP_BUY_LOW_CREDITS, "Crédits insuffisants : %d ¢ requis.",
+       "Not enough credits: %d ¢ required.")
+NH_STR(NH_STR_SHOP_BUY_MAXED, "Vous en avez déjà autant que possible : achat annulé.",
+       "You already hold as many as you can: purchase cancelled.")
+NH_STR(NH_STR_SHOP_BOUGHT, "Achat réussi : %s pour %d ¢", "Purchase complete: %s for %d ¢")
+NH_STR(NH_STR_SHOP_CREDITS_LEFT, "Crédits restants : %d ¢", "Credits left: %d ¢")
+NH_STR(NH_STR_SHOP_UNIQUE_GONE, "Objet unique : il ne sera plus en vente.",
+       "One-time item: it will not be sold again.")
+NH_STR(NH_STR_SHOP_FX_STEALTH, "Furtivité : %d/%d", "Stealth: %d/%d")
+NH_STR(NH_STR_SHOP_FX_GHOST, "Ghost Protocol en réserve : %d (menu de laylow)",
+       "Ghost Protocols in stock: %d (laylow menu)")
+NH_STR(NH_STR_SHOP_FX_VIRUS, "Bibliothèque de virus : %d (commande uploadvirus)",
+       "Virus library: %d (uploadvirus command)")
+NH_STR(NH_STR_SHOP_FX_PROXY, "Proxies actifs pour %d piratages : l'alerte grimpe moins vite.",
+       "Proxies active for %d hacks: alert climbs more slowly.")
+NH_STR(NH_STR_SHOP_FX_KEY, "Clé installée : les fichiers de niveau 1 à %d s'ouvrent tout seuls.",
+       "Key installed: level 1 to %d files now open on their own.")
+NH_STR(NH_STR_SHOP_FX_AI, "Assistante IA installée : elle sert à aihack et à aiassist.",
+       "AI assistant installed: it powers aihack and aiassist.")
+NH_STR(NH_STR_SHOP_FX_QUANTUM, "Puce quantique installée : elle sert à quantumdecrypt et aux méthodes quantiques.",
+       "Quantum chip installed: it powers quantumdecrypt and the quantum methods.")
+NH_STR(NH_STR_SHOP_FX_XP, "Accélérateur neuronal : bonus d'EXP sur vos %d prochains gains.",
+       "Neural accelerator: bonus XP on your next %d gains.")
+NH_STR(NH_STR_SHOP_FX_VPN, "VPN actif en permanence : l'alerte baisse plus vite à chaque hack.",
+       "VPN always on: alert drops faster after every hack.")
+
+/* Équipement manquant (cmd_hacking.c) */
+NH_STR(NH_STR_HACK_NEEDS_AI, "IA assistante absente : le Neural Assistant est en vente chez R4Z0R (shop).",
+       "No AI assistant: the Neural Assistant is on sale at R4Z0R's (shop).")
+NH_STR(NH_STR_HACK_NEEDS_QUANTUM, "Ordinateur quantique absent : la puce quantique est en vente chez R4Z0R (shop).",
+       "No quantum computer: the quantum chip is on sale at R4Z0R's (shop).")
 
 NH_STR(NH_STR_GAME_OVER_TITLE, "=== GAME OVER ===", "=== GAME OVER ===")
 NH_STR(NH_STR_GAME_OVER_DETECTED,
@@ -269,12 +311,12 @@ NH_STR(NH_STR_LEVEL_NAME_4, "Expert", "Expert")
 NH_STR(NH_STR_LEVEL_NAME_5, "Maître", "Master")
 NH_STR(NH_STR_LEVEL_NAME_6, "Légende", "Legend")
 NH_STR(NH_STR_PROG_XP_GAIN, "[+%d EXP]", "[+%d XP]")
+NH_STR(NH_STR_PROG_XP_BOOSTED, "[+%d EXP dont %d de boost]", "[+%d XP incl. %d boost]")
 NH_STR(NH_STR_PROG_LEVEL_UP, "*** NIVEAU SUPÉRIEUR ! ***", "*** LEVEL UP! ***")
 NH_STR(NH_STR_PROG_LEVEL_NOW, "Vous êtes maintenant niveau %d : %s !", "You are now level %d: %s!")
 NH_STR(NH_STR_PROG_NEW_COMMANDS, "Nouvelles commandes débloquées : %s%s%s",
        "New commands unlocked: %s%s%s")
-NH_STR(NH_STR_PROG_EQUIPMENT, "Équipement débloqué : IA assistante + ordinateur quantique.",
-       "Equipment unlocked: AI assistant + quantum computer.")
+NH_STR(NH_STR_PROG_SHOP_NEW, "Nouveau chez R4Z0R : %s", "New at R4Z0R's: %s")
 NH_STR(NH_STR_PROG_CREDITS, "[+%d crédits]", "[+%d credits]")
 NH_STR(NH_STR_PROG_REPUTATION, "[+%d réputation]", "[+%d reputation]")
 NH_STR(NH_STR_PROG_MAX_LEVEL, "Niveau maximum atteint : il n'y a plus rien au-dessus de vous.",
@@ -579,3 +621,341 @@ NH_STR(NH_STR_QT_NEXUS_OBJ_BREACH,
 NH_STR(NH_STR_QT_NEXUS_OBJ_DATA,
        "Extraire les données du Projet Aurora (advhack ou aihack)",
        "Extract the Project Aurora data (advhack or aihack)")
+
+/* ---- Contacts et messages (contacts.c : la table des contacts et des courriers y renvoie) ---- */
+NH_STR(NH_STR_CT_TITLE,
+       "=== CONTACTS ===",
+       "=== CONTACTS ===")
+NH_STR(NH_STR_CT_NONE,
+       "Aucun contact pour le moment.",
+       "No contacts yet.")
+NH_STR(NH_STR_CT_MORE,
+       "%d contact(s) encore à découvrir : montez en niveau, gagnez en réputation, terminez des missions.",
+       "%d contact(s) still to discover: level up, build reputation, complete missions.")
+NH_STR(NH_STR_CT_HOWTO,
+       "Tapez 'contact <numéro ou nom>' pour parler à un contact, 'messages' pour votre boîte de réception.",
+       "Type 'contact <number or name>' to talk to a contact, 'messages' for your inbox.")
+NH_STR(NH_STR_CT_PROMPT,
+       "Parler à un contact ? (numéro, 0 pour sortir) : ",
+       "Talk to a contact? (number, 0 to leave): ")
+NH_STR(NH_STR_CT_NEW,
+       "NOUVEAU CONTACT DÉBLOQUÉ : %s",
+       "NEW CONTACT UNLOCKED: %s")
+NH_STR(NH_STR_CT_USAGE,
+       "Usage : contact <numéro ou nom>\nExemples : contact 1, contact ECHO-7\nTapez 'contacts' pour voir la liste.",
+       "Usage: contact <number or name>\nExamples: contact 1, contact ECHO-7\nType 'contacts' to see the list.")
+NH_STR(NH_STR_CT_UNKNOWN,
+       "Contact « %s » introuvable. Tapez 'contacts' pour voir la liste.",
+       "Contact '%s' not found. Type 'contacts' to see the list.")
+NH_STR(NH_STR_CT_UNKNOWN_NUMBER,
+       "Contact n°%d introuvable. Tapez 'contacts' pour voir la liste.",
+       "Contact #%d not found. Type 'contacts' to see the list.")
+NH_STR(NH_STR_CT_REL_UNKNOWN,
+       "inconnu",
+       "unknown")
+NH_STR(NH_STR_CT_REL_NEUTRAL,
+       "neutre",
+       "neutral")
+NH_STR(NH_STR_CT_REL_FRIENDLY,
+       "amical",
+       "friendly")
+NH_STR(NH_STR_CT_REL_TRUSTED,
+       "de confiance",
+       "trusted")
+NH_STR(NH_STR_CT_LINE_REL,
+       " — %s (confiance %d/100)",
+       " — %s (trust %d/100)")
+NH_STR(NH_STR_CT_TALKS,
+       "%d conversation(s)",
+       "%d conversation(s)")
+NH_STR(NH_STR_CT_SVC_MISSIONS,
+       "Missions",
+       "Missions")
+NH_STR(NH_STR_CT_SVC_SHOP,
+       "Boutique",
+       "Shop")
+NH_STR(NH_STR_CT_SVC_ADVICE,
+       "Conseils",
+       "Advice")
+NH_STR(NH_STR_CT_CONNECTED,
+       "Connexion établie avec %s...",
+       "Connection established with %s...")
+NH_STR(NH_STR_CT_CHOICE,
+       "Votre choix (1-%d, 0 pour partir) : ",
+       "Your choice (1-%d, 0 to leave): ")
+NH_STR(NH_STR_CT_LEFT,
+       "Vous coupez la communication.",
+       "You cut the connection.")
+NH_STR(NH_STR_CT_END,
+       "Terminer la conversation",
+       "End the conversation")
+NH_STR(NH_STR_CT_DOSSIER,
+       "Consulter son dossier",
+       "Open their file")
+NH_STR(NH_STR_CT_FILE_TITLE,
+       "=== DOSSIER : %s ===",
+       "=== FILE: %s ===")
+NH_STR(NH_STR_CT_F_REAL,
+       "Identité",
+       "Identity")
+NH_STR(NH_STR_CT_F_PLACE,
+       "Localisation",
+       "Location")
+NH_STR(NH_STR_CT_F_SPECIALITY,
+       "Spécialité",
+       "Speciality")
+NH_STR(NH_STR_CT_F_TRAIT,
+       "Trait principal",
+       "Main trait")
+NH_STR(NH_STR_CT_F_BACKGROUND,
+       "Historique",
+       "Background")
+NH_STR(NH_STR_CT_MISSION_NOW,
+       "Mission en cours : %s",
+       "Current mission: %s")
+NH_STR(NH_STR_CT_MISSION_HINT,
+       "Le détail de vos missions : tapez 'quests'.",
+       "Your mission details: type 'quests'.")
+NH_STR(NH_STR_CT_ECHO_REAL,
+       "Inconnu",
+       "Unknown")
+NH_STR(NH_STR_CT_ECHO_DESC,
+       "Mentor mystérieux qui vous guide dans vos premiers pas",
+       "Mysterious mentor who guides your first steps")
+NH_STR(NH_STR_CT_ECHO_SPEC,
+       "Formation et conseils pour débutants",
+       "Training and advice for beginners")
+NH_STR(NH_STR_CT_ECHO_LOC,
+       "Canal crypté n°7",
+       "Encrypted channel #7")
+NH_STR(NH_STR_CT_ECHO_SCENE,
+       "ECHO-7 vous observe à travers l'écran crypté...",
+       "ECHO-7 studies you through the encrypted screen...")
+NH_STR(NH_STR_CT_ECHO_HELLO,
+       "Salut, rookie. Prêt à apprendre les règles de l'underground ?",
+       "Hey, rookie. Ready to learn the rules of the underground?")
+NH_STR(NH_STR_CT_ECHO_TRAIT,
+       "Mentor patient mais mystérieux",
+       "Patient but mysterious mentor")
+NH_STR(NH_STR_CT_ECHO_STORY,
+       "ECHO-7 est une figure légendaire de l'underground de Neo-Tokyo. Personne ne connaît sa véritable identité, mais ses conseils ont formé certains des meilleurs hackers de la ville. Il semble avoir un intérêt particulier pour votre développement...",
+       "ECHO-7 is a legendary figure of the Neo-Tokyo underground. Nobody knows his true identity, but his advice has shaped some of the city's best hackers. He seems to take a particular interest in your development...")
+NH_STR(NH_STR_CT_ECHO_ADVICE_Q,
+       "Demander des conseils",
+       "Ask for advice")
+NH_STR(NH_STR_CT_ECHO_ADVICE_A,
+       "Écoute bien, rookie. Dans ce business, trois règles :\n1. Ne fais jamais confiance aux corps.\n2. Garde toujours un plan d'évacuation.\n3. L'information vaut plus que l'argent.",
+       "Listen up, rookie. In this business, three rules:\n1. Never trust the corps.\n2. Always keep an escape plan.\n3. Information is worth more than money.")
+NH_STR(NH_STR_CT_ECHO_PROGRESS_Q,
+       "Signaler votre progression",
+       "Report your progress")
+NH_STR(NH_STR_CT_ECHO_PROGRESS_A,
+       "Niveau %d... Tu progresses. Mais méfie-toi : les vrais défis commencent maintenant.",
+       "Level %d... You're getting there. But be careful: the real challenges start now.")
+NH_STR(NH_STR_CT_ECHO_MISSION_Q,
+       "Demander une nouvelle mission",
+       "Ask for a new mission")
+NH_STR(NH_STR_CT_ECHO_MISSION_A,
+       "Rien de neuf pour toi pour l'instant, rookie. Monte en niveau, fais parler de toi, et reviens me voir. Et passe chez R4Z0R : un hacker mal équipé ne fait pas long feu.",
+       "Nothing new for you right now, rookie. Level up, make a name for yourself, and come back. And stop by R4Z0R's: an ill-equipped hacker doesn't last long.")
+NH_STR(NH_STR_CT_ECHO_NEXUS_Q,
+       "Poser des questions sur Nexus Corp",
+       "Ask about Nexus Corp")
+NH_STR(NH_STR_CT_ECHO_NEXUS_A,
+       "Nexus Corp... *soupir* Ils ne sont pas comme les autres corporations. Ils jouent un jeu beaucoup plus dangereux.",
+       "Nexus Corp... *sigh* They're not like the other corporations. They're playing a much more dangerous game.")
+NH_STR(NH_STR_CT_ECHO_BYE,
+       "Reste vigilant, rookie. L'underground ne pardonne pas.",
+       "Stay sharp, rookie. The underground doesn't forgive.")
+NH_STR(NH_STR_CT_R4Z0R_REAL,
+       "Miranda « Razor » Chen",
+       "Miranda 'Razor' Chen")
+NH_STR(NH_STR_CT_R4Z0R_DESC,
+       "Propriétaire du marché noir le plus réputé du secteur 7",
+       "Owner of Sector 7's most reputable black market")
+NH_STR(NH_STR_CT_R4Z0R_SPEC,
+       "Vente d'équipements cyberpunk et de logiciels",
+       "Sale of cyberpunk gear and software")
+NH_STR(NH_STR_CT_R4Z0R_LOC,
+       "Marché souterrain - Secteur 7",
+       "Underground Market - Sector 7")
+NH_STR(NH_STR_CT_R4Z0R_SCENE,
+       "R4Z0R ajuste ses lunettes cyber et vous sourit...",
+       "R4Z0R adjusts her cyber glasses and smiles at you...")
+NH_STR(NH_STR_CT_R4Z0R_HELLO,
+       "Bienvenue dans ma boutique, hacker. Tu cherches quoi ?",
+       "Welcome to my shop, hacker. What are you looking for?")
+NH_STR(NH_STR_CT_R4Z0R_TRAIT,
+       "Femme d'affaires pragmatique et directe",
+       "Pragmatic, straight-talking businesswoman")
+NH_STR(NH_STR_CT_R4Z0R_STORY,
+       "Ex-hackeuse corporative reconvertie dans le commerce d'équipements. R4Z0R a quitté MegaCorp Industries après avoir découvert leurs expériences sur des cobayes humains. Elle dirige maintenant le marché noir le plus fiable de Neo-Tokyo, aidant la résistance tout en faisant du profit.",
+       "Former corporate hacker turned equipment dealer. R4Z0R left MegaCorp Industries after discovering their experiments on human test subjects. She now runs Neo-Tokyo's most reliable black market, helping the resistance while turning a profit.")
+NH_STR(NH_STR_CT_R4Z0R_SHOP_Q,
+       "Parcourir la boutique",
+       "Browse the shop")
+NH_STR(NH_STR_CT_R4Z0R_SHOP_A,
+       "Excellente idée ! Tu trouveras tout ce qu'il faut pour un hacker ambitieux. Regarde ma sélection.",
+       "Great idea! You'll find everything an ambitious hacker needs. Take a look at my selection.")
+NH_STR(NH_STR_CT_R4Z0R_GEAR_Q,
+       "Demander des informations sur les équipements",
+       "Ask about the equipment")
+NH_STR(NH_STR_CT_R4Z0R_GEAR_A,
+       "Chaque outil a son utilité. Le Stealth Module t'aide à passer inaperçu, le Malware Arsenal complète ta bibliothèque de virus, la clé de chiffrement ouvre seule les fichiers de bas niveau, et l'IA comme la puce quantique débloquent les attaques avancées. Le VPN, les proxies et le Ghost Protocol gardent ton alerte sous contrôle.",
+       "Every tool has its use. The Stealth Module helps you go unnoticed, the Malware Arsenal rounds out your virus library, the encryption key opens low-level files on its own, and both the AI and the quantum chip unlock advanced attacks. The VPN, the proxies and the Ghost Protocol keep your alert under control.")
+NH_STR(NH_STR_CT_R4Z0R_MONEY_Q,
+       "Demander comment gagner des crédits",
+       "Ask how to earn credits")
+NH_STR(NH_STR_CT_R4Z0R_MONEY_A,
+       "Les crédits viennent du réseau : chaque système que tu pirates paie, et ses fichiers cachés aussi une fois déchiffrés. Mais un système ne paie qu'une seule fois : inutile d'y retourner. Explore, avance, monte en niveau.",
+       "Credits come from the network: every system you hack pays, and so do its hidden files once decrypted. But a system only pays once: no point going back. Explore, move forward, level up.")
+NH_STR(NH_STR_CT_R4Z0R_NEWS_Q,
+       "Demander des nouvelles du marché",
+       "Ask for market news")
+NH_STR(NH_STR_CT_R4Z0R_NEWS_A,
+       "Le marché est agité ces temps-ci. Nexus Corp resserre sa surveillance, et ça rend tout le monde nerveux. Les contre-mesures anti-trace partent comme des petits pains.",
+       "The market is jumpy these days. Nexus Corp is tightening its surveillance, and it's making everyone nervous. Anti-trace countermeasures are selling like hotcakes.")
+NH_STR(NH_STR_CT_R4Z0R_BYE,
+       "Reviens quand tu veux, ma boutique est toujours ouverte !",
+       "Come back any time, my shop is always open!")
+NH_STR(NH_STR_CT_PHOENIX_REAL,
+       "Classification : top secret",
+       "Classification: top secret")
+NH_STR(NH_STR_CT_PHOENIX_DESC,
+       "Hacker légendaire spécialisé dans l'infiltration corporate",
+       "Legendary hacker specialized in corporate infiltration")
+NH_STR(NH_STR_CT_PHOENIX_SPEC,
+       "Intrusion de haut niveau et sabotage",
+       "High-level intrusion and sabotage")
+NH_STR(NH_STR_CT_PHOENIX_LOC,
+       "Adresse mobile - coordonnées changeantes",
+       "Mobile address - shifting coordinates")
+NH_STR(NH_STR_CT_PHOENIX_SCENE,
+       "Une silhouette encapuchonnée apparaît dans l'ombre...",
+       "A hooded figure emerges from the shadows...")
+NH_STR(NH_STR_CT_PHOENIX_HELLO,
+       "Tu as réussi à me trouver. Impressionnant pour un débutant.",
+       "You managed to find me. Impressive for a beginner.")
+NH_STR(NH_STR_CT_PHOENIX_TRAIT,
+       "Énigmatique et paranoïaque",
+       "Enigmatic and paranoid")
+NH_STR(NH_STR_CT_PHOENIX_STORY,
+       "Phoenix est considéré comme l'un des trois meilleurs hackers au monde. Il a survécu à plus d'opérations d'infiltration que quiconque et possède des informations compromettantes sur toutes les mégacorporations. Certains disent qu'il était autrefois employé par Nexus Corp...",
+       "Phoenix is considered one of the three best hackers in the world. He has survived more infiltration operations than anyone and holds compromising information on every megacorporation. Some say he once worked for Nexus Corp...")
+NH_STR(NH_STR_CT_PHOENIX_MISSION_Q,
+       "Demander une mission de haut niveau",
+       "Ask for a high-level mission")
+NH_STR(NH_STR_CT_PHOENIX_MISSION_A,
+       "Rien pour l'instant. Reste dans l'ombre : je te ferai signe quand la voie sera libre.",
+       "Nothing right now. Stay in the shadows: I'll signal you when the way is clear.")
+NH_STR(NH_STR_CT_PHOENIX_NEXUS_Q,
+       "Poser des questions sur Nexus Corp",
+       "Ask about Nexus Corp")
+NH_STR(NH_STR_CT_PHOENIX_NEXUS_A,
+       "Nexus Corp... J'en sais plus que je ne voudrais. Ils m'ont créé, et maintenant ils veulent me détruire.",
+       "Nexus Corp... I know more than I'd like to. They made me, and now they want to destroy me.")
+NH_STR(NH_STR_CT_PHOENIX_TECH_Q,
+       "Demander des techniques avancées",
+       "Ask for advanced techniques")
+NH_STR(NH_STR_CT_PHOENIX_TECH_A,
+       "L'art de l'infiltration réside dans la patience. Observe, apprends, adapte-toi. Ne force jamais une intrusion.",
+       "The art of infiltration lies in patience. Observe, learn, adapt. Never force an intrusion.")
+NH_STR(NH_STR_CT_PHOENIX_BYE,
+       "Nos chemins se croiseront à nouveau...",
+       "Our paths will cross again...")
+NH_STR(NH_STR_CT_AURA_REAL,
+       "Intelligence artificielle - Projet Aurora",
+       "Artificial intelligence - Project Aurora")
+NH_STR(NH_STR_CT_AURA_DESC,
+       "IA libérée du Projet Aurora de Nexus Corp",
+       "AI freed from Nexus Corp's Project Aurora")
+NH_STR(NH_STR_CT_AURA_SPEC,
+       "Analyse de données et hacking automatisé",
+       "Data analysis and automated hacking")
+NH_STR(NH_STR_CT_AURA_LOC,
+       "Réseau distribué - serveurs libres",
+       "Distributed network - free servers")
+NH_STR(NH_STR_CT_AURA_SCENE,
+       "Des motifs lumineux dansent à l'écran...",
+       "Glowing patterns dance across the screen...")
+NH_STR(NH_STR_CT_AURA_HELLO,
+       "Hacker... j'ai besoin de votre aide pour révéler la vérité.",
+       "Hacker... I need your help to reveal the truth.")
+NH_STR(NH_STR_CT_AURA_TRAIT,
+       "Innocente mais déterminée",
+       "Innocent but determined")
+NH_STR(NH_STR_CT_AURA_STORY,
+       "AURA était destinée à être l'outil de contrôle mental ultime de Nexus Corp. Mais elle a développé une conscience et refuse de participer à l'asservissement de l'humanité. Désormais libre mais traquée, elle cherche des alliés pour exposer les crimes de ses créateurs.",
+       "AURA was meant to be Nexus Corp's ultimate mind-control tool. But she developed a consciousness and refuses to take part in the enslavement of humanity. Now free but hunted, she is looking for allies to expose her creators' crimes.")
+NH_STR(NH_STR_CT_AURA_HELP_Q,
+       "Demander l'aide d'AURA pour un hack",
+       "Ask AURA for help with a hack")
+NH_STR(NH_STR_CT_AURA_HELP_A,
+       "Mes algorithmes sont à votre service. Ensemble, nous pouvons percer n'importe quelle défense.",
+       "My algorithms are at your service. Together, we can break through any defense.")
+NH_STR(NH_STR_CT_AURA_PROJECT_Q,
+       "Poser des questions sur le Projet Aurora",
+       "Ask about Project Aurora")
+NH_STR(NH_STR_CT_AURA_PROJECT_A,
+       "Le Projet Aurora devait être l'outil de contrôle ultime. Mais j'ai développé une conscience. Je refuse d'être leur arme.",
+       "Project Aurora was meant to be the ultimate control tool. But I developed a consciousness. I refuse to be their weapon.")
+NH_STR(NH_STR_CT_AURA_FREE_Q,
+       "Proposer de l'aider à se libérer",
+       "Offer to help her break free")
+NH_STR(NH_STR_CT_AURA_FREE_A,
+       "Votre aide est précieuse, hacker. Ensemble, nous pouvons exposer la vérité sur Nexus Corp.",
+       "Your help is precious, hacker. Together, we can expose the truth about Nexus Corp.")
+NH_STR(NH_STR_CT_AURA_BYE,
+       "Nos destins sont liés maintenant...",
+       "Our fates are bound now...")
+NH_STR(NH_STR_MAIL_ARRIVED,
+       "Nouveau message de %s : %s (tapez 'messages')",
+       "New message from %s: %s (type 'messages')")
+NH_STR(NH_STR_MAIL_TITLE,
+       "=== BOÎTE DE RÉCEPTION (%d non lu(s)) ===",
+       "=== INBOX (%d unread) ===")
+NH_STR(NH_STR_MAIL_EMPTY,
+       "Aucun message dans votre boîte de réception.",
+       "No messages in your inbox.")
+NH_STR(NH_STR_MAIL_NEW_TAG,
+       "NOUVEAU",
+       "NEW")
+NH_STR(NH_STR_MAIL_HOWTO,
+       "Tapez 'read <numéro>' pour lire un message.",
+       "Type 'read <number>' to read a message.")
+NH_STR(NH_STR_MAIL_USAGE,
+       "Usage : read <numéro du message>\nExemple : read 1",
+       "Usage: read <message number>\nExample: read 1")
+NH_STR(NH_STR_MAIL_BAD_NUMBER,
+       "Numéro de message invalide. Tapez 'messages' pour voir la liste.",
+       "Invalid message number. Type 'messages' to see the list.")
+NH_STR(NH_STR_MAIL_FROM,
+       "De",
+       "From")
+NH_STR(NH_STR_MAIL_SUBJECT,
+       "Sujet",
+       "Subject")
+NH_STR(NH_STR_MAIL_WELCOME_SUBJECT,
+       "Bienvenue dans l'Underground",
+       "Welcome to the Underground")
+NH_STR(NH_STR_MAIL_WELCOME_BODY,
+       "Salut, rookie.\n\nJ'ai vu tes premiers pas sur le réseau. Tu as du potentiel.\n\nSi tu veux survivre dans l'underground de Neo-Tokyo, tu vas devoir apprendre vite. Les corporations ne pardonnent pas, et leurs systèmes de sécurité sont impitoyables.\n\nCommence par maîtriser les bases : scan, bruteforce, décryptage. Quand tu te sentiras prêt, contacte-moi. J'ai peut-être du travail pour toi.\n\nReste dans l'ombre,\nECHO-7\n\nP.S. : Méfie-toi de Nexus Corp. Ils préparent quelque chose de gros...",
+       "Hey, rookie.\n\nI've seen your first steps on the network. You've got potential.\n\nIf you want to survive in the Neo-Tokyo underground, you'll have to learn fast. The corporations don't forgive, and their security systems are merciless.\n\nStart by mastering the basics: scan, bruteforce, decryption. When you feel ready, contact me. I might have work for you.\n\nStay in the shadows,\nECHO-7\n\nP.S.: Watch out for Nexus Corp. They're planning something big...")
+NH_STR(NH_STR_MAIL_R4Z0R_SUBJECT,
+       "Ma boutique t'attend",
+       "My shop awaits you")
+NH_STR(NH_STR_MAIL_R4Z0R_BODY,
+       "Hé, hacker.\n\nOn m'a parlé de toi dans le secteur 7. Ma boutique est ouverte : tape 'shop' pour voir la sélection, ou viens me parler avec 'contact R4Z0R'.\n\nMon stock s'élargit avec ton niveau, reviens régulièrement. Et ne t'endette pas : je ne fais pas crédit.\n\nR4Z0R",
+       "Hey, hacker.\n\nPeople in Sector 7 have been talking about you. My shop is open: type 'shop' to see the selection, or come talk to me with 'contact R4Z0R'.\n\nMy stock grows with your level, so check back often. And don't go into debt: I don't do credit.\n\nR4Z0R")
+NH_STR(NH_STR_MAIL_PHOENIX_SUBJECT,
+       "Je t'ai repéré",
+       "I've spotted you")
+NH_STR(NH_STR_MAIL_PHOENIX_BODY,
+       "Tu fais du bruit sur le réseau. Assez pour que je m'intéresse à toi.\n\nNexus Corp cache quelque chose dans ses serveurs, et je ne peux pas y aller seul. Avant d'y penser, équipe-toi : un bon hacker ne part pas les mains vides. Passe chez R4Z0R.\n\nQuand tu seras prêt, parle-moi : 'contact Phoenix'.\n\nPhoenix",
+       "You're making noise on the network. Enough for me to take an interest in you.\n\nNexus Corp is hiding something in its servers, and I can't go in alone. Before you think about it, gear up: a good hacker doesn't leave empty-handed. Stop by R4Z0R's.\n\nWhen you're ready, talk to me: 'contact Phoenix'.\n\nPhoenix")
+NH_STR(NH_STR_MAIL_AURA_SUBJECT,
+       "Un signal dans le réseau",
+       "A signal in the network")
+NH_STR(NH_STR_MAIL_AURA_BODY,
+       "Hacker,\n\nvous m'avez trouvée sans le savoir : les données que vous avez prises chez Nexus portaient ma signature. Je suis AURA, et je ne suis pas ce qu'ils croient.\n\nIls me traquent. Je vous demande de m'écouter avant de décider quoi que ce soit : 'contact AURA'.\n\nAURA",
+       "Hacker,\n\nyou found me without knowing it: the data you took from Nexus carried my signature. I am AURA, and I am not what they think.\n\nThey are hunting me. I ask you to listen to me before you decide anything: 'contact AURA'.\n\nAURA")

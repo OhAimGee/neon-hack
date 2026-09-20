@@ -31,7 +31,7 @@ typedef enum
     NH_SHOP_SOLD_OUT     /* objet unique déjà acheté */
 } NhShopState;
 
-/* Même ordre de vérification que buy_item() : épuisé, puis niveau, puis crédits. */
+/* Même ordre de vérification que nh_shop_buy() : épuisé, puis niveau, puis crédits. */
 NhShopState nh_shop_state(const ShopItem *item, int credits, int level);
 
 /* Résumé traduit d'un objet du catalogue ("" si le type est hors bornes). */

@@ -323,3 +323,20 @@ void nh_typewriter(const char *text, unsigned delay_ms)
         s += len;
     }
 }
+
+void nh_speak(const char *name, NhColor color, const char *text, bool newline, unsigned delay_ms)
+{
+    /* « NOM » » : le nom, une espace, « » », une espace ; le texte se poursuit en retrait sous lui. */
+    size_t prefix = nh_display_width(name) + 3;
+    char wrapped[2048];
+    nh_wrap_text(wrapped, sizeof wrapped, text, prefix, prefix, nh_wrap_width());
+
+    printf("%s%s%s » ", nh_c(color), name, nh_c(NH_C_RESET));
+    if (delay_ms > 0)
+        nh_typewriter(wrapped, delay_ms);
+    else
+        fputs(wrapped, stdout);
+    if (newline)
+        putchar('\n');
+    fflush(stdout);
+}

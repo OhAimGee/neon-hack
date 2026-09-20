@@ -33,7 +33,7 @@ static const NhQuestDef k_quests[QUEST_COUNT] = {
             .description = NH_STR_QT_TUTORIAL_DESC,
             .lore = NH_STR_QT_TUTORIAL_LORE,
             .location = NH_STR_QT_TUTORIAL_LOC,
-            .contact = NH_ECHO7,
+            .contact = CONTACT_ECHO7,
             .level_required = 1,
             .prerequisites = {-1, -1},
             .chapter = 1,
@@ -49,7 +49,7 @@ static const NhQuestDef k_quests[QUEST_COUNT] = {
             .description = NH_STR_QT_INFIL_DESC,
             .lore = NH_STR_QT_INFIL_LORE,
             .location = NH_STR_QT_INFIL_LOC,
-            .contact = NH_ECHO7,
+            .contact = CONTACT_ECHO7,
             .level_required = 2,
             .prerequisites = {QUEST_INTRO_TUTORIAL, -1},
             .chapter = 1,
@@ -69,7 +69,7 @@ static const NhQuestDef k_quests[QUEST_COUNT] = {
             .description = NH_STR_QT_INTEL_DESC,
             .lore = NH_STR_QT_INTEL_LORE,
             .location = NH_STR_QT_INTEL_LOC,
-            .contact = "R4Z0R",
+            .contact = CONTACT_R4Z0R,
             .level_required = 3,
             .prerequisites = {QUEST_FIRST_INFILTRATION, -1},
             .chapter = 2,
@@ -92,7 +92,7 @@ static const NhQuestDef k_quests[QUEST_COUNT] = {
             .description = NH_STR_QT_NEXUS_DESC,
             .lore = NH_STR_QT_NEXUS_LORE,
             .location = NH_STR_QT_NEXUS_LOC,
-            .contact = "Phoenix",
+            .contact = CONTACT_PHOENIX,
             .level_required = 4,
             .prerequisites = {QUEST_GATHER_INTEL, -1},
             .chapter = 3,
@@ -385,7 +385,7 @@ bool nh_quest_complete(GameState *gs, QuestType quest, bool reward)
                 printf("%s ", nh_c(NH_C_RESET));
             }
             nh_grant_reputation(gs, def->reputation);
-            nh_grant_xp(gs, def->xp);
+            nh_grant_xp_flat(gs, def->xp);
             printf("\n");
         }
     }
@@ -461,7 +461,7 @@ void nh_quests_print_log(const GameState *gs)
         printf("\n%s[%d] %s%s\n", nh_c(NH_C_YELLOW), q + 1, nh_tr(def->title), nh_c(NH_C_RESET));
         print_wrapped(nh_tr(def->description), 4);
         printf("    %s: %s%s%s   %s: %s%s%s\n", nh_tr(NH_STR_QUEST_LABEL_CONTACT), nh_c(NH_C_WHITE),
-               def->contact, nh_c(NH_C_RESET), nh_tr(NH_STR_QUEST_LABEL_LOCATION), nh_c(NH_C_WHITE),
+               nh_contact_name(def->contact), nh_c(NH_C_RESET), nh_tr(NH_STR_QUEST_LABEL_LOCATION), nh_c(NH_C_WHITE),
                nh_tr(def->location), nh_c(NH_C_RESET));
         printf("    %s%s%s\n", nh_c(NH_C_GREEN), nh_tr(NH_STR_QUEST_LABEL_OBJECTIVES), nh_c(NH_C_RESET));
         for (int i = 0; i < def->objective_count; i++)

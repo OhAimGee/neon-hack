@@ -43,7 +43,20 @@ int nh_alert_reduce(AlertSystem *a, int amount)
 
 int nh_alert_decay(AlertSystem *a)
 {
-    return nh_alert_reduce(a, 1 + (a->vpn_active ? 1 : 0) + (a->proxy_active ? 1 : 0));
+    return nh_alert_reduce(a, 1 + (a->vpn_active ? 1 : 0));
+}
+
+void nh_alert_end_action(AlertSystem *a)
+{
+    if (a->proxy_hacks_left > 0)
+        a->proxy_hacks_left--;
+}
+
+int nh_alert_proxied(int amount)
+{
+    if (amount <= 1)
+        return amount;
+    return (amount * 2 + 2) / 3; /* 2/3 arrondi au-dessus : 2 -> 2, 5 -> 4, 30 -> 20 */
 }
 
 NhAlertBand nh_alert_band(int level)
@@ -110,10 +123,6 @@ NhReduceResult nh_alert_apply_reduction(AlertSystem *a, NhReduction method, int 
     *credits -= cost;
     if (method == NH_REDUCTION_GHOST)
         a->ghost_protocols_available--;
-    else if (method == NH_REDUCTION_VPN)
-        a->vpn_active = true;
-    else if (method == NH_REDUCTION_PROXY)
-        a->proxy_active = true;
 
     int done = nh_alert_reduce(a, k_reductions[method].amount);
     if (applied != NULL)
@@ -158,7 +167,7 @@ NhStr nh_alert_label(int level)
 
 void nh_alert_raise(AlertSystem *a, int amount)
 {
-    int applied = nh_alert_add(a, amount);
+    int applied = nh_alert_add(a, a->proxy_hacks_left > 0 ? nh_alert_proxied(amount) : amount);
     if (applied <= 0)
         return;
 
@@ -172,10 +181,17 @@ void nh_alert_raise(AlertSystem *a, int amount)
         printf("%s%s%s ", nh_c(NH_C_YELLOW), nh_tr(NH_STR_ALERT_TAG_ELEVATED), nh_c(NH_C_RESET));
 }
 
-static void print_protection(const char *label, bool on)
+static void print_protection(const char *label, bool on, int left)
 {
-    printf("  %s: %s%s%s\n", label, nh_c(on ? NH_C_GREEN : NH_C_RED),
+    printf("  %s: %s%s%s", label, nh_c(on ? NH_C_GREEN : NH_C_RED),
            nh_tr(on ? NH_STR_VALUE_ON : NH_STR_VALUE_OFF), nh_c(NH_C_RESET));
+    if (on && left > 0)
+    {
+        printf(" (");
+        printf(nh_tr(NH_STR_ALERT_PROXY_LEFT), left);
+        printf(")");
+    }
+    printf("\n");
 }
 
 void nh_alert_print_status(const AlertSystem *a)
@@ -189,8 +205,8 @@ void nh_alert_print_status(const AlertSystem *a)
            nh_tr(nh_alert_label(a->level)));
     printf(nh_tr(NH_STR_ALERT_MAX_REACHED), a->max_level);
     printf("\n%s\n", nh_tr(NH_STR_ALERT_PROTECTION));
-    print_protection("VPN", a->vpn_active);
-    print_protection("Proxy", a->proxy_active);
+    print_protection("VPN", a->vpn_active, 0);
+    print_protection("Proxy", a->proxy_hacks_left > 0, a->proxy_hacks_left);
     printf("  Ghost Protocol: %d\n", a->ghost_protocols_available);
 
     if (a->level >= NH_ALERT_WARNING)

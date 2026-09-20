@@ -26,8 +26,8 @@ typedef struct
 {
     int level;     /* 0..NH_ALERT_MAX */
     int max_level; /* plus haut niveau atteint dans la partie */
-    bool vpn_active;
-    bool proxy_active;
+    bool vpn_active;         /* VPN permanent (boutique) : le refroidissement gagne 1 point par hack */
+    int proxy_hacks_left;    /* proxies (boutique) : encore autant de hacks dont les hausses d'alerte sont réduites d'un tiers */
     int ghost_protocols_available;
     int reductions_done; /* nombre de fois où une méthode de réduction a été appliquée (le tutoriel s'y fie) */
 } AlertSystem;
@@ -63,8 +63,12 @@ void nh_alert_init(AlertSystem *a);
 int nh_alert_add(AlertSystem *a, int amount);
 /* Retire `amount` (les valeurs négatives sont ignorées). Retourne la baisse réellement appliquée. */
 int nh_alert_reduce(AlertSystem *a, int amount);
-/* Refroidissement naturel, une fois par action de hacking : 1, +1 avec VPN, +1 avec proxy. */
+/* Refroidissement naturel, une fois par action de hacking : 1, +1 avec le VPN. */
 int nh_alert_decay(AlertSystem *a);
+/* Fin d'une action de hacking : un hack de moins sous proxy. */
+void nh_alert_end_action(AlertSystem *a);
+/* Ce que devient une hausse `amount` sous proxy : réduite d'un tiers (arrondie au-dessus), jamais nulle. */
+int nh_alert_proxied(int amount);
 
 NhAlertBand nh_alert_band(int level);
 bool nh_alert_is_game_over(const AlertSystem *a);
@@ -78,14 +82,14 @@ NhStr nh_alert_label(int level);
 
 int nh_alert_reduction_cost(NhReduction method);
 int nh_alert_reduction_amount(NhReduction method);
-/* Applique une méthode : débite les crédits, baisse l'alerte, active VPN/proxy. */
+/* Applique une méthode : débite les crédits et baisse l'alerte (le VPN et les proxies durables s'achètent en boutique). */
 NhReduceResult nh_alert_apply_reduction(AlertSystem *a, NhReduction method, int *credits,
                                         int *applied);
 
 /* Jauge de `width` colonnes (« ██████░░░░ »), au moins une case pleine dès que level > 0. */
 void nh_alert_bar(char *out, size_t out_size, int level, int width);
 
-/* Ajoute de l'alerte ET l'annonce (« [ALERTE +5] », puis les avertissements de seuil). */
+/* Ajoute de l'alerte ET l'annonce (« [ALERTE +5] », puis les avertissements de seuil). Sous proxy, la hausse est réduite. */
 void nh_alert_raise(AlertSystem *a, int amount);
 void nh_alert_print_status(const AlertSystem *a);
 void nh_alert_print_menu(const AlertSystem *a);

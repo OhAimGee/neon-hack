@@ -90,6 +90,8 @@ typedef struct
     // Nouvelles mécaniques avancées
     bool has_quantum_computer;
     bool has_ai_assistant;
+    bool has_encryption_key; // clé de chiffrement (boutique) : les fichiers de bas niveau s'ouvrent à la compromission
+    int xp_boost;            // gains d'expérience qu'il reste à majorer (boutique, voir nh_grant_xp)
     int virus_library_size;
     int backdoors_active;
     time_t last_hack_time;
