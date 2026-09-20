@@ -7,6 +7,8 @@
 #include "../ui/term.h"
 #include "progression.h"
 
+#define NH_MAX_ENCRYPTION 99 /* « tous les niveaux » pour nh_world_extract_upto */
+
 typedef struct
 {
     const char *filename;
@@ -280,7 +282,7 @@ int nh_world_locked_files(const NetworkNode *node)
     return n;
 }
 
-int nh_world_extract(GameState *gs, int idx)
+int nh_world_extract_upto(GameState *gs, int idx, int max_level)
 {
     if (!valid(idx))
         return 0;
@@ -289,7 +291,7 @@ int nh_world_extract(GameState *gs, int idx)
     for (int i = 0; i < node->file_count; i++)
     {
         DataFile *file = &node->secret_files[i];
-        if (file->is_unlocked)
+        if (file->is_unlocked || file->encryption_level > max_level)
             continue;
         file->is_unlocked = true;
         printf(nh_tr(NH_STR_WORLD_FILE), file->filename);
@@ -302,6 +304,11 @@ int nh_world_extract(GameState *gs, int idx)
     if (done > 0)
         nh_event(gs, NH_EV_FILES_EXTRACTED, done);
     return done;
+}
+
+int nh_world_extract(GameState *gs, int idx)
+{
+    return nh_world_extract_upto(gs, idx, NH_MAX_ENCRYPTION);
 }
 
 bool nh_world_compromise(GameState *gs, int idx, bool deep)
@@ -319,6 +326,8 @@ bool nh_world_compromise(GameState *gs, int idx, bool deep)
     gs->player.credits += node->data_value;
     if (deep)
         nh_world_extract(gs, idx);
+    else if (gs->player.has_encryption_key)
+        nh_world_extract_upto(gs, idx, NH_KEY_DECRYPT_LEVEL);
     nh_grant_xp(gs, k_nodes[idx].xp);
     nh_event(gs, NH_EV_NODE_COMPROMISED, idx);
     return true;

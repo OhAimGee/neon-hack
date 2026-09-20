@@ -26,6 +26,7 @@
 #include <stdbool.h>
 
 #include "../i18n/i18n.h"
+#include "contacts.h"
 #include "events.h"
 
 struct GameState;
@@ -88,7 +89,7 @@ typedef struct
     NhStr description;
     NhStr lore;
     NhStr location;
-    const char *contact; /* nom propre (ECHO-7, R4Z0R…) : jamais traduit */
+    ContactType contact; /* qui confie la quête (son nom est dans contacts.c) */
     int level_required;
     int prerequisites[NH_QUEST_MAX_PREREQ]; /* quêtes à terminer d'abord ; -1 : aucune */
     int chapter;                            /* 1..NH_CHAPTER_COUNT */

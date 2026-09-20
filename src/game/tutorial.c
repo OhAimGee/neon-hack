@@ -23,22 +23,9 @@ static const StepText k_steps[NH_TUT_STEP_COUNT] = {
     [NH_TUT_LAYLOW] = {NH_STR_TUT_OBJ_LAYLOW, NH_STR_TUT_SAY_LAYLOW},
 };
 
-/* « ECHO-7 » + « » » : 9 colonnes avant le texte, qui se poursuit en retrait sous lui. */
-#define ECHO_PREFIX_COLS 9
-
 void nh_echo_say(const char *text, bool newline, unsigned delay_ms)
 {
-    char wrapped[2048];
-    nh_wrap_text(wrapped, sizeof wrapped, text, ECHO_PREFIX_COLS, ECHO_PREFIX_COLS, nh_wrap_width());
-
-    printf("%s%s%s » ", nh_c(NH_C_BRIGHT_CYAN), NH_ECHO7, nh_c(NH_C_RESET));
-    if (delay_ms > 0)
-        nh_typewriter(wrapped, delay_ms);
-    else
-        fputs(wrapped, stdout);
-    if (newline)
-        putchar('\n');
-    fflush(stdout);
+    nh_speak(NH_ECHO7, NH_C_BRIGHT_CYAN, text, newline, delay_ms);
 }
 
 bool nh_tutorial_active(const GameState *gs) { return gs->tutorial.step != NH_TUT_NONE; }
@@ -73,6 +60,13 @@ void nh_tutorial_announce(const GameState *gs, bool resumed)
     printf("\n");
     nh_echo_say(nh_tr(k_steps[gs->tutorial.step].say), true, 0);
     printf("\n");
+}
+
+void nh_tutorial_repeat(const GameState *gs)
+{
+    if (!nh_tutorial_active(gs))
+        return;
+    nh_echo_say(nh_tr(k_steps[gs->tutorial.step].say), true, 0);
 }
 
 void nh_tutorial_print_mission(const GameState *gs)

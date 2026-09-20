@@ -71,6 +71,9 @@ void nh_tutorial_announce(const GameState *gs, bool resumed);
  */
 void nh_tutorial_on_command(GameState *gs, const char *command, NhDispatch result);
 
+/* Redit la consigne de l'étape en cours (ECHO-7, quand le joueur lui demande sa mission). Sans effet hors tutoriel. */
+void nh_tutorial_repeat(const GameState *gs);
+
 /* Le journal de la mission (commande `quests` pendant le tutoriel). */
 void nh_tutorial_print_mission(const GameState *gs);
 

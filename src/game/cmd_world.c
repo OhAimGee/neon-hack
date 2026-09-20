@@ -1,6 +1,6 @@
 /*
- * Commandes du monde : boutique, alerte, contacts, messages (le journal de quêtes, `quests`, est
- * dans quest_system.c).
+ * Commandes du monde : boutique et alerte (les quêtes, `quests`, sont dans quest_system.c ; les
+ * contacts et les messages, dans contacts.c).
  *
  * Code d'origine (neon_hack.c, v2.087) déplacé tel quel et adapté à GameState :
  * les variables globales sont devenues des champs de `gs`. La logique sera
@@ -55,21 +55,9 @@ bool cmd_shop(GameState *gs, const char *arg)
         return true;
     }
 
-    ShopItemType item_type = (ShopItemType)(choice - 1);
-    if (buy_item(&gs->shop, item_type, &gs->player.credits, gs->player.level))
-    {
-        nh_event(gs, NH_EV_ITEM_BOUGHT, (int)item_type);
-        // Utiliser l'objet acheté immédiatement si applicable. Seul le boost de réputation a un
-        // effet pour l'instant (une quête en dépend) ; les autres arrivent avec la phase 3.4.
-        if (item_type == ITEM_REPUTATION_BOOST)
-        {
-            nh_grant_reputation(gs, 20);
-            printf("\n");
-        }
-        else
-            use_item(item_type, &gs->player);
-    }
-
+    /* Vérifications, paiement, effet, événement et messages : tout est dans nh_shop_buy. Un refus
+     * (niveau, crédits, réserve pleine) est expliqué à l'écran ; la commande, elle, a bien eu lieu. */
+    (void)nh_shop_buy(gs, (ShopItemType)(choice - 1));
     return true;
 }
 
@@ -127,133 +115,4 @@ bool cmd_lay_low(GameState *gs, const char *arg)
     printf(nh_tr(NH_STR_ALERT_NOW), before, gs->alert.level);
     printf("\n");
     return true;
-}
-
-/* Parle à un contact ; une conversation qui a eu lieu est un événement (les quêtes le comptent). */
-static bool talk_to(GameState *gs, ContactType id)
-{
-    bool ok = contact_npc(&gs->contacts, id, &gs->player);
-    if (ok)
-        nh_event(gs, NH_EV_CONTACT_MET, (int)id);
-    return ok;
-}
-
-bool cmd_contacts(GameState *gs, const char *arg)
-{
-    (void)arg;
-
-    display_contacts(&gs->contacts);
-
-    printf("\nVoulez-vous parler à un contact ? (tapez le numéro ou 0 pour sortir): ");
-    char input[10];
-    nh_read_line(input, sizeof(input));
-    input[strcspn(input, "\n")] = 0;
-
-    int contact_id = atoi(input);
-    if (contact_id > 0 && contact_id <= gs->contacts.active_contacts)
-    {
-        ContactType id = (ContactType)(contact_id - 1);
-        talk_to(gs, id);
-    }
-
-    return true;
-}
-
-bool cmd_messages(GameState *gs, const char *arg)
-{
-    (void)arg;
-
-    display_inbox(&gs->contacts);
-    return true;
-}
-
-bool cmd_read(GameState *gs, const char *argument)
-{
-    if (strlen(argument) == 0)
-    {
-        printf("Usage: read <numéro_message>\n");
-        printf("Exemple: read 1\n");
-        return false;
-    }
-
-    int message_id = atoi(argument);
-    if (message_id <= 0 || message_id > gs->contacts.inbox_count)
-    {
-        printf("Numéro de message invalide.\n");
-        return false;
-    }
-
-    // Marquer le message comme lu et l'afficher
-    Message *msg = &gs->contacts.inbox[message_id - 1];
-    msg->is_read = true;
-
-    printf("\n" COLOR_CYAN "═══════════════════════════════════════════════════════════════════════════\n");
-    printf("De: " COLOR_WHITE "%s" COLOR_RESET "\n", msg->from);
-    printf("Sujet: " COLOR_YELLOW "%s" COLOR_RESET "\n", msg->subject);
-    printf("═══════════════════════════════════════════════════════════════════════════\n" COLOR_RESET);
-    printf("\n%s\n", msg->content);
-    printf("\n" COLOR_CYAN "═══════════════════════════════════════════════════════════════════════════\n" COLOR_RESET);
-
-    return true;
-}
-
-bool cmd_interact_contact(GameState *gs, const char *argument)
-{
-    if (strlen(argument) == 0)
-    {
-        printf("Usage: contact <numéro> ou contact <nom>\n");
-        printf("Exemple: contact 1\n");
-        printf("Exemple: contact ECHO-7\n");
-        printf("Tapez 'contacts' pour voir la liste des contacts disponibles.\n");
-        return false;
-    }
-
-    // Vérifier si c'est un numéro
-    if (isdigit(argument[0]))
-    {
-        int contact_number = atoi(argument);
-        if (contact_number <= 0)
-        {
-            printf("Numéro de contact invalide. Tapez 'contacts' pour voir la liste.\n");
-            return false;
-        }
-
-        // Trouver le contact par numéro (basé sur les contacts débloqués)
-        int current_number = 1;
-        for (int i = 0; i < CONTACT_COUNT; i++)
-        {
-            if (gs->contacts.contacts[i].is_unlocked)
-            {
-                if (current_number == contact_number)
-                {
-                    ContactType id = (ContactType)i;
-                    talk_to(gs, id);
-                    return true;
-                }
-                current_number++;
-            }
-        }
-
-        printf("Contact #%d introuvable. Tapez 'contacts' pour voir la liste.\n", contact_number);
-        return false;
-    }
-    else
-    {
-        // Rechercher par nom
-        for (int i = 0; i < CONTACT_COUNT; i++)
-        {
-            if (gs->contacts.contacts[i].is_unlocked)
-            {
-                if (strcmp(gs->contacts.contacts[i].name, argument) == 0)
-                {
-                    ContactType id = (ContactType)i;
-                    talk_to(gs, id);
-                    return true;
-                }
-            }
-        }
-
-        printf("Contact '%s' introuvable. Tapez 'contacts' pour voir la liste.\n", argument);
-        return false;
-    }
 }

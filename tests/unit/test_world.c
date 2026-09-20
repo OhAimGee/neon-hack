@@ -632,7 +632,8 @@ static void test_exploit(void)
     run_line(gs, "traceroute nexus-mainframe", out, sizeof out);
     CHECK(gs->nodes[nexus].is_traced);
     gs->alert.level = 0;
-    gs->alert.vpn_active = gs->alert.proxy_active = false;
+    gs->alert.vpn_active = false;
+    gs->alert.proxy_hacks_left = 0;
     int before = gs->alert.level;
     run_line(gs, "exploit nexus-mainframe", out, sizeof out);
     CHECK(gs->alert.level > before);

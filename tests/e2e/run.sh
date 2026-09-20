@@ -148,7 +148,7 @@ else fail "progression" "code=$CODE"; fi
 
 # --- Robustesse des saisies --------------------------------------------------
 
-run 'T\ncontact ECHO-7\nabc\nquit\n' --fast
+run 'T\ncontact ECHO-7\nabc\n0\nquit\n' --fast
 if [ "$CODE" -eq 0 ] && contains "Option invalide" && ! contains "runtime error"; then
     pass "dialogue : saisie non numérique rejetée proprement"
 else fail "saisie non numérique" "code=$CODE"; fi
@@ -603,7 +603,7 @@ steps=$(printf '%s' "$OUT" | grep -c "Objectif accompli")
 if [ -n "$ok_seed" ] && [ "$steps" -eq 7 ] && contains "Pas mal du tout, Neo" && contains "[+100 crédits]" \
     && contains "[+10 réputation]" && contains "Réputation: 10" && contains "Niveau: 2 (Apprenti)" \
     && contains "QUÊTE TERMINÉE : Premiers Pas dans l'Ombre" && contains "NOUVELLE QUÊTE : Baptême du Feu" \
-    && contains "NOUVEAU CONTACT DÉBLOQUÉ: R4Z0R"; then
+    && contains "NOUVEAU CONTACT DÉBLOQUÉ : R4Z0R"; then
     pass "tutoriel : les 7 étapes, quête terminée, récompense versée, quête suivante et contact débloqués (graine $ok_seed)"
 else fail "parcours complet" "graine=${ok_seed:-aucune} étapes=$steps"; fi
 
@@ -668,7 +668,7 @@ craft_save "$CAMP" player.level=3 player.experience=75 player.scans_done=5 playe
 run_in "$CAMP" '1\nquests\n0\nlaylow\n1\nquests\n0\nquit\n'
 n=$(printf '%s' "$OUT" | grep -c "\[ \] Maintenir l'alerte sous 50")
 if [ "$CODE" -eq 0 ] && [ "$n" -eq 2 ] && contains "[x] Infiltrer corp-server-01" && contains "Niveau d'alerte : 60 → 52/100" \
-    && ! contains "QUÊTE TERMINÉE" && contains "NOUVEAU CONTACT DÉBLOQUÉ: R4Z0R"; then
+    && ! contains "QUÊTE TERMINÉE" && contains "NOUVEAU CONTACT DÉBLOQUÉ : R4Z0R"; then
     pass "quêtes : objectif d'alerte non rempli, la quête reste ouverte (et R4Z0R se débloque)"
 else fail "condition d'alerte" "code=$CODE lignes=$n"; fi
 
@@ -735,6 +735,107 @@ if [ "$CODE" -eq 0 ] && contains "=== QUEST LOG ===" && contains "[ ] Keep your 
     && ! contains "QUÊTE" && ! contains "Objectifs"; then
     pass "quêtes en anglais : journal, annonces et chapitres"
 else fail "quêtes (en)" "code=$CODE"; fi
+
+# --- Contacts, messages et boutique (lots 3.3 et 3.4) ---------------------------------------------------
+
+# Une partie neuve : ECHO-7 seul, une conversation en boucle jusqu'à « Terminer », son dossier, le courrier.
+run 'T\ncontacts\n1\n1\n2\n5\n6\nmessages\nread 1\nmessages\nquit\n' --fast
+if [ "$CODE" -eq 0 ] && contains "=== CONTACTS ===" && contains "[1] ECHO-7 — amical (confiance 60/100)" \
+    && contains "3 contact(s) encore à découvrir" && ! contains "R4Z0R —" \
+    && contains "Connexion établie avec ECHO-7" && contains "trois règles" && contains "=== DOSSIER : ECHO-7 ===" \
+    && contains "Reste vigilant" && contains "=== BOÎTE DE RÉCEPTION (1 non lu(s)) ===" \
+    && contains "[1] ECHO-7 — Bienvenue dans l'Underground  NOUVEAU" && contains "Salut, rookie." \
+    && contains "(0 non lu(s))"; then
+    pass "contacts : liste, conversation à menu (dossier, adieu), boîte de réception et lecture"
+else fail "contacts et messages" "code=$CODE"; fi
+
+# Un contact se débloque par niveau + réputation : R4Z0R, avec son courrier de présentation, une seule fois.
+MAILD="$DATA/courrier"
+craft_save "$MAILD" player.level=2 player.reputation=10
+run_in "$MAILD" '1\nstatus\nquit\n'
+if [ "$CODE" -eq 0 ] && contains "NOUVEAU CONTACT DÉBLOQUÉ : R4Z0R" \
+    && contains "Nouveau message de R4Z0R : Ma boutique t'attend (tapez 'messages')" \
+    && file_has "$MAILD/savegame.sav" "contact.1.flags=1" && file_has "$MAILD/savegame.sav" "mail.count=2" \
+    && file_has "$MAILD/savegame.sav" "mail.1.id=1" && file_has "$MAILD/savegame.sav" "mail.1.read=0"; then
+    pass "contacts : R4Z0R se débloque (annonce + courrier), et le courrier est dans la sauvegarde"
+else fail "déblocage de R4Z0R" "code=$CODE"; fi
+
+run_in "$MAILD" '1\nmessages\nread 2\nread 1\nmessages\nquit\n'
+if [ "$CODE" -eq 0 ] && ! contains "NOUVEAU CONTACT DÉBLOQUÉ" && ! contains "Nouveau message de" \
+    && contains "(2 non lu(s))" && contains "[2] R4Z0R — Ma boutique t'attend  NOUVEAU" && contains "De: R4Z0R" \
+    && contains "(0 non lu(s))" && file_has "$MAILD/savegame.sav" "mail.0.read=1" \
+    && file_has "$MAILD/savegame.sav" "mail.1.read=1" && file_has "$MAILD/savegame.sav" "mail.count=2"; then
+    pass "messages : rechargés sans redéposer le courrier, lus, et l'état « lu » est sauvegardé"
+else fail "courrier persistant" "code=$CODE"; fi
+
+run_in "$MAILD" '1\nmessages\nquit\n'
+if [ "$CODE" -eq 0 ] && contains "(0 non lu(s))" && ! contains "NOUVEAU"; then
+    pass "messages : rien de nouveau après un second rechargement"
+else fail "courrier relu" "code=$CODE"; fi
+
+# Phoenix et AURA : niveau, réputation ET quête terminée. Il manque la quête : ils restent introuvables.
+GATE="$DATA/contacts-porte"
+craft_save "$GATE" player.level=5 player.reputation=100 quest.0.status=3 quest.1.status=3 quest.2.status=2
+run_in "$GATE" '1\nstatus\ncontacts\n0\ncontact Phoenix\ncontact AURA\nquit\n'
+if [ "$CODE" -eq 0 ] && contains "NOUVEAU CONTACT DÉBLOQUÉ : R4Z0R" && ! contains "NOUVEAU CONTACT DÉBLOQUÉ : Phoenix" \
+    && ! contains "[3] Phoenix" && contains "Contact « Phoenix » introuvable" && contains "Contact « AURA » introuvable"; then
+    pass "contacts : Phoenix et AURA restent verrouillés tant que leur quête n'est pas terminée"
+else fail "contacts verrouillés" "code=$CODE"; fi
+
+# Les quêtes terminées les débloquent ; on peut leur parler (missions, dossier) et lire leur courrier.
+FIN="$DATA/contacts-fin"
+craft_save "$FIN" player.level=5 player.reputation=100 quest.0.status=3 quest.1.status=3 quest.2.status=3 quest.3.status=3
+run_in "$FIN" '1\nstatus\ncontacts\n0\ncontact Phoenix\n1\n5\ncontact 4\n4\n5\nmessages\nread 4\nquit\n'
+if [ "$CODE" -eq 0 ] && contains "NOUVEAU CONTACT DÉBLOQUÉ : Phoenix" && contains "NOUVEAU CONTACT DÉBLOQUÉ : AURA" \
+    && contains "[3] Phoenix — inconnu (confiance 0/100)" && contains "[4] AURA — inconnu (confiance 0/100)" \
+    && contains "Tu as réussi à me trouver" && contains "Rien pour l'instant" && contains "Connexion établie avec AURA" \
+    && contains "Intelligence artificielle - Projet Aurora" && contains "[3] Phoenix — Je t'ai repéré  NOUVEAU" \
+    && contains "[4] AURA — Un signal dans le réseau  NOUVEAU" && contains "De: AURA" \
+    && file_has "$FIN/savegame.sav" "contact.2.interactions=1" && file_has "$FIN/savegame.sav" "contact.3.interactions=1" \
+    && file_has "$FIN/savegame.sav" "mail.count=4"; then
+    pass "contacts : Phoenix et AURA se débloquent par leurs quêtes, on leur parle, leur courrier arrive"
+else fail "Phoenix et AURA" "code=$CODE"; fi
+
+# Même partie en anglais : la langue suit, la relation aussi (3 points de confiance par conversation).
+run_in "$FIN" '1\ncontacts\n0\nmessages\nread 4\ncontact AURA\n0\nquit\n' --lang en
+if [ "$CODE" -eq 0 ] && contains "=== CONTACTS ===" && contains "[3] Phoenix — unknown (trust 3/100)" \
+    && contains "[4] AURA — unknown (trust 3/100)" && contains "Missions · Advice" && contains "=== INBOX (" \
+    && contains "From: AURA" && contains "Subject: A signal in the network" && contains "Connection established with AURA" \
+    && ! contains "conversation(s) ·" && ! contains "BOÎTE" && ! contains "confiance"; then
+    pass "contacts et messages en anglais : liste, relation, courrier, conversation"
+else fail "contacts (en)" "code=$CODE"; fi
+
+# Les dix objets de la boutique ont un effet réel : visibles dans `status`, conservés par la sauvegarde.
+SHOP="$DATA/boutique-effets"
+craft_save "$SHOP" player.level=4 player.credits=1000 player.reputation=10
+run_in "$SHOP" '1\nshop\n10\nshop\n8\nshop\n9\nshop\n2\nshop\n4\nshop\n5\nstatus\nquit\n'
+if [ "$CODE" -eq 0 ] && contains "Achat réussi : Dark Web VPN pour 60 ¢" && contains "[+20 réputation]" \
+    && contains "Accélérateur neuronal" && contains "Ghost Protocol en réserve : 1" \
+    && contains "Proxies actifs pour 5 piratages" && contains "Crédits: 395" && contains "Réputation: 30" \
+    && contains "Clé de déchiffrement: DISPONIBLE" && contains "Ghost Protocols en réserve: 1" \
+    && contains "Accélérateur d'EXP (gains): 3" && contains "VPN: ACTIVÉ" && contains "Proxies (piratages): 5"; then
+    pass "boutique : VPN, Street Cred, accélérateur, Ghost Protocol, proxys et clé ont leur effet (status)"
+else fail "effets de la boutique" "code=$CODE"; fi
+if file_has "$SHOP/savegame.sav" "alert.vpn=1" && file_has "$SHOP/savegame.sav" "alert.proxy_left=5" \
+    && file_has "$SHOP/savegame.sav" "alert.ghost=1" && file_has "$SHOP/savegame.sav" "player.xp_boost=3" \
+    && file_has "$SHOP/savegame.sav" "player.key=1"; then
+    pass "boutique : les effets sont dans la sauvegarde"
+else fail "effets sauvegardés"; fi
+run_in "$SHOP" '1\nstatus\nquit\n'
+if [ "$CODE" -eq 0 ] && contains "Crédits: 395" && contains "VPN: ACTIVÉ" && contains "Proxies (piratages): 5" \
+    && contains "Accélérateur d'EXP (gains): 3" && contains "Clé de déchiffrement: DISPONIBLE"; then
+    pass "boutique : les effets survivent au rechargement"
+else fail "effets rechargés" "code=$CODE"; fi
+
+# Refus : niveau, unicité (un achat unique ne se paie pas deux fois), crédits.
+POOR="$DATA/boutique-refus"
+craft_save "$POOR" player.level=1 player.credits=100
+run_in "$POOR" '1\nshop\n1\nshop\n10\nshop\n10\nshop\n2\nstatus\nquit\n'
+if [ "$CODE" -eq 0 ] && contains "Niveau insuffisant : niveau 2 requis." && contains "Achat réussi : Dark Web VPN pour 60 ¢" \
+    && ! contains "Crédits: 100" && contains "Crédits: 40" && contains "Crédits insuffisants : 80 ¢ requis." \
+    && [ "$(printf '%s' "$OUT" | grep -c 'Achat réussi')" -eq 1 ]; then
+    pass "boutique : niveau, achat unique et crédits refusés sans rien débiter"
+else fail "refus d'achat" "code=$CODE"; fi
 
 # --- Bilan -------------------------------------------------------------------
 

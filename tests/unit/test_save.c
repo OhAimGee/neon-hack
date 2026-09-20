@@ -63,6 +63,9 @@ static void make_rich(GameState *gs)
     p->virus_library_size = 2;
     p->backdoors_active = 1;
 
+    p->has_encryption_key = true;
+    p->xp_boost = 2;
+
     gs->stealth_mode = true;
     gs->viruses[0].is_detected = true;
 
@@ -83,17 +86,20 @@ static void make_rich(GameState *gs)
     gs->alert.level = 33;
     gs->alert.max_level = 51;
     gs->alert.vpn_active = true;
-    gs->alert.proxy_active = true;
+    gs->alert.proxy_hacks_left = 3;
     gs->alert.ghost_protocols_available = 3;
     gs->alert.reductions_done = 4;
 
     gs->advanced.neural_interface_sync = 17;
 
     gs->contacts.inbox[0].is_read = true;
-    gs->contacts.contacts[1].is_unlocked = true;
-    gs->contacts.contacts[1].is_discovered = true;
-    gs->contacts.contacts[1].interactions_count = 6;
-    gs->contacts.active_contacts = 2;
+    gs->contacts.contacts[CONTACT_R4Z0R].is_unlocked = true;
+    gs->contacts.contacts[CONTACT_R4Z0R].interactions_count = 6;
+    /* un courrier arrivé en cours de partie, non lu, puis un autre, lu : l'ordre compte */
+    gs->contacts.inbox[1].mail = NH_MAIL_AURA;
+    gs->contacts.inbox[2].mail = NH_MAIL_R4Z0R;
+    gs->contacts.inbox[2].is_read = true;
+    gs->contacts.inbox_count = 3;
 
     /* Tutoriel terminé, deuxième quête active avec un objectif accompli sur deux. */
     gs->quests.quests[QUEST_INTRO_TUTORIAL].status = QUEST_STATUS_COMPLETED;
@@ -137,13 +143,19 @@ static void test_roundtrip(void)
     CHECK_INT(b->shop.bought, (1u << ITEM_ALERT_REDUCER) | (1u << ITEM_VIRUS_PACK));
     CHECK_INT(b->alert.level, 33);
     CHECK_INT(b->alert.max_level, 51);
-    CHECK(b->alert.vpn_active && b->alert.proxy_active);
+    CHECK(b->alert.vpn_active);
+    CHECK_INT(b->alert.proxy_hacks_left, 3);
+    CHECK(b->player.has_encryption_key);
+    CHECK_INT(b->player.xp_boost, 2);
     CHECK_INT(b->alert.ghost_protocols_available, 3);
     CHECK_INT(b->alert.reductions_done, 4);
     CHECK_INT(b->advanced.neural_interface_sync, 17);
-    CHECK(b->contacts.inbox[0].is_read);
-    CHECK(b->contacts.contacts[1].is_unlocked && b->contacts.contacts[1].is_discovered);
-    CHECK_INT(b->contacts.contacts[1].interactions_count, 6);
+    CHECK_INT(b->contacts.inbox_count, 3);
+    CHECK(b->contacts.inbox[0].mail == NH_MAIL_WELCOME && b->contacts.inbox[0].is_read);
+    CHECK(b->contacts.inbox[1].mail == NH_MAIL_AURA && !b->contacts.inbox[1].is_read);
+    CHECK(b->contacts.inbox[2].mail == NH_MAIL_R4Z0R && b->contacts.inbox[2].is_read);
+    CHECK(b->contacts.contacts[CONTACT_R4Z0R].is_unlocked && !b->contacts.contacts[CONTACT_PHOENIX].is_unlocked);
+    CHECK_INT(b->contacts.contacts[CONTACT_R4Z0R].interactions_count, 6);
     CHECK_INT(b->quests.quests[QUEST_INTRO_TUTORIAL].status, QUEST_STATUS_COMPLETED);
     CHECK(nh_quest_objective_done(&b->quests, QUEST_INTRO_TUTORIAL, 0));
     CHECK_INT(b->quests.quests[QUEST_FIRST_INFILTRATION].status, QUEST_STATUS_ACTIVE);
@@ -206,7 +218,10 @@ static void test_transactional_load(void)
         {"player.credits", "2000000000"}, {"player.stealth_rating", "101"}, {"player.credits", "beaucoup"},
         {"node.0.flags", "64"},          {"node.0.firewall", "-5"},   {"alert.level", "101"},
         {"alert.vpn", "2"},              {"quest.0.status", "9"},     {"tutorial.step", "99"},
-        {"tutorial.done", "7"},          {"contacts.active", "50"},   {"shop.sold_out", "999999"},
+        {"tutorial.done", "7"},          {"mail.count", "33"},        {"shop.sold_out", "999999"},
+        {"mail.1.id", "99"},             {"mail.1.id", "-1"},         {"mail.2.read", "2"},
+        {"mail.2.id", "0"},              {"mail.1.id", "beaucoup"},   {"contact.1.flags", "9"},
+        {"contact.0.interactions", "-3"},
         {"player.unlocked", "-1"},       {"player.credits", ""},
         {"quest.1.status", "5"},         {"quest.1.obj.0", "-1"},     {"quest.1.obj.0", "beaucoup"},
         {"shop.bought", "999999"},       {"shop.bought", "-1"},
@@ -235,6 +250,48 @@ static void test_transactional_load(void)
     free(before);
     free(good);
     free(a);
+}
+
+/* Une sauvegarde d'avant les courriers persistés : seul « inbox.read » dit si la bienvenue est lue. */
+static void test_legacy_inbox_and_contacts(void)
+{
+    const char *text =
+        "neon-hack-save=1\n"
+        "inbox.read=1\n"
+        "contacts.active=3\n"
+        "contact.0.flags=3\n"
+        "contact.1.flags=3\n"
+        "contact.4.flags=1\n"
+        "end=1\n";
+    GameState *b = new_state();
+    CHECK_INT(nh_save_from_text(b, text, strlen(text)), NH_SAVE_OK);
+    CHECK_INT(b->contacts.inbox_count, 1);
+    CHECK(b->contacts.inbox[0].mail == NH_MAIL_WELCOME && b->contacts.inbox[0].is_read);
+    CHECK(b->contacts.contacts[CONTACT_ECHO7].is_unlocked);
+    CHECK(b->contacts.contacts[CONTACT_R4Z0R].is_unlocked); /* le bit « découvert » est ignoré */
+    CHECK(!b->contacts.contacts[CONTACT_SHADOW_BROKER].is_unlocked); /* pas de fiche : jamais débloqué */
+
+    /* sans « inbox.read » : la bienvenue reste non lue, comme dans une partie neuve */
+    const char *fresh = "neon-hack-save=1\nend=1\n";
+    CHECK_INT(nh_save_from_text(b, fresh, strlen(fresh)), NH_SAVE_OK);
+    CHECK_INT(b->contacts.inbox_count, 1);
+    CHECK(!b->contacts.inbox[0].is_read);
+    free(b);
+}
+
+/* Une boîte vidée à la main est une boîte vide : « mail.count=0 » n'est pas « clé absente ». */
+static void test_empty_inbox_roundtrip(void)
+{
+    GameState *a = new_state();
+    a->contacts.inbox_count = 0;
+    char *text = nh_save_to_text(a);
+    CHECK(strstr(text, "mail.count=0\n") != NULL);
+    GameState *b = new_state();
+    CHECK_INT(nh_save_from_text(b, text, strlen(text)), NH_SAVE_OK);
+    CHECK_INT(b->contacts.inbox_count, 0);
+    free(text);
+    free(a);
+    free(b);
 }
 
 static void test_bad_frames(void)
@@ -628,6 +685,8 @@ int main(void)
     test_transactional_load();
     test_bad_frames();
     test_tolerance();
+    test_legacy_inbox_and_contacts();
+    test_empty_inbox_roundtrip();
     test_name_sanitized();
     test_tutorial_state_persisted();
     test_quest_state_persisted();

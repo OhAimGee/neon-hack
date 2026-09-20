@@ -121,7 +121,7 @@ static void test_tables(void)
         check_text(def->lore);
         nh_set_lang(NH_LANG_FR);
         CHECK(nh_tr(def->location)[0] != '\0'); /* un nom de lieu peut être identique dans les deux langues */
-        CHECK(def->contact != NULL && def->contact[0] != '\0');
+        CHECK(nh_contact_written(def->contact)); /* confiée par un contact qui a de quoi parler */
         CHECK(def->level_required >= 1 && def->level_required <= NH_LEVEL_MAX);
         CHECK(def->chapter >= 1 && def->chapter <= NH_CHAPTER_COUNT);
         CHECK(def->xp >= 0 && def->credits >= 0 && def->reputation >= 0);
@@ -664,6 +664,9 @@ static void test_campaign_first_four_quests(void)
     }
     CHECK_INT(gs->player.level, 2);
     CHECK_INT(state(gs, QUEST_FIRST_INFILTRATION)->status, QUEST_STATUS_ACTIVE);
+    /* niveau 2 + 10 de réputation (tutoriel) : R4Z0R est joignable, les autres pas encore */
+    CHECK(gs->contacts.contacts[CONTACT_R4Z0R].is_unlocked);
+    CHECK(!gs->contacts.contacts[CONTACT_PHOENIX].is_unlocked && !gs->contacts.contacts[CONTACT_AURA].is_unlocked);
 
     /* Baptême du Feu : localhost (5 XP, pas dans la quête) puis corp-server-01 */
     cap = nh_capture_begin();
@@ -677,6 +680,8 @@ static void test_campaign_first_four_quests(void)
     CHECK_INT(gs->player.level, 3);
     CHECK_INT(state(gs, QUEST_GATHER_INTEL)->status, QUEST_STATUS_ACTIVE);
     CHECK_INT(nh_quests_chapter(&gs->quests), 2);
+    /* le contact de la quête (R4Z0R) est déjà joignable : sa première étape est de lui parler */
+    CHECK(gs->contacts.contacts[nh_quest_def(QUEST_GATHER_INTEL)->contact].is_unlocked);
 
     /* Réseaux d'Information : contact, achat, troisième système, réputation, décryptage */
     nh_feed("0\n");
@@ -712,6 +717,10 @@ static void test_campaign_first_four_quests(void)
     CHECK_INT(gs->player.level, 4);
     CHECK_INT(state(gs, QUEST_NEXUS_DATA_BREACH)->status, QUEST_STATUS_ACTIVE);
     CHECK_INT(nh_quests_chapter(&gs->quests), 3);
+    /* Phoenix, qui confie la quête, apparaît avec elle (et annonce son arrivée) ; AURA attend Nexus */
+    CHECK(gs->contacts.contacts[nh_quest_def(QUEST_NEXUS_DATA_BREACH)->contact].is_unlocked);
+    CHECK(gs->contacts.contacts[CONTACT_PHOENIX].is_unlocked && !gs->contacts.contacts[CONTACT_AURA].is_unlocked);
+    CHECK(has(out, "NOUVEAU CONTACT DÉBLOQUÉ : Phoenix"));
     CHECK(has(out, "CHAPITRE 3 : LE PROJET AURORA"));
 
     /* L'œil du Cyclone : la clé de chiffrement est abordable, puis Nexus percé en profondeur */
@@ -726,6 +735,9 @@ static void test_campaign_first_four_quests(void)
     tick(gs, out, sizeof out);
     CHECK_INT(state(gs, QUEST_NEXUS_DATA_BREACH)->status, QUEST_STATUS_COMPLETED);
     CHECK_INT(gs->player.level, 5); /* 140 + 100 + 80 = 320 */
+    CHECK(gs->contacts.contacts[CONTACT_AURA].is_unlocked); /* Nexus percé, niveau 5 */
+    CHECK_INT(gs->contacts.inbox_count, 4);                /* bienvenue, R4Z0R, Phoenix, AURA */
+    CHECK_INT(nh_inbox_unread(&gs->contacts), 4);
 
     CHECK_INT(nh_quests_count(&gs->quests, QUEST_STATUS_COMPLETED), 4);
     CHECK_INT(nh_quests_percent(&gs->quests), 40);

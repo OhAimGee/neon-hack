@@ -26,44 +26,12 @@ void nh_event(GameState *gs, NhEvent event, int value)
 
 /* ---- Abonnés --------------------------------------------------------------------------------- */
 
-/*
- * Les contacts se débloquent quand le niveau et la réputation de la fiche sont atteints. Les
- * contacts encore à écrire (fiche vide) et ceux hors ligne (Phoenix, AURA : rien ne les rend
- * joignables avant la phase 3.3) restent verrouillés plutôt que d'apparaître inutilisables.
- */
-static void unlock_contacts(GameState *gs)
-{
-    for (int i = 0; i < CONTACT_COUNT; i++)
-    {
-        const Contact *c = &gs->contacts.contacts[i];
-        if (c->is_unlocked || c->name[0] == '\0' || c->availability == CONTACT_OFFLINE)
-            continue;
-        (void)unlock_contact(&gs->contacts, (ContactType)i, &gs->player);
-    }
-}
-
 static void deliver(GameState *gs, const NhEventRecord *event)
 {
     if (gs->events.observer != NULL)
         gs->events.observer(gs->events.observer_ctx, event);
 
-    switch (event->type)
-    {
-    case NH_EV_COMMAND:
-    case NH_EV_LEVEL_UP:
-    case NH_EV_REPUTATION:
-    case NH_EV_QUEST_COMPLETED:
-        unlock_contacts(gs);
-        break;
-    case NH_EV_NODE_COMPROMISED:
-    case NH_EV_FILES_EXTRACTED:
-    case NH_EV_ITEM_BOUGHT:
-    case NH_EV_CONTACT_MET:
-    case NH_EV_MILESTONE:
-    case NH_EV_COUNT:
-        break;
-    }
-
+    nh_contacts_on_event(gs, event->type, event->value);
     nh_quests_on_event(gs, event->type, event->value);
 }
 

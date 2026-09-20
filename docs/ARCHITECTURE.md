@@ -26,9 +26,11 @@ src/game/          logique de jeu (GameState unique, plus aucune variable global
   cmd_hacking.c      commandes de hacking classiques (scan, bruteforce, decrypt, backdoor…)
   complete.[ch]      ce que TAB propose à l'invite : commandes disponibles maintenant, puis l'argument selon NhCommand.arg
   shop_view.[ch]     vitrine de la boutique : composition pure (largeur, budget de lignes), 2 colonnes quand l'écran le permet
-  cmd_world.c        boutique, contacts, messages, laylow (la commande `quests` est dans quest_system.c)
+  shop.[ch]          boutique : table des 10 objets, achat `nh_shop_buy`, leurs effets réels
+  contacts.[ch]      contacts et boîte de réception : tables, déblocage par le bus, conversations à menu, courriers
+  cmd_world.c        `shop` et `laylow` (`quests` est dans quest_system.c, `contacts`/`contact`/`messages`/`read` dans contacts.c)
   cmd_advanced.c     hacking avancé (advhack, aiassist, neuralsync, temporalhack…)
-  shop, contacts, advanced_hacking   modules d'origine (à porter, phase 3) ; l'affichage de shop est déjà dans shop_view
+  advanced_hacking   dernier module d'origine non porté (phase 3.5)
 src/core/          socle neuf, testé, sans état de jeu
   platform.[ch]      pauses, mode rapide, console (Windows : UTF-8 + ANSI), détection du terminal
   io.[ch]            lecture de lignes et d'entiers sûre, EOF géré ; nh_io_uses_stdin() dit si l'entrée est la vraie
@@ -39,7 +41,7 @@ src/core/          socle neuf, testé, sans état de jeu
   kv.[ch]            format texte « clé=valeur » : analyse tolérante, entiers stricts bornés, écrivain
   storage.[ch]       dossier de données, lecture bornée, écriture atomique (temporaire + fsync + renommage)
   settings.[ch]      réglages du joueur (langue, couleurs, animations, HUD) dans settings.cfg
-src/ui/term.[ch]   couleurs ANSI, largeur d'affichage UTF-8, remplissage de colonnes, jauge, troncature
+src/ui/term.[ch]   couleurs ANSI, largeur d'affichage UTF-8, remplissage de colonnes, jauge, troncature, répliques de personnage (nh_speak)
 src/ui/hud.[ch]    interface fixe : barres haut/bas + zone de texte défilante (région de défilement ANSI)
 src/ui/lineedit.[ch]   saisie d'une ligne : édition, historique, complétion par TAB (cœur pur + mode brut termios)
 src/i18n/          textes français/anglais (strings.def, i18n.[ch])
@@ -52,7 +54,7 @@ tests/e2e/pty_hud.py   tests de l'interface fixe, du menu, du tutoriel, de la bo
 
 Le code neuf (`src/core`, `src/ui`, `src/i18n`, `src/main.c`, `src/game/commands.c`, `src/game/alert.c`, `src/game/progression.c`, `src/game/world.c`,
 `src/game/save.c`, `src/game/tutorial.c`, `src/game/intro.c`, `src/game/menu.c`, `src/game/events.c`, `src/game/quest_system.c`,
-`src/game/shop_view.c`, `src/game/complete.c`)
+`src/game/shop_view.c`, `src/game/complete.c`, `src/game/shop.c`, `src/game/contacts.c`)
 est compilé avec `-Wpedantic -Wshadow -Wconversion -Werror`. Le reste de `src/game/`
 (code d'origine déplacé) ne l'est pas : il porte encore ses avertissements et sera
 remplacé, pas corrigé.
@@ -127,8 +129,8 @@ remplacé, pas corrigé.
 
 - **Bus d'événements** (`events.[ch]`) : ce qui vient de se passer dans le monde est dit *une fois*, à l'endroit où cela
   arrive, par `nh_event(gs, type, valeur)` : système compromis (`nh_world_compromise`), fichiers extraits
-  (`nh_world_extract`), niveau gagné (`level_up`), réputation (`nh_grant_reputation`), achat (`cmd_shop`), conversation
-  (`talk_to`), jalon (`nh_milestone_claim`), quête terminée, et `NH_EV_COMMAND` à la fin de chaque commande exécutée
+  (`nh_world_extract`), niveau gagné (`level_up`), réputation (`nh_grant_reputation`), achat (`nh_shop_buy`), conversation
+  (`nh_contact_talk`), jalon (`nh_milestone_claim`), quête terminée, et `NH_EV_COMMAND` à la fin de chaque commande exécutée
   (le temps a passé : l'alerte a bougé). L'émetteur ne sait pas qui écoute.
   - **Différé.** `nh_event()` ne fait qu'enregistrer, dans une file circulaire de 32 ; `nh_events_flush()`, appelée par
     `nh_dispatch()` une fois la commande terminée (et l'étape du tutoriel jouée), livre dans l'ordre. Les annonces
@@ -138,8 +140,8 @@ remplacé, pas corrigé.
     par récursion. Garde-fous : file pleine, l'événement est perdu mais compté (`dropped`) ; livraison coupée à 256. Une
     partie finie (`quit`, game over) vide la file : pas d'annonce sur un écran de fin.
   - **Les abonnés relisent l'état du jeu** au lieu de compter les événements ; en perdre un ne fausse donc rien. Abonnés
-    actuels : le déblocage des contacts (niveau et réputation de leur fiche ; les contacts sans fiche ou hors ligne
-    restent verrouillés jusqu'à la phase 3.3) et le moteur de quêtes.
+    actuels, dans cet ordre : les contacts (`nh_contacts_on_event`, voir « Contacts et messages ») puis le moteur de
+    quêtes — un contact débloqué par une quête terminée l'est donc avant que les quêtes suivantes ne réagissent.
   - L'état du bus vit dans `GameState.events` mais n'est **jamais sauvegardé** : il est vide entre deux commandes.
 - **Quêtes** (`quest_system.[ch]`) : une table `static const` (`k_quests`) décrit chaque quête — textes (clés de
   `strings.def`), contact, niveau requis, prérequis, chapitre, objectifs, récompenses — et l'état par quête se réduit à
@@ -181,13 +183,95 @@ catalogue doit maintenant tenir **entièrement** dans la zone de texte.
   objet (13 lignes). Une carte fait 3 lignes. À partir de 71 colonnes utiles (largeur plafonnée à 100), les objets se
   répartissent sur **deux colonnes**, dans l'ordre de lecture par colonne (1 à 5, puis 6 à 10). À 80×24 avec le HUD (21 lignes
   disponibles) : deux colonnes de cartes serrées.
-- Une case : `[NN] nom … prix` / résumé / `type · état`. L'état suit l'ordre de `buy_item()` (épuisé, niveau, crédits) pour
+- Une case : `[NN] nom … prix` / résumé / `type · état`. L'état suit l'ordre de `nh_shop_buy()` (épuisé, niveau, crédits) pour
   que l'écran n'annonce jamais ce que l'achat refuserait autrement. Aucune ligne ne dépasse `cols - 1` colonnes (on n'écrit
   pas dans la dernière colonne) ; les textes trop longs sont coupés par `…` sans casser un caractère UTF-8.
 - Les textes (titre, états, 10 résumés) sont dans `strings.def` (`SHOP_*`). `ShopItem.description` (texte français en dur)
-  a disparu. `buy_item`/`use_item` ne sont pas touchés : leurs messages et 9 des 10 effets restent à faire en 3.4.
+  a disparu. Les achats et leurs effets sont décrits dans la section suivante.
 - `test_shop_view.c` balaie les largeurs et hauteurs (chaque ligne tient, chaque objet est présent, FR et EN, couleurs ou
   non) ; `pty_hud.py` vérifie sur un vrai pseudo-terminal que tous les objets sont à l'écran et que les barres n'ont pas bougé.
+
+## Boutique : achats, effets et économie
+
+- **`shop.c`** (strict) : le catalogue est une table `static const` (`k_items` : nom de marque, prix, niveau, unique ou
+  consommable) ; les noms sont identiques en français et en anglais, les résumés affichés sont dans `shop_view.c`.
+  `test_shop.c` vérifie que les nombres cités dans ces résumés sont ceux du code (un résumé ne peut pas mentir).
+- **`nh_shop_buy(gs, type)`** est le seul chemin d'achat (la commande `shop` et la conversation avec R4Z0R y passent). Il
+  vérifie dans l'ordre : objet valide, pas épuisé, niveau, crédits, plafond (`NH_BUY_MAXED` : on refuse d'encaisser pour un
+  objet qui ne changerait plus rien). Un refus est expliqué à l'écran et ne débite rien. Un achat débite, marque `shop.bought`,
+  applique l'effet, annonce tout (FR/EN) et émet `NH_EV_ITEM_BOUGHT`. Un objet *unique* devient épuisé ; un *consommable* se
+  rachète tant que sa réserve n'est pas pleine.
+
+  | Objet (prix · niveau) | Effet réel |
+  |---|---|
+  | Stealth Module v2.0 (150 · 2, unique) | +2 de furtivité, plafonnée à 10 (`status` affiche `n/10`) |
+  | Ghost Protocol (80 · 1, conso.) | +1 en réserve (max 5) ; le menu de `laylow` en consomme un pour −30 d'alerte |
+  | Malware Arsenal (120 · 4, unique) | bibliothèque de virus complète (`uploadvirus`) |
+  | Proxy Chain Pro (100 · 2, conso.) | 5 piratages dont la hausse d'alerte est réduite d'un tiers (arrondi au-dessus, jamais nulle) ; réserve max 15 |
+  | Quantum Encryption Key (200 · 3, unique) | ouvre les fichiers chiffrés de niveau 1 à 2 (`NH_KEY_DECRYPT_LEVEL`), y compris ceux des systèmes déjà compromis |
+  | Neural Assistant v3.1 (500 · 4, unique) | l'IA : `aihack` et `aiassist` (via `nh_world_sync_tools`) |
+  | Quantum Processing Chip (800 · 5, unique) | l'ordinateur quantique : `quantumdecrypt` (via `nh_world_sync_tools`) |
+  | Street Cred Booster (75 · 1, conso.) | +20 de réputation (`nh_grant_reputation`, donc bornée et émise sur le bus) |
+  | Neural Accelerator (90 · 2, conso.) | 3 prochains gains d'expérience doublés, le bonus étant plafonné à +30 par gain |
+  | Dark Web VPN (60 · 1, unique) | abonnement : le refroidissement gagne 1 point de plus à chaque action de hacking |
+
+- **Alerte** : `AlertSystem.vpn_active` (permanent) et `proxy_hacks_left` (compteur, décrémenté par `nh_alert_end_action`
+  après une commande de hacking classique ou avancée) ; l'ancien booléen `proxy_active` a disparu. Les méthodes de `laylow`
+  « VPN » et « proxy » n'installent plus rien de durable : elles baissent l'alerte une fois, comme les autres.
+- **Économie : plus rien n'est offert.** Le niveau 5 ne donnait plus 5 000 ¢, l'IA et l'ordinateur quantique d'office : ils
+  s'achètent (500 ¢ au niveau 4, 800 ¢ au niveau 5) et le gain de niveau annonce ce que R4Z0R met en vente à ce niveau.
+- **Règle anti-farm, appliquée à tout ce que la boutique touche** : une source d'expérience ou de crédits est bornée par un
+  état, et le boost d'expérience double un gain *déjà borné* (jamais plus de +30 par gain, 3 gains par achat) au lieu
+  d'en créer un. Les récompenses de quête passent par `nh_grant_xp_flat` : un boost ne double pas une récompense unique.
+  `test_economy.c` en fait un invariant : sur une partie où tout a été pris (systèmes piratés, fichiers ouverts, jalons
+  obtenus), chaque commande répétée des milliers de fois ne rapporte plus ni crédit, ni expérience, ni réputation ; il
+  échoue dès qu'un farm réapparaît (vérifié en ouvrant volontairement une source).
+- **Valeurs provisoires** : prix, plafonds et durées se règlent en phase 5. Déséquilibres connus laissés à cette phase :
+  Ghost Protocol (80 ¢, −30) est dominé par le « Se faire discret » de `laylow` (40 ¢, −25), et deux récompenses uniques
+  restent très élevées (10 000 ¢ et 2 000 ¢).
+
+## Contacts et messages
+
+- **Contenu en tables** (`contacts.c`, strict) : `k_defs[CONTACT_COUNT]` décrit chaque contact (nom propre, couleur,
+  description, lieu, dossier, confiance de départ, conditions de déblocage, sujets de conversation) et `k_mails[]` chaque
+  modèle de courrier (expéditeur, sujet, texte, contact dont il marque le déblocage). Tous les textes sont des clés de
+  `strings.def` (`CT_*`, `MAIL_*`) : ils suivent la langue et ne sont jamais sauvegardés. Ajouter un contact ou un courrier =
+  une entrée de table et ses clés ; `test_contacts.c` vérifie les tables (traductions non vides, dernier sujet = « Terminer »).
+- **État minimal** (`ContactSystem`) : par contact `{is_unlocked, interactions_count}` ; la boîte de réception est une liste
+  ordonnée de `{modèle, lu}` (32 au plus, un modèle n'arrive qu'une fois). La **confiance est déduite** (départ de la fiche
+  + 3 par conversation, plafonnée à 100) et donne la *relation* affichée (inconnu < 20 ≤ neutre < 50 ≤ amical < 80 ≤ de
+  confiance) ; les services d'un contact se déduisent de ses sujets, la liste ne peut donc pas promettre plus que la
+  conversation ne tient.
+- **Déblocage** : `nh_contacts_on_event` est un abonné du bus (comme le moteur de quêtes) et relit l'état du jeu : niveau,
+  réputation ET quête terminée (s'il y en a une) demandés par la fiche. Un contact débloqué le reste. Annonce
+  « NOUVEAU CONTACT DÉBLOQUÉ : … » puis courrier de présentation, une seule fois.
+
+  | Contact | Niveau | Réputation | Quête terminée |
+  |---|---|---|---|
+  | ECHO-7 | 1 (dès le départ) | 0 | — |
+  | R4Z0R | 2 | 10 | — |
+  | Phoenix | 4 | 50 | Réseaux d'Information |
+  | AURA | 5 | 50 | L'œil du Cyclone |
+
+  Les cinq autres contacts (Shadow Broker, Neon Angel, Ghost Walker, Data Miner, Nexus Insider) n'ont pas de fiche (phase
+  4.2) : ils ont un nom et restent verrouillés (`nh_contact_written`). « Réseaux d'Information » exige elle-même 50 de
+  réputation (et en verse 40) : un joueur qui la termine a donc déjà de quoi débloquer Phoenix, puis AURA (`test_quests.c` rejoue
+  la campagne).
+- **Conversation** (`nh_contact_talk`) : un menu de sujets propre au contact, qui *revient* jusqu'à « Terminer », `0`, une
+  ligne vide ou la fin de l'entrée (une saisie invalide est dite, puis le menu est réaffiché). Un sujet est une réplique
+  (`nh_speak`), le commentaire du niveau du joueur, la **mission en cours de ce contact** (un objectif de quête actif dont
+  `NhQuestDef.contact` est lui ; pendant le tutoriel, ECHO-7 redit aussi la consigne de l'étape, `nh_tutorial_repeat`), l'ouverture de
+  la boutique (R4Z0R) ou son dossier. Chaque conversation est comptée (`interactions_count`) et émet `NH_EV_CONTACT_MET`,
+  que l'objectif « Contacter R4Z0R » lit.
+- **Courriers** : `nh_mail_send` dépose un modèle et l'annonce (« Nouveau message de … »). `messages` liste la boîte
+  (non lus marqués NOUVEAU), `read N` ouvre un message (et le marque lu). Le message de bienvenue d'ECHO-7 est dans la boîte dès
+  `init_contact_system` ; les trois autres partent au déblocage de leur contact.
+- **Numérotation** : `contacts` numérote les contacts *débloqués* (1 = le premier dans l'ordre de la table) ; le numéro tapé à
+  l'invite, `contact <n>` ou `contact <nom>` (sans tenir compte de la casse) désignent le même contact, la complétion TAB propose
+  les noms.
+- **Répliques** (`nh_speak` dans `ui/term.c`) : « NOM » texte », le nom en couleur, le texte coupé à la largeur du terminal avec
+  retrait sous le premier mot ; `nh_echo_say` (tutoriel) l'utilise aussi, ECHO-7 parle donc de la même façon partout.
+- **Sauvegarde** : voir « Sauvegarde ». Rien de textuel n'est écrit, seulement des états et des numéros de modèle.
 
 ## Démarrage, menu, prologue et tutoriel
 
@@ -238,6 +322,11 @@ annonce du tutoriel → `game_loop`.
   chargement ; une quête terminée est toujours relue complète), `shop.bought` (masque des objets achetés, que les
   quêtes lisent). Les compteurs d'origine (`quests.active`, `quests.completed`, `quest.N.done`…) ne sont plus écrits et
   sont ignorés à la lecture : ils se déduisent des statuts.
+- **Boutique, contacts, courrier** : `player.key`, `player.xp_boost`, `alert.vpn`, `alert.proxy_left`, `alert.ghost` (effets
+  des objets) ; `contact.N.flags` (bit 0 : débloqué) et `contact.N.interactions` ; `mail.count` puis `mail.N.id` (numéro de
+  modèle) et `mail.N.read`. Toute valeur présente mais hors bornes, un modèle inconnu ou en double donnent `NH_SAVE_CORRUPT`.
+  Les anciennes clés (`alert.proxy`, `contacts.active`, `inbox.read`, bit « découvert » des contacts) sont lues ou ignorées :
+  un ancien masque `inbox.read` dont le bit 0 est levé marque lu le courrier de bienvenue.
 - **Compatibilité** : une clé absente garde sa valeur par défaut, une clé inconnue est ignorée ;
   `NH_SAVE_VERSION` ne monte que pour un changement incompatible. Une version supérieure à celle du
   jeu donne `NH_SAVE_TOO_NEW`, jamais un chargement approximatif.

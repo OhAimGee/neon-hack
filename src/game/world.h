@@ -53,6 +53,7 @@ typedef enum
 #define NH_CHANCE_MIN 5  /* jamais impossible… */
 #define NH_CHANCE_MAX 95 /* …et jamais garanti */
 #define NH_INTEL_BONUS 15 /* points de chance apportés par des accès internes (socialeng) */
+#define NH_KEY_DECRYPT_LEVEL 2 /* la clé de chiffrement (boutique) ouvre les fichiers de niveau 1 à 2 */
 
 /* Nombre de systèmes du monde (= NH_MAX_NODES). */
 int nh_world_count(void);
@@ -117,12 +118,16 @@ int nh_world_locked_files(const NetworkNode *node);
 
 /*
  * Compromet le système `idx` : verse UNE fois ses crédits et son expérience (via nh_grant_xp).
- * Avec `deep`, extrait aussi tous ses fichiers. Renvoie false, sans rien verser, s'il l'était déjà.
+ * Avec `deep`, extrait aussi tous ses fichiers ; sinon, avec la clé de chiffrement, ceux de niveau
+ * NH_KEY_DECRYPT_LEVEL au plus. Renvoie false, sans rien verser, s'il l'était déjà.
  * Émet NH_EV_NODE_COMPROMISED (et NH_EV_FILES_EXTRACTED si des fichiers sont extraits).
  */
 bool nh_world_compromise(GameState *gs, int idx, bool deep);
 
 /* Extrait les fichiers restants d'un système ; verse leurs crédits ; renvoie combien (et émet NH_EV_FILES_EXTRACTED). */
 int nh_world_extract(GameState *gs, int idx);
+
+/* Comme nh_world_extract, mais seulement les fichiers dont le niveau de chiffrement ne dépasse pas `max_level`. */
+int nh_world_extract_upto(GameState *gs, int idx, int max_level);
 
 #endif /* NH_WORLD_H */

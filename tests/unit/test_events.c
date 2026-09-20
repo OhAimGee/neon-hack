@@ -513,6 +513,7 @@ static void test_contacts_unlock_on_events(void)
 
     CHECK(gs->contacts.contacts[CONTACT_ECHO7].is_unlocked);
     CHECK(!gs->contacts.contacts[CONTACT_R4Z0R].is_unlocked);
+    int mails0 = gs->contacts.inbox_count;
 
     /* trop tôt : niveau atteint mais pas la réputation */
     gs->player.level = LEVEL_APPRENTICE;
@@ -522,35 +523,37 @@ static void test_contacts_unlock_on_events(void)
     nh_capture_end(&cap, out, sizeof out);
     CHECK(!gs->contacts.contacts[CONTACT_R4Z0R].is_unlocked);
 
-    /* niveau ET réputation : R4Z0R apparaît, une seule fois, avec une annonce */
+    /* niveau ET réputation : R4Z0R apparaît, une seule fois, avec une annonce et son courrier */
     gs->player.reputation = 10;
-    int active0 = gs->contacts.active_contacts;
     nh_event(gs, NH_EV_REPUTATION, 10);
     cap = nh_capture_begin();
     nh_events_flush(gs);
     nh_capture_end(&cap, out, sizeof out);
     CHECK(gs->contacts.contacts[CONTACT_R4Z0R].is_unlocked);
-    CHECK_INT(gs->contacts.active_contacts, active0 + 1);
-    CHECK(strstr(out, "R4Z0R") != NULL);
+    CHECK_INT(gs->contacts.inbox_count, mails0 + 1);
+    CHECK(strstr(out, "NOUVEAU CONTACT DÉBLOQUÉ : R4Z0R") != NULL);
+    CHECK(strstr(out, "Nouveau message de R4Z0R") != NULL);
 
     nh_event(gs, NH_EV_REPUTATION, 10);
     cap = nh_capture_begin();
     nh_events_flush(gs);
     nh_capture_end(&cap, out, sizeof out);
-    CHECK_INT(gs->contacts.active_contacts, active0 + 1);
+    CHECK_INT(gs->contacts.inbox_count, mails0 + 1);
     CHECK(strstr(out, "R4Z0R") == NULL); /* pas de seconde annonce */
 
     free(gs);
 }
 
-/* Hors ligne ou pas encore écrits : jamais débloqués, quels que soient niveau et réputation. */
-static void test_contacts_offline_and_unwritten_stay_locked(void)
+/* Sans fiche : jamais débloqué, quels que soient niveau, réputation et quêtes. Avec fiche : dès que tout est réuni. */
+static void test_contacts_unwritten_stay_locked(void)
 {
     GameState *gs = new_game();
     char out[16384];
     nh_term_set_color(false);
     gs->player.level = LEVEL_LEGEND;
     gs->player.reputation = 100000;
+    for (int q = 0; q < QUEST_COUNT; q++)
+        gs->quests.quests[q].status = QUEST_STATUS_COMPLETED;
 
     nh_event(gs, NH_EV_COMMAND, 0);
     NhCapture cap = nh_capture_begin();
@@ -558,13 +561,8 @@ static void test_contacts_offline_and_unwritten_stay_locked(void)
     nh_capture_end(&cap, out, sizeof out);
 
     for (int i = 0; i < CONTACT_COUNT; i++)
-    {
-        const Contact *c = &gs->contacts.contacts[i];
-        if (c->name[0] == '\0' || c->availability == CONTACT_OFFLINE)
-            CHECK(!c->is_unlocked);
-        else
-            CHECK(c->is_unlocked);
-    }
+        CHECK(gs->contacts.contacts[i].is_unlocked == nh_contact_written((ContactType)i));
+    CHECK(!gs->contacts.contacts[CONTACT_SHADOW_BROKER].is_unlocked);
     free(gs);
 }
 
@@ -588,7 +586,7 @@ int main(void)
     test_emitter_shop();
     test_emitter_contact_and_reputation_booster();
     test_contacts_unlock_on_events();
-    test_contacts_offline_and_unwritten_stay_locked();
+    test_contacts_unwritten_stay_locked();
     nh_unfeed();
     return NH_TEST_REPORT("events");
 }

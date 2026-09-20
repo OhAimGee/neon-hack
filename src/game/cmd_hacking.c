@@ -428,7 +428,7 @@ bool cmd_ai_hack(GameState *gs, const char *target)
 {
     if (!gs->player.has_ai_assistant)
     {
-        printf("IA assistante non disponible. Améliorer d'abord votre équipement.\n");
+        printf("%s\n", nh_tr(NH_STR_HACK_NEEDS_AI));
         return false;
     }
 
@@ -491,8 +491,7 @@ bool cmd_quantum_decrypt(GameState *gs, const char *data)
 {
     if (!gs->player.has_quantum_computer)
     {
-        printf("Ordinateur quantique non disponible.\n");
-        printf("Requis pour décrypter les chiffrements de niveau quantique.\n");
+        printf("%s\n", nh_tr(NH_STR_HACK_NEEDS_QUANTUM));
         return false;
     }
 

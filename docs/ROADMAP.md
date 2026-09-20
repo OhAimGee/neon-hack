@@ -17,8 +17,8 @@ binaires Linux, macOS et Windows.
 - [x] **Phase 2** — couche de jeu unifiée : `GameState` unique, table de commandes, alerte, HUD, progression, monde unifié,
       menu + prologue + tutoriel + sauvegarde + réglages
 - [ ] **Phase 3** — porter les modules d'origine
-  - [x] 3.1 bus d'événements · [x] 3.2 moteur de quêtes · [ ] 3.3 contacts et messages
-  - [ ] 3.4 boutique et économie (l'*affichage* est fait, voir « Hors lot ») · [ ] 3.5 hacking avancé et commandes, tout le code en règles strictes
+  - [x] 3.1 bus d'événements · [x] 3.2 moteur de quêtes · [x] 3.3 contacts et messages
+  - [x] 3.4 boutique et économie · [ ] 3.5 hacking avancé et commandes, tout le code en règles strictes
   - [x] Hors lot : vitrine de la boutique lisible (2 colonnes) et saisie avec complétion par TAB
 - [ ] **Phase 4** — contenu narratif (quêtes 5 à 9, épilogue, 5 contacts, fin)
 - [ ] **Phase 5** — équilibrage par simulation
@@ -30,11 +30,14 @@ binaires Linux, macOS et Windows.
 
 - ~~`update_quest_progress`, `check_quest_prerequisites`, `start_quest` et `unlock_contact` ne sont appelés par aucun code de
   jeu : aucun événement de gameplay n'alimente quêtes ni contacts. C'est le trou central.~~ **Résolu en 3.1 + 3.2** : bus
-  d'événements, moteur de quêtes, déblocage des contacts branché (version minimale, la refonte complète est en 3.3).
+  d'événements, moteur de quêtes, puis (3.3) contacts refondus et pilotés par le bus.
 - Seules **4 quêtes sur 10** sont écrites (tutoriel, `FIRST_INFILTRATION`, `GATHER_INTEL`, `NEXUS_DATA_BREACH`) : les
   5 à 9 et l'épilogue restent à écrire en 4.1 (elles sont verrouillées tant qu'elles n'ont pas d'objectif).
-- `use_item` (`shop.c`) est un **stub** : les 10 objets de la boutique n'ont aucun effet.
-- Contacts : 9 dans l'enum, **4 dialogues** écrits, 1 seul débloqué au départ, 5 sur un menu générique sans effet.
+- ~~`use_item` (`shop.c`) est un **stub** : les 10 objets de la boutique n'ont aucun effet.~~ **Résolu en 3.4** : `nh_shop_buy`
+  et les 10 effets réels, testés.
+- ~~Contacts : 9 dans l'enum, **4 dialogues** écrits, 1 seul débloqué au départ, 5 sur un menu générique sans effet.~~ **Résolu
+  en 3.3** pour les 4 contacts écrits (ECHO-7, R4Z0R, Phoenix, AURA, tous joignables) ; les 5 autres, sans fiche, restent
+  verrouillés et sont à écrire en 4.2.
 - Deux commandes de furtivité pour **deux états distincts** : `stealth` (cachée) bascule `gs->stealth_mode`, `stealthmode`
   bascule `gs->advanced.stealth.is_active`, qui n'est **pas sauvegardé**.
 - ≈ 3 700 lignes d'origine non strictes (`contacts`, `advanced_hacking`, `cmd_hacking`, `quest_system`, `shop`, `cmd_world`,
@@ -79,9 +82,40 @@ au lieu de `strcpy` dans des `char[]` : le texte suit la langue, il n'y a rien �
    partie **persistés** (aujourd'hui seul le masque « lu » des messages initiaux est sauvegardé). Remplace le petit abonné de
    `events.c` (`unlock_contacts`) ; **à traiter ici** : Phoenix (contact de « L'œil du Cyclone ») et AURA sont *hors ligne* et
    restent verrouillés, donc injoignables tant que ce lot n'est pas fait.
+   **Fait** : `contacts.[ch]` réécrits et stricts, `test_contacts.c` (415 vérifications),
+   e2e (liste, conversation, courrier persistant, Phoenix et AURA, anglais). Détail dans `ARCHITECTURE.md`, « Contacts et messages ».
+   - **Tout est table** : `k_defs` (fiche, conditions de déblocage, sujets) et `k_mails` (modèles de courrier) à clés `NhStr` ;
+     l'état ne garde que « débloqué » et « nombre de conversations » par contact, plus la boîte de réception (modèle + lu).
+     La confiance et les services se déduisent (ils ne sont plus des champs qu'on pourrait laisser mentir).
+   - **Déblocage par le bus** (`nh_contacts_on_event`) : R4Z0R niveau 2 + réputation 10 ; Phoenix niveau 4 + réputation 50 +
+     « Réseaux d'Information » ; AURA niveau 5 + réputation 50 + « L'œil du Cyclone ». Annonce et courrier de présentation, une fois.
+   - **Conversation en boucle** (elle se ferme par « Terminer », `0`, entrée vide ou fin d'entrée ; une saisie invalide
+     redemande) ; le sujet « mission » parle de la quête *active de ce contact* et, pendant le tutoriel, redit la consigne.
+     `nh_speak` (`ui/term`) met en forme les répliques de tous les personnages, ECHO-7 compris.
+   - **Écarts assumés** : le sujet de R4Z0R « Proposer des données à vendre » affichait « +500 crédits » sans jamais les verser
+     (ce n'aurait été qu'un farm de plus) : remplacé par « Demander comment gagner des crédits ». « Arasaka Corp » est devenu
+     « MegaCorp Industries », la corporation du reste du jeu. La numérotation des contacts est celle de la *liste* (n-ième
+     débloqué), là où l'ancien code en avait deux différentes. Les champs décoratifs (émoji, priorité, « chiffré ») sont
+     abandonnés : plus aucun émoji dans le jeu porté. La fiche du Shadow Broker n'est pas portée (4.2).
+   - **Sauvegarde** : `contact.N.flags` (bit 0 seulement), `contact.N.interactions`, `mail.count`, `mail.N.id`, `mail.N.read` ;
+     les anciennes clés (`contacts.active`, bit « découvert », masque `inbox.read`) sont ignorées ou converties.
 4. **3.4 Boutique et économie** (`shop.c`, `cmd_shop`) : implémenter les 10 effets (furtivité, réducteur d'alerte, virus,
    proxy/VPN, IA, puce quantique → `nh_world_sync_tools`, réputation, boost d'XP sous plafond anti-farm) ; revoir le
    `.credits = 5000` provisoire (`progression.c`) ; fermer les farms de crédits par la boutique et `advhack`.
+   **Fait** : `shop.[ch]` réécrits et stricts (table `k_items`, `nh_shop_buy`), `test_shop.c` (306 vérifications), `test_economy.c`
+   (3 194 vérifications, dont l'invariant anti-farm), e2e (dix effets à l'écran, dans la sauvegarde, après rechargement, refus).
+   Détail dans `ARCHITECTURE.md`, « Boutique : achats, effets et économie ».
+   - **Les 10 effets sont réels** et annoncés en FR/EN ; un achat qui ne changerait plus rien est refusé (`NH_BUY_MAXED`) au
+     lieu d'encaisser. Le VPN devient permanent (`vpn_active`), le proxy un compteur de hacks (`proxy_hacks_left`), le Ghost
+     Protocol une réserve consommée par `laylow` ; la clé de chiffrement ouvre les fichiers de niveau 1-2 ; le boost d'expérience
+     double 3 gains déjà bornés (+30 au plus chacun).
+   - **Économie sans cadeaux** : les 5 000 ¢, l'IA et l'ordinateur quantique offerts au niveau 5 disparaissent ; l'IA (500 ¢) et
+     la puce quantique (800 ¢) s'achètent, et un gain de niveau annonce ce que R4Z0R met en vente.
+   - **Farms fermés** : chaque source de crédits ou d'expérience est bornée par un état (`test_economy.c` le garantit sur un
+     monde épuisé). Une idée de « vente de données » (jalon `NH_MS_DATA_SALE`) a été écartée : elle aurait payé deux fois.
+   - **Laissé à la phase 5** : Ghost Protocol (80 ¢, −30) est dominé par « Se faire discret » (40 ¢, −25) ; deux récompenses
+     uniques restent très élevées (10 000 ¢ et 2 000 ¢).
+   - **Sauvegarde** : `player.key`, `player.xp_boost`, `alert.proxy_left` (l'ancien `alert.proxy` est ignoré).
 5. **3.5 Hacking avancé et commandes** (`advanced_hacking.c`, `cmd_hacking.c`, `cmd_advanced.c`, `game.c`) : i18n, fusion des deux
    furtivités en un seul état **sauvegardé**, retrait de `legacy_colors.h` (`--no-color` complet), **tous** les fichiers dans les
    règles strictes (la distinction `STRICT_OBJ` disparaît), 0 warning.
@@ -95,7 +129,7 @@ au lieu de `strcpy` dans des `char[]` : le texte suit la langue, il n'y a rien �
   le début du catalogue sortait par le haut et il fallait remonter dans l'historique du terminal (ce qui déplace aussi les
   barres). Le catalogue tient maintenant en entier, sur 2 colonnes dès 72 colonnes de terminal, en trois mises en page selon la place. Les
   textes de la boutique sont dans `strings.def` (FR+EN) et `ShopItem.description` a disparu. C'est la partie *affichage* de 3.4 ;
-  restent les messages de `buy_item`/`use_item` (encore en français en dur) et les 9 effets.
+  les messages d'achat et les 10 effets ont suivi avec le lot 3.4.
 - **Saisie avec complétion par TAB** (`ui/lineedit.[ch]` et `game/complete.[ch]`, stricts) : édition de la ligne, historique et
   TAB « comme bash » à l'invite de commandes ; les candidats sont les commandes disponibles maintenant, puis systèmes découverts,
   contacts débloqués ou numéros de messages selon `NhCommand.arg`. Sans terminal (tubes, tests, Windows), retour à `nh_read_line`.
@@ -156,14 +190,15 @@ Plusieurs emplacements de sauvegarde (et suppression) ; `--new` demande confirma
 **Exception recommandée** : lancer la CI macOS/Windows de la phase 8 dès la fin de la phase 3. C'est le plus gros risque
 technique (le code Windows n'a jamais été compilé) et il vaut mieux le découvrir tôt.
 
-## Prochain lot : 3.3 + 3.4 (indépendants, dans l'ordre que l'on veut)
+## Prochain lot : 3.5 Hacking avancé et commandes
 
-1. **3.3 Contacts et messages** : `contacts.c` en table `static const` à clés `NhStr`, dialogues portés (ECHO-7 cohérent avec le
-   tutoriel), Phoenix et AURA joignables, messages persistés ; remplace `unlock_contacts` (`events.c`). Les contacts 5 à 8 n'ont pas
-   encore de fiche (4.2).
-2. **3.4 Boutique et économie** : les 9 effets restants (`use_item` est un stub ; les quêtes lisent déjà `shop.bought`), `nh_world_sync_tools`
-   pour l'IA et la puce quantique, `.credits = 5000` de `progression.c` à revoir, farms de crédits à fermer.
-3. Tests et documentation de chaque lot, comme pour 3.1 + 3.2 ; la CI macOS/Windows peut démarrer dès la fin de la phase 3.
+1. **`advanced_hacking.c`, `cmd_hacking.c`, `cmd_advanced.c`, `game.c`** : textes dans `strings.def` (FR+EN), retrait de
+   `legacy_colors.h` (`--no-color` complet), lecture par `core/io.h` seulement.
+2. **Une seule furtivité**, sauvegardée : fusion de `stealth` (`gs->stealth_mode`) et `stealthmode` (`gs->advanced.stealth.is_active`,
+   aujourd'hui perdu à chaque partie).
+3. **Tout le code en règles strictes** : la distinction `STRICT_OBJ` disparaît, 0 warning (il reste `advanced_hacking.c:737`).
+4. *Fin de phase 3* : un test vérifie qu'il ne reste aucun littéral français accentué dans `src/game` hors `strings.def`.
+5. Tests et documentation, comme pour les lots précédents ; la CI macOS/Windows peut démarrer dès la fin de la phase 3.
 
 ## Risques
 

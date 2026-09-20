@@ -56,10 +56,23 @@ bool nh_milestone_claim(GameState *gs, NhMilestone milestone);
 void nh_grant_reputation(GameState *gs, int amount);
 
 /*
+ * Accélérateur neuronal (boutique) : les NH_XP_BOOST_CHARGES gains d'expérience suivants sont
+ * majorés de leur propre montant, sans dépasser NH_XP_BOOST_BONUS_CAP points de plus. Le boost ne
+ * crée pas d'expérience : il double des gains que l'état du jeu limite déjà (règle anti-farm,
+ * voir ARCHITECTURE.md), et il ne se cumule pas au-delà de NH_XP_BOOST_CHARGES.
+ */
+#define NH_XP_BOOST_CHARGES 3
+#define NH_XP_BOOST_BONUS_CAP 30
+
+/*
  * Ajoute `amount` (> 0) d'expérience, annonce le gain, puis applique autant de montées de
  * niveau que la courbe le permet (un gros gain peut en enchaîner plusieurs), chacune avec
  * ses déblocages. Retourne le nombre de niveaux gagnés. amount <= 0 : sans effet.
+ * Le gain consomme une charge de boost s'il en reste (c'est le cas des piratages).
  */
 int nh_grant_xp(GameState *gs, int amount);
+
+/* Comme nh_grant_xp, sans boost : les récompenses de quête ne sont pas des « hacks ». */
+int nh_grant_xp_flat(GameState *gs, int amount);
 
 #endif /* NH_PROGRESSION_H */

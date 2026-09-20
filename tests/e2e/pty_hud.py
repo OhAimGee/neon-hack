@@ -607,7 +607,7 @@ def main():
     inner = "\n".join(scr.line(r) for r in range(1, scr.rows - 1))
     check("boutique 80x24 en anglais : tout est visible et traduit",
           all_visible(inner) and "BLACK MARKET" in inner and "level 2 required" in inner
-          and "Passively lowers alert" in inner and "Crédits" not in inner and "niveau" not in inner, body)
+          and "Alert -1 per hack" in inner and "Crédits" not in inner and "niveau" not in inner, body)
     s.send("0"); s.send("quit"); s.finish()
 
     s, scr, body = shop_screen(40, 120)

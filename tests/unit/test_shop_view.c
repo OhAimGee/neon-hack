@@ -228,7 +228,7 @@ static void test_status_texts(void)
     /* Niveau 6, 100 crédits : ce qui est trop cher dit combien il manque. */
     compose(out, sizeof out, &shop, 100, 6, 80, 21);
     CHECK(has(out, "unique · il manque 50 ¢"));       /* Stealth : 150 - 100 */
-    CHECK(has(out, "consommable · il manque 20 ¢"));  /* Malware Arsenal : 120 - 100 */
+    CHECK(has(out, "unique · il manque 20 ¢"));       /* Malware Arsenal : 120 - 100 */
     CHECK(has(out, "unique · il manque 700 ¢"));      /* Quantum Processing Chip : 800 - 100 */
 
     /* Un objet unique acheté reste à sa place, numéro compris, et se dit épuisé. */
@@ -246,7 +246,7 @@ static void test_status_texts(void)
     CHECK(has(out, "one-time · sold out"));
     CHECK(has(out, "consumable · available"));
     CHECK(has(out, "level 5 required"));
-    CHECK(has(out, "Passively lowers alert"));
+    CHECK(has(out, "Alert -30 via laylow"));
     CHECK(!has(out, "Crédits"));
     nh_set_lang(NH_LANG_FR);
 }

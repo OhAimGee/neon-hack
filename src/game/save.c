@@ -79,6 +79,8 @@ char *nh_save_to_text(const GameState *gs)
     nh_kvw_int(&w, "player.unlocked", mask_of(p->commands_unlocked, MAX_COMMANDS));
     nh_kvw_int(&w, "player.quantum", p->has_quantum_computer);
     nh_kvw_int(&w, "player.ai", p->has_ai_assistant);
+    nh_kvw_int(&w, "player.key", p->has_encryption_key);
+    nh_kvw_int(&w, "player.xp_boost", p->xp_boost);
     nh_kvw_int(&w, "player.virus_library", p->virus_library_size);
     nh_kvw_int(&w, "player.backdoors", p->backdoors_active);
 
@@ -112,23 +114,25 @@ char *nh_save_to_text(const GameState *gs)
     nh_kvw_int(&w, "alert.level", gs->alert.level);
     nh_kvw_int(&w, "alert.max", gs->alert.max_level);
     nh_kvw_int(&w, "alert.vpn", gs->alert.vpn_active);
-    nh_kvw_int(&w, "alert.proxy", gs->alert.proxy_active);
+    nh_kvw_int(&w, "alert.proxy_left", gs->alert.proxy_hacks_left);
     nh_kvw_int(&w, "alert.ghost", gs->alert.ghost_protocols_available);
     nh_kvw_int(&w, "alert.reductions", gs->alert.reductions_done);
 
     nh_kvw_int(&w, "advanced.neural_sync", gs->advanced.neural_interface_sync);
 
-    long read = 0;
-    for (int i = 0; i < gs->contacts.inbox_count && i < 30; i++)
-        if (gs->contacts.inbox[i].is_read)
-            read |= 1L << i;
-    nh_kvw_int(&w, "inbox.read", read);
-    nh_kvw_int(&w, "contacts.active", gs->contacts.active_contacts);
+    /* Contacts : débloqué ou non, et le nombre de conversations. Le texte, lui, n'est jamais écrit. */
     for (int i = 0; i < CONTACT_COUNT; i++)
     {
         const Contact *c = &gs->contacts.contacts[i];
-        nh_kvw_int(&w, key(k, sizeof k, "contact.%d.flags", i), (c->is_unlocked ? 1 : 0) | (c->is_discovered ? 2 : 0));
+        nh_kvw_int(&w, key(k, sizeof k, "contact.%d.flags", i), c->is_unlocked ? 1 : 0);
         nh_kvw_int(&w, key(k, sizeof k, "contact.%d.interactions", i), c->interactions_count);
+    }
+    /* Boîte de réception : quels modèles de courrier sont arrivés, dans l'ordre, et lesquels sont lus. */
+    nh_kvw_int(&w, "mail.count", gs->contacts.inbox_count);
+    for (int i = 0; i < gs->contacts.inbox_count; i++)
+    {
+        nh_kvw_int(&w, key(k, sizeof k, "mail.%d.id", i), (long)gs->contacts.inbox[i].mail);
+        nh_kvw_int(&w, key(k, sizeof k, "mail.%d.read", i), gs->contacts.inbox[i].is_read ? 1 : 0);
     }
 
     /* Les compteurs (actives, terminées, progression) se déduisent des statuts : on ne les écrit plus. */
@@ -196,6 +200,43 @@ static long rd(Reader *r, const char *name, long min, long max, long fallback)
     return fallback;
 }
 
+/*
+ * La boîte de réception. Une sauvegarde d'avant les courriers persistés n'a que « inbox.read » (le
+ * masque « lu » du seul message de bienvenue, le premier) : la boîte reste alors celle d'une partie
+ * neuve, avec ce message lu ou non. Un modèle inconnu ou en double est une sauvegarde corrompue.
+ */
+static void read_inbox(Reader *r, GameState *gs)
+{
+    ContactSystem *cs = &gs->contacts;
+    char k[48];
+
+    long count = rd(r, "mail.count", 0, NH_INBOX_MAX, -1);
+    if (count < 0)
+    {
+        if (cs->inbox_count > 0)
+            cs->inbox[0].is_read = (rd(r, "inbox.read", 0, 1L << 30, 0) & 1) != 0;
+        return;
+    }
+
+    cs->inbox_count = 0;
+    for (int i = 0; i < (int)count; i++)
+    {
+        long id = rd(r, key(k, sizeof k, "mail.%d.id", i), 0, NH_MAIL_COUNT - 1, -1);
+        long is_read = rd(r, key(k, sizeof k, "mail.%d.read", i), 0, 1, 0);
+        bool duplicate = false;
+        for (int j = 0; j < cs->inbox_count; j++)
+            duplicate = duplicate || (long)cs->inbox[j].mail == id;
+        if (id < 0 || duplicate)
+        {
+            r->bad = true;
+            continue;
+        }
+        cs->inbox[cs->inbox_count].mail = (NhMail)id;
+        cs->inbox[cs->inbox_count].is_read = is_read != 0;
+        cs->inbox_count++;
+    }
+}
+
 /* Vérifie l'en-tête et la marque de fin. */
 static NhSaveStatus check_frame(const NhKv *kv)
 {
@@ -241,6 +282,8 @@ static void apply(GameState *gs, Reader *r)
         p->commands_unlocked[i] = (unlocked >> i) & 1;
     p->has_quantum_computer = rd(r, "player.quantum", 0, 1, p->has_quantum_computer) != 0;
     p->has_ai_assistant = rd(r, "player.ai", 0, 1, p->has_ai_assistant) != 0;
+    p->has_encryption_key = rd(r, "player.key", 0, 1, p->has_encryption_key) != 0;
+    p->xp_boost = (int)rd(r, "player.xp_boost", 0, NH_XP_BOOST_CHARGES, p->xp_boost);
     p->virus_library_size = (int)rd(r, "player.virus_library", 0, gs->virus_count, p->virus_library_size);
     p->backdoors_active = (int)rd(r, "player.backdoors", 0, MAX_COUNTER, p->backdoors_active);
 
@@ -275,24 +318,23 @@ static void apply(GameState *gs, Reader *r)
     gs->alert.level = (int)rd(r, "alert.level", 0, NH_ALERT_MAX, gs->alert.level);
     gs->alert.max_level = (int)rd(r, "alert.max", 0, NH_ALERT_MAX, gs->alert.max_level);
     gs->alert.vpn_active = rd(r, "alert.vpn", 0, 1, gs->alert.vpn_active) != 0;
-    gs->alert.proxy_active = rd(r, "alert.proxy", 0, 1, gs->alert.proxy_active) != 0;
+    /* « alert.proxy » (0/1) des versions précédentes est ignoré : le proxy durable se compte maintenant en hacks. */
+    gs->alert.proxy_hacks_left = (int)rd(r, "alert.proxy_left", 0, NH_PROXY_HACKS_MAX, gs->alert.proxy_hacks_left);
     gs->alert.ghost_protocols_available = (int)rd(r, "alert.ghost", 0, MAX_COUNTER, gs->alert.ghost_protocols_available);
     gs->alert.reductions_done = (int)rd(r, "alert.reductions", 0, MAX_COUNTER, gs->alert.reductions_done);
 
     gs->advanced.neural_interface_sync = (int)rd(r, "advanced.neural_sync", 0, 100, gs->advanced.neural_interface_sync);
 
-    long read = rd(r, "inbox.read", 0, full_mask(gs->contacts.inbox_count), 0);
-    for (int i = 0; i < gs->contacts.inbox_count; i++)
-        gs->contacts.inbox[i].is_read = (read >> i) & 1;
-    gs->contacts.active_contacts = (int)rd(r, "contacts.active", 0, CONTACT_COUNT, gs->contacts.active_contacts);
+    /* Un contact n'est débloqué que s'il a une fiche : les cinq derniers restent verrouillés. Le bit 2
+     * (« découvert ») des versions précédentes est ignoré, comme « contacts.active ». */
     for (int i = 0; i < CONTACT_COUNT; i++)
     {
         Contact *c = &gs->contacts.contacts[i];
-        long flags = rd(r, key(k, sizeof k, "contact.%d.flags", i), 0, 3, (c->is_unlocked ? 1 : 0) | (c->is_discovered ? 2 : 0));
-        c->is_unlocked = (flags & 1) != 0;
-        c->is_discovered = (flags & 2) != 0;
+        long flags = rd(r, key(k, sizeof k, "contact.%d.flags", i), 0, 3, c->is_unlocked ? 1 : 0);
+        c->is_unlocked = (flags & 1) != 0 && nh_contact_written((ContactType)i);
         c->interactions_count = (int)rd(r, key(k, sizeof k, "contact.%d.interactions", i), 0, MAX_COUNTER, c->interactions_count);
     }
+    read_inbox(r, gs);
 
     /* Les clés « quests.* » et « quest.N.done » des versions précédentes sont ignorées : tout se déduit
      * des statuts et de l'avancement. Une quête terminée est complète, quoi qu'en disent ses compteurs. */
