@@ -1,6 +1,6 @@
 # Exact compiler version: clippy -D warnings would otherwise break at random on every
 # Rust release (new lints). Bumping it is a dedicated PR (Dependabot opens it).
 [toolchain]
-channel = "1.97.0"
+channel = "1.99.0"
 profile = "minimal"
 components = ["rustfmt", "clippy"]
