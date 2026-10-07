@@ -16,7 +16,8 @@ RPG textuel cyberpunk pour le terminal. Vous êtes un hacker novice à Neo-Tokyo
 | Feuille de route de la v1.0 | écrite : [`docs/ROADMAP.md`](docs/ROADMAP.md) |
 | Ancien code C et fichiers parasites | supprimés (voir [Ancienne version](#ancienne-version-en-c)) |
 | Phase R0 : squelette Cargo, CI sur trois systèmes | fait |
-| Phase R1 : socle (contrat moteur ↔ frontends, i18n, sauvegarde, frontend plain) | **prochaine étape** |
+| Phase R1.1 : contrat moteur ↔ frontends, deux interfaces (plain et plein écran), jeu de démonstration | fait |
+| Phases R1.2 à R1.5 : i18n, sauvegarde, commandes et réglages, jeu jouet complet | **prochaine étape** |
 | Moteur de jeu, TUI, campagne | à venir |
 
 ## Développer
@@ -27,6 +28,12 @@ Prérequis : [rustup](https://rustup.rs) (le fichier `rust-toolchain.toml` épin
 cargo test --workspace      # tests unitaires, de propriété et du binaire
 cargo lint                  # clippy, exactement comme la CI
 cargo run -p neon-cli --    # lance le binaire (un talon pour l'instant)
+
+# La démo du moteur (développement) : un petit jeu qui exerce les deux interfaces
+cargo run -p neon-cli -- --demo                  # interface plein écran dans un vrai terminal
+cargo run -p neon-cli -- --demo --plain          # interface ligne par ligne
+cargo run -p neon-cli -- --demo --screen-reader  # mode lecteur d'écran
+cargo run -p neon-cli -- --demo --lang fr --seed 7
 ```
 
 ## Objectifs de la v1.0
