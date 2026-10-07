@@ -1,5 +1,7 @@
 # Plan de développement — de `refonte/v1` à la v1.0
 
+> **Remplacé le 7 octobre 2026** : le projet est réécrit en Rust. La feuille de route à suivre est [`ROADMAP-RUST.md`](ROADMAP-RUST.md) ; ce document ne décrit plus que la version en C, conservée pour mémoire.
+
 > **Provenance.** Le plan d'origine a été perdu. Celui-ci est *reconstitué* (19 sept. 2026) d'après l'historique git, le code
 > et la documentation : les messages de commit disent « Phase 0 » et « Phase 1 » ; les commentaires du code citent « Phase 3 »
 > (port des modules d'origine, dont « 3.4 » pour l'économie) et « phase 5 » (équilibrage) ; `docs/ARCHITECTURE.md` cite
