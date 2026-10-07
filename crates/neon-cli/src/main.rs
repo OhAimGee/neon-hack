@@ -15,6 +15,7 @@ use std::process::ExitCode;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use clap::{Parser, ValueEnum};
+use neon_engine::Game;
 use neon_engine::demo::{DemoGame, catalog_en, catalog_fr};
 use neon_engine::text::RenderMode;
 
@@ -40,7 +41,8 @@ struct Cli {
     #[arg(long)]
     screen_reader: bool,
 
-    /// Strict ASCII output: no symbols, no decoration.
+    /// ASCII-friendly output: ASCII symbols, no decoration. Accented letters stay until
+    /// transliteration arrives (phase R1.2).
     #[arg(long)]
     ascii: bool,
 
@@ -114,6 +116,8 @@ fn run_demo(cli: &Cli) -> io::Result<()> {
         mode,
         verbosity: cli.verbosity.into(),
     };
+    // A new game: the owner starts it once and hands the step to whichever frontend runs.
+    let first = game.start();
 
     let stdin = io::stdin();
     let interactive = stdin.is_terminal() && io::stdout().is_terminal();
@@ -121,13 +125,14 @@ fn run_demo(cli: &Cli) -> io::Result<()> {
     let use_tui = cfg!(feature = "tui") && interactive && !cli.plain && !cli.screen_reader;
     if use_tui {
         #[cfg(feature = "tui")]
-        return tui::run(&mut game, renderer);
+        return tui::run(&mut game, first, renderer);
     }
     // On a pipe the lines read are repeated in the output so that it reads as a transcript;
     // on a terminal the terminal echoes by itself.
     let echo_input = !stdin.is_terminal();
     plain::run(
         &mut game,
+        first,
         &renderer,
         &mut BufReader::new(stdin.lock()),
         &mut io::stdout().lock(),

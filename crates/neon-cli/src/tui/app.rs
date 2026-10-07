@@ -68,8 +68,9 @@ pub(crate) struct App<'a> {
 }
 
 impl<'a> App<'a> {
-    pub(crate) fn new(game: &'a mut dyn Game, renderer: Renderer<'a>) -> Self {
-        let step = game.start();
+    /// Attaches the interface to a game, starting from `first`: the step of a new game or
+    /// the current state of a game under way (see [`Game::resume`]).
+    pub(crate) fn new(game: &'a mut dyn Game, renderer: Renderer<'a>, first: Step) -> Self {
         let mut app = Self {
             game,
             renderer,
@@ -79,7 +80,7 @@ impl<'a> App<'a> {
             finished: false,
             quit: false,
         };
-        app.apply(step);
+        app.apply(first);
         app
     }
 

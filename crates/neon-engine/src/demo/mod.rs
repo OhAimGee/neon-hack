@@ -226,7 +226,7 @@ impl DemoGame {
         events.push(Event::reward(
             Text::new("demo.scan.reward").with_int("credits", i64::from(credits)),
         ));
-        events.push(trace_changed(from, self.trace));
+        events.extend(trace_changed(from, self.trace));
         if from < TRACE_TENSE && self.trace >= TRACE_TENSE {
             events.push(Event::alert(
                 Severity::Warning,
@@ -298,7 +298,7 @@ impl DemoGame {
             let from = self.trace;
             self.trace = (self.trace - 10).max(0);
             events.push(Event::narration(Text::new("demo.shop.proxy_effect")));
-            events.push(trace_changed(from, self.trace));
+            events.extend(trace_changed(from, self.trace));
         }
         true
     }
@@ -438,13 +438,14 @@ fn band(trace: i32) -> Text {
     }
 }
 
-fn trace_changed(from: i32, to: i32) -> Event {
-    Event::Changed {
+/// The event for a trace that moved; nothing when it did not (already at an end of its range).
+fn trace_changed(from: i32, to: i32) -> Option<Event> {
+    (from != to).then(|| Event::Changed {
         gauge: Gauge::Trace,
         from,
         to,
         band: band(to),
-    }
+    })
 }
 
 fn help_table() -> Event {

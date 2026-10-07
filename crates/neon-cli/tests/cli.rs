@@ -123,7 +123,10 @@ fn the_language_and_the_reading_mode_are_options() {
         &["--demo", "--ascii", "--seed", "1"],
         script,
     ));
-    assert!(ascii.is_ascii(), "--ascii output must be 7-bit:\n{ascii}");
+    assert!(
+        ascii.is_ascii(),
+        "the English demo with --ascii and an ASCII handle must be ASCII:\n{ascii}"
+    );
 }
 
 #[test]
@@ -139,6 +142,8 @@ fn brief_verbosity_keeps_alerts_and_drops_the_atmosphere() {
     ));
     assert!(full.contains("An old cyberdeck boots up on its own."));
     assert!(!brief.contains("An old cyberdeck"), "atmosphere is dropped");
+    assert!(!brief.contains("N E O N"), "decoration is dropped too");
+    assert!(full.contains("N E O N"));
     assert!(!brief.contains("ECHO-7 »"), "dialogue is not essential");
     assert!(
         brief.contains("[ALERT]"),

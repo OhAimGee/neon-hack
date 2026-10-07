@@ -95,7 +95,8 @@ pub enum RenderMode {
     Full,
     /// Screen-reader wording: no symbols to spell out (`key@sr`).
     ScreenReader,
-    /// Strict 7-bit text (`key@ascii`).
+    /// ASCII-friendly: the `key@ascii` variants and ASCII decoration. Accented letters and
+    /// text typed by the player are kept until transliteration arrives (phase R1.2).
     Ascii,
 }
 

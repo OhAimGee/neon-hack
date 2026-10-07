@@ -97,7 +97,8 @@ pub enum Event {
         /// What is said.
         text: Text,
     },
-    /// Pure decoration (a logo). Replaced by `alt` in ASCII mode and dropped for screen readers.
+    /// Pure decoration (a logo): normal importance, so brief verbosity drops it. Replaced by
+    /// `alt` in ASCII mode and dropped for screen readers.
     Decor {
         /// Lines of art.
         art: &'static [&'static str],
@@ -187,6 +188,8 @@ impl Event {
             Self::Message {
                 role, importance, ..
             } if !role.is_critical() => *importance,
+            // Decoration is dropped at brief verbosity, like any other non-essential content.
+            Self::Decor { .. } => Importance::Normal,
             _ => Importance::Essential,
         }
     }
@@ -265,5 +268,14 @@ mod tests {
         ));
         assert_eq!(Event::flavor(text()).importance(), Importance::Flavor);
         assert_eq!(Event::Break.importance(), Importance::Essential);
+    }
+
+    #[test]
+    fn decoration_is_not_essential() {
+        let decor = Event::Decor {
+            art: &["+--+"],
+            alt: Text::new("k"),
+        };
+        assert_eq!(decor.importance(), Importance::Normal);
     }
 }

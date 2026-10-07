@@ -9,6 +9,7 @@ use super::*;
 use crate::render::Verbosity;
 
 fn app_with<'a>(game: &'a mut DemoGame, catalog: &'a StaticCatalog, mode: RenderMode) -> App<'a> {
+    let first = game.start();
     App::new(
         game,
         Renderer {
@@ -16,6 +17,7 @@ fn app_with<'a>(game: &'a mut DemoGame, catalog: &'a StaticCatalog, mode: Render
             mode,
             verbosity: Verbosity::Normal,
         },
+        first,
     )
 }
 
@@ -329,4 +331,36 @@ proptest! {
         let original: String = text.chars().filter(|c| *c != ' ').collect();
         prop_assert_eq!(kept, original);
     }
+}
+
+#[test]
+fn an_interface_attached_to_a_game_under_way_does_not_replay_the_start() {
+    let (catalog, mut game) = (catalog_en(), DemoGame::new(1));
+    game.start();
+    for input in [
+        Input::Continue,
+        Input::Line("Neon".to_owned()),
+        Input::Confirm(true),
+    ] {
+        game.handle(input);
+    }
+    let attach = game.resume();
+    let renderer = Renderer {
+        catalog: &catalog,
+        mode: RenderMode::Full,
+        verbosity: Verbosity::Full,
+    };
+    let app = App::new(&mut game, renderer, attach);
+    let rows = screen(&app, 100, 28);
+    assert!(
+        !has(&rows, "NEON HACK") && !has(&rows, "N E O N"),
+        "no logo"
+    );
+    assert!(!has(&rows, "Neo-Tokyo"), "no intro");
+    assert_eq!(rows[27], ">", "straight to the command line");
+    assert!(
+        rows[0].contains("Neon"),
+        "the player's state is shown: {:?}",
+        rows[0]
+    );
 }

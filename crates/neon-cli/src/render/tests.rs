@@ -121,6 +121,27 @@ fn decor_is_art_then_alt_text_then_nothing() {
         lines(RenderMode::ScreenReader, Verbosity::Full),
         "NEON HACK"
     );
+    // Decoration is not essential: brief output drops it in every mode.
+    for mode in [
+        RenderMode::Full,
+        RenderMode::Ascii,
+        RenderMode::ScreenReader,
+    ] {
+        assert_eq!(lines(mode, Verbosity::Brief), "", "{mode:?}");
+    }
+}
+
+#[test]
+fn a_gauge_that_did_not_move_says_nothing() {
+    let catalog = catalog_en();
+    let r = renderer(&catalog, RenderMode::Full, Verbosity::Normal);
+    let unmoved = Event::Changed {
+        gauge: Gauge::Trace,
+        from: 7,
+        to: 7,
+        band: Text::new("band.calm"),
+    };
+    assert!(r.event(&unmoved).is_empty(), "no `Trace +0` line");
 }
 
 fn help_screen() -> Event {
@@ -323,7 +344,7 @@ fn a_full_session_never_renders_a_missing_key_in_any_language_mode_or_verbosity(
 }
 
 #[test]
-fn english_ascii_mode_is_strict_seven_bit_text() {
+fn ascii_mode_gives_ascii_only_text_for_the_english_demo() {
     let catalog = catalog_en();
     let r = renderer(&catalog, RenderMode::Ascii, Verbosity::Full);
     for step in session() {

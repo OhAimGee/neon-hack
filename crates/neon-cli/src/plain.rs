@@ -13,18 +13,20 @@ use neon_engine::{Game, Input, Prompt, Step};
 use crate::input::{InputError, to_input};
 use crate::render::Renderer;
 
-/// Plays a game to its end.
+/// Plays a game to its end, starting from `first`: the step of a new game
+/// ([`Game::start`]) or the current state of a game under way ([`Game::resume`]).
 ///
 /// `echo_input` repeats each line read in the output (`> scan`), which a pipe needs to
 /// give a readable transcript; on a terminal the terminal itself echoes what is typed.
 pub(crate) fn run(
     game: &mut dyn Game,
+    first: Step,
     renderer: &Renderer<'_>,
     input: &mut dyn BufRead,
     out: &mut dyn Write,
     echo_input: bool,
 ) -> io::Result<()> {
-    let mut step = game.start();
+    let mut step = first;
     let mut closed = false;
     loop {
         write_step(out, renderer, &step)?;

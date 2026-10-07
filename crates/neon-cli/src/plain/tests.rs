@@ -20,8 +20,11 @@ fn play(
         verbosity: Verbosity::Normal,
     };
     let mut out = Vec::new();
+    let mut game = DemoGame::new(seed);
+    let first = game.start();
     run(
-        &mut DemoGame::new(seed),
+        &mut game,
+        first,
         &renderer,
         &mut Cursor::new(input),
         &mut out,
@@ -187,8 +190,11 @@ fn an_engine_that_will_not_end_cannot_trap_the_frontend_in_a_loop() {
         mode: RenderMode::Full,
         verbosity: Verbosity::Normal,
     };
+    let mut game = Stubborn;
+    let first = game.start();
     let error = run(
-        &mut Stubborn,
+        &mut game,
+        first,
         &renderer,
         &mut Cursor::new(&b"one\ntwo\n"[..]),
         &mut Vec::new(),
@@ -196,4 +202,44 @@ fn an_engine_that_will_not_end_cannot_trap_the_frontend_in_a_loop() {
     )
     .unwrap_err();
     assert_eq!(error.kind(), io::ErrorKind::UnexpectedEof);
+}
+
+#[test]
+fn a_frontend_attached_to_a_game_under_way_continues_without_replaying_the_start() {
+    let catalog = catalog_en();
+    let renderer = Renderer {
+        catalog: &catalog,
+        mode: RenderMode::Full,
+        verbosity: Verbosity::Full,
+    };
+    // Play the prologue elsewhere (another frontend, or a load), then attach this one.
+    let mut game = DemoGame::new(1);
+    game.start();
+    for input in [
+        Input::Continue,
+        Input::Line("Neon".to_owned()),
+        Input::Confirm(true),
+    ] {
+        game.handle(input);
+    }
+    let attach = game.resume();
+    let mut out = Vec::new();
+    run(
+        &mut game,
+        attach,
+        &renderer,
+        &mut Cursor::new(&b"status\nquit\ny\n"[..]),
+        &mut out,
+        true,
+    )
+    .unwrap();
+    let output = String::from_utf8(out).unwrap();
+    assert!(output.starts_with("> status\n"), "{output}");
+    assert!(!output.contains("NEON HACK"), "the logo is not shown again");
+    assert!(!output.contains("Neo-Tokyo"), "the intro is not replayed");
+    assert!(
+        !output.contains("Your handle"),
+        "the prologue is not asked again"
+    );
+    assert!(output.contains("Handle: Neon"), "the game state is kept");
 }

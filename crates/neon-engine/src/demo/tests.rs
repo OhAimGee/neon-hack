@@ -96,10 +96,11 @@ fn nested_menus_are_states_not_blocking_reads() {
     );
     assert!(bought.save_requested);
     assert!(
-        bought
+        !bought
             .events
             .iter()
-            .any(|e| matches!(e, Event::Changed { .. }))
+            .any(|e| matches!(e, Event::Changed { .. })),
+        "the trace was already at 0: nothing moved, so nothing is announced"
     );
 
     // Refusals are said in words, nothing is spent, the stall stays open.
@@ -456,4 +457,77 @@ proptest! {
             finished = step.prompt == Prompt::End;
         }
     }
+}
+
+#[test]
+fn buying_the_proxy_lowers_a_raised_trace_and_says_so() {
+    let mut game = at_command_line(7);
+    game.handle(line("scan"));
+    let raised = game.view().gauges[0].value;
+    assert!(raised >= 5);
+    game.handle(line("shop"));
+    let bought = game.handle(line("proxy"));
+    let moves: Vec<(i32, i32)> = bought
+        .events
+        .iter()
+        .filter_map(|event| match event {
+            Event::Changed { from, to, .. } => Some((*from, *to)),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(moves, [(raised, (raised - 10).max(0))]);
+}
+
+#[test]
+fn a_gauge_at_the_end_of_its_range_never_announces_a_zero_move() {
+    let mut game = at_command_line(11);
+    for _ in 0..30 {
+        game.handle(line("scan"));
+    }
+    assert_eq!(game.view().gauges[0].value, TRACE_MAX);
+    let at_the_cap = game.handle(line("scan"));
+    assert!(
+        !at_the_cap
+            .events
+            .iter()
+            .any(|e| matches!(e, Event::Changed { .. })),
+        "scanning at the cap moves nothing"
+    );
+    // Every Changed event of a whole session really moves its gauge.
+    let mut game = at_command_line(4);
+    for input in ["shop", "1", "0", "scan", "scan", "shop", "2", "0"] {
+        for event in game.handle(line(input)).events {
+            if let Event::Changed { from, to, .. } = event {
+                assert_ne!(from, to);
+            }
+        }
+    }
+}
+
+#[test]
+fn resuming_gives_the_current_prompt_and_says_nothing_new() {
+    let mut game = DemoGame::new(2);
+    let first = game.start();
+    assert!(
+        !first.events.is_empty(),
+        "a new game starts with its prologue"
+    );
+    assert_eq!(game.resume().prompt, Prompt::Continue);
+    assert!(game.resume().events.is_empty());
+    for input in [
+        Input::Continue,
+        line("Neon"),
+        Input::Confirm(true),
+        line("shop"),
+    ] {
+        game.handle(input);
+    }
+    let resumed = game.resume();
+    assert!(resumed.events.is_empty());
+    assert!(
+        matches!(resumed.prompt, Prompt::Choice(_)),
+        "back in the open menu"
+    );
+    assert_eq!(resumed.prompt, game.prompt());
+    assert!(!resumed.save_requested);
 }

@@ -35,7 +35,8 @@ pub struct View {
 
 /// A game, as seen by a frontend.
 pub trait Game {
-    /// The first step of a new game: the prologue, then the first prompt.
+    /// The first step of a NEW game: the prologue, then the first prompt. Whoever owns the
+    /// game calls it once and hands the step to a frontend; a frontend never calls it itself.
     fn start(&mut self) -> Step;
 
     /// Advances the game by one input. The only way to make it progress.
@@ -44,6 +45,18 @@ pub trait Game {
     /// What the game is waiting for, derived from its state (so it is also right just
     /// after a load).
     fn prompt(&self) -> Prompt;
+
+    /// The step to attach a frontend to a game that is already under way: nothing new to
+    /// say, just the current prompt. A frontend that takes over from another one (the TUI
+    /// handing over to the plain interface) or a loaded game starts from this, not from
+    /// [`Game::start`], so the prologue is never replayed.
+    fn resume(&self) -> Step {
+        Step {
+            events: Vec::new(),
+            prompt: self.prompt(),
+            save_requested: false,
+        }
+    }
 
     /// A read-only snapshot for the interface.
     fn view(&self) -> View;

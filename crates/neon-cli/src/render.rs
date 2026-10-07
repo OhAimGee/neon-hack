@@ -92,7 +92,7 @@ impl Renderer<'_> {
                 from,
                 to,
                 band,
-            } => vec![self.changed(*gauge, *from, *to, band)],
+            } => self.changed(*gauge, *from, *to, band).into_iter().collect(),
             Event::Break if self.verbosity == Verbosity::Brief => Vec::new(),
             Event::Break => vec![Line::new(LineKind::Blank, String::new())],
         }
@@ -165,8 +165,12 @@ impl Renderer<'_> {
         lines
     }
 
-    fn changed(&self, gauge: Gauge, from: i32, to: i32, band: &Text) -> Line {
-        let key = if to >= from {
+    /// A gauge that did not move has nothing to say, whatever the engine sent.
+    fn changed(&self, gauge: Gauge, from: i32, to: i32, band: &Text) -> Option<Line> {
+        if from == to {
+            return None;
+        }
+        let key = if to > from {
             "ui.gauge.up"
         } else {
             "ui.gauge.down"
@@ -177,7 +181,7 @@ impl Renderer<'_> {
             .with_int("from", i64::from(from))
             .with_int("to", i64::from(to))
             .with_text("band", band.clone());
-        Line::new(LineKind::Gauge, self.text(&text))
+        Some(Line::new(LineKind::Gauge, self.text(&text)))
     }
 
     /// The lines above the input and the marker before it, for the prompt the engine waits on.
