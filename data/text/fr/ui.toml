@@ -1,0 +1,58 @@
+# Texts of the interface (ui, gauges, bands, contacts), French.
+# Keys are the table path plus the name; `name@sr` and `name@ascii` are variants of `name`.
+# Templates: {name}, and {count|singular|plural} (see docs/design/architecture-rust.md, section 6).
+
+[ui]
+raw = "{value}"
+tagged = "{tag} {text}"
+say = "{speaker} » {text}"
+"say@ascii" = "{speaker}: {text}"
+"say@sr" = "{speaker}: {text}"
+invalid_input = "Cette saisie n'est pas valable ici."
+invalid_choice = "Choisissez un des numéros ou des noms listés."
+invalid_confirm = "Répondez par oui ou par non."
+eof = "Entrée fermée : fin de la session."
+
+[ui.tag]
+alert = "[ALERTE]"
+reward = "[Gain]"
+error = "[Erreur]"
+
+[ui.gauge]
+up = "{gauge} +{delta} ({from} → {to}, {band})."
+"up@sr" = "{gauge} en hausse de {delta}, de {from} à {to}, niveau {band}."
+down = "{gauge} -{delta} ({from} → {to}, {band})."
+"down@sr" = "{gauge} en baisse de {delta}, de {from} à {to}, niveau {band}."
+
+[ui.prompt]
+command = "> "
+choice = "? "
+text = "{label} : "
+text_default = "{label} [{default}] : "
+confirm = "{question} {hint} "
+continue = "[Entrée] pour continuer"
+
+[ui.hint]
+yes_default = "[O/n]"
+no_default = "[o/N]"
+
+[ui.choice]
+unavailable = "{label} ({reason})"
+
+[ui.sr]
+cell = "{column} : {value}"
+
+[ui.tui]
+too_small = "Terminal trop petit ({width}x{height}) : {min_width}x{min_height} au minimum."
+press_key = "Appuyez sur une touche pour quitter."
+
+[gauge]
+trace = "Trace"
+
+[band]
+calm = "calme"
+tense = "tendu"
+critical = "critique"
+
+[contact.echo7]
+name = "ECHO-7"

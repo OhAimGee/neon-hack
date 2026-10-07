@@ -6,7 +6,7 @@
 
 use neon_engine::event::{Event, Gauge, Role, Severity, Table};
 use neon_engine::prompt::{Choice, Prompt};
-use neon_engine::text::{Catalog, RenderMode, Text, render};
+use neon_engine::text::{Catalog, RenderMode, Text, render, to_ascii};
 
 /// How much of the atmosphere the player wants to read.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
@@ -68,7 +68,7 @@ pub(crate) struct PromptView {
 
 /// Turns texts, events and prompts into lines, in one language and one mode.
 pub(crate) struct Renderer<'a> {
-    pub(crate) catalog: &'a dyn Catalog,
+    pub(crate) catalog: &'a Catalog,
     pub(crate) mode: RenderMode,
     pub(crate) verbosity: Verbosity,
 }
@@ -76,6 +76,16 @@ pub(crate) struct Renderer<'a> {
 impl Renderer<'_> {
     pub(crate) fn text(&self, text: &Text) -> String {
         render(text, self.catalog, self.mode)
+    }
+
+    /// Text that is not in the catalogs, such as what the player typed. In ASCII mode it is
+    /// transliterated like everything else, so the output stays 7-bit.
+    pub(crate) fn verbatim(&self, text: &str) -> String {
+        if self.mode.ascii {
+            to_ascii(text)
+        } else {
+            text.to_owned()
+        }
     }
 
     /// The lines of an event; none when the verbosity hides it.
@@ -125,17 +135,20 @@ impl Renderer<'_> {
     }
 
     fn decor(&self, art: &[&str], alt: &Text) -> Vec<Line> {
-        match self.mode {
-            RenderMode::Full => art
-                .iter()
-                .map(|row| Line::new(LineKind::Decor, (*row).to_owned()))
-                .collect(),
-            RenderMode::Ascii => vec![Line::new(LineKind::Decor, self.text(alt))],
+        let short = || vec![Line::new(LineKind::Decor, self.text(alt))];
+        if self.mode.screen_reader {
             // Pure decoration is dropped for screen readers; its short text only at full verbosity.
-            RenderMode::ScreenReader if self.verbosity == Verbosity::Full => {
-                vec![Line::new(LineKind::Decor, self.text(alt))]
+            if self.verbosity == Verbosity::Full {
+                short()
+            } else {
+                Vec::new()
             }
-            RenderMode::ScreenReader => Vec::new(),
+        } else if self.mode.ascii {
+            short()
+        } else {
+            art.iter()
+                .map(|row| Line::new(LineKind::Decor, (*row).to_owned()))
+                .collect()
         }
     }
 
@@ -143,7 +156,7 @@ impl Renderer<'_> {
         let mut lines = vec![Line::new(LineKind::Table, self.text(&table.title))];
         for (index, row) in table.rows.iter().enumerate() {
             let number = index + 1;
-            let text = if self.mode == RenderMode::ScreenReader {
+            let text = if self.mode.screen_reader {
                 let cells: Vec<String> = table
                     .columns
                     .iter()
@@ -243,7 +256,7 @@ impl Renderer<'_> {
 
     fn choice_lines(&self, choice: &Choice) -> Vec<Line> {
         let numbered = |number: usize, label: &str| {
-            if self.mode == RenderMode::ScreenReader {
+            if self.mode.screen_reader {
                 format!("{number}. {label}")
             } else {
                 format!("[{number}] {label}")

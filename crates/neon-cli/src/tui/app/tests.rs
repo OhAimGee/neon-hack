@@ -1,5 +1,5 @@
-use neon_engine::demo::{DemoGame, catalog_en, catalog_fr};
-use neon_engine::text::{RenderMode, StaticCatalog};
+use neon_engine::demo::DemoGame;
+use neon_engine::text::{Catalog, RenderMode};
 use proptest::prelude::*;
 use ratatui::Terminal;
 use ratatui::backend::TestBackend;
@@ -7,8 +7,9 @@ use ratatui::crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
 use super::*;
 use crate::render::Verbosity;
+use crate::test_support::{catalog_en, catalog_fr};
 
-fn app_with<'a>(game: &'a mut DemoGame, catalog: &'a StaticCatalog, mode: RenderMode) -> App<'a> {
+fn app_with<'a>(game: &'a mut DemoGame, catalog: &'a Catalog, mode: RenderMode) -> App<'a> {
     let first = game.start();
     App::new(
         game,
@@ -74,7 +75,7 @@ fn the_terminal_size_decides_how_much_of_the_interface_is_shown() {
 #[test]
 fn the_full_layout_has_a_status_bar_a_log_a_panel_and_an_input_line() {
     let (catalog, mut game) = (catalog_en(), DemoGame::new(1));
-    let mut app = app_with(&mut game, &catalog, RenderMode::Full);
+    let mut app = app_with(&mut game, &catalog, RenderMode::FULL);
     reach_command_line(&mut app);
     type_line(&mut app, "scan");
     let rows = screen(&app, 100, 28);
@@ -102,7 +103,7 @@ fn the_full_layout_has_a_status_bar_a_log_a_panel_and_an_input_line() {
 #[test]
 fn the_compact_layout_drops_the_panel_but_keeps_the_gauge_in_words() {
     let (catalog, mut game) = (catalog_en(), DemoGame::new(1));
-    let mut app = app_with(&mut game, &catalog, RenderMode::Full);
+    let mut app = app_with(&mut game, &catalog, RenderMode::FULL);
     reach_command_line(&mut app);
     let rows = screen(&app, 64, 20);
     assert!(rows[0].contains("Trace 0/100 (calm)"), "{:?}", rows[0]);
@@ -115,21 +116,21 @@ fn the_compact_layout_drops_the_panel_but_keeps_the_gauge_in_words() {
 #[test]
 fn a_terminal_that_is_too_small_says_so_in_the_current_language() {
     let (catalog, mut game) = (catalog_en(), DemoGame::new(1));
-    let app = app_with(&mut game, &catalog, RenderMode::Full);
+    let app = app_with(&mut game, &catalog, RenderMode::FULL);
     let rows = screen(&app, 63, 20);
     assert!(
         has(&rows, "Terminal too small (63x20): at least 64x20 needed."),
         "{rows:?}"
     );
     let (catalog, mut game) = (catalog_fr(), DemoGame::new(1));
-    let app = app_with(&mut game, &catalog, RenderMode::Full);
+    let app = app_with(&mut game, &catalog, RenderMode::FULL);
     assert!(has(&screen(&app, 63, 20), "Terminal trop petit (63x20)"));
 }
 
 #[test]
 fn no_terminal_size_can_make_the_interface_panic() {
     let (catalog, mut game) = (catalog_en(), DemoGame::new(1));
-    let mut app = app_with(&mut game, &catalog, RenderMode::Full);
+    let mut app = app_with(&mut game, &catalog, RenderMode::FULL);
     reach_command_line(&mut app);
     type_line(&mut app, "shop");
     for width in [1, 2, 3, 10, 30, 63, 64, 65, 99, 100, 150] {
@@ -142,7 +143,7 @@ fn no_terminal_size_can_make_the_interface_panic() {
 #[test]
 fn a_menu_is_listed_above_the_input_with_its_way_out() {
     let (catalog, mut game) = (catalog_en(), DemoGame::new(1));
-    let mut app = app_with(&mut game, &catalog, RenderMode::Full);
+    let mut app = app_with(&mut game, &catalog, RenderMode::FULL);
     reach_command_line(&mut app);
     type_line(&mut app, "shop");
     let rows = screen(&app, 100, 28);
@@ -158,7 +159,7 @@ fn a_menu_is_listed_above_the_input_with_its_way_out() {
 #[test]
 fn playing_by_keyboard_goes_through_the_whole_prologue() {
     let (catalog, mut game) = (catalog_en(), DemoGame::new(1));
-    let mut app = app_with(&mut game, &catalog, RenderMode::Full);
+    let mut app = app_with(&mut game, &catalog, RenderMode::FULL);
     assert!(has(&screen(&app, 100, 28), "[Enter] to continue"));
     press(&mut app, KeyCode::Enter);
     assert!(has(&screen(&app, 100, 28), "Your handle [Case]:"));
@@ -181,7 +182,7 @@ fn playing_by_keyboard_goes_through_the_whole_prologue() {
 #[test]
 fn a_bad_yes_or_no_is_refused_on_the_spot() {
     let (catalog, mut game) = (catalog_en(), DemoGame::new(1));
-    let mut app = app_with(&mut game, &catalog, RenderMode::Full);
+    let mut app = app_with(&mut game, &catalog, RenderMode::FULL);
     press(&mut app, KeyCode::Enter);
     type_line(&mut app, "Neon");
     type_line(&mut app, "perhaps");
@@ -196,7 +197,7 @@ fn a_bad_yes_or_no_is_refused_on_the_spot() {
 #[test]
 fn escape_clears_a_typed_line_then_backs_out_of_a_menu() {
     let (catalog, mut game) = (catalog_en(), DemoGame::new(1));
-    let mut app = app_with(&mut game, &catalog, RenderMode::Full);
+    let mut app = app_with(&mut game, &catalog, RenderMode::FULL);
     reach_command_line(&mut app);
     type_line(&mut app, "shop");
     for c in "xy".chars() {
@@ -219,7 +220,7 @@ fn escape_clears_a_typed_line_then_backs_out_of_a_menu() {
 #[test]
 fn control_d_ends_the_game_and_the_next_key_leaves() {
     let (catalog, mut game) = (catalog_en(), DemoGame::new(1));
-    let mut app = app_with(&mut game, &catalog, RenderMode::Full);
+    let mut app = app_with(&mut game, &catalog, RenderMode::FULL);
     reach_command_line(&mut app);
     app.on_key(KeyEvent::new(KeyCode::Char('d'), KeyModifiers::CONTROL));
     assert!(!app.should_quit());
@@ -233,7 +234,7 @@ fn control_d_ends_the_game_and_the_next_key_leaves() {
 #[test]
 fn control_c_also_ends_cleanly_and_other_control_keys_are_not_text() {
     let (catalog, mut game) = (catalog_en(), DemoGame::new(1));
-    let mut app = app_with(&mut game, &catalog, RenderMode::Full);
+    let mut app = app_with(&mut game, &catalog, RenderMode::FULL);
     reach_command_line(&mut app);
     app.on_key(KeyEvent::new(KeyCode::Char('a'), KeyModifiers::CONTROL));
     assert_eq!(screen(&app, 100, 28)[27], ">", "Ctrl+A types nothing");
@@ -244,7 +245,7 @@ fn control_c_also_ends_cleanly_and_other_control_keys_are_not_text() {
 #[test]
 fn altgr_characters_are_text() {
     let (catalog, mut game) = (catalog_en(), DemoGame::new(1));
-    let mut app = app_with(&mut game, &catalog, RenderMode::Full);
+    let mut app = app_with(&mut game, &catalog, RenderMode::FULL);
     reach_command_line(&mut app);
     // Windows reports AltGr as Control+Alt.
     app.on_key(KeyEvent::new(
@@ -263,7 +264,7 @@ fn altgr_characters_are_text() {
 #[test]
 fn tab_completes_like_a_shell() {
     let (catalog, mut game) = (catalog_en(), DemoGame::new(1));
-    let mut app = app_with(&mut game, &catalog, RenderMode::Full);
+    let mut app = app_with(&mut game, &catalog, RenderMode::FULL);
     reach_command_line(&mut app);
     press(&mut app, KeyCode::Char('s'));
     press(&mut app, KeyCode::Tab);
@@ -292,7 +293,7 @@ fn tab_completes_like_a_shell() {
 #[test]
 fn ascii_mode_draws_the_bar_and_separators_with_ascii_only() {
     let (catalog, mut game) = (catalog_en(), DemoGame::new(1));
-    let mut app = app_with(&mut game, &catalog, RenderMode::Ascii);
+    let mut app = app_with(&mut game, &catalog, RenderMode::ASCII);
     reach_command_line(&mut app);
     type_line(&mut app, "scan");
     let rows = screen(&app, 100, 28);
@@ -347,7 +348,7 @@ fn an_interface_attached_to_a_game_under_way_does_not_replay_the_start() {
     let attach = game.resume();
     let renderer = Renderer {
         catalog: &catalog,
-        mode: RenderMode::Full,
+        mode: RenderMode::FULL,
         verbosity: Verbosity::Full,
     };
     let app = App::new(&mut game, renderer, attach);
@@ -363,4 +364,26 @@ fn an_interface_attached_to_a_game_under_way_does_not_replay_the_start() {
         "the player's state is shown: {:?}",
         rows[0]
     );
+}
+
+#[test]
+fn ascii_mode_shows_what_is_typed_as_ascii_and_keeps_every_cell_ascii() {
+    let (catalog, mut game) = (catalog_fr(), DemoGame::new(1));
+    let mut app = app_with(&mut game, &catalog, RenderMode::ASCII);
+    press(&mut app, KeyCode::Enter);
+    for c in "Zoë".chars() {
+        press(&mut app, KeyCode::Char(c));
+    }
+    let rows = screen(&app, 100, 28);
+    assert_eq!(rows[27], "Votre pseudo [Case] : Zoe", "while typing");
+    press(&mut app, KeyCode::Enter);
+    type_line(&mut app, "o");
+    let rows = screen(&app, 100, 28);
+    assert!(
+        has(&rows, "Zoe"),
+        "the handle is shown in the log: {rows:#?}"
+    );
+    for row in &rows {
+        assert!(row.is_ascii(), "not ASCII: {row:?}");
+    }
 }

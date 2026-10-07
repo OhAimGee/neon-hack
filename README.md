@@ -17,7 +17,8 @@ RPG textuel cyberpunk pour le terminal. Vous êtes un hacker novice à Neo-Tokyo
 | Ancien code C et fichiers parasites | supprimés (voir [Ancienne version](#ancienne-version-en-c)) |
 | Phase R0 : squelette Cargo, CI sur trois systèmes | fait |
 | Phase R1.1 : contrat moteur ↔ frontends, deux interfaces (plain et plein écran), jeu de démonstration | fait |
-| Phases R1.2 à R1.5 : i18n, sauvegarde, commandes et réglages, jeu jouet complet | **prochaine étape** |
+| Phase R1.2 : textes en TOML embarqués, pluriels, `--ascii` strictement 7 bits, contrôles de parité FR/EN | fait |
+| Phases R1.3 à R1.5 : sauvegarde, commandes et réglages, jeu jouet complet | **prochaine étape** |
 | Moteur de jeu, TUI, campagne | à venir |
 
 ## Jouer en local
@@ -71,7 +72,7 @@ Dans un vrai terminal, la démonstration s'ouvre en **plein écran** (barre d'é
 |---|---|
 | `--plain` | interface ligne par ligne |
 | `--screen-reader` | mode lecteur d'écran : interface ligne par ligne, sans symboles à épeler |
-| `--ascii` | symboles ASCII, sans décoration |
+| `--ascii` | ASCII 7 bits : symboles, accents et texte tapé translittérés, sans décoration |
 | `--lang fr` / `--lang en` | langue des textes (anglais par défaut) |
 | `--verbosity brief\|normal\|full` | quantité d'ambiance affichée |
 | `--seed 7` | partie reproductible |
@@ -82,7 +83,7 @@ L'interface plein écran demande au moins **64×20** caractères, et **100×28**
 
 - `cargo: command not found` : fermez puis rouvrez le terminal après avoir installé Rust, ou ajoutez `~/.cargo/bin` au `PATH`.
 - `linker 'cc' not found` ou `link.exe not found` : installez l'éditeur de liens (étape 1).
-- Cadres ou symboles mal affichés : essayez `--ascii`. Accents mal affichés : le terminal n'est pas en UTF-8, à régler dans ses préférences (pour l'instant `--ascii` garde les lettres accentuées).
+- Cadres, symboles ou accents mal affichés : le terminal n'est probablement pas en UTF-8 ; essayez `--ascii`, qui n'écrit plus que de l'ASCII sur 7 bits (les accents deviennent des lettres simples).
 - Une erreur à propos de la version de Rust : lancez `rustup toolchain install` dans le dossier du projet.
 
 ## Développer
