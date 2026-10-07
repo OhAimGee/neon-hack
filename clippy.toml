@@ -1,0 +1,6 @@
+# Clippy reads ONE file, the one of the crate being linted, with no merge with this one:
+# crates/neon-engine/clippy.toml repeats these settings (and adds the purity rules).
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true
+allow-indexing-slicing-in-tests = true
+allow-print-in-tests = true

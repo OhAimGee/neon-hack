@@ -1,0 +1,15 @@
+version: 2
+updates:
+  - package-ecosystem: cargo
+    directory: /
+    schedule:
+      interval: weekly
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+  # Keeps the exact compiler version of rust-toolchain.toml current, one PR at a time.
+  - package-ecosystem: rust-toolchain
+    directory: /
+    schedule:
+      interval: weekly

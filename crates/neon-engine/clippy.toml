@@ -1,0 +1,32 @@
+# The engine is a pure state machine: no clock, no environment, no disk, no console,
+# no unordered collections (docs/design/architecture-rust.md, section 3.4). These rules
+# are enforced here, by the compiler tooling, not by convention.
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true
+allow-indexing-slicing-in-tests = true
+allow-print-in-tests = true
+
+disallowed-types = [
+    { path = "std::collections::HashMap", reason = "iteration order is not deterministic: use BTreeMap" },
+    { path = "std::collections::HashSet", reason = "iteration order is not deterministic: use BTreeSet" },
+    { path = "std::time::Instant", reason = "the engine has no clock: game time is a turn counter" },
+    { path = "std::time::SystemTime", reason = "the engine has no clock: game time is a turn counter" },
+]
+
+disallowed-methods = [
+    { path = "std::thread::sleep", reason = "the engine never waits: text speed is a presentation setting" },
+    { path = "std::env::var", reason = "the environment is read by the CLI and passed in" },
+    { path = "std::env::vars", reason = "the environment is read by the CLI and passed in" },
+    { path = "std::fs::read", reason = "the engine does no I/O: the CLI reads and writes files" },
+    { path = "std::fs::read_to_string", reason = "the engine does no I/O: the CLI reads and writes files" },
+    { path = "std::fs::write", reason = "the engine does no I/O: the CLI reads and writes files" },
+    { path = "std::fs::File::open", reason = "the engine does no I/O: the CLI reads and writes files" },
+    { path = "std::fs::File::create", reason = "the engine does no I/O: the CLI reads and writes files" },
+]
+
+disallowed-macros = [
+    { path = "std::println", reason = "the engine does not print: it returns events" },
+    { path = "std::print", reason = "the engine does not print: it returns events" },
+    { path = "std::eprintln", reason = "the engine does not print: it returns events" },
+    { path = "std::eprint", reason = "the engine does not print: it returns events" },
+]
