@@ -32,7 +32,7 @@ A cyberpunk text RPG for the terminal. You are a novice hacker in Neo-Tokyo, in 
   - Windows: "Build Tools for Visual Studio", workload *Desktop development with C++* (`rustup-init.exe` offers it);
   - macOS: `xcode-select --install`;
   - Linux: `gcc` (for example `sudo apt install build-essential`).
-- **A modern UTF-8 terminal**: Windows Terminal (not the old `cmd` console), Terminal or iTerm2 on macOS, any common Linux terminal. On Windows, WSL works too: just run the commands in the WSL terminal.
+- **A modern UTF-8 terminal**: Windows Terminal (not the old `cmd` console), Terminal or iTerm2 on macOS, any common Linux terminal. On Windows, WSL works too, but it is then a Linux environment: install Git, Rust and `gcc` **inside WSL**, following the Linux steps above (not the Build Tools), then run the commands in the WSL terminal.
 
 ### 2. Download the project
 
@@ -56,7 +56,7 @@ cargo install --path crates/neon-cli --locked
 neon-hack --demo
 ```
 
-`rustup` has already put `~/.cargo/bin` on your `PATH`. To update: `git pull`, then run the command above again (with `--force` for `cargo install`). To uninstall: `cargo uninstall neon-cli`.
+`rustup` has already put `~/.cargo/bin` on your `PATH`. To update: with a clone, `git pull` then run the command above again (with `--force` for `cargo install`); with the ZIP, download it again. To uninstall: `cargo uninstall neon-cli`.
 
 ### 4. How to play
 
@@ -64,8 +64,8 @@ In a real terminal the demo opens **full screen** (status bar, log, side panel).
 
 - At the start: *Enter* to continue, a handle, then `y` or `n` to confirm.
 - Commands: `help` lists what is possible; `status`, `scan`, `shop` (the stall) and `quit`.
-- Menus: type an entry's **number** or **name**; `0` or an empty line goes back (*Esc* in full screen).
-- Full screen: *TAB* completes a command, *Ctrl+D* or *Ctrl+C* quits.
+- Menus: type an entry's **number** (in the stall, `proxy`, `cloak` and `deck` work too); `0` or an empty line goes back (*Esc* in full screen).
+- Full screen: *TAB* completes a command, *Ctrl+D* or *Ctrl+C* ends the game, then one more key closes the interface.
 
 | Option | Effect |
 |---|---|
@@ -82,7 +82,7 @@ The full-screen interface needs at least **64×20** characters, and **100×28** 
 
 - `cargo: command not found`: close and reopen the terminal after installing Rust, or add `~/.cargo/bin` to your `PATH`.
 - `linker 'cc' not found` or `link.exe not found`: install the linker (step 1).
-- Frames or accents displayed wrongly: the terminal is not in UTF-8; try `--ascii`.
+- Frames or symbols displayed wrongly: try `--ascii`. Accents displayed wrongly: the terminal is not in UTF-8, to set in its preferences (for now `--ascii` keeps accented letters).
 - An error about the Rust version: run `rustup toolchain install` in the project folder.
 
 ## Development
