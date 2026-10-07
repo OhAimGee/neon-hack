@@ -65,7 +65,7 @@ neon-hack --demo
 Dans un vrai terminal, la démonstration s'ouvre en **plein écran** (barre d'état, journal, panneau latéral). Si l'entrée est redirigée, ou avec `--plain`, elle se joue **ligne par ligne**.
 
 - Au début : *Entrée* pour continuer, un pseudo, puis `o` ou `n` pour confirmer.
-- Commandes : `help` liste ce qui est possible ; `status`, `scan`, `shop` (la boutique) et `quit`.
+- Commandes : `help` liste ce qui est possible ; `status`, `scan`, `shop` (la boutique), `save` et `quit`. Des raccourcis existent (`h`, `st`, `buy`, `exit`) et la casse n'importe pas.
 - Menus : tapez le **numéro** d'une entrée (dans l'étal, `proxy`, `cloak` et `deck` marchent aussi) ; `0` ou une ligne vide revient en arrière (*Échap* en plein écran).
 - Sauvegarde : la partie est **sauvegardée automatiquement** et reprise au lancement suivant (`--new` pour recommencer) ; `save` ou `save 2` l'écrit dans un emplacement (1 à 9) ; entrer dans l'étal crée un **point de contrôle** (les 3 derniers sont gardés). `neon-hack --demo --list-saves` montre le dossier et ce qu'il contient.
 - Plein écran : *TAB* complète une commande, *Ctrl+D* ou *Ctrl+C* termine la partie, puis une touche ferme l'interface.

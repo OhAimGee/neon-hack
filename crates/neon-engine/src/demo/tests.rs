@@ -261,6 +261,78 @@ fn completion_only_offers_what_can_be_used_now() {
     );
 }
 
+// ---- Commands ------------------------------------------------------------------------------
+
+#[test]
+fn the_command_table_is_well_formed_and_every_command_has_a_handler_and_a_help_text() {
+    assert_eq!(COMMANDS.issues(), []);
+    for spec in COMMANDS.specs() {
+        let mut game = at_command_line(1);
+        let step = game.handle(line(spec.name));
+        assert!(
+            !error_keys(&step).contains(&"demo.unknown_command".to_owned()),
+            "`{}` is declared but not handled",
+            spec.name
+        );
+    }
+    for lang in Lang::ALL {
+        let catalog = catalog(lang);
+        for key in COMMANDS.help_keys() {
+            assert!(catalog.get(key).is_some(), "{lang:?}: `{key}` has no text");
+        }
+    }
+}
+
+#[test]
+fn the_help_screen_lists_exactly_the_commands_that_run() {
+    let mut game = at_command_line(1);
+    let step = game.handle(line("help"));
+    let Some(Event::Screen(table)) = step.events.first() else {
+        panic!("help is a screen: {:?}", step.events);
+    };
+    let listed: Vec<&Text> = table.rows.iter().map(|row| &row[0]).collect();
+    let declared: Vec<Text> = COMMANDS
+        .specs()
+        .iter()
+        .map(|spec| Text::raw(spec.name))
+        .collect();
+    assert_eq!(listed, declared.iter().collect::<Vec<_>>());
+}
+
+#[test]
+fn an_alias_runs_the_same_command_as_its_name() {
+    for (alias, name) in [
+        ("h", "help"),
+        ("st", "status"),
+        ("buy", "shop"),
+        ("exit", "quit"),
+    ] {
+        let (mut by_alias, mut by_name) = (at_command_line(4), at_command_line(4));
+        assert_eq!(
+            by_alias.handle(line(alias)),
+            by_name.handle(line(name)),
+            "{alias} is {name}"
+        );
+        assert_eq!(by_alias.prompt(), by_name.prompt());
+    }
+    // Case does not matter, and an alias counts as one action like its name.
+    let mut game = at_command_line(4);
+    assert!(matches!(game.handle(line("BUY")).prompt, Prompt::Choice(_)));
+    assert_eq!(game.snapshot().unwrap().matches("turn = 1").count(), 2);
+}
+
+#[test]
+fn completion_prefers_names_and_falls_back_to_aliases() {
+    let game = at_command_line(2);
+    assert_eq!(
+        game.complete("st"),
+        ["status"],
+        "the name wins over the alias `st`"
+    );
+    assert_eq!(game.complete("e"), ["exit"], "no name starts with e");
+    assert_eq!(game.complete("b"), ["buy"]);
+}
+
 // ---- Catalogs ----------------------------------------------------------------------------
 
 fn catalog(lang: Lang) -> Catalog {

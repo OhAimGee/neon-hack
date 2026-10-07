@@ -65,7 +65,7 @@ neon-hack --demo
 In a real terminal the demo opens **full screen** (status bar, log, side panel). If the input is redirected, or with `--plain`, it is played **line by line**.
 
 - At the start: *Enter* to continue, a handle, then `y` or `n` to confirm.
-- Commands: `help` lists what is possible; `status`, `scan`, `shop` (the stall) and `quit`.
+- Commands: `help` lists what is possible; `status`, `scan`, `shop` (the stall), `save` and `quit`. There are shortcuts (`h`, `st`, `buy`, `exit`) and case does not matter.
 - Menus: type an entry's **number** (in the stall, `proxy`, `cloak` and `deck` work too); `0` or an empty line goes back (*Esc* in full screen).
 - Saving: the game is **saved automatically** and resumed at the next launch (`--new` to start over); `save` or `save 2` writes it to a slot (1 to 9); entering the stall makes a **checkpoint** (the last 3 are kept). `neon-hack --demo --list-saves` shows the folder and what it holds.
 - Full screen: *TAB* completes a command, *Ctrl+D* or *Ctrl+C* ends the game, then one more key closes the interface.
