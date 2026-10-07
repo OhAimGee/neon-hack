@@ -14,4 +14,6 @@ Ces documents préparent la réécriture complète de Neon Hack en Rust (concept
 
 Les cinq premiers documents ont été écrits en parallèle par des agents indépendants le 7 octobre 2026, chacun avec un prototype jetable compilé sur `rustc 1.97.0`. Ces prototypes n'étaient pas dans le dépôt : les chemins `<scratchpad>` cités renvoient au dossier temporaire de la session. Les légendes `[E]` (exécuté), `[C]` (lu dans le code), `[D]` (connaissance non vérifiée), `[H]` (hypothèse) disent le degré de preuve de chaque affirmation.
 
-**Les documents se contredisent sur 19 points** (voir `CROSS-CHECK.md`) : en cas de conflit, la résolution retenue dans `CROSS-CHECK.md` prévaut jusqu'à la passe de consolidation (phase P1 de la feuille de route).
+**Règle de préséance** (`DECISIONS.md` § 4, R-0) : `DECISIONS.md` > `CROSS-CHECK.md` § 1 > les cinq dossiers. Les dossiers sont des **sources d'analyse non réécrites** : ils se contredisent sur 19 points, et les résolutions de `CROSS-CHECK.md` font foi. Elles s'appliquent dans le code, au lot qui touche chaque point.
+
+**Références au code C.** Les dossiers citent des fichiers du jeu en C (`src/…`, `tests/…`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`) : le C est supprimé du dépôt (table rase, `DECISIONS.md` P3) mais reste lisible dans l'historique, par exemple `git show 653bc46:src/game/world.c`. Les références `fichier:ligne` s'entendent dans ce commit. La version d'origine non refondue est le tag distant `legacy-v2.087`.

@@ -1,6 +1,6 @@
 # Cross-check des dossiers de conception
 
-Un agent critique indépendant a relu les cinq documents de `docs/design/` (et les rapports structurés de leurs auteurs), vérifié par exécution 15 de leurs affirmations, et cherché contradictions et trous. Ce fichier en est la synthèse. **Aucun des cinq documents n'a été corrigé** : les résolutions ci-dessous sont celles retenues pour la phase P1 de [`docs/ROADMAP-RUST.md`](../ROADMAP-RUST.md), où elles seront appliquées une fois les décisions du propriétaire tranchées ([`DECISIONS.md`](DECISIONS.md)).
+Un agent critique indépendant a relu les cinq documents de `docs/design/` (et les rapports structurés de leurs auteurs), vérifié par exécution 15 de leurs affirmations, et cherché contradictions et trous. Ce fichier en est la synthèse. **Les cinq documents ne sont pas réécrits** : les résolutions de la colonne de droite ci-dessous sont **normatives** (règle de préséance R-0 de [`DECISIONS.md`](DECISIONS.md) § 4) et s'appliquent dans le code, au lot qui touche chaque point ([`docs/ROADMAP-RUST.md`](../ROADMAP-RUST.md)). Les points qui exigeaient une décision du propriétaire (5, 6, 7, 15) sont tranchés par défaut en § 4 de `DECISIONS.md`.
 
 Verdict : les documents sont solides pris un par un (les prototypes compilent, les chiffres relus se confirment) mais **ne sont pas encore compatibles entre eux** sur 19 points, dont trois qui bloquent l'écriture du moteur (contrat moteur ↔ frontends, type de texte, schéma de contenu).
 
