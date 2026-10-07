@@ -211,7 +211,7 @@ fn check_parity(reference: &Catalog, other: &Catalog, issues: &mut Vec<Issue>) {
 /// Control characters (a text is one line), non-breaking and narrow spaces, the ellipsis
 /// character, and emoji: the terminals the game targets draw them unreliably.
 ///
-/// "Emoji" means the Emoji_Presentation characters outside the blocks below, the
+/// "Emoji" means the `Emoji_Presentation` characters outside the blocks below, the
 /// Miscellaneous Symbols and Dingbats blocks (U+2600 to U+27BF), the supplementary planes'
 /// pictographs (U+1F000 to U+1FAFF), the joiner and the emoji variation selector.
 fn is_forbidden(c: char) -> bool {
