@@ -27,7 +27,7 @@ fn echo7() -> ContactId {
 #[test]
 fn every_role_reads_as_text_without_colour() {
     let catalog = catalog_en();
-    let r = renderer(&catalog, RenderMode::Full, Verbosity::Normal);
+    let r = renderer(&catalog, RenderMode::FULL, Verbosity::Normal);
     let line = |event: Event| texts(&r.event(&event)).join("|");
     assert_eq!(line(Event::narration(Text::raw("rain"))), "rain");
     assert_eq!(line(Event::system(Text::raw("info"))), "info");
@@ -43,7 +43,7 @@ fn every_role_reads_as_text_without_colour() {
 #[test]
 fn roles_follow_the_language() {
     let catalog = catalog_fr();
-    let r = renderer(&catalog, RenderMode::Full, Verbosity::Normal);
+    let r = renderer(&catalog, RenderMode::FULL, Verbosity::Normal);
     let alert = r.event(&Event::alert(Severity::Warning, Text::raw("fuyez")));
     assert_eq!(texts(&alert), ["[ALERTE] fuyez"]);
     let reward = r.event(&Event::reward(Text::raw("+5")));
@@ -53,7 +53,7 @@ fn roles_follow_the_language() {
 #[test]
 fn dialogue_uses_a_plain_colon_for_screen_readers_and_ascii() {
     let catalog = catalog_en();
-    for mode in [RenderMode::ScreenReader, RenderMode::Ascii] {
+    for mode in [RenderMode::SCREEN_READER, RenderMode::ASCII] {
         let r = renderer(&catalog, mode, Verbosity::Normal);
         let lines = r.event(&Event::say(echo7(), Text::raw("hi")));
         assert_eq!(texts(&lines), ["ECHO-7: hi"], "{mode:?}");
@@ -63,7 +63,7 @@ fn dialogue_uses_a_plain_colon_for_screen_readers_and_ascii() {
 #[test]
 fn line_kinds_let_a_frontend_style_without_changing_the_text() {
     let catalog = catalog_en();
-    let r = renderer(&catalog, RenderMode::Full, Verbosity::Normal);
+    let r = renderer(&catalog, RenderMode::FULL, Verbosity::Normal);
     let kind = |event: Event| r.event(&event)[0].kind;
     assert_eq!(
         kind(Event::say(echo7(), Text::raw("x"))),
@@ -83,7 +83,7 @@ fn verbosity_filters_by_importance_but_never_hides_what_is_critical() {
     let flavor = Event::flavor(Text::raw("rain"));
     let normal = Event::narration(Text::raw("story"));
     let counts = |verbosity| {
-        let r = renderer(&catalog, RenderMode::Full, verbosity);
+        let r = renderer(&catalog, RenderMode::FULL, verbosity);
         (
             r.event(&flavor).len(),
             r.event(&normal).len(),
@@ -94,7 +94,7 @@ fn verbosity_filters_by_importance_but_never_hides_what_is_critical() {
     assert_eq!(counts(Verbosity::Normal), (0, 1, 1));
     assert_eq!(counts(Verbosity::Brief), (0, 0, 0));
 
-    let brief = renderer(&catalog, RenderMode::Full, Verbosity::Brief);
+    let brief = renderer(&catalog, RenderMode::FULL, Verbosity::Brief);
     for role in [Role::Alert(Severity::Notice), Role::Reward, Role::Error] {
         // Even an event filled in by hand with the lowest importance is still shown.
         let sneaky = Event::Message {
@@ -115,18 +115,18 @@ fn decor_is_art_then_alt_text_then_nothing() {
     };
     let lines =
         |mode, verbosity| texts(&renderer(&catalog, mode, verbosity).event(&decor)).join("|");
-    assert_eq!(lines(RenderMode::Full, Verbosity::Normal), "+--+||NH|");
-    assert_eq!(lines(RenderMode::Ascii, Verbosity::Normal), "NEON HACK");
-    assert_eq!(lines(RenderMode::ScreenReader, Verbosity::Normal), "");
+    assert_eq!(lines(RenderMode::FULL, Verbosity::Normal), "+--+||NH|");
+    assert_eq!(lines(RenderMode::ASCII, Verbosity::Normal), "NEON HACK");
+    assert_eq!(lines(RenderMode::SCREEN_READER, Verbosity::Normal), "");
     assert_eq!(
-        lines(RenderMode::ScreenReader, Verbosity::Full),
+        lines(RenderMode::SCREEN_READER, Verbosity::Full),
         "NEON HACK"
     );
     // Decoration is not essential: brief output drops it in every mode.
     for mode in [
-        RenderMode::Full,
-        RenderMode::Ascii,
-        RenderMode::ScreenReader,
+        RenderMode::FULL,
+        RenderMode::ASCII,
+        RenderMode::SCREEN_READER,
     ] {
         assert_eq!(lines(mode, Verbosity::Brief), "", "{mode:?}");
     }
@@ -135,7 +135,7 @@ fn decor_is_art_then_alt_text_then_nothing() {
 #[test]
 fn a_gauge_that_did_not_move_says_nothing() {
     let catalog = catalog_en();
-    let r = renderer(&catalog, RenderMode::Full, Verbosity::Normal);
+    let r = renderer(&catalog, RenderMode::FULL, Verbosity::Normal);
     let unmoved = Event::Changed {
         gauge: Gauge::Trace,
         from: 7,
@@ -162,7 +162,7 @@ fn help_screen() -> Event {
 #[test]
 fn a_screen_is_a_numbered_list_and_says_its_columns_for_screen_readers() {
     let catalog = catalog_en();
-    let full = renderer(&catalog, RenderMode::Full, Verbosity::Normal).event(&help_screen());
+    let full = renderer(&catalog, RenderMode::FULL, Verbosity::Normal).event(&help_screen());
     assert_eq!(
         texts(&full),
         [
@@ -171,7 +171,7 @@ fn a_screen_is_a_numbered_list_and_says_its_columns_for_screen_readers() {
             "[2] shop - Visit the stall"
         ]
     );
-    let sr = renderer(&catalog, RenderMode::ScreenReader, Verbosity::Normal).event(&help_screen());
+    let sr = renderer(&catalog, RenderMode::SCREEN_READER, Verbosity::Normal).event(&help_screen());
     assert_eq!(
         texts(&sr),
         [
@@ -181,7 +181,7 @@ fn a_screen_is_a_numbered_list_and_says_its_columns_for_screen_readers() {
         ]
     );
     let fr =
-        renderer(&catalog_fr(), RenderMode::ScreenReader, Verbosity::Normal).event(&help_screen());
+        renderer(&catalog_fr(), RenderMode::SCREEN_READER, Verbosity::Normal).event(&help_screen());
     assert_eq!(
         fr[1].text,
         "1. Commande : scan ; Effet : Scanner le réseau".replace(" ; ", "; ")
@@ -200,23 +200,23 @@ fn a_gauge_change_gives_numbers_and_the_level_in_words() {
     let say =
         |mode, event| texts(&renderer(&catalog, mode, Verbosity::Normal).event(&event)).join("");
     assert_eq!(
-        say(RenderMode::Full, changed(4, 14)),
+        say(RenderMode::FULL, changed(4, 14)),
         "Trace +10 (4 → 14, calm)."
     );
     assert_eq!(
-        say(RenderMode::Ascii, changed(4, 14)),
+        say(RenderMode::ASCII, changed(4, 14)),
         "Trace +10 (4 -> 14, calm)."
     );
     assert_eq!(
-        say(RenderMode::ScreenReader, changed(4, 14)),
+        say(RenderMode::SCREEN_READER, changed(4, 14)),
         "Trace up by 10, from 4 to 14, level calm."
     );
     assert_eq!(
-        say(RenderMode::Full, changed(14, 4)),
+        say(RenderMode::FULL, changed(14, 4)),
         "Trace -10 (14 → 4, calm)."
     );
     assert_eq!(
-        say(RenderMode::ScreenReader, changed(14, 4)),
+        say(RenderMode::SCREEN_READER, changed(14, 4)),
         "Trace down by 10, from 14 to 4, level calm."
     );
 }
@@ -243,7 +243,7 @@ fn menu() -> Prompt {
 #[test]
 fn prompts_show_what_is_expected_and_why_an_entry_is_unavailable() {
     let catalog = catalog_en();
-    let r = renderer(&catalog, RenderMode::Full, Verbosity::Normal);
+    let r = renderer(&catalog, RenderMode::FULL, Verbosity::Normal);
 
     assert_eq!(r.prompt(&Prompt::Command).marker, "> ");
     assert_eq!(r.prompt(&Prompt::End).marker, "");
@@ -275,7 +275,7 @@ fn prompts_show_what_is_expected_and_why_an_entry_is_unavailable() {
     assert_eq!(r.prompt(&confirm(true)).marker, "Leave the net? [Y/n] ");
     assert_eq!(r.prompt(&confirm(false)).marker, "Leave the net? [y/N] ");
 
-    let sr = renderer(&catalog, RenderMode::ScreenReader, Verbosity::Normal);
+    let sr = renderer(&catalog, RenderMode::SCREEN_READER, Verbosity::Normal);
     assert_eq!(
         texts(&sr.prompt(&menu()).header),
         [
@@ -316,9 +316,9 @@ fn a_full_session_never_renders_a_missing_key_in_any_language_mode_or_verbosity(
     let steps = session();
     for catalog in [catalog_en(), catalog_fr()] {
         for mode in [
-            RenderMode::Full,
-            RenderMode::ScreenReader,
-            RenderMode::Ascii,
+            RenderMode::FULL,
+            RenderMode::SCREEN_READER,
+            RenderMode::ASCII,
         ] {
             for verbosity in [Verbosity::Brief, Verbosity::Normal, Verbosity::Full] {
                 let r = renderer(&catalog, mode, verbosity);
@@ -348,7 +348,7 @@ fn a_full_session_never_renders_a_missing_key_in_any_language_mode_or_verbosity(
 fn ascii_mode_gives_ascii_only_text_in_both_languages_whatever_the_player_typed() {
     // The handle of `session()` has an accent, guillemets and a character with no equivalent.
     for catalog in [catalog_en(), catalog_fr()] {
-        let r = renderer(&catalog, RenderMode::Ascii, Verbosity::Full);
+        let r = renderer(&catalog, RenderMode::ASCII, Verbosity::Full);
         let mut greeted = false;
         for step in session() {
             let mut lines: Vec<Line> = step
@@ -366,4 +366,49 @@ fn ascii_mode_gives_ascii_only_text_in_both_languages_whatever_the_player_typed(
         }
         assert!(greeted, "the handle must be shown, transliterated");
     }
+}
+
+#[test]
+fn screen_reader_and_ascii_together_drop_decoration_number_lists_and_stay_ascii() {
+    let catalog = catalog_fr();
+    let together = RenderMode {
+        screen_reader: true,
+        ascii: true,
+    };
+    let normal = renderer(&catalog, together, Verbosity::Normal);
+    let full = renderer(&catalog, together, Verbosity::Full);
+    let banner = Event::Decor {
+        art: &["== N E O N =="],
+        alt: Text::new("demo.banner.alt"),
+    };
+    assert!(normal.event(&banner).is_empty(), "decoration is dropped");
+    assert_eq!(
+        full.event(&banner)[0].text,
+        "NEON HACK",
+        "its short text, at full verbosity"
+    );
+
+    let table = full.event(&help_screen());
+    assert!(table[1].text.starts_with("1. "), "{:?}", table[1].text);
+    for step in session() {
+        let lines: Vec<Line> = step
+            .events
+            .iter()
+            .flat_map(|event| full.event(event))
+            .collect();
+        for line in lines {
+            assert!(line.text.is_ascii(), "not ASCII: {:?}", line.text);
+        }
+    }
+    // The wording is the spoken one, not the symbols.
+    let changed = full.event(&Event::Changed {
+        gauge: Gauge::Trace,
+        from: 4,
+        to: 14,
+        band: Text::new("band.calm"),
+    });
+    assert_eq!(
+        changed[0].text,
+        "Trace en hausse de 10, de 4 a 14, niveau calme."
+    );
 }

@@ -379,13 +379,13 @@ fn every_text_of_a_session_renders_cleanly_in_every_language_and_mode() {
                 for lang in Lang::ALL {
                     let catalog = catalog(lang);
                     for mode in [
-                        RenderMode::Full,
-                        RenderMode::ScreenReader,
-                        RenderMode::Ascii,
+                        RenderMode::FULL,
+                        RenderMode::SCREEN_READER,
+                        RenderMode::ASCII,
                     ] {
                         let rendered = render(&text, &catalog, mode);
                         assert_clean(&rendered, &format!("{lang:?} {mode:?} {}", text.key));
-                        if mode == RenderMode::Ascii {
+                        if mode == RenderMode::ASCII {
                             assert!(rendered.is_ascii(), "{lang:?} {}: {rendered}", text.key);
                         }
                     }
@@ -401,7 +401,7 @@ fn a_scan_reads_correctly_with_one_port_and_with_several() {
         render(
             &Text::new("demo.scan.found").with_int("found", found),
             &catalog(lang),
-            RenderMode::Full,
+            RenderMode::FULL,
         )
     };
     assert_eq!(lines(Lang::En, 1), "The scan finds 1 open port.");

@@ -81,7 +81,7 @@ impl Renderer<'_> {
     /// Text that is not in the catalogs, such as what the player typed. In ASCII mode it is
     /// transliterated like everything else, so the output stays 7-bit.
     pub(crate) fn verbatim(&self, text: &str) -> String {
-        if self.mode == RenderMode::Ascii {
+        if self.mode.ascii {
             to_ascii(text)
         } else {
             text.to_owned()
@@ -135,17 +135,20 @@ impl Renderer<'_> {
     }
 
     fn decor(&self, art: &[&str], alt: &Text) -> Vec<Line> {
-        match self.mode {
-            RenderMode::Full => art
-                .iter()
-                .map(|row| Line::new(LineKind::Decor, (*row).to_owned()))
-                .collect(),
-            RenderMode::Ascii => vec![Line::new(LineKind::Decor, self.text(alt))],
+        let short = || vec![Line::new(LineKind::Decor, self.text(alt))];
+        if self.mode.screen_reader {
             // Pure decoration is dropped for screen readers; its short text only at full verbosity.
-            RenderMode::ScreenReader if self.verbosity == Verbosity::Full => {
-                vec![Line::new(LineKind::Decor, self.text(alt))]
+            if self.verbosity == Verbosity::Full {
+                short()
+            } else {
+                Vec::new()
             }
-            RenderMode::ScreenReader => Vec::new(),
+        } else if self.mode.ascii {
+            short()
+        } else {
+            art.iter()
+                .map(|row| Line::new(LineKind::Decor, (*row).to_owned()))
+                .collect()
         }
     }
 
@@ -153,7 +156,7 @@ impl Renderer<'_> {
         let mut lines = vec![Line::new(LineKind::Table, self.text(&table.title))];
         for (index, row) in table.rows.iter().enumerate() {
             let number = index + 1;
-            let text = if self.mode == RenderMode::ScreenReader {
+            let text = if self.mode.screen_reader {
                 let cells: Vec<String> = table
                     .columns
                     .iter()
@@ -253,7 +256,7 @@ impl Renderer<'_> {
 
     fn choice_lines(&self, choice: &Choice) -> Vec<Line> {
         let numbered = |number: usize, label: &str| {
-            if self.mode == RenderMode::ScreenReader {
+            if self.mode.screen_reader {
                 format!("{number}. {label}")
             } else {
                 format!("[{number}] {label}")

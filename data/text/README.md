@@ -24,7 +24,7 @@ Une clé peut avoir des variantes, que le mode d'affichage préfère au texte de
 - `"clé@sr"` : formulation pour lecteur d'écran, sans symbole à épeler (`→` devient « de 4 à 14 ») ;
 - `"clé@ascii"` : formulation pour `--ascii` quand la simple translittération ne suffit pas (`»` devient `:`).
 
-Une variante porte **les mêmes marqueurs** que sa clé de base. Un texte qui utilise un symbole mal lu par les lecteurs d'écran (`→ ← ↔ ¢ × · • ≤ ≥`) doit avoir sa variante `@sr`. Les noms de variante s'écrivent entre guillemets en TOML (`"say@sr" = …`).
+Les deux modes se combinent (`--screen-reader --ascii`) : la variante `@sr` passe d'abord, puis `@ascii`, puis le texte de base, et le résultat est translittéré. Une variante porte **les mêmes marqueurs** que sa clé de base. Un texte qui utilise un symbole mal lu par les lecteurs d'écran (`→ ← ↔ ¢ × · • ≤ ≥`) doit avoir sa variante `@sr`. Les noms de variante s'écrivent entre guillemets en TOML (`"say@sr" = …`).
 
 ## Règles de contenu
 

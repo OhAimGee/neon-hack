@@ -210,12 +210,23 @@ fn check_parity(reference: &Catalog, other: &Catalog, issues: &mut Vec<Issue>) {
 
 /// Control characters (a text is one line), non-breaking and narrow spaces, the ellipsis
 /// character, and emoji: the terminals the game targets draw them unreliably.
+///
+/// "Emoji" means the Emoji_Presentation characters outside the blocks below, the
+/// Miscellaneous Symbols and Dingbats blocks (U+2600 to U+27BF), the supplementary planes'
+/// pictographs (U+1F000 to U+1FAFF), the joiner and the emoji variation selector.
 fn is_forbidden(c: char) -> bool {
     c.is_control()
         || matches!(
             c,
             '\u{00A0}' | '\u{202F}' | '\u{2026}' | '\u{200D}' | '\u{FE0F}'
+                | '\u{231A}'..='\u{231B}'
+                | '\u{23E9}'..='\u{23EC}'
+                | '\u{23F0}' | '\u{23F3}'
+                | '\u{25FD}'..='\u{25FE}'
                 | '\u{2600}'..='\u{27BF}'
+                | '\u{2B1B}'..='\u{2B1C}'
+                | '\u{2B50}' | '\u{2B55}'
+                | '\u{3030}' | '\u{303D}' | '\u{3297}' | '\u{3299}'
                 | '\u{1F000}'..='\u{1FAFF}'
         )
 }
@@ -312,6 +323,20 @@ mod tests {
                 symbol: '→',
             }]
         );
+    }
+
+    #[test]
+    fn emoji_are_forbidden_but_the_symbols_the_game_uses_are_not() {
+        for emoji in [
+            '⌚', '⏩', '⏰', '⏳', '◽', '⬛', '⭐', '⭕', '✅', '☀', '❤', '🙂', '🧠', '\u{FE0F}',
+        ] {
+            assert!(is_forbidden(emoji), "U+{:04X}", u32::from(emoji));
+        }
+        for fine in [
+            '→', '←', '«', '»', 'é', 'œ', '·', '×', '¢', '€', '-', '#', '█', '░',
+        ] {
+            assert!(!is_forbidden(fine), "U+{:04X}", u32::from(fine));
+        }
     }
 
     #[test]

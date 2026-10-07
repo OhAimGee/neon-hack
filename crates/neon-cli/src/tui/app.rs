@@ -207,11 +207,7 @@ impl<'a> App<'a> {
     }
 
     fn status_line(&self, view: &View) -> String {
-        let separator = if self.renderer.mode == RenderMode::Ascii {
-            "|"
-        } else {
-            "│"
-        };
+        let separator = if self.renderer.mode.ascii { "|" } else { "│" };
         let mut parts = vec![format!(" {}", self.renderer.verbatim(&view.player))];
         parts.extend(
             view.gauges
@@ -259,7 +255,7 @@ impl<'a> App<'a> {
         }
         let block = Block::default().borders(Borders::LEFT);
         // Box-drawing characters are not ASCII: outside the full mode the border is a plain `|`.
-        let block = if self.renderer.mode == RenderMode::Full {
+        let block = if self.renderer.mode == RenderMode::FULL {
             block
         } else {
             block.border_set(border::Set {
@@ -272,7 +268,7 @@ impl<'a> App<'a> {
     }
 
     fn bar(&self, value: i32, max: i32) -> String {
-        let (filled_char, empty_char) = if self.renderer.mode == RenderMode::Full {
+        let (filled_char, empty_char) = if self.renderer.mode == RenderMode::FULL {
             ('█', '░')
         } else {
             ('#', '.')

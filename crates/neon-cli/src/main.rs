@@ -113,12 +113,10 @@ fn run_demo(cli: &Cli) -> io::Result<()> {
     // The catalogs are checked by the tests, so this only fails on a broken build.
     let catalog = Catalog::embedded(cli.lang.into())
         .map_err(|errors| io::Error::other(format!("the texts do not load:\n{errors}")))?;
-    let mode = if cli.screen_reader {
-        RenderMode::ScreenReader
-    } else if cli.ascii {
-        RenderMode::Ascii
-    } else {
-        RenderMode::Full
+    // The two are independent and can be combined.
+    let mode = RenderMode {
+        screen_reader: cli.screen_reader,
+        ascii: cli.ascii,
     };
     let renderer = Renderer {
         catalog: &catalog,

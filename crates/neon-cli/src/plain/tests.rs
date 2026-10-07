@@ -30,7 +30,7 @@ fn play(catalog: &Catalog, mode: RenderMode, seed: u64, input: &[u8], echo_input
 }
 
 fn english(input: &[u8]) -> String {
-    play(&catalog_en(), RenderMode::Full, 1, input, true)
+    play(&catalog_en(), RenderMode::FULL, 1, input, true)
 }
 
 #[test]
@@ -77,7 +77,7 @@ fn echo_is_for_pipes_only() {
     assert!(piped.contains("> status\n"));
     let terminal = play(
         &catalog_en(),
-        RenderMode::Full,
+        RenderMode::FULL,
         1,
         b"\nNeon\ny\nstatus\nquit\ny\n",
         false,
@@ -128,7 +128,7 @@ fn invalid_utf8_does_not_end_the_game() {
 #[test]
 fn the_same_seed_gives_the_same_bytes() {
     let script = b"\nNeon\ny\nscan\nscan\nscan\nquit\ny\n";
-    let run_seed = |seed| play(&catalog_en(), RenderMode::Full, seed, script, true);
+    let run_seed = |seed| play(&catalog_en(), RenderMode::FULL, seed, script, true);
     assert_eq!(run_seed(5), run_seed(5));
     assert_ne!(run_seed(5), run_seed(6));
 }
@@ -136,10 +136,10 @@ fn the_same_seed_gives_the_same_bytes() {
 #[test]
 fn french_and_screen_reader_modes_change_the_words_not_the_structure() {
     let script = b"\nNeon\ny\nscan\nquit\nn\nquit\ny\n";
-    let french = play(&catalog_fr(), RenderMode::Full, 1, script, true);
+    let french = play(&catalog_fr(), RenderMode::FULL, 1, script, true);
     assert!(french.contains("[Gain] +"));
     assert!(french.contains("Quitter le réseau ? [o/N] "));
-    let reader = play(&catalog_en(), RenderMode::ScreenReader, 1, script, true);
+    let reader = play(&catalog_en(), RenderMode::SCREEN_READER, 1, script, true);
     assert!(reader.contains("Trace up by "), "{reader}");
     assert!(reader.contains("ECHO-7: Finally"));
     assert!(
@@ -182,7 +182,7 @@ fn an_engine_that_will_not_end_cannot_trap_the_frontend_in_a_loop() {
     let catalog = catalog_en();
     let renderer = Renderer {
         catalog: &catalog,
-        mode: RenderMode::Full,
+        mode: RenderMode::FULL,
         verbosity: Verbosity::Normal,
     };
     let mut game = Stubborn;
@@ -204,7 +204,7 @@ fn a_frontend_attached_to_a_game_under_way_continues_without_replaying_the_start
     let catalog = catalog_en();
     let renderer = Renderer {
         catalog: &catalog,
-        mode: RenderMode::Full,
+        mode: RenderMode::FULL,
         verbosity: Verbosity::Full,
     };
     // Play the prologue elsewhere (another frontend, or a load), then attach this one.
@@ -242,11 +242,11 @@ fn a_frontend_attached_to_a_game_under_way_continues_without_replaying_the_start
 #[test]
 fn ascii_mode_keeps_the_echo_of_typed_lines_seven_bit_too() {
     let script = "\nZoë\no\nscan\nquit\no\n".as_bytes();
-    let ascii = play(&catalog_fr(), RenderMode::Ascii, 1, script, true);
+    let ascii = play(&catalog_fr(), RenderMode::ASCII, 1, script, true);
     assert!(ascii.is_ascii(), "{ascii}");
     assert!(ascii.contains("Votre pseudo [Case] : Zoe\n"), "{ascii}");
     assert!(ascii.contains("> scan\n"));
     // The same session keeps its accents everywhere else.
-    let full = play(&catalog_fr(), RenderMode::Full, 1, script, true);
+    let full = play(&catalog_fr(), RenderMode::FULL, 1, script, true);
     assert!(full.contains("Votre pseudo [Case] : Zoë\n"), "{full}");
 }

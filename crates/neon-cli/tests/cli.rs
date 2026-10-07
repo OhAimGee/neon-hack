@@ -194,3 +194,32 @@ fn plurals_follow_the_language_in_a_real_session() {
     }
     assert!(found_one_port, "some seed finds exactly one port");
 }
+
+#[test]
+fn screen_reader_and_ascii_can_be_asked_together() {
+    let script = "\nZoë\no\nscan\nshop\n0\nquit\no\n";
+    let output = run_with_input(
+        &[
+            "--demo",
+            "--screen-reader",
+            "--ascii",
+            "--lang",
+            "fr",
+            "--seed",
+            "1",
+        ],
+        script,
+    );
+    assert!(output.status.success());
+    let text = stdout(&output);
+    assert!(text.is_ascii(), "{text}");
+    assert!(
+        text.contains("Trace en hausse de "),
+        "the spoken wording:\n{text}"
+    );
+    assert!(
+        text.contains("\n1. Chaine de proxys (30 credits)\n"),
+        "{text}"
+    );
+    assert!(!text.contains("N E O N"), "no decoration:\n{text}");
+}

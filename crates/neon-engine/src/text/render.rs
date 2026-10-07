@@ -5,28 +5,40 @@ use super::catalog::Catalog;
 use super::template::{Part, Template};
 use super::{Arg, Text};
 
-/// How a text is rendered. The mode selects a variant of a key.
+/// How a text is rendered: two independent choices, which can be combined (a screen-reader
+/// user on a terminal that only does ASCII).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum RenderMode {
-    /// Everything: accents, symbols, decoration.
-    #[default]
-    Full,
-    /// Screen-reader wording: no symbols to spell out (`key@sr`).
-    ScreenReader,
+pub struct RenderMode {
+    /// Screen-reader wording: no symbols to spell out (`key@sr`). Accents are kept.
+    pub screen_reader: bool,
     /// 7-bit ASCII: the `key@ascii` variants, then transliteration of the whole line
     /// (accents, typographic symbols, and text typed by the player).
-    Ascii,
+    pub ascii: bool,
 }
 
 impl RenderMode {
-    /// Suffix of the key variant tried before the base key.
-    #[must_use]
-    pub fn suffix(self) -> Option<&'static str> {
-        match self {
-            Self::Full => None,
-            Self::ScreenReader => Some("@sr"),
-            Self::Ascii => Some("@ascii"),
-        }
+    /// Everything: accents, symbols, decoration.
+    pub const FULL: Self = Self {
+        screen_reader: false,
+        ascii: false,
+    };
+    /// Screen-reader wording.
+    pub const SCREEN_READER: Self = Self {
+        screen_reader: true,
+        ascii: false,
+    };
+    /// 7-bit ASCII.
+    pub const ASCII: Self = Self {
+        screen_reader: false,
+        ascii: true,
+    };
+
+    /// Suffixes of the key variants tried, in this order, before the base key.
+    pub fn suffixes(self) -> impl Iterator<Item = &'static str> {
+        self.screen_reader
+            .then_some("@sr")
+            .into_iter()
+            .chain(self.ascii.then_some("@ascii"))
     }
 }
 
@@ -34,12 +46,12 @@ impl RenderMode {
 /// the template asks for but the text lacks as `<?name>`, so a problem is visible, and
 /// tests can assert that neither ever happens.
 ///
-/// In [`RenderMode::Ascii`] the result is transliterated here, once, so that everything a
+/// When the mode is ASCII the result is transliterated here, once, so that everything a
 /// frontend lays out is the text that is really displayed.
 #[must_use]
 pub fn render(text: &Text, catalog: &Catalog, mode: RenderMode) -> String {
     let rendered = render_inner(text, catalog, mode);
-    if mode == RenderMode::Ascii {
+    if mode.ascii {
         to_ascii(&rendered)
     } else {
         rendered
@@ -48,8 +60,8 @@ pub fn render(text: &Text, catalog: &Catalog, mode: RenderMode) -> String {
 
 fn render_inner(text: &Text, catalog: &Catalog, mode: RenderMode) -> String {
     let template = mode
-        .suffix()
-        .and_then(|suffix| catalog.get(&format!("{}{suffix}", text.key)))
+        .suffixes()
+        .find_map(|suffix| catalog.get(&format!("{}{suffix}", text.key)))
         .or_else(|| catalog.get(&text.key));
     let Some(template) = template else {
         return format!("<missing:{}>", text.key);
@@ -151,7 +163,7 @@ mod tests {
     }
 
     fn full(text: &Text) -> String {
-        render(text, &english(), RenderMode::Full)
+        render(text, &english(), RenderMode::FULL)
     }
 
     #[test]
@@ -189,7 +201,7 @@ mod tests {
             render(
                 &Text::new("credits").with_int("n", n),
                 &french,
-                RenderMode::Full,
+                RenderMode::FULL,
             )
         };
         assert_eq!(fr(0), "0 crédit", "zero is singular in French");
@@ -202,15 +214,15 @@ mod tests {
         let catalog = english();
         let text = Text::new("hello").with_str("name", "Case").with_int("n", 5);
         assert_eq!(
-            render(&text, &catalog, RenderMode::ScreenReader),
+            render(&text, &catalog, RenderMode::SCREEN_READER),
             "Hello Case. You have 5 credits."
         );
         assert_eq!(
-            render(&text, &catalog, RenderMode::Ascii),
+            render(&text, &catalog, RenderMode::ASCII),
             "Hello Case - 5 credits."
         );
         let plain = Text::new("plain");
-        for mode in [RenderMode::ScreenReader, RenderMode::Ascii] {
+        for mode in [RenderMode::SCREEN_READER, RenderMode::ASCII] {
             assert_eq!(render(&plain, &catalog, mode), "No placeholder.");
         }
     }
@@ -219,18 +231,49 @@ mod tests {
     fn ascii_mode_transliterates_the_whole_line_including_what_the_player_typed() {
         let catalog = english();
         let accents = Text::new("accents");
-        assert_eq!(render(&accents, &catalog, RenderMode::Full), "Café → ok");
-        assert_eq!(render(&accents, &catalog, RenderMode::Ascii), "Cafe -> ok");
+        assert_eq!(render(&accents, &catalog, RenderMode::FULL), "Café → ok");
+        assert_eq!(render(&accents, &catalog, RenderMode::ASCII), "Cafe -> ok");
         let typed = Text::new("outer").with_text("item", Text::raw("Zoë « 影 »"));
         assert_eq!(
-            render(&typed, &catalog, RenderMode::Ascii),
+            render(&typed, &catalog, RenderMode::ASCII),
             "Bought Zoe \" ? \"."
         );
         assert_eq!(
-            render(&typed, &catalog, RenderMode::ScreenReader),
+            render(&typed, &catalog, RenderMode::SCREEN_READER),
             "Bought Zoë « 影 ».",
             "only --ascii changes the characters"
         );
+    }
+
+    #[test]
+    fn screen_reader_and_ascii_combine_with_the_spoken_wording_first() {
+        let catalog = catalog(
+            Lang::En,
+            r#"
+            both = "Base é → x"
+            "both@sr" = "Spoken é to x"
+            "both@ascii" = "Plain é -> x"
+            only_ascii = "Base é"
+            "only_ascii@ascii" = "Plain é"
+            only_base = "Base é →"
+            "#,
+        );
+        let combined = RenderMode {
+            screen_reader: true,
+            ascii: true,
+        };
+        let text = |key| render(&Text::new(key), &catalog, combined);
+        assert_eq!(text("both"), "Spoken e to x", "@sr wins, then it is ASCII");
+        assert_eq!(text("only_ascii"), "Plain e", "no @sr: the @ascii variant");
+        assert_eq!(
+            text("only_base"),
+            "Base e ->",
+            "no variant: the base, transliterated"
+        );
+        let single = |mode| render(&Text::new("both"), &catalog, mode);
+        assert_eq!(single(RenderMode::SCREEN_READER), "Spoken é to x");
+        assert_eq!(single(RenderMode::ASCII), "Plain e -> x");
+        assert_eq!(single(RenderMode::FULL), "Base é → x");
     }
 
     #[test]

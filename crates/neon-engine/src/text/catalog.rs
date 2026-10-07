@@ -157,13 +157,8 @@ impl Catalog {
             let mut flat = Vec::new();
             flatten(&table, "", &mut flat);
             for (key, value) in flat {
-                let toml::Value::String(source) = value else {
-                    errors.push(LoadError::NotText {
-                        file: (*file).to_owned(),
-                        key,
-                    });
-                    continue;
-                };
+                // The first definition owns the key even when it is itself broken, so a
+                // duplicate is reported in the same pass as that problem.
                 if let Some(first) = origins.get(&key) {
                     errors.push(LoadError::Duplicate {
                         file: (*file).to_owned(),
@@ -172,9 +167,16 @@ impl Catalog {
                     });
                     continue;
                 }
+                origins.insert(key.clone(), (*file).to_owned());
+                let toml::Value::String(source) = value else {
+                    errors.push(LoadError::NotText {
+                        file: (*file).to_owned(),
+                        key,
+                    });
+                    continue;
+                };
                 match Template::parse(&source) {
                     Ok(template) => {
-                        origins.insert(key.clone(), (*file).to_owned());
                         entries.insert(key, template);
                     }
                     Err(error) => errors.push(LoadError::Template {
@@ -287,13 +289,16 @@ mod tests {
             Lang::En,
             &[
                 ("a.toml", "good = \"ok\"\nbroken = \"{name\"\ncount = 3\n"),
-                ("b.toml", "good = \"again\"\nlist = [\"x\"]\n"),
+                (
+                    "b.toml",
+                    "broken = \"fine\"\ngood = \"again\"\nlist = [\"x\"]\n",
+                ),
                 ("c.toml", "not toml at all ==="),
             ],
         )
         .unwrap_err()
         .0;
-        assert_eq!(errors.len(), 5, "{errors:#?}");
+        assert_eq!(errors.len(), 6, "{errors:#?}");
         assert!(errors.contains(&LoadError::Template {
             file: "a.toml".into(),
             key: "broken".into(),
@@ -312,7 +317,15 @@ mod tests {
             file: "b.toml".into(),
             key: "list".into(),
         }));
-        assert!(matches!(&errors[4], LoadError::Syntax { file, .. } if file == "c.toml"));
+        assert!(
+            errors.contains(&LoadError::Duplicate {
+                file: "b.toml".into(),
+                key: "broken".into(),
+                first: "a.toml".into(),
+            }),
+            "a duplicate of a broken text is reported in the same pass"
+        );
+        assert!(matches!(&errors[5], LoadError::Syntax { file, .. } if file == "c.toml"));
         let shown = LoadErrors(errors).to_string();
         assert!(
             shown.contains("a.toml: `broken`: a `{` is never closed"),
