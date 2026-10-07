@@ -5,12 +5,16 @@
 
 use serde::{Deserialize, Serialize};
 
+use crate::save::hex_u64;
+
 const MULTIPLIER: u64 = 6_364_136_223_846_793_005;
 
 /// PCG32 random number generator.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Pcg32 {
+    #[serde(with = "hex_u64")]
     state: u64,
+    #[serde(with = "hex_u64")]
     inc: u64,
 }
 
@@ -27,6 +31,13 @@ impl Pcg32 {
         rng.state = rng.state.wrapping_add(seed);
         rng.next_u32();
         rng
+    }
+
+    /// False for a generator that [`Pcg32::new`] could never have made: the increment of a
+    /// PCG generator is always odd. Used to validate a loaded state.
+    #[must_use]
+    pub fn is_valid(&self) -> bool {
+        self.inc & 1 == 1
     }
 
     /// Returns the next 32 random bits.

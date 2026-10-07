@@ -18,7 +18,8 @@ RPG textuel cyberpunk pour le terminal. Vous êtes un hacker novice à Neo-Tokyo
 | Phase R0 : squelette Cargo, CI sur trois systèmes | fait |
 | Phase R1.1 : contrat moteur ↔ frontends, deux interfaces (plain et plein écran), jeu de démonstration | fait |
 | Phase R1.2 : textes en TOML embarqués, pluriels, `--ascii` strictement 7 bits, contrôles de parité FR/EN | fait |
-| Phases R1.3 à R1.5 : sauvegarde, commandes et réglages, jeu jouet complet | **prochaine étape** |
+| Phase R1.3 : sauvegarde (autosave, points de contrôle, emplacements, copie de secours, versions de format) | fait |
+| Phases R1.4 et R1.5 : commandes et réglages, jeu jouet complet | **prochaine étape** |
 | Moteur de jeu, TUI, campagne | à venir |
 
 ## Jouer en local
@@ -66,6 +67,7 @@ Dans un vrai terminal, la démonstration s'ouvre en **plein écran** (barre d'é
 - Au début : *Entrée* pour continuer, un pseudo, puis `o` ou `n` pour confirmer.
 - Commandes : `help` liste ce qui est possible ; `status`, `scan`, `shop` (la boutique) et `quit`.
 - Menus : tapez le **numéro** d'une entrée (dans l'étal, `proxy`, `cloak` et `deck` marchent aussi) ; `0` ou une ligne vide revient en arrière (*Échap* en plein écran).
+- Sauvegarde : la partie est **sauvegardée automatiquement** et reprise au lancement suivant (`--new` pour recommencer) ; `save` ou `save 2` l'écrit dans un emplacement (1 à 9) ; entrer dans l'étal crée un **point de contrôle** (les 3 derniers sont gardés). `neon-hack --demo --list-saves` montre le dossier et ce qu'il contient.
 - Plein écran : *TAB* complète une commande, *Ctrl+D* ou *Ctrl+C* termine la partie, puis une touche ferme l'interface.
 
 | Option | Effet |
@@ -75,9 +77,16 @@ Dans un vrai terminal, la démonstration s'ouvre en **plein écran** (barre d'é
 | `--ascii` | ASCII 7 bits : symboles, accents et texte tapé translittérés, sans décoration |
 | `--lang fr` / `--lang en` | langue des textes (anglais par défaut) |
 | `--verbosity brief\|normal\|full` | quantité d'ambiance affichée |
-| `--seed 7` | partie reproductible |
+| `--seed 7` | partie reproductible (pour une nouvelle partie) |
+| `--new` | recommence au lieu de reprendre la sauvegarde automatique (l'ancienne devient `auto.toml.bak`) |
+| `--load auto\|checkpoint-1\|slot-2` | reprend cette sauvegarde (`checkpoint-1` à `checkpoint-3`, `slot-1` à `slot-9`) |
+| `--list-saves` | liste les sauvegardes et le dossier où elles sont |
+| `--no-save` | joue sans rien écrire |
+| `--data-dir DIR` | dossier des sauvegardes, à la place de celui du système |
 
 L'interface plein écran demande au moins **64×20** caractères, et **100×28** pour afficher le panneau latéral ; en dessous, un message le dit : agrandissez la fenêtre ou utilisez `--plain`.
+
+Les sauvegardes sont dans le dossier de données de l'utilisateur, sous-dossier `saves` : `~/.local/share/neon-hack` sous Linux, `~/Library/Application Support/neon-hack` sous macOS, `%APPDATA%\neon-hack\data` sous Windows. Une sauvegarde abîmée n'est jamais écrasée : le jeu reprend la copie précédente (`.bak`) et le dit, ou explique comment recommencer.
 
 ### En cas de problème
 

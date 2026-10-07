@@ -26,6 +26,7 @@ status = "Show your situation"
 scan = "Scan the network"
 shop = "Visit the stall"
 quit = "Leave the net"
+save = "Save the game (save 1 to 9)"
 
 [demo.status]
 name = "Handle: {name}"
@@ -69,3 +70,6 @@ unknown_command = "Unknown command: {command}"
 
 [demo.objective]
 trace = "Keep your trace under {limit}."
+
+[demo.save]
+bad_slot = "Slots go from 1 to {max}."

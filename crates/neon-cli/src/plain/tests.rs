@@ -5,6 +5,7 @@ use neon_engine::text::{Catalog, RenderMode};
 use neon_engine::{Game, Input, Prompt, Step, View};
 
 use super::*;
+use crate::persist::Persistence;
 use crate::render::Verbosity;
 use crate::test_support::{catalog_en, catalog_fr};
 
@@ -24,6 +25,7 @@ fn play(catalog: &Catalog, mode: RenderMode, seed: u64, input: &[u8], echo_input
         &mut Cursor::new(input),
         &mut out,
         echo_input,
+        &mut Persistence::disabled(),
     )
     .unwrap();
     String::from_utf8(out).unwrap()
@@ -50,9 +52,10 @@ ECHO-7 » Type 'help' to see what you can do.
 Commands
 [1] help - List the commands
 [2] quit - Leave the net
-[3] scan - Scan the network
-[4] shop - Visit the stall
-[5] status - Show your situation
+[3] save - Save the game (save 1 to 9)
+[4] scan - Scan the network
+[5] shop - Visit the stall
+[6] status - Show your situation
 > quit
 Leave the net? [y/N] y
 Goodbye, Neon.
@@ -159,11 +162,14 @@ impl Game for Stubborn {
         Step {
             events: Vec::new(),
             prompt: Prompt::Command,
-            save_requested: false,
+            save: None,
         }
     }
     fn prompt(&self) -> Prompt {
         Prompt::Command
+    }
+    fn snapshot(&self) -> Result<String, neon_engine::save::SaveError> {
+        Ok(String::new())
     }
     fn view(&self) -> View {
         View {
@@ -194,6 +200,7 @@ fn an_engine_that_will_not_end_cannot_trap_the_frontend_in_a_loop() {
         &mut Cursor::new(&b"one\ntwo\n"[..]),
         &mut Vec::new(),
         true,
+        &mut Persistence::disabled(),
     )
     .unwrap_err();
     assert_eq!(error.kind(), io::ErrorKind::UnexpectedEof);
@@ -226,6 +233,7 @@ fn a_frontend_attached_to_a_game_under_way_continues_without_replaying_the_start
         &mut Cursor::new(&b"status\nquit\ny\n"[..]),
         &mut out,
         true,
+        &mut Persistence::disabled(),
     )
     .unwrap();
     let output = String::from_utf8(out).unwrap();
@@ -249,4 +257,41 @@ fn ascii_mode_keeps_the_echo_of_typed_lines_seven_bit_too() {
     // The same session keeps its accents everywhere else.
     let full = play(&catalog_fr(), RenderMode::FULL, 1, script, true);
     assert!(full.contains("Votre pseudo [Case] : Zoë\n"), "{full}");
+}
+
+#[test]
+fn saves_are_written_as_the_game_goes_and_manual_ones_are_acknowledged() {
+    let dir = tempfile::tempdir().unwrap();
+    let saves = dir.path().join("saves");
+    let renderer = Renderer {
+        catalog: &catalog_en(),
+        mode: RenderMode::FULL,
+        verbosity: Verbosity::Normal,
+    };
+    let mut persistence = Persistence::new(crate::store::Store::new(saves.clone()));
+    let mut game = DemoGame::new(7);
+    let first = game.start();
+    let mut out = Vec::new();
+    run(
+        &mut game,
+        first,
+        &renderer,
+        &mut Cursor::new(&b"\nNeon\ny\nscan\nsave 2\nsave 12\nshop\n0\nquit\ny\n"[..]),
+        &mut out,
+        true,
+        &mut persistence,
+    )
+    .unwrap();
+    let output = String::from_utf8(out).unwrap();
+    assert!(output.contains("Game saved in slot 2.\n"), "{output}");
+    assert!(output.contains("Slots go from 1 to 9."), "{output}");
+    for file in ["auto.toml", "slot-2.toml", "checkpoint-1.toml"] {
+        assert!(saves.join(file).exists(), "{file} is missing");
+    }
+    // The autosave of the last action (quitting) holds the game at the command line.
+    let text = std::fs::read_to_string(saves.join("auto.toml")).unwrap();
+    assert_eq!(
+        DemoGame::from_save(&text).unwrap().prompt(),
+        Prompt::Command
+    );
 }

@@ -1,0 +1,22 @@
+version = 1
+
+[meta]
+player = "Neon"
+turn = 3
+
+[state]
+name = "Neon"
+trace = 30
+credits = 36
+turn = 3
+owned = ["proxy"]
+
+[state.rng]
+state = "0998be29feaac1cf"
+inc = "000000000000006d"
+
+[[state.flows]]
+kind = "shop"
+
+[end]
+ok = true

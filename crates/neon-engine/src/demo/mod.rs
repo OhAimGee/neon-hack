@@ -4,11 +4,14 @@
 //! stall), alerts, rewards, a gauge and a clean end. It is not the real game: it exists so
 //! that both frontends and the tests talk to a real engine while the real one is designed.
 
+use serde::{Deserialize, Serialize};
+
 use crate::event::{Event, Gauge, Severity, Table};
 use crate::game::{Game, GaugeReading, View};
 use crate::ids::ContactId;
 use crate::prompt::{Choice, ChoiceOption, Input, Prompt, Resolution, Step};
 use crate::rng::Pcg32;
+use crate::save::{self, SLOT_COUNT, SaveError, SaveMeta, SaveRequest, SaveState};
 use crate::text::Text;
 
 const DEFAULT_NAME: &str = "Case";
@@ -17,7 +20,8 @@ const TRACE_MAX: i32 = 100;
 const TRACE_TENSE: i32 = 30;
 const TRACE_CRITICAL: i32 = 70;
 const STARTING_CREDITS: i32 = 50;
-const COMMANDS: [&str; 5] = ["help", "quit", "scan", "shop", "status"];
+const MAX_CREDITS: i32 = 1_000_000;
+const COMMANDS: [&str; 6] = ["help", "quit", "save", "scan", "shop", "status"];
 const BANNER: &[&str] = &["== N E O N   H A C K =="];
 
 struct ItemDef {
@@ -50,24 +54,28 @@ const ITEMS: [ItemDef; 3] = [
 
 /// A step of the game that needs its own prompt. The stack of flows is what lets menus
 /// nest, be cloned and be saved in the middle of a menu.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
 enum Flow {
     Intro,
     AskName,
-    ConfirmName(String),
+    ConfirmName { name: String },
     Shop,
     ConfirmQuit,
 }
 
-/// The demo game.
-#[derive(Debug, Clone)]
+/// The demo game. Its fields are its save file; `over` is not saved, because a game that
+/// is loaded is never finished.
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DemoGame {
     rng: Pcg32,
     name: String,
     trace: i32,
     credits: i32,
-    owned: Vec<&'static str>,
+    turn: u32,
+    owned: Vec<String>,
     flows: Vec<Flow>,
+    #[serde(skip)]
     over: bool,
 }
 
@@ -80,19 +88,30 @@ impl DemoGame {
             name: DEFAULT_NAME.to_owned(),
             trace: 0,
             credits: STARTING_CREDITS,
+            turn: 0,
             owned: Vec::new(),
             flows: vec![Flow::Intro],
             over: false,
         }
     }
 
+    /// Loads a game from save text.
+    ///
+    /// # Errors
+    ///
+    /// [`SaveError`] when the text is damaged, from a newer game, or not a state the demo
+    /// can be in. A failed load changes nothing: this builds a new game.
+    pub fn from_save(text: &str) -> Result<Self, SaveError> {
+        save::decode::<Self>(text).map(|(_, game)| game)
+    }
+
     /// Builds a step whose prompt is derived from the state, so it can never disagree
     /// with [`Game::prompt`].
-    fn step(&self, events: Vec<Event>, save_requested: bool) -> Step {
+    fn step(&self, events: Vec<Event>, save: Option<SaveRequest>) -> Step {
         Step {
             events,
             prompt: self.prompt(),
-            save_requested,
+            save,
         }
     }
 
@@ -117,11 +136,15 @@ impl DemoGame {
         match input {
             Input::Line(line) => {
                 self.flows.pop();
-                self.flows.push(Flow::ConfirmName(clean_name(line)));
+                self.flows.push(Flow::ConfirmName {
+                    name: clean_name(line),
+                });
             }
             Input::Cancel => {
                 self.flows.pop();
-                self.flows.push(Flow::ConfirmName(DEFAULT_NAME.to_owned()));
+                self.flows.push(Flow::ConfirmName {
+                    name: DEFAULT_NAME.to_owned(),
+                });
             }
             _ => invalid(events),
         }
@@ -146,51 +169,53 @@ impl DemoGame {
         }
     }
 
-    /// Returns whether the game should be saved.
-    fn command(&mut self, input: &Input, events: &mut Vec<Event>) -> bool {
+    /// Returns the save the command asks for, if any.
+    fn command(&mut self, input: &Input, events: &mut Vec<Event>) -> Option<SaveRequest> {
         match input {
             Input::Line(line) => self.run_command(line.trim(), events),
-            Input::Cancel => false,
+            Input::Cancel => None,
             _ => {
                 invalid(events);
-                false
+                None
             }
         }
     }
 
-    fn run_command(&mut self, line: &str, events: &mut Vec<Event>) -> bool {
-        let word = line
-            .split_whitespace()
-            .next()
-            .unwrap_or_default()
-            .to_ascii_lowercase();
+    fn run_command(&mut self, line: &str, events: &mut Vec<Event>) -> Option<SaveRequest> {
+        let mut words = line.split_whitespace();
+        let word = words.next().unwrap_or_default().to_ascii_lowercase();
+        if !word.is_empty() {
+            self.turn = self.turn.saturating_add(1);
+        }
         match word.as_str() {
-            "" => false,
+            "" => None,
             "help" => {
                 events.push(help_table());
-                false
+                None
             }
             "status" => {
                 self.status(events);
-                false
+                None
             }
+            "save" => save_command(words.next(), events),
             "scan" => {
                 self.scan(events);
-                true
+                Some(SaveRequest::Autosave)
             }
             "shop" => {
                 self.flows.push(Flow::Shop);
-                false
+                // Buying is permanent: the player can come back to the moment before.
+                Some(SaveRequest::Checkpoint)
             }
             "quit" => {
                 self.flows.push(Flow::ConfirmQuit);
-                false
+                None
             }
             other => {
                 events.push(Event::error(
                     Text::new("demo.unknown_command").with_str("command", other),
                 ));
-                false
+                None
             }
         }
     }
@@ -243,7 +268,7 @@ impl DemoGame {
             .map(|item| ChoiceOption {
                 id: item.id.to_owned(),
                 label: Text::new(item.label_key).with_int("price", i64::from(item.price)),
-                available: if self.owned.contains(&item.id) {
+                available: if self.owned.iter().any(|owned| owned == item.id) {
                     Err(Text::new("demo.shop.owned"))
                 } else if self.credits < item.price {
                     Err(Text::new("demo.shop.cannot_afford")
@@ -260,33 +285,38 @@ impl DemoGame {
         }
     }
 
-    /// Returns whether the game should be saved.
-    fn shop(&mut self, input: &Input, events: &mut Vec<Event>) -> bool {
+    /// Returns the save the input asks for, if any.
+    fn shop(&mut self, input: &Input, events: &mut Vec<Event>) -> Option<SaveRequest> {
         let choice = self.shop_choice();
         match choice.resolve(input) {
             Resolution::Cancel => {
                 self.flows.pop();
-                false
+                None
             }
             Resolution::Invalid => {
                 events.push(Event::error(Text::new("ui.invalid_choice")));
-                false
+                None
             }
             Resolution::Pick(index) => self.buy(&choice, index, events),
         }
     }
 
-    fn buy(&mut self, choice: &Choice, index: usize, events: &mut Vec<Event>) -> bool {
+    fn buy(
+        &mut self,
+        choice: &Choice,
+        index: usize,
+        events: &mut Vec<Event>,
+    ) -> Option<SaveRequest> {
         let (Some(option), Some(item)) = (choice.options.get(index), ITEMS.get(index)) else {
             invalid(events);
-            return false;
+            return None;
         };
         if let Err(reason) = &option.available {
             events.push(Event::error(reason.clone()));
-            return false;
+            return None;
         }
         self.credits -= item.price;
-        self.owned.push(item.id);
+        self.owned.push(item.id.to_owned());
         events.push(Event::reward(
             Text::new("demo.shop.bought").with_text("item", Text::new(item.name_key)),
         ));
@@ -296,26 +326,27 @@ impl DemoGame {
             events.push(Event::narration(Text::new("demo.shop.proxy_effect")));
             events.extend(trace_changed(from, self.trace));
         }
-        true
+        Some(SaveRequest::Autosave)
     }
 
-    /// Returns whether the game should be saved.
-    fn confirm_quit(&mut self, input: &Input, events: &mut Vec<Event>) -> bool {
+    /// Leaving saves the game at the command line, so the next launch picks up from there.
+    fn confirm_quit(&mut self, input: &Input, events: &mut Vec<Event>) -> Option<SaveRequest> {
         match input {
             Input::Confirm(true) => {
+                self.flows.pop();
                 self.over = true;
                 events.push(Event::system(
                     Text::new("demo.quit.bye").with_str("name", self.name.clone()),
                 ));
-                true
+                Some(SaveRequest::Autosave)
             }
             Input::Confirm(false) | Input::Cancel => {
                 self.flows.pop();
-                false
+                None
             }
             _ => {
                 invalid(events);
-                false
+                None
             }
         }
     }
@@ -331,24 +362,24 @@ impl Game for DemoGame {
             Event::flavor(Text::new("demo.intro.1")),
             Event::narration(Text::new("demo.intro.2")),
         ];
-        self.step(events, false)
+        self.step(events, None)
     }
 
     fn handle(&mut self, input: Input) -> Step {
         if self.over {
-            return self.step(Vec::new(), false);
+            return self.step(Vec::new(), None);
         }
         if input == Input::Eof {
             self.over = true;
-            return self.step(vec![Event::system(Text::new("ui.eof"))], false);
+            return self.step(vec![Event::system(Text::new("ui.eof"))], None);
         }
         let mut events = Vec::new();
-        let mut save = false;
+        let mut save = None;
         match self.flows.last().cloned() {
             None => save = self.command(&input, &mut events),
             Some(Flow::Intro) => self.intro(&input, &mut events),
             Some(Flow::AskName) => self.ask_name(&input, &mut events),
-            Some(Flow::ConfirmName(name)) => self.confirm_name(name, &input, &mut events),
+            Some(Flow::ConfirmName { name }) => self.confirm_name(name, &input, &mut events),
             Some(Flow::Shop) => save = self.shop(&input, &mut events),
             Some(Flow::ConfirmQuit) => save = self.confirm_quit(&input, &mut events),
         }
@@ -367,7 +398,7 @@ impl Game for DemoGame {
                 max_chars: NAME_MAX_CHARS,
                 default: Some(DEFAULT_NAME.to_owned()),
             },
-            Some(Flow::ConfirmName(name)) => Prompt::Confirm {
+            Some(Flow::ConfirmName { name }) => Prompt::Confirm {
                 question: Text::new("demo.prompt.confirm_name").with_str("name", name.clone()),
                 default: true,
             },
@@ -377,6 +408,14 @@ impl Game for DemoGame {
                 default: false,
             },
         }
+    }
+
+    fn snapshot(&self) -> Result<String, SaveError> {
+        let meta = SaveMeta {
+            player: self.name.clone(),
+            turn: self.turn,
+        };
+        save::encode(&meta, self)
     }
 
     fn view(&self) -> View {
@@ -411,6 +450,62 @@ impl Game for DemoGame {
             _ => Vec::new(),
         }
     }
+}
+
+impl SaveState for DemoGame {
+    fn validate(&self) -> Result<(), String> {
+        if !self.rng.is_valid() {
+            return Err("the random generator state is not one the game can produce".to_owned());
+        }
+        if !(0..=TRACE_MAX).contains(&self.trace) {
+            return Err(format!("trace {} is out of range", self.trace));
+        }
+        if !(0..=MAX_CREDITS).contains(&self.credits) {
+            return Err(format!("credits {} are out of range", self.credits));
+        }
+        if clean_name(&self.name) != self.name {
+            return Err("the player name is not a clean name".to_owned());
+        }
+        for (index, owned) in self.owned.iter().enumerate() {
+            if !ITEMS.iter().any(|item| item.id == owned) {
+                return Err(format!("unknown item `{owned}`"));
+            }
+            if self
+                .owned
+                .iter()
+                .take(index)
+                .any(|earlier| earlier == owned)
+            {
+                return Err(format!("item `{owned}` is owned twice"));
+            }
+        }
+        // Every menu is opened from the command line, so at most one flow is ever stacked.
+        match self.flows.as_slice() {
+            [] | [Flow::Intro | Flow::AskName | Flow::Shop | Flow::ConfirmQuit] => Ok(()),
+            [Flow::ConfirmName { name }] if clean_name(name) == *name => Ok(()),
+            other => Err(format!(
+                "{} stacked flows do not make a state of the game",
+                other.len()
+            )),
+        }
+    }
+}
+
+/// `save` or `save N`: a manual slot, 1 by default.
+fn save_command(argument: Option<&str>, events: &mut Vec<Event>) -> Option<SaveRequest> {
+    let slot = match argument {
+        None => Some(1),
+        Some(text) => text
+            .parse::<u8>()
+            .ok()
+            .filter(|slot| (1..=SLOT_COUNT).contains(slot)),
+    };
+    if slot.is_none() {
+        events.push(Event::error(
+            Text::new("demo.save.bad_slot").with_int("max", i64::from(SLOT_COUNT)),
+        ));
+    }
+    slot.map(SaveRequest::Slot)
 }
 
 fn invalid(events: &mut Vec<Event>) {

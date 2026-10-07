@@ -7,6 +7,7 @@
 
 use crate::event::Gauge;
 use crate::prompt::{Input, Prompt, Step};
+use crate::save::SaveError;
 use crate::text::Text;
 
 /// One reading of a gauge, for the status bar and the side panel.
@@ -54,9 +55,18 @@ pub trait Game {
         Step {
             events: Vec::new(),
             prompt: self.prompt(),
-            save_requested: false,
+            save: None,
         }
     }
+
+    /// The game as save text, for the frontend to write where the player's request says
+    /// (see [`crate::save`]). Loading is the constructor of the concrete game, so that a
+    /// failed load can never touch a game that is running.
+    ///
+    /// # Errors
+    ///
+    /// [`SaveError`] if the state cannot be written (a programming error).
+    fn snapshot(&self) -> Result<String, SaveError>;
 
     /// A read-only snapshot for the interface.
     fn view(&self) -> View;

@@ -11,6 +11,7 @@ use neon_engine::text::Text;
 use neon_engine::{Game, Input, Prompt, Step};
 
 use crate::input::{InputError, to_input};
+use crate::persist::Persistence;
 use crate::render::Renderer;
 
 /// Plays a game to its end, starting from `first`: the step of a new game
@@ -25,6 +26,7 @@ pub(crate) fn run(
     input: &mut dyn BufRead,
     out: &mut dyn Write,
     echo_input: bool,
+    persistence: &mut Persistence,
 ) -> io::Result<()> {
     let mut step = first;
     let mut closed = false;
@@ -48,6 +50,7 @@ pub(crate) fn run(
                 Input::Eof
             };
         step = game.handle(engine_input);
+        persistence.after_step(&*game, &mut step);
     }
 }
 

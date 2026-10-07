@@ -1,27 +1,34 @@
 //! `neon-hack`: the command-line entry point.
 //!
-//! Phase R1.1: the engine contract is exercised by a small demo game (`--demo`) through
+//! The engine contract and saving are exercised by a small demo game (`--demo`) through
 //! two frontends, plain and TUI. The real game arrives with phase R2 (see
 //! `docs/ROADMAP.md`); without `--demo` the binary still says it is not playable yet.
 
 mod input;
+mod persist;
 mod plain;
 mod render;
+mod store;
 #[cfg(test)]
 mod test_support;
 #[cfg(feature = "tui")]
 mod tui;
 
-use std::io::{self, BufReader, IsTerminal};
+use std::io::{self, BufReader, IsTerminal, Write};
+use std::path::PathBuf;
 use std::process::ExitCode;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use clap::{Parser, ValueEnum};
-use neon_engine::Game;
+use directories::ProjectDirs;
 use neon_engine::demo::DemoGame;
-use neon_engine::text::{Catalog, Lang, RenderMode};
+use neon_engine::event::Event;
+use neon_engine::text::{Catalog, Lang, RenderMode, Text};
+use neon_engine::{Game, Step};
 
+use crate::persist::Persistence;
 use crate::render::{Renderer, Verbosity};
+use crate::store::{Store, Target};
 
 /// Neon Hack: a cyberpunk text RPG for the terminal.
 #[derive(Debug, Parser)]
@@ -58,6 +65,28 @@ struct Cli {
     /// Seed of the random number generator (reproducible games).
     #[arg(long)]
     seed: Option<u64>,
+
+    /// Start a new game instead of resuming the autosave (the previous autosave is kept
+    /// as `auto.toml.bak`).
+    #[arg(long, requires = "demo", conflicts_with = "load")]
+    new: bool,
+
+    /// Resume this save instead of the autosave: auto, checkpoint-1 to checkpoint-3, or
+    /// slot-1 to slot-9.
+    #[arg(long, requires = "demo", value_name = "SAVE", value_parser = Target::parse)]
+    load: Option<Target>,
+
+    /// List the saves and exit.
+    #[arg(long, requires = "demo")]
+    list_saves: bool,
+
+    /// Play without writing any save.
+    #[arg(long, requires = "demo")]
+    no_save: bool,
+
+    /// Folder for the saves, instead of the data folder of the system.
+    #[arg(long, requires = "demo", value_name = "DIR")]
+    data_dir: Option<PathBuf>,
 }
 
 #[derive(Debug, Clone, Copy, ValueEnum)]
@@ -108,8 +137,6 @@ fn main() -> ExitCode {
 }
 
 fn run_demo(cli: &Cli) -> io::Result<()> {
-    let seed = cli.seed.unwrap_or_else(clock_seed);
-    let mut game = DemoGame::new(seed);
     // The catalogs are checked by the tests, so this only fails on a broken build.
     let catalog = Catalog::embedded(cli.lang.into())
         .map_err(|errors| io::Error::other(format!("the texts do not load:\n{errors}")))?;
@@ -123,8 +150,18 @@ fn run_demo(cli: &Cli) -> io::Result<()> {
         mode,
         verbosity: cli.verbosity.into(),
     };
-    // A new game: the owner starts it once and hands the step to whichever frontend runs.
-    let first = game.start();
+    let store = Store::new(saves_dir(cli)?);
+    if cli.list_saves {
+        return list_saves(&store, &renderer, &mut io::stdout().lock());
+    }
+    // The owner of the game starts or resumes it once and hands the step to whichever
+    // frontend runs.
+    let (mut game, first) = open_game(cli, &store, &renderer)?;
+    let persistence = if cli.no_save {
+        Persistence::disabled()
+    } else {
+        Persistence::new(store)
+    };
 
     let stdin = io::stdin();
     let interactive = stdin.is_terminal() && io::stdout().is_terminal();
@@ -132,11 +169,12 @@ fn run_demo(cli: &Cli) -> io::Result<()> {
     let use_tui = cfg!(feature = "tui") && interactive && !cli.plain && !cli.screen_reader;
     if use_tui {
         #[cfg(feature = "tui")]
-        return tui::run(&mut game, first, renderer);
+        return tui::run(&mut game, first, renderer, persistence);
     }
     // On a pipe the lines read are repeated in the output so that it reads as a transcript;
     // on a terminal the terminal echoes by itself.
     let echo_input = !stdin.is_terminal();
+    let mut persistence = persistence;
     plain::run(
         &mut game,
         first,
@@ -144,7 +182,73 @@ fn run_demo(cli: &Cli) -> io::Result<()> {
         &mut BufReader::new(stdin.lock()),
         &mut io::stdout().lock(),
         echo_input,
+        &mut persistence,
     )
+}
+
+/// The folder of the saves: `--data-dir`, or the data folder of the system.
+fn saves_dir(cli: &Cli) -> io::Result<PathBuf> {
+    if let Some(dir) = &cli.data_dir {
+        return Ok(dir.join("saves"));
+    }
+    ProjectDirs::from("", "", "neon-hack")
+        .map(|dirs| dirs.data_dir().join("saves"))
+        .ok_or_else(|| io::Error::other("no data folder found for this user: use --data-dir"))
+}
+
+/// A game to play: the save asked for (the autosave by default), or a new one.
+fn open_game(cli: &Cli, store: &Store, renderer: &Renderer<'_>) -> io::Result<(DemoGame, Step)> {
+    if !cli.new {
+        let target = cli.load.unwrap_or(Target::Auto);
+        match store.read(target, DemoGame::from_save) {
+            Ok(Some(loaded)) => {
+                let notice = if loaded.from_backup {
+                    "ui.save.resumed_backup"
+                } else {
+                    "ui.save.resumed"
+                };
+                let mut step = loaded.value.resume();
+                step.events.push(Event::system(Text::new(notice)));
+                return Ok((loaded.value, step));
+            }
+            Ok(None) if cli.load.is_some() => {
+                let missing = Text::new("ui.save.missing").with_str("save", target.label());
+                return Err(io::Error::other(renderer.text(&missing)));
+            }
+            Ok(None) => {}
+            Err(error) => {
+                let unreadable =
+                    Text::new("ui.save.unreadable").with_str("details", error.to_string());
+                return Err(io::Error::other(renderer.text(&unreadable)));
+            }
+        }
+    }
+    let mut game = DemoGame::new(cli.seed.unwrap_or_else(clock_seed));
+    let first = game.start();
+    Ok((game, first))
+}
+
+fn list_saves(store: &Store, renderer: &Renderer<'_>, out: &mut dyn Write) -> io::Result<()> {
+    let folder = Text::new("ui.save.folder").with_str("folder", store.dir().display().to_string());
+    writeln!(out, "{}", renderer.text(&folder))?;
+    let listing = store.list();
+    if listing.is_empty() {
+        return writeln!(out, "{}", renderer.text(&Text::new("ui.save.none")));
+    }
+    for entry in listing {
+        let save = Text::raw(entry.target.label());
+        let line = match entry.meta {
+            Ok(meta) => Text::new("ui.save.list_entry")
+                .with_text("save", save)
+                .with_str("player", meta.player)
+                .with_int("turn", i64::from(meta.turn)),
+            Err(reason) => Text::new("ui.save.list_damaged")
+                .with_text("save", save)
+                .with_str("reason", reason),
+        };
+        writeln!(out, "{}", renderer.text(&line))?;
+    }
+    Ok(())
 }
 
 /// A seed from the clock. The engine never reads the clock: it receives a number.

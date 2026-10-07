@@ -6,6 +6,7 @@ use ratatui::backend::TestBackend;
 use ratatui::crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
 use super::*;
+use crate::persist::Persistence;
 use crate::render::Verbosity;
 use crate::test_support::{catalog_en, catalog_fr};
 
@@ -19,6 +20,7 @@ fn app_with<'a>(game: &'a mut DemoGame, catalog: &'a Catalog, mode: RenderMode) 
             verbosity: Verbosity::Normal,
         },
         first,
+        Persistence::disabled(),
     )
 }
 
@@ -351,7 +353,7 @@ fn an_interface_attached_to_a_game_under_way_does_not_replay_the_start() {
         mode: RenderMode::FULL,
         verbosity: Verbosity::Full,
     };
-    let app = App::new(&mut game, renderer, attach);
+    let app = App::new(&mut game, renderer, attach, Persistence::disabled());
     let rows = screen(&app, 100, 28);
     assert!(
         !has(&rows, "NEON HACK") && !has(&rows, "N E O N"),
