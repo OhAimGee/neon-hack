@@ -20,6 +20,71 @@ A cyberpunk text RPG for the terminal. You are a novice hacker in Neo-Tokyo, in 
 | Phases R1.2 to R1.5: i18n, saves, commands and settings, complete toy game | **next step** |
 | Game engine, TUI, campaign | to come |
 
+## Play locally
+
+> **The complete game does not exist yet.** What you can run today is the **engine demo**: a mini-game (prologue, commands, a stall, an alert gauge) that shows both interfaces. There is no prebuilt binary before v1.0: you build the project yourself, which takes from a few dozen seconds to a few minutes the first time (downloading the dependencies included).
+
+### 1. Install the tools (once)
+
+- **Git**, to download the project ([git-scm.com](https://git-scm.com)).
+- **Rust**, through [rustup](https://rustup.rs) (on Linux and macOS: `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`; on Windows: `rustup-init.exe`). The project's `rust-toolchain.toml` picks the right compiler version; if `cargo` says it is missing, run `rustup toolchain install`.
+- **A linker**, which Rust uses to build the executable:
+  - Windows: "Build Tools for Visual Studio", workload *Desktop development with C++* (`rustup-init.exe` offers it);
+  - macOS: `xcode-select --install`;
+  - Linux: `gcc` (for example `sudo apt install build-essential`).
+- **A modern UTF-8 terminal**: Windows Terminal (not the old `cmd` console), Terminal or iTerm2 on macOS, any common Linux terminal. On Windows, WSL works too, but it is then a Linux environment: install Git, Rust and `gcc` **inside WSL**, following the Linux steps above (not the Build Tools), then run the commands in the WSL terminal.
+
+### 2. Download the project
+
+```bash
+git clone https://github.com/OhAimGee/neon-hack.git
+cd neon-hack
+```
+
+Without Git: on the project's GitHub page, *Code → Download ZIP*, unzip it, then open a terminal in the resulting folder.
+
+### 3. Run the demo
+
+```bash
+cargo run --release -p neon-cli -- --demo
+```
+
+The first time, Cargo downloads and builds the dependencies; later runs are immediate. To get a `neon-hack` command usable from anywhere:
+
+```bash
+cargo install --path crates/neon-cli --locked
+neon-hack --demo
+```
+
+`rustup` has already put `~/.cargo/bin` on your `PATH`. To update: with a clone, `git pull` then run the command above again (with `--force` for `cargo install`); with the ZIP, download it again. To uninstall: `cargo uninstall neon-cli`.
+
+### 4. How to play
+
+In a real terminal the demo opens **full screen** (status bar, log, side panel). If the input is redirected, or with `--plain`, it is played **line by line**.
+
+- At the start: *Enter* to continue, a handle, then `y` or `n` to confirm.
+- Commands: `help` lists what is possible; `status`, `scan`, `shop` (the stall) and `quit`.
+- Menus: type an entry's **number** (in the stall, `proxy`, `cloak` and `deck` work too); `0` or an empty line goes back (*Esc* in full screen).
+- Full screen: *TAB* completes a command, *Ctrl+D* or *Ctrl+C* ends the game, then one more key closes the interface.
+
+| Option | Effect |
+|---|---|
+| `--plain` | line-by-line interface |
+| `--screen-reader` | screen-reader mode: line-by-line interface, no symbols to spell out |
+| `--ascii` | ASCII symbols, no decoration |
+| `--lang fr` / `--lang en` | language of the texts (English by default) |
+| `--verbosity brief\|normal\|full` | how much atmosphere is shown |
+| `--seed 7` | reproducible game |
+
+The full-screen interface needs at least **64×20** characters, and **100×28** to show the side panel; below that, a message says so: enlarge the window or use `--plain`.
+
+### If something goes wrong
+
+- `cargo: command not found`: close and reopen the terminal after installing Rust, or add `~/.cargo/bin` to your `PATH`.
+- `linker 'cc' not found` or `link.exe not found`: install the linker (step 1).
+- Frames or symbols displayed wrongly: try `--ascii`. Accents displayed wrongly: the terminal is not in UTF-8, to set in its preferences (for now `--ascii` keeps accented letters).
+- An error about the Rust version: run `rustup toolchain install` in the project folder.
+
 ## Development
 
 Requirement: [rustup](https://rustup.rs) (`rust-toolchain.toml` pins the compiler version).
@@ -28,12 +93,6 @@ Requirement: [rustup](https://rustup.rs) (`rust-toolchain.toml` pins the compile
 cargo test --workspace      # unit, property and binary tests
 cargo lint                  # clippy, exactly like the CI
 cargo run -p neon-cli --    # runs the binary (a placeholder for now)
-
-# The engine demo (development): a small game that exercises both interfaces
-cargo run -p neon-cli -- --demo                  # full-screen interface in a real terminal
-cargo run -p neon-cli -- --demo --plain          # line-by-line interface
-cargo run -p neon-cli -- --demo --screen-reader  # screen-reader mode
-cargo run -p neon-cli -- --demo --lang fr --seed 7
 ```
 
 ## v1.0 goals
