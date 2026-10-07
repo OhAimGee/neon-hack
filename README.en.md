@@ -8,15 +8,26 @@ A cyberpunk text RPG for the terminal. You are a novice hacker in Neo-Tokyo, in 
 
 ## Status
 
-**The repository does not contain any Rust code yet: the game is not playable.** The design phase is finished and the rebuild is about to start.
+**The game is not playable yet**: the repository holds the Rust technical skeleton (three crates, CI, lint rules) but not the game engine yet. The groundwork is done; the foundation (phase R1) is the next step.
 
 | Step | State |
 |---|---|
-| Design (game systems, narrative, TUI and accessibility, architecture, CI) | done: [`docs/design/`](docs/design/README.md) |
+| Scoping and design documents (game systems, narrative, TUI and accessibility, architecture, CI) | done: [`docs/design/`](docs/design/README.md); the detailed specifications (phase P1) and several design decisions are still to be validated |
 | v1.0 roadmap | written: [`docs/ROADMAP.md`](docs/ROADMAP.md) |
 | Old C code and stray files | removed (see [Previous version](#previous-version-in-c)) |
-| Phase R0: Cargo skeleton, CI on three systems | **next step** |
-| Engine, frontends, campaign | to come |
+| Phase R0: Cargo skeleton, CI on three systems | done |
+| Phase R1: foundation (engine ↔ frontends contract, i18n, saves, plain frontend) | **next step** |
+| Game engine, TUI, campaign | to come |
+
+## Development
+
+Requirement: [rustup](https://rustup.rs) (`rust-toolchain.toml` pins the compiler version).
+
+```bash
+cargo test --workspace      # unit, property and binary tests
+cargo lint                  # clippy, exactly like the CI
+cargo run -p neon-cli --    # runs the binary (a placeholder for now)
+```
 
 ## v1.0 goals
 

@@ -1,0 +1,40 @@
+# cargo-deny: dependency policy (licenses, architecture boundaries, sources, advisories).
+# Run with `cargo deny check`. See docs/design/delivery-and-ci.md and docs/design/DECISIONS.md.
+
+[graph]
+all-features = true
+
+[advisories]
+version = 2
+yanked = "deny"
+ignore = []
+
+[licenses]
+version = 2
+# The whole dependency tree evaluated for the project uses only these. Anything else
+# (BSD, ISC, MPL, GPL...) must be added by a PR that says why.
+allow = ["MIT", "Apache-2.0", "Unicode-3.0", "Zlib", "CC0-1.0"]
+confidence-threshold = 0.93
+exceptions = [
+    # DECISIONS.md R-6: `directories` pulls `option-ext` (MPL-2.0, file-level copyleft).
+    # We do not modify it and ship its license text with the binaries.
+    { allow = ["MPL-2.0"], crate = "option-ext" },
+]
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+allow-wildcard-paths = true
+# Architecture boundaries: `wrappers` lists the only crates allowed to depend on a banned
+# crate directly. neon-engine depends on none of them, which keeps it free of any UI.
+deny = [
+    { crate = "ratatui", wrappers = ["neon-cli"], reason = "the TUI belongs to the frontend, never to the engine" },
+    { crate = "clap", wrappers = ["neon-cli", "neon-sim"], reason = "argument parsing belongs to the binaries" },
+    { crate = "crossterm", wrappers = ["ratatui"], reason = "use the ratatui::crossterm re-export, never a direct dependency" },
+]
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []

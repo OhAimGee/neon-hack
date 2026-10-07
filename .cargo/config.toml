@@ -1,0 +1,7 @@
+[alias]
+# `cargo lint` is exactly the CI clippy job.
+lint = "clippy --workspace --all-targets --locked -- -D warnings"
+# `cargo play -- --help` runs the game binary.
+play = "run -p neon-cli --"
+# `cargo sim -- ...` runs the balancing harness in release mode.
+sim = "run -p neon-sim --release --"

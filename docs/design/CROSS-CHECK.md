@@ -6,6 +6,8 @@ Verdict : les documents sont solides pris un par un (les prototypes compilent, l
 
 ## 1. Contradictions (19) et résolution retenue
 
+**Statut d'application** : les points **15** (licences) et **16** (lints) sont appliqués par la phase R0 (`deny.toml`, table de lints unique dans `Cargo.toml`) ; le point **17** l'est en partie (le job plain-only attend la feature `tui`, R3) ; les autres s'appliquent aux lots indiqués dans [`docs/ROADMAP.md`](../ROADMAP.md).
+
 | # | Documents | Contradiction | Résolution retenue |
 |---|---|---|---|
 | 1 | architecture, TUI | Contrat moteur ↔ frontends défini deux fois : `Outcome{output, prompt, dispatch, save_requested}` (moteur) contre `Step{events, prompt}` avec rôles sémantiques (TUI). Sans rôle ni importance : pas de verbosité ni de `[Alerte]`/`[Gain]` ; sans `Cancel`/`Eof` : pas de sortie de menu propre ; `enabled: bool` perd la règle « l'écran n'annonce jamais ce que l'achat refuserait ». | **Un seul contrat**, écrit et compilé au premier lot du socle avec les deux frontends : `Event`/`Step`/`Prompt`/`Input` du document TUI comme base, plus `Input::{Cancel, Eof}`, fin de partie explicite, `save_requested`, menus adressables par index **et** id stable, option indisponible = `Result<(), Text>`. Le bus interne du moteur est renommé `Fact`. Critère : les 94 tests du prototype moteur et les 56 du prototype TUI repassent sur le contrat fusionné. |
