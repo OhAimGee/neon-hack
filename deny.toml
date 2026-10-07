@@ -30,7 +30,8 @@ allow-wildcard-paths = true
 deny = [
     { crate = "ratatui", wrappers = ["neon-cli"], reason = "the TUI belongs to the frontend, never to the engine" },
     { crate = "clap", wrappers = ["neon-cli", "neon-sim"], reason = "argument parsing belongs to the binaries" },
-    { crate = "crossterm", wrappers = ["ratatui"], reason = "use the ratatui::crossterm re-export, never a direct dependency" },
+    # ratatui 0.30 is split in sub-crates: its crossterm backend is the other legitimate parent.
+    { crate = "crossterm", wrappers = ["ratatui", "ratatui-crossterm"], reason = "use the ratatui::crossterm re-export, never a direct dependency" },
 ]
 
 [sources]

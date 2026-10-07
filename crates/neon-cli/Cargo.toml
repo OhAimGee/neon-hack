@@ -12,9 +12,20 @@ publish.workspace = true
 name = "neon-hack"
 path = "src/main.rs"
 
+[features]
+# The full-screen interface. `--no-default-features` builds the plain frontend only,
+# and CI checks that this build keeps working.
+default = ["tui"]
+tui = ["dep:ratatui", "dep:unicode-width"]
+
 [dependencies]
 neon-engine = { workspace = true }
 clap = { workspace = true }
+ratatui = { workspace = true, optional = true }
+unicode-width = { workspace = true, optional = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
 
 [lints]
 workspace = true

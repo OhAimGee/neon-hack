@@ -70,6 +70,21 @@ jobs:
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
       - run: cargo test --workspace --locked
 
+  plain-only:
+    # The plain frontend must keep building and passing without the full-screen interface:
+    # it is the one used by pipes, tests and screen readers.
+    name: plain-only (no tui)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install the toolchain from rust-toolchain.toml
+        run: rustup toolchain install
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - run: cargo clippy -p neon-cli --no-default-features --all-targets --locked -- -D warnings
+      - run: cargo test -p neon-cli --no-default-features --locked
+
   msrv:
     name: msrv
     runs-on: ubuntu-latest
@@ -130,7 +145,7 @@ jobs:
   ci-ok:
     name: CI OK
     if: always()
-    needs: [fmt, clippy, test, msrv, deny, docs]
+    needs: [fmt, clippy, test, plain-only, msrv, deny, docs]
     runs-on: ubuntu-latest
     steps:
       - name: Every required job succeeded
