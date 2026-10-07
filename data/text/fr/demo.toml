@@ -26,6 +26,7 @@ status = "Voir votre situation"
 scan = "Scanner le réseau"
 shop = "Visiter l'étal"
 quit = "Quitter le réseau"
+save = "Sauvegarder la partie (save 1 à 9)"
 
 [demo.status]
 name = "Pseudo : {name}"
@@ -69,3 +70,6 @@ unknown_command = "Commande inconnue : {command}"
 
 [demo.objective]
 trace = "Gardez votre trace sous {limit}."
+
+[demo.save]
+bad_slot = "Les emplacements vont de 1 à {max}."

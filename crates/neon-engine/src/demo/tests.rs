@@ -4,6 +4,7 @@ use proptest::prelude::*;
 
 use super::*;
 use crate::event::Role;
+use crate::save::{SLOT_COUNT, SaveError, SaveRequest};
 use crate::text::{Arg, Catalog, Lang, RenderMode, Text, render};
 
 fn line(text: &str) -> Input {
@@ -94,7 +95,7 @@ fn nested_menus_are_states_not_blocking_reads() {
         choice.options[0].available,
         Err(Text::new("demo.shop.owned"))
     );
-    assert!(bought.save_requested);
+    assert_eq!(bought.save, Some(SaveRequest::Autosave));
     assert!(
         !bought
             .events
@@ -108,7 +109,7 @@ fn nested_menus_are_states_not_blocking_reads() {
     assert_eq!(error_keys(&owned), ["demo.shop.owned"]);
     let too_dear = game.handle(line("3"));
     assert_eq!(error_keys(&too_dear), ["demo.shop.cannot_afford"]);
-    assert!(!too_dear.save_requested);
+    assert_eq!(too_dear.save, None);
     let nonsense = game.handle(line("banana"));
     assert_eq!(error_keys(&nonsense), ["ui.invalid_choice"]);
 
@@ -179,16 +180,16 @@ fn quitting_asks_for_confirmation_and_saves() {
     game.handle(line("quit"));
     let left = game.handle(Input::Confirm(true));
     assert_eq!(left.prompt, Prompt::End);
-    assert!(left.save_requested);
+    assert_eq!(left.save, Some(SaveRequest::Autosave));
 }
 
 #[test]
 fn only_state_changing_commands_ask_for_a_save() {
     let mut game = at_command_line(5);
     for command in ["help", "status", "nonsense", ""] {
-        assert!(!game.handle(line(command)).save_requested, "{command:?}");
+        assert_eq!(game.handle(line(command)).save, None, "{command:?}");
     }
-    assert!(game.handle(line("scan")).save_requested);
+    assert_eq!(game.handle(line("scan")).save, Some(SaveRequest::Autosave));
 }
 
 #[test]
@@ -246,7 +247,7 @@ fn a_clone_is_an_independent_game() {
 #[test]
 fn completion_only_offers_what_can_be_used_now() {
     let mut game = at_command_line(2);
-    assert_eq!(game.complete("s"), ["scan", "shop", "status"]);
+    assert_eq!(game.complete("s"), ["save", "scan", "shop", "status"]);
     assert_eq!(game.complete("SH"), ["shop"]);
     assert!(game.complete("scan x").is_empty());
     assert!(game.complete("zz").is_empty());
@@ -410,6 +411,254 @@ fn a_scan_reads_correctly_with_one_port_and_with_several() {
     assert_eq!(lines(Lang::Fr, 4), "Le scan trouve 4 ports ouverts.");
 }
 
+// ---- Saving --------------------------------------------------------------------------------
+
+fn text_of(game: &DemoGame) -> String {
+    game.snapshot().unwrap()
+}
+
+/// The same inputs played on two games must give the same steps.
+fn assert_same_future(a: &mut DemoGame, b: &mut DemoGame, inputs: &[Input]) {
+    for input in inputs {
+        assert_eq!(
+            a.handle(input.clone()),
+            b.handle(input.clone()),
+            "{input:?}"
+        );
+    }
+    assert_eq!(text_of(a), text_of(b));
+}
+
+#[test]
+fn entering_the_stall_asks_for_a_checkpoint_and_save_asks_for_a_slot() {
+    let mut game = at_command_line(7);
+    assert_eq!(
+        game.handle(line("shop")).save,
+        Some(SaveRequest::Checkpoint),
+        "buying is permanent: the moment before is kept"
+    );
+    game.handle(Input::Cancel);
+    assert_eq!(game.handle(line("save")).save, Some(SaveRequest::Slot(1)));
+    assert_eq!(game.handle(line("save 9")).save, Some(SaveRequest::Slot(9)));
+    assert_eq!(game.handle(line("SAVE 3")).save, Some(SaveRequest::Slot(3)));
+}
+
+#[test]
+fn a_bad_slot_is_refused_in_words_and_nothing_is_saved() {
+    let mut game = at_command_line(7);
+    for bad in ["save 0", "save 10", "save x", "save -1", "save 300"] {
+        let step = game.handle(line(bad));
+        assert_eq!(step.save, None, "{bad}");
+        assert_eq!(error_keys(&step), ["demo.save.bad_slot"], "{bad}");
+    }
+    assert_eq!(SLOT_COUNT, 9);
+}
+
+#[test]
+fn a_game_saved_at_the_command_line_comes_back_identical() {
+    let mut game = at_command_line(7);
+    for _ in 0..3 {
+        game.handle(line("scan"));
+    }
+    let mut loaded = DemoGame::from_save(&text_of(&game)).unwrap();
+    assert_eq!(text_of(&loaded), text_of(&game));
+    assert_eq!(loaded.view(), game.view());
+    assert_eq!(loaded.resume(), game.resume());
+    let future = [
+        line("scan"),
+        line("scan"),
+        line("shop"),
+        line("1"),
+        Input::Cancel,
+    ];
+    assert_same_future(&mut game, &mut loaded, &future);
+}
+
+#[test]
+fn a_game_saved_in_the_middle_of_a_menu_resumes_in_the_menu() {
+    let mut game = at_command_line(7);
+    game.handle(line("scan"));
+    game.handle(line("shop"));
+    let mut loaded = DemoGame::from_save(&text_of(&game)).unwrap();
+    assert!(matches!(loaded.resume().prompt, Prompt::Choice(_)));
+    assert_same_future(
+        &mut game,
+        &mut loaded,
+        &[line("1"), line("zzz"), Input::Cancel],
+    );
+}
+
+#[test]
+fn the_prologue_can_be_saved_and_resumed_too() {
+    let mut game = DemoGame::new(3);
+    game.start();
+    game.handle(Input::Continue);
+    game.handle(line("Zoë"));
+    let mut loaded = DemoGame::from_save(&text_of(&game)).unwrap();
+    assert!(matches!(loaded.prompt(), Prompt::Confirm { .. }));
+    assert_same_future(
+        &mut game,
+        &mut loaded,
+        &[Input::Confirm(true), line("scan")],
+    );
+}
+
+#[test]
+fn quitting_saves_the_game_at_the_command_line_and_a_loaded_game_is_never_over() {
+    let mut game = at_command_line(5);
+    game.handle(line("scan"));
+    game.handle(line("quit"));
+    let left = game.handle(Input::Confirm(true));
+    assert_eq!(left.prompt, Prompt::End);
+    let loaded = DemoGame::from_save(&text_of(&game)).unwrap();
+    assert_eq!(loaded.prompt(), Prompt::Command);
+}
+
+fn valid_save() -> String {
+    let mut game = at_command_line(7);
+    for _ in 0..3 {
+        game.handle(line("scan"));
+    }
+    game.handle(line("shop"));
+    game.handle(line("1"));
+    game.handle(Input::Cancel);
+    text_of(&game)
+}
+
+#[test]
+fn every_strict_prefix_of_a_game_save_is_rejected() {
+    let text = valid_save();
+    let body = text.trim_end();
+    for (cut, _) in body.char_indices() {
+        assert!(DemoGame::from_save(&body[..cut]).is_err(), "prefix {cut}");
+    }
+    assert!(DemoGame::from_save(body).is_ok());
+}
+
+#[test]
+fn impossible_states_are_rejected_not_loaded() {
+    let text = valid_save();
+    let line_with = |prefix: &str| {
+        text.lines()
+            .find(|l| l.starts_with(prefix))
+            .unwrap_or_else(|| panic!("no `{prefix}` line in:\n{text}"))
+            .to_owned()
+    };
+    let (trace, credits, name, owned) = (
+        line_with("trace = "),
+        line_with("credits = "),
+        line_with("name = "),
+        line_with("owned = "),
+    );
+    let cases = [
+        (trace.clone(), "trace = 101"),
+        (trace, "trace = -1"),
+        (credits.clone(), "credits = -1"),
+        (credits, "credits = 5000000"),
+        (name.clone(), "name = \"\""),
+        (name.clone(), "name = \" padded \""),
+        (name.clone(), "name = \"tab\\there\""),
+        (name, "name = \"123456789012345678901\""),
+        (owned.clone(), "owned = [\"deck-of-doom\"]"),
+        (owned, "owned = [\"proxy\", \"proxy\"]"),
+    ];
+    for (original, replacement) in cases {
+        let hostile = text.replacen(&original, replacement, 1);
+        assert_ne!(hostile, text);
+        assert!(
+            matches!(DemoGame::from_save(&hostile), Err(SaveError::Invalid(_))),
+            "{replacement}: {:?}",
+            DemoGame::from_save(&hostile).map(|_| ())
+        );
+    }
+    assert!(
+        text.contains("flows = []"),
+        "a save at the command line has no flow:\n{text}"
+    );
+    let two_flows = text.replacen(
+        "flows = []",
+        "flows = [{ kind = \"shop\" }, { kind = \"shop\" }]",
+        1,
+    );
+    assert!(matches!(
+        DemoGame::from_save(&two_flows),
+        Err(SaveError::Invalid(_))
+    ));
+    let unknown_flow = text.replacen("flows = []", "flows = [{ kind = \"teleport\" }]", 1);
+    assert!(matches!(
+        DemoGame::from_save(&unknown_flow),
+        Err(SaveError::Schema(_))
+    ));
+    let even_stream = text.replacen(&line_with("inc = "), "inc = \"0000000000000002\"", 1);
+    assert!(matches!(
+        DemoGame::from_save(&even_stream),
+        Err(SaveError::Invalid(_))
+    ));
+}
+
+#[test]
+fn a_newer_version_is_refused_and_nothing_is_loaded() {
+    let newer = valid_save().replacen("version = 1", "version = 2", 1);
+    assert!(matches!(
+        DemoGame::from_save(&newer),
+        Err(SaveError::TooNew {
+            found: 2,
+            supported: 1
+        })
+    ));
+}
+
+fn rendered_player_name(text: &str) -> Option<String> {
+    DemoGame::from_save(text)
+        .ok()
+        .map(|game| game.view().player)
+}
+
+proptest! {
+    #[test]
+    fn a_saved_game_always_comes_back_and_plays_on_identically(
+        seed: u64,
+        before in proptest::collection::vec(any_input(), 0..60),
+        after in proptest::collection::vec(any_input(), 0..30),
+    ) {
+        let mut game = DemoGame::new(seed);
+        game.start();
+        for input in before {
+            game.handle(input);
+        }
+        let mut loaded = DemoGame::from_save(&text_of(&game)).unwrap();
+        prop_assert_eq!(text_of(&loaded), text_of(&game));
+        // A game that has ended is saved as it was, and a loaded game is never over:
+        // there is nothing left to compare once the original has ended.
+        for input in after {
+            if game.prompt() == Prompt::End {
+                break;
+            }
+            prop_assert_eq!(game.handle(input.clone()), loaded.handle(input));
+        }
+    }
+
+    #[test]
+    fn a_damaged_save_never_panics_and_what_loads_is_stable(
+        position in 0usize..400,
+        replacement in "[ -~]{0,3}",
+    ) {
+        let text = valid_save();
+        let mut start = position.min(text.len());
+        while !text.is_char_boundary(start) { start -= 1; }
+        let end = (start + replacement.len().max(1)).min(text.len());
+        let mut end = end;
+        while !text.is_char_boundary(end) { end += 1; }
+        let damaged = format!("{}{}{}", &text[..start], replacement, &text[end..]);
+        if let Some(name) = rendered_player_name(&damaged) {
+            prop_assert!(!name.is_empty());
+            let game = DemoGame::from_save(&damaged).unwrap();
+            let again = DemoGame::from_save(&text_of(&game)).unwrap();
+            prop_assert_eq!(text_of(&again), text_of(&game));
+        }
+    }
+}
+
 // ---- Properties --------------------------------------------------------------------------
 
 fn any_input() -> impl Strategy<Value = Input> {
@@ -527,5 +776,5 @@ fn resuming_gives_the_current_prompt_and_says_nothing_new() {
         "back in the open menu"
     );
     assert_eq!(resumed.prompt, game.prompt());
-    assert!(!resumed.save_requested);
+    assert_eq!(resumed.save, None);
 }

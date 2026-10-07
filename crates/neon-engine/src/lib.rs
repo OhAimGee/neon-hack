@@ -15,6 +15,7 @@ pub mod game;
 pub mod ids;
 pub mod prompt;
 pub mod rng;
+pub mod save;
 pub mod text;
 
 pub use event::Event;

@@ -11,12 +11,18 @@ use neon_engine::{Game, Step};
 use ratatui::DefaultTerminal;
 use ratatui::crossterm::event::{self, Event, KeyEventKind};
 
+use crate::persist::Persistence;
 use crate::render::Renderer;
 use app::App;
 
 /// Runs the game in the full-screen interface until it ends.
-pub(crate) fn run(game: &mut dyn Game, first: Step, renderer: Renderer<'_>) -> io::Result<()> {
-    let mut app = App::new(game, renderer, first);
+pub(crate) fn run(
+    game: &mut dyn Game,
+    first: Step,
+    renderer: Renderer<'_>,
+    persistence: Persistence,
+) -> io::Result<()> {
+    let mut app = App::new(game, renderer, first, persistence);
     // `try_init` also installs a panic hook that gives the terminal back.
     let mut terminal = ratatui::try_init()?;
     let result = event_loop(&mut terminal, &mut app);

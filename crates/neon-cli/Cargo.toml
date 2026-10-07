@@ -21,11 +21,14 @@ tui = ["dep:ratatui", "dep:unicode-width"]
 [dependencies]
 neon-engine = { workspace = true }
 clap = { workspace = true }
+directories = { workspace = true }
+thiserror = { workspace = true }
 ratatui = { workspace = true, optional = true }
 unicode-width = { workspace = true, optional = true }
 
 [dev-dependencies]
 proptest = { workspace = true }
+tempfile = { workspace = true }
 
 [lints]
 workspace = true

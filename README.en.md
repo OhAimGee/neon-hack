@@ -18,7 +18,8 @@ A cyberpunk text RPG for the terminal. You are a novice hacker in Neo-Tokyo, in 
 | Phase R0: Cargo skeleton, CI on three systems | done |
 | Phase R1.1: engine ↔ frontends contract, two interfaces (plain and full-screen), demo game | done |
 | Phase R1.2: embedded TOML texts, plurals, strictly 7-bit `--ascii`, FR/EN parity checks | done |
-| Phases R1.3 to R1.5: saves, commands and settings, complete toy game | **next step** |
+| Phase R1.3: saving (autosave, checkpoints, slots, backup copy, format versions) | done |
+| Phases R1.4 and R1.5: commands and settings, complete toy game | **next step** |
 | Game engine, TUI, campaign | to come |
 
 ## Play locally
@@ -66,6 +67,7 @@ In a real terminal the demo opens **full screen** (status bar, log, side panel).
 - At the start: *Enter* to continue, a handle, then `y` or `n` to confirm.
 - Commands: `help` lists what is possible; `status`, `scan`, `shop` (the stall) and `quit`.
 - Menus: type an entry's **number** (in the stall, `proxy`, `cloak` and `deck` work too); `0` or an empty line goes back (*Esc* in full screen).
+- Saving: the game is **saved automatically** and resumed at the next launch (`--new` to start over); `save` or `save 2` writes it to a slot (1 to 9); entering the stall makes a **checkpoint** (the last 3 are kept). `neon-hack --demo --list-saves` shows the folder and what it holds.
 - Full screen: *TAB* completes a command, *Ctrl+D* or *Ctrl+C* ends the game, then one more key closes the interface.
 
 | Option | Effect |
@@ -75,9 +77,16 @@ In a real terminal the demo opens **full screen** (status bar, log, side panel).
 | `--ascii` | 7-bit ASCII: symbols, accents and typed text transliterated, no decoration |
 | `--lang fr` / `--lang en` | language of the texts (English by default) |
 | `--verbosity brief\|normal\|full` | how much atmosphere is shown |
-| `--seed 7` | reproducible game |
+| `--seed 7` | reproducible game (for a new game) |
+| `--new` | start over instead of resuming the autosave (the old one becomes `auto.toml.bak`) |
+| `--load auto\|checkpoint-1\|slot-2` | resume that save (`checkpoint-1` to `checkpoint-3`, `slot-1` to `slot-9`) |
+| `--list-saves` | list the saves and the folder they are in |
+| `--no-save` | play without writing anything |
+| `--data-dir DIR` | folder for the saves, instead of the system's |
 
 The full-screen interface needs at least **64×20** characters, and **100×28** to show the side panel; below that, a message says so: enlarge the window or use `--plain`.
+
+Saves live in the user's data folder, in a `saves` subfolder: `~/.local/share/neon-hack` on Linux, `~/Library/Application Support/neon-hack` on macOS, `%APPDATA%\neon-hack\data` on Windows. A damaged save is never overwritten: the game resumes from the previous copy (`.bak`) and says so, or explains how to start over.
 
 ### If something goes wrong
 

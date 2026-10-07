@@ -56,3 +56,16 @@ critical = "critical"
 
 [contact.echo7]
 name = "ECHO-7"
+
+[ui.save]
+folder = "Saves folder: {folder}"
+resumed = "Resuming your saved game. Start over with --new."
+resumed_backup = "The latest save was damaged: resuming from the previous copy."
+failed = "Could not save the game: {reason}"
+slot_done = "Game saved in slot {slot}."
+disabled = "Saving is turned off (--no-save)."
+missing = "There is no save called {save}."
+unreadable = "The save is damaged and no previous copy works ({details}). Nothing was changed: start a new game with --new."
+none = "No saved game."
+list_entry = "{save}: {player}, {turn} {turn|action|actions}"
+list_damaged = "{save}: damaged ({reason})"

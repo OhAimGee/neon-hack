@@ -5,6 +5,7 @@
 //! [`Input`]. That keeps the engine pure, cloneable and savable in the middle of a menu.
 
 use crate::event::Event;
+use crate::save::SaveRequest;
 use crate::text::Text;
 
 /// What the engine is waiting for.
@@ -134,8 +135,9 @@ pub struct Step {
     pub events: Vec<Event>,
     /// What the engine waits for next. After a load it is derived from the state.
     pub prompt: Prompt,
-    /// The engine asks the frontend to persist the game now (and to say whether it worked).
-    pub save_requested: bool,
+    /// The engine asks the frontend to persist the game now, and says which kind of save
+    /// it is. The frontend writes the file and says whether it worked.
+    pub save: Option<SaveRequest>,
 }
 
 #[cfg(test)]

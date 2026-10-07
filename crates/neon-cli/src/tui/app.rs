@@ -18,6 +18,7 @@ use ratatui::widgets::{Block, Borders, Paragraph};
 use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 
 use crate::input::{InputError, to_input};
+use crate::persist::Persistence;
 use crate::render::{LineKind, Renderer};
 
 /// Smallest terminal with the permanent side panel.
@@ -60,6 +61,7 @@ enum LogEntry {
 pub(crate) struct App<'a> {
     game: &'a mut dyn Game,
     renderer: Renderer<'a>,
+    persistence: Persistence,
     log: Vec<LogEntry>,
     prompt: Prompt,
     input: String,
@@ -70,10 +72,16 @@ pub(crate) struct App<'a> {
 impl<'a> App<'a> {
     /// Attaches the interface to a game, starting from `first`: the step of a new game or
     /// the current state of a game under way (see [`Game::resume`]).
-    pub(crate) fn new(game: &'a mut dyn Game, renderer: Renderer<'a>, first: Step) -> Self {
+    pub(crate) fn new(
+        game: &'a mut dyn Game,
+        renderer: Renderer<'a>,
+        first: Step,
+        persistence: Persistence,
+    ) -> Self {
         let mut app = Self {
             game,
             renderer,
+            persistence,
             log: Vec::new(),
             prompt: Prompt::Command,
             input: String::new(),
@@ -93,11 +101,11 @@ impl<'a> App<'a> {
             .extend(step.events.into_iter().map(LogEntry::Event));
         self.finished = step.prompt == Prompt::End;
         self.prompt = step.prompt;
-        // `step.save_requested` is honoured from phase R1.3, when saving exists.
     }
 
     fn submit(&mut self, input: Input) {
-        let step = self.game.handle(input);
+        let mut step = self.game.handle(input);
+        self.persistence.after_step(&*self.game, &mut step);
         self.apply(step);
     }
 

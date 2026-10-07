@@ -9,9 +9,17 @@ fn run(args: &[&str]) -> Output {
 }
 
 /// Runs the binary with the given text on its standard input (so, as on a pipe).
+///
+/// A test never touches the real data folder: a demo run without an explicit `--data-dir`
+/// gets `--no-save`.
 fn run_with_input(args: &[&str], input: &str) -> Output {
+    let isolated = args.contains(&"--demo")
+        && !args.contains(&"--data-dir")
+        && !args.contains(&"--no-save")
+        && !args.contains(&"--list-saves");
     let mut child = Command::new(env!("CARGO_BIN_EXE_neon-hack"))
         .args(args)
+        .args(isolated.then_some("--no-save"))
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -222,4 +230,211 @@ fn screen_reader_and_ascii_can_be_asked_together() {
         "{text}"
     );
     assert!(!text.contains("N E O N"), "no decoration:\n{text}");
+}
+
+// ---- Saves ---------------------------------------------------------------------------------
+
+/// Runs the demo with its saves in `dir`.
+fn play_in(dir: &std::path::Path, args: &[&str], input: &str) -> Output {
+    let dir = dir.to_str().expect("a UTF-8 temporary path");
+    let mut all = vec!["--demo", "--data-dir", dir, "--seed", "7"];
+    all.extend_from_slice(args);
+    run_with_input(&all, input)
+}
+
+fn stderr(output: &Output) -> String {
+    String::from_utf8(output.stderr.clone()).expect("stderr is not UTF-8")
+}
+
+const PROLOGUE: &str = "\nNeon\ny\n";
+
+#[test]
+fn a_game_is_resumed_where_it_was_left_without_the_prologue() {
+    let dir = tempfile::tempdir().unwrap();
+    let first = play_in(dir.path(), &[], &format!("{PROLOGUE}scan\nscan\nquit\ny\n"));
+    assert!(first.status.success());
+    assert!(dir.path().join("saves/auto.toml").exists());
+
+    let second = play_in(dir.path(), &[], "status\nquit\ny\n");
+    assert!(second.status.success(), "{}", stderr(&second));
+    let text = stdout(&second);
+    assert!(text.contains("Resuming your saved game."), "{text}");
+    assert!(
+        !text.contains("Your handle"),
+        "the prologue is not replayed:\n{text}"
+    );
+    assert!(text.contains("Handle: Neon"), "{text}");
+    assert!(
+        !text.contains("Trace: 0/"),
+        "the trace of the first session is back:\n{text}"
+    );
+}
+
+#[test]
+fn new_starts_over_and_keeps_the_previous_autosave_as_backup() {
+    let dir = tempfile::tempdir().unwrap();
+    play_in(dir.path(), &[], &format!("{PROLOGUE}scan\nquit\ny\n"));
+    let fresh = play_in(
+        dir.path(),
+        &["--new"],
+        &format!("{PROLOGUE}scan\nquit\ny\n"),
+    );
+    let text = stdout(&fresh);
+    assert!(
+        text.contains("Your handle"),
+        "a new game has its prologue:\n{text}"
+    );
+    assert!(!text.contains("Resuming"), "{text}");
+    assert!(dir.path().join("saves/auto.toml.bak").exists());
+}
+
+#[test]
+fn saves_can_be_listed_and_loaded_by_name() {
+    let dir = tempfile::tempdir().unwrap();
+    let empty = play_in(dir.path(), &["--list-saves"], "");
+    let text = stdout(&empty);
+    assert!(text.starts_with("Saves folder: "), "{text}");
+    assert!(text.contains("saves"), "the folder is shown: {text}");
+    assert!(text.ends_with("No saved game.\n"), "{text}");
+
+    play_in(
+        dir.path(),
+        &[],
+        &format!("{PROLOGUE}scan\nsave 2\nshop\n0\nscan\nquit\ny\n"),
+    );
+    let listing = stdout(&play_in(dir.path(), &["--list-saves"], ""));
+    assert!(listing.contains("auto: Neon, 5 actions\n"), "{listing}");
+    assert!(
+        listing.contains("checkpoint-1: Neon, 3 actions\n"),
+        "{listing}"
+    );
+    assert!(listing.contains("slot-2: Neon, 2 actions\n"), "{listing}");
+    let french = stdout(&play_in(dir.path(), &["--list-saves", "--lang", "fr"], ""));
+    assert!(french.contains("slot-2 : Neon, 2 actions\n"), "{french}");
+
+    // Slot 2 was saved after one scan: loading it is not the end of the game.
+    let from_slot = play_in(dir.path(), &["--load", "slot-2"], "status\nquit\ny\n");
+    assert!(from_slot.status.success(), "{}", stderr(&from_slot));
+    assert!(stdout(&from_slot).contains("Resuming your saved game."));
+
+    // The checkpoint was made on entering the stall: it comes back inside the stall.
+    let from_checkpoint = play_in(dir.path(), &["--load", "checkpoint-1"], "0\nquit\ny\n");
+    let text = stdout(&from_checkpoint);
+    assert!(text.contains("R4Z0R's stall"), "{text}");
+}
+
+#[test]
+fn asking_for_a_save_that_does_not_exist_is_an_error_that_changes_nothing() {
+    let dir = tempfile::tempdir().unwrap();
+    let output = play_in(dir.path(), &["--load", "slot-4"], "");
+    assert_eq!(output.status.code(), Some(1));
+    assert!(
+        stderr(&output).contains("There is no save called slot-4."),
+        "{}",
+        stderr(&output)
+    );
+    assert!(!dir.path().join("saves").exists());
+
+    let bad_name = play_in(dir.path(), &["--load", "slot-12"], "");
+    assert_eq!(
+        bad_name.status.code(),
+        Some(2),
+        "a bad name is a usage error"
+    );
+}
+
+#[test]
+fn a_damaged_autosave_is_explained_and_never_overwritten_until_the_player_starts_over() {
+    let dir = tempfile::tempdir().unwrap();
+    let saves = dir.path().join("saves");
+    std::fs::create_dir_all(&saves).unwrap();
+    std::fs::write(saves.join("auto.toml"), "garbage").unwrap();
+
+    let refused = play_in(dir.path(), &[], "quit\ny\n");
+    assert_eq!(refused.status.code(), Some(1));
+    let message = stderr(&refused);
+    assert!(
+        message.contains("damaged") && message.contains("--new"),
+        "{message}"
+    );
+    assert_eq!(
+        std::fs::read_to_string(saves.join("auto.toml")).unwrap(),
+        "garbage"
+    );
+
+    let started = play_in(
+        dir.path(),
+        &["--new"],
+        &format!("{PROLOGUE}scan\nquit\ny\n"),
+    );
+    assert!(started.status.success(), "{}", stderr(&started));
+    assert_eq!(
+        std::fs::read_to_string(saves.join("auto.toml.corrupt")).unwrap(),
+        "garbage",
+        "the damaged file is set aside, not destroyed"
+    );
+}
+
+#[test]
+fn a_damaged_latest_save_resumes_from_the_previous_copy_and_says_so() {
+    let dir = tempfile::tempdir().unwrap();
+    play_in(dir.path(), &[], &format!("{PROLOGUE}scan\nscan\nquit\ny\n"));
+    let auto = dir.path().join("saves/auto.toml");
+    let text = std::fs::read_to_string(&auto).unwrap();
+    std::fs::write(&auto, &text[..text.len() / 2]).unwrap();
+
+    let output = play_in(dir.path(), &[], "quit\ny\n");
+    assert!(output.status.success(), "{}", stderr(&output));
+    assert!(
+        stdout(&output).contains("resuming from the previous copy"),
+        "{}",
+        stdout(&output)
+    );
+}
+
+#[test]
+fn no_save_writes_nothing_and_a_manual_save_says_it_is_off() {
+    let dir = tempfile::tempdir().unwrap();
+    let output = play_in(
+        dir.path(),
+        &["--no-save"],
+        &format!("{PROLOGUE}scan\nsave\nquit\ny\n"),
+    );
+    assert!(output.status.success());
+    assert!(
+        stdout(&output).contains("Saving is turned off (--no-save)."),
+        "{}",
+        stdout(&output)
+    );
+    assert!(!dir.path().join("saves").exists());
+}
+
+#[test]
+fn save_options_need_the_demo() {
+    for flag in ["--new", "--list-saves", "--no-save"] {
+        assert_eq!(run(&[flag]).status.code(), Some(2), "{flag}");
+    }
+}
+
+#[test]
+fn save_texts_follow_the_language_and_stay_ascii_with_ascii() {
+    let dir = tempfile::tempdir().unwrap();
+    let output = play_in(
+        dir.path(),
+        &["--lang", "fr", "--ascii"],
+        "\nZoë\no\nsave 3\nsave 99\nquit\no\n",
+    );
+    let text = stdout(&output);
+    assert!(text.is_ascii(), "{text}");
+    assert!(
+        text.contains("Partie sauvegardee dans l'emplacement 3."),
+        "{text}"
+    );
+    assert!(text.contains("Les emplacements vont de 1 a 9."), "{text}");
+    let resumed = play_in(dir.path(), &["--lang", "fr", "--ascii"], "quit\no\n");
+    assert!(
+        stdout(&resumed).contains("Reprise de votre partie sauvegardee."),
+        "{}",
+        stdout(&resumed)
+    );
 }
