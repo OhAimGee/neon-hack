@@ -1,5 +1,7 @@
 # Livraison : migration vers `legacy-c/`, squelette Rust, CI et releases
 
+> **Mise à jour du 7 octobre 2026 : table rase du C** (`DECISIONS.md` P3 et R-1). La migration vers `legacy-c/` (§ 1), le job `legacy-c.yml` (§ 3) et le critère de suppression du C (D5) sont **abandonnés** : le C est supprimé dès R0, son historique reste dans git. Le reste (squelette Rust § 2, CI § 3 hors `legacy-c`, releases § 4, flux § 5) reste valable ; les lints et les licences sont à corriger comme indiqué dans `CROSS-CHECK.md` (16, 15).
+
 **Légende des preuves** — `[E]` exécuté ici (commande lancée, résultat lu ; rustc/cargo 1.97.0, Linux, 2026-10-07) ; `[C]` lu dans un fichier du dépôt, dans le source d'un outil ou d'une action sans l'exécuter ; `[D]` connaissance de la documentation d'une plateforme, **non vérifiée ici** ; `[H]` hypothèse ou choix de conception. Ce qui n'a pas pu être vérifié sans GitHub est regroupé au § 7.
 
 Tous les essais ont eu lieu dans des copies jetables sous `scratchpad/` ; le dépôt n'a reçu que ce fichier. Les brouillons livrables sont dans `scratchpad/ci-drafts/` (liste au § 8).

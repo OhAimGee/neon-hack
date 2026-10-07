@@ -1,6 +1,6 @@
 # Cross-check des dossiers de conception
 
-Un agent critique indépendant a relu les cinq documents de `docs/design/` (et les rapports structurés de leurs auteurs), vérifié par exécution 15 de leurs affirmations, et cherché contradictions et trous. Ce fichier en est la synthèse. **Aucun des cinq documents n'a été corrigé** : les résolutions ci-dessous sont celles retenues pour la phase P1 de [`docs/ROADMAP-RUST.md`](../ROADMAP-RUST.md), où elles seront appliquées une fois les décisions du propriétaire tranchées ([`DECISIONS.md`](DECISIONS.md)).
+Un agent critique indépendant a relu les cinq documents de `docs/design/` (et les rapports structurés de leurs auteurs), vérifié par exécution 15 de leurs affirmations, et cherché contradictions et trous. Ce fichier en est la synthèse. **Les cinq documents ne sont pas réécrits** : les résolutions de la colonne de droite ci-dessous sont **normatives** (règle de préséance R-0 de [`DECISIONS.md`](DECISIONS.md) § 4) et s'appliquent dans le code, au lot qui touche chaque point ([`docs/ROADMAP.md`](../ROADMAP.md)). Les points qui exigeaient une décision du propriétaire (5, 6, 7, 15) sont tranchés par défaut en § 4 de `DECISIONS.md`.
 
 Verdict : les documents sont solides pris un par un (les prototypes compilent, les chiffres relus se confirment) mais **ne sont pas encore compatibles entre eux** sur 19 points, dont trois qui bloquent l'écriture du moteur (contrat moteur ↔ frontends, type de texte, schéma de contenu).
 
@@ -30,7 +30,7 @@ Verdict : les documents sont solides pris un par un (les prototypes compilent, l
 
 ## 2. Trous (18) : rien ne les couvre aujourd'hui
 
-- **Aucune feuille de route Rust** : [`docs/ROADMAP-RUST.md`](../ROADMAP-RUST.md) la fournit.
+- **Aucune feuille de route Rust** : [`docs/ROADMAP.md`](../ROADMAP.md) la fournit.
 - **Les prototypes ne vivent que dans le scratchpad de la session** (moteur ≈ 6 100 lignes, TUI, squelette de 29 fichiers, script de migration, modèle de campagne Python, prototype de run) : à archiver dans le dépôt avant la fin de la session, puis à porter module par module.
 - **Moteur de run** (le plus gros chantier : 1 800-2 800 lignes estimées) : ni spécification ni spike réaliste (seul existe un jouet de 6 nœuds sans patrouilles ni familles d'ICE) ; état d'un run, reprise en plein run, bornes du solveur, ordre des patrouilles, difficulté.
 - **`neon-sim`** : aucun bot, métrique, seuil d'acceptation, durée de partie visée ni emplacement CI défini.
