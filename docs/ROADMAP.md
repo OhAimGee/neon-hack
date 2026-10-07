@@ -1,7 +1,6 @@
 # Feuille de route : refonte de Neon Hack en Rust
 
-> Rédigée le 7 octobre 2026 à partir des cinq dossiers de [`docs/design/`](design/README.md) et de leur [cross-check](design/CROSS-CHECK.md), puis **adaptée à la table rase du C** (`design/DECISIONS.md` P3 et R-1). La feuille de route de la version en C disparaît avec elle ; elle reste lisible par `git show 653bc46:docs/ROADMAP.md`. Ce fichier sera renommé `docs/ROADMAP.md` à l'étape R0 (une fois l'ancien supprimé).
-
+> Rédigée le 7 octobre 2026 à partir des cinq dossiers de [`docs/design/`](design/README.md) et de leur [cross-check](design/CROSS-CHECK.md), puis **adaptée à la table rase du C** (`design/DECISIONS.md` P3 et R-1). La feuille de route de la version en C disparaît avec elle ; elle reste lisible par `git show 653bc46:docs/ROADMAP.md`.
 ## Objectif
 
 Une v1.0 jouable, **entièrement en Rust**, repartie de zéro, avec :
@@ -33,7 +32,7 @@ Le socle technique ne dépend pas du design de jeu et démarre tout de suite ; l
 
 | Phase | Contenu | Fini quand |
 |---|---|---|
-| **R0** Table rase et squelette | **1.** Suppression du C et des fichiers parasites : `src/`, `tests/`, `Makefile`, les 3 scripts `demo_*.sh`, `docs/legacy/`, `docs/ARCHITECTURE.md`, l'ancien `docs/ROADMAP.md`, la CI du C ; renommage de ce fichier en `docs/ROADMAP.md`. **2.** README FR et EN réécrits pour le projet Rust, `.gitignore` Rust. **3.** Workspace Cargo (édition 2024, résolveur 3, MSRV 1.88, **lints = union des deux jeux**, `deny.toml`, `rust-toolchain.toml`). **4.** CI sur 3 OS (fmt, clippy `-D warnings`, tests, MSRV, `cargo deny`, job plain-only). **5.** Licences : exception `option-ext` / MPL-2.0 (R-6), vérifiée par `cargo deny` | le dépôt ne contient plus que la licence, les README, `docs/`, le workspace et la CI ; CI verte sur les 3 systèmes ; `cargo deny` vert |
+| **R0** Table rase et squelette | **1. Fait.** Suppression du C et des fichiers parasites : `src/`, `tests/`, `Makefile`, les 3 scripts `demo_*.sh`, `docs/legacy/`, `docs/ARCHITECTURE.md`, l'ancien `docs/ROADMAP.md`, la CI du C ; ce fichier est devenu `docs/ROADMAP.md`. **2. Fait.** README FR et EN réécrits pour le projet Rust, `.gitignore` Rust. **3.** Workspace Cargo (édition 2024, résolveur 3, MSRV 1.88, **lints = union des deux jeux**, `deny.toml`, `rust-toolchain.toml`). **4.** CI sur 3 OS (fmt, clippy `-D warnings`, tests, MSRV, `cargo deny`, job plain-only). **5.** Licences : exception `option-ext` / MPL-2.0 (R-6), vérifiée par `cargo deny` | le dépôt ne contient plus que la licence, les README, `docs/`, le workspace et la CI ; CI verte sur les 3 systèmes ; `cargo deny` vert |
 | **R1** Socle | **Contrat moteur ↔ frontends unique**, écrit une fois et **compilé avec les deux frontends** (base : `Step`, `Event`, `Prompt`, `Input` du dossier TUI, plus `Input::{Cancel, Eof}`, `save_requested`, option indisponible = `Result<(), Text>`, bus interne renommé `Fact`) ; PCG32 ; i18n (catalogue, pluriels, variantes `@sr`, parité testée) ; commandes et complétion ; sauvegarde (autosave, points de contrôle, emplacements, écriture atomique, migrations ; R-7) ; réglages et CLI unifiés en trois familles (présentation, partie, développement) ; frontend plain minimal ; accessibilité de base (`NO_COLOR`, `--ascii`, mode lecteur d'écran) | un jeu jouet complet tourne en plain, FR et EN, avec sauvegarde et rechargement, et ses tests (unitaires, `proptest`, `insta`) passent sur 3 OS |
 
 ### Piste conception (en parallèle, bloque R2)

@@ -1,11 +1,8 @@
-# Build artifacts
-*.o
-*.obj
-build/
-/neon_hack
-/neon_hack.exe
+# Rust
+/target/
+**/*.rs.bk
 
-# Editor / OS
+# Éditeurs et système
 *~
 *.bak
 *.tmp
@@ -15,6 +12,6 @@ build/
 .DS_Store
 Thumbs.db
 
-# Runtime
+# Parties et journaux locaux
 *.log
 *.sav

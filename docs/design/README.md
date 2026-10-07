@@ -1,6 +1,6 @@
 # Dossiers de conception de la refonte en Rust
 
-Ces documents préparent la réécriture complète de Neon Hack en Rust (conception libre, moteur pur, deux frontends). Le plan d'exécution est [`docs/ROADMAP-RUST.md`](../ROADMAP-RUST.md).
+Ces documents préparent la réécriture complète de Neon Hack en Rust (conception libre, moteur pur, deux frontends). Le plan d'exécution est [`docs/ROADMAP.md`](../ROADMAP.md).
 
 | Fichier | Contenu | Cité dans les documents comme |
 |---|---|---|
@@ -8,7 +8,7 @@ Ces documents préparent la réécriture complète de Neon Hack en Rust (concept
 | [`narrative-bible.md`](narrative-bible.md) | Inventaire de l'existant, univers, personnages, arc en trois actes, quêtes, textes à écrire, annexe des textes d'origine | « tâche B » |
 | [`tui-and-accessibility.md`](tui-and-accessibility.md) | Contrat moteur ↔ frontends, frontend plain, TUI, spécification d'accessibilité (60 exigences), tests | « tâche C » |
 | [`architecture-rust.md`](architecture-rust.md) | Workspace, API du moteur, contenu en données, i18n, sauvegarde, pyramide de tests | « tâche D » |
-| [`delivery-and-ci.md`](delivery-and-ci.md) | Migration vers `legacy-c/`, squelette R0, CI, releases | « tâche E » |
+| [`delivery-and-ci.md`](delivery-and-ci.md) | Squelette R0, CI, releases (la migration vers `legacy-c/` est abandonnée : table rase du C) | « tâche E » |
 | [`CROSS-CHECK.md`](CROSS-CHECK.md) | Contradictions entre les documents, trous, affirmations vérifiées | |
 | [`DECISIONS.md`](DECISIONS.md) | Décisions du propriétaire, choix recommandés, décisions à valider | |
 
