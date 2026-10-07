@@ -1,0 +1,71 @@
+# Texts of the demo game, French.
+# Keys are the table path plus the name; `name@sr` and `name@ascii` are variants of `name`.
+# Templates: {name}, and {count|singular|plural} (see docs/design/architecture-rust.md, section 6).
+
+[demo.banner]
+alt = "NEON HACK"
+
+[demo.intro]
+1 = "Neo-Tokyo, 2087. Un vieux cyberdeck s'allume tout seul."
+2 = "À l'écran, une seule ligne : CANAL CHIFFRÉ #7 - CONNEXION ENTRANTE."
+
+[demo.prompt]
+name = "Votre pseudo"
+confirm_name = "Graver « {name} » dans le réseau ?"
+
+[demo.echo]
+greeting = "Enfin. Je commençais à croire que tu ne te réveillerais jamais, {name}."
+ready = "Tape 'help' pour voir ce que tu peux faire."
+
+[demo.help]
+title = "Commandes"
+col_command = "Commande"
+col_effect = "Effet"
+help = "Lister les commandes"
+status = "Voir votre situation"
+scan = "Scanner le réseau"
+shop = "Visiter l'étal"
+quit = "Quitter le réseau"
+
+[demo.status]
+name = "Pseudo : {name}"
+credits = "Crédits : {credits}"
+trace = "Trace : {value}/{max} ({band})"
+
+[demo.scan]
+found = "Le scan trouve {found} {found|port ouvert|ports ouverts}."
+reward = "+{credits} {credits|crédit|crédits}."
+
+[demo.alert]
+tense = "La sécurité vous a repéré."
+critical = "La sécurité se rapproche : votre trace est critique."
+
+[demo.shop]
+title = "L'étal de R4Z0R"
+cancel = "Quitter l'étal"
+owned = "Vous le possédez déjà."
+cannot_afford = "Il manque {missing} {missing|crédit|crédits}."
+bought = "Vous avez acheté {item}."
+proxy_effect = "La chaîne de proxys efface vos traces."
+
+[demo.item.proxy]
+label = "Chaîne de proxys ({price} {price|crédit|crédits})"
+name = "la chaîne de proxys"
+
+[demo.item.cloak]
+label = "Module de camouflage ({price} {price|crédit|crédits})"
+name = "le module de camouflage"
+
+[demo.item.deck]
+label = "Amélioration du deck ({price} {price|crédit|crédits})"
+name = "l'amélioration du deck"
+
+[demo.quit]
+confirm = "Quitter le réseau ?"
+bye = "Au revoir, {name}."
+
+[demo]
+unknown_command = "Commande inconnue : {command}"
+
+[demo.objective]
+trace = "Gardez votre trace sous {limit}."

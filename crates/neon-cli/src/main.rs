@@ -7,6 +7,8 @@
 mod input;
 mod plain;
 mod render;
+#[cfg(test)]
+mod test_support;
 #[cfg(feature = "tui")]
 mod tui;
 
@@ -16,8 +18,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use clap::{Parser, ValueEnum};
 use neon_engine::Game;
-use neon_engine::demo::{DemoGame, catalog_en, catalog_fr};
-use neon_engine::text::RenderMode;
+use neon_engine::demo::DemoGame;
+use neon_engine::text::{Catalog, Lang, RenderMode};
 
 use crate::render::{Renderer, Verbosity};
 
@@ -41,14 +43,13 @@ struct Cli {
     #[arg(long)]
     screen_reader: bool,
 
-    /// ASCII-friendly output: ASCII symbols, no decoration. Accented letters stay until
-    /// transliteration arrives (phase R1.2).
+    /// 7-bit ASCII output: ASCII symbols, no decoration, accents and typed text transliterated.
     #[arg(long)]
     ascii: bool,
 
     /// Language of the texts.
-    #[arg(long, value_enum, default_value_t = Lang::En)]
-    lang: Lang,
+    #[arg(long, value_enum, default_value_t = LangArg::En)]
+    lang: LangArg,
 
     /// How much atmosphere to show.
     #[arg(long, value_enum, default_value_t = VerbosityArg::Normal)]
@@ -60,9 +61,18 @@ struct Cli {
 }
 
 #[derive(Debug, Clone, Copy, ValueEnum)]
-enum Lang {
+enum LangArg {
     En,
     Fr,
+}
+
+impl From<LangArg> for Lang {
+    fn from(value: LangArg) -> Self {
+        match value {
+            LangArg::En => Self::En,
+            LangArg::Fr => Self::Fr,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, ValueEnum)]
@@ -100,10 +110,9 @@ fn main() -> ExitCode {
 fn run_demo(cli: &Cli) -> io::Result<()> {
     let seed = cli.seed.unwrap_or_else(clock_seed);
     let mut game = DemoGame::new(seed);
-    let catalog = match cli.lang {
-        Lang::En => catalog_en(),
-        Lang::Fr => catalog_fr(),
-    };
+    // The catalogs are checked by the tests, so this only fails on a broken build.
+    let catalog = Catalog::embedded(cli.lang.into())
+        .map_err(|errors| io::Error::other(format!("the texts do not load:\n{errors}")))?;
     let mode = if cli.screen_reader {
         RenderMode::ScreenReader
     } else if cli.ascii {

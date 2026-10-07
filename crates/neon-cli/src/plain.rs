@@ -82,7 +82,7 @@ fn read_input(
         let text = String::from_utf8_lossy(&bytes);
         let line = text.trim_end_matches(['\n', '\r']);
         if echo_input {
-            writeln!(out, "{line}")?;
+            writeln!(out, "{}", renderer.verbatim(line))?;
         }
         match to_input(prompt, line) {
             Ok(engine_input) => return Ok(Some(engine_input)),

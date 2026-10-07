@@ -17,7 +17,8 @@ A cyberpunk text RPG for the terminal. You are a novice hacker in Neo-Tokyo, in 
 | Old C code and stray files | removed (see [Previous version](#previous-version-in-c)) |
 | Phase R0: Cargo skeleton, CI on three systems | done |
 | Phase R1.1: engine ↔ frontends contract, two interfaces (plain and full-screen), demo game | done |
-| Phases R1.2 to R1.5: i18n, saves, commands and settings, complete toy game | **next step** |
+| Phase R1.2: embedded TOML texts, plurals, strictly 7-bit `--ascii`, FR/EN parity checks | done |
+| Phases R1.3 to R1.5: saves, commands and settings, complete toy game | **next step** |
 | Game engine, TUI, campaign | to come |
 
 ## Play locally
@@ -71,7 +72,7 @@ In a real terminal the demo opens **full screen** (status bar, log, side panel).
 |---|---|
 | `--plain` | line-by-line interface |
 | `--screen-reader` | screen-reader mode: line-by-line interface, no symbols to spell out |
-| `--ascii` | ASCII symbols, no decoration |
+| `--ascii` | 7-bit ASCII: symbols, accents and typed text transliterated, no decoration |
 | `--lang fr` / `--lang en` | language of the texts (English by default) |
 | `--verbosity brief\|normal\|full` | how much atmosphere is shown |
 | `--seed 7` | reproducible game |
@@ -82,7 +83,7 @@ The full-screen interface needs at least **64×20** characters, and **100×28** 
 
 - `cargo: command not found`: close and reopen the terminal after installing Rust, or add `~/.cargo/bin` to your `PATH`.
 - `linker 'cc' not found` or `link.exe not found`: install the linker (step 1).
-- Frames or symbols displayed wrongly: try `--ascii`. Accents displayed wrongly: the terminal is not in UTF-8, to set in its preferences (for now `--ascii` keeps accented letters).
+- Frames, symbols or accents displayed wrongly: the terminal is probably not in UTF-8; try `--ascii`, which writes plain 7-bit ASCII only (accents become simple letters).
 - An error about the Rust version: run `rustup toolchain install` in the project folder.
 
 ## Development

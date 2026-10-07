@@ -4,7 +4,7 @@ use proptest::prelude::*;
 
 use super::*;
 use crate::event::Role;
-use crate::text::{Arg, Catalog, placeholders};
+use crate::text::{Arg, Catalog, Lang, RenderMode, Text, render};
 
 fn line(text: &str) -> Input {
     Input::Line(text.to_owned())
@@ -262,41 +262,43 @@ fn completion_only_offers_what_can_be_used_now() {
 
 // ---- Catalogs ----------------------------------------------------------------------------
 
-fn keys(entries: &[(&str, &str)]) -> BTreeSet<String> {
-    entries.iter().map(|(key, _)| (*key).to_owned()).collect()
+fn catalog(lang: Lang) -> Catalog {
+    Catalog::embedded(lang).unwrap()
 }
 
-#[test]
-fn both_languages_have_the_same_keys_with_the_same_placeholders() {
-    let (en, fr) = (catalog_en(), catalog_fr());
-    assert_eq!(keys(en.entries()), keys(fr.entries()));
-    for (key, english) in en.entries() {
-        let french = fr.lookup(key).unwrap();
-        assert_eq!(
-            placeholders(english),
-            placeholders(french),
-            "placeholders of `{key}` differ between languages"
-        );
-    }
-}
-
-#[test]
-fn mode_variants_keep_the_placeholders_of_their_base_key() {
-    for catalog in [catalog_en(), catalog_fr()] {
-        for (key, template) in catalog.entries() {
-            let Some((base, _mode)) = key.split_once('@') else {
-                continue;
-            };
-            let base_template = catalog
-                .lookup(base)
-                .unwrap_or_else(|| panic!("variant `{key}` has no base key"));
-            assert_eq!(
-                placeholders(template),
-                placeholders(base_template),
-                "`{key}`"
-            );
+/// Every text the game sent in a step: events and the prompt, nested texts apart.
+fn texts_of(step: &Step) -> Vec<Text> {
+    let mut texts = Vec::new();
+    for event in &step.events {
+        match event {
+            Event::Message { text, .. } => texts.push(text.clone()),
+            Event::Decor { alt, .. } => texts.push(alt.clone()),
+            Event::Screen(table) => {
+                texts.push(table.title.clone());
+                texts.extend(table.columns.iter().cloned());
+                texts.extend(table.rows.iter().flatten().cloned());
+            }
+            Event::Changed { gauge, band, .. } => {
+                texts.push(Text::new(gauge.name_key()));
+                texts.push(band.clone());
+            }
+            Event::Break => {}
         }
     }
+    match &step.prompt {
+        Prompt::Text { label, .. } => texts.push(label.clone()),
+        Prompt::Confirm { question, .. } => texts.push(question.clone()),
+        Prompt::Choice(choice) => {
+            texts.push(choice.title.clone());
+            texts.extend(choice.cancel.iter().cloned());
+            for option in &choice.options {
+                texts.push(option.label.clone());
+                texts.extend(option.available.as_ref().err().cloned());
+            }
+        }
+        Prompt::Command | Prompt::Continue | Prompt::End => {}
+    }
+    texts
 }
 
 fn collect_keys(text: &Text, found: &mut BTreeSet<String>) {
@@ -312,59 +314,13 @@ fn collect_keys(text: &Text, found: &mut BTreeSet<String>) {
     }
 }
 
-fn collect_event_keys(event: &Event, found: &mut BTreeSet<String>) {
-    match event {
-        Event::Message { text, .. } => collect_keys(text, found),
-        Event::Decor { alt, .. } => collect_keys(alt, found),
-        Event::Screen(table) => {
-            collect_keys(&table.title, found);
-            table
-                .columns
-                .iter()
-                .for_each(|text| collect_keys(text, found));
-            table
-                .rows
-                .iter()
-                .flatten()
-                .for_each(|text| collect_keys(text, found));
-        }
-        Event::Changed { gauge, band, .. } => {
-            found.insert(gauge.name_key().to_owned());
-            collect_keys(band, found);
-        }
-        Event::Break => {}
-    }
-}
-
-fn collect_prompt_keys(prompt: &Prompt, found: &mut BTreeSet<String>) {
-    match prompt {
-        Prompt::Text { label, .. } => collect_keys(label, found),
-        Prompt::Confirm { question, .. } => collect_keys(question, found),
-        Prompt::Choice(choice) => {
-            collect_keys(&choice.title, found);
-            choice
-                .cancel
-                .iter()
-                .for_each(|text| collect_keys(text, found));
-            for option in &choice.options {
-                collect_keys(&option.label, found);
-                if let Err(reason) = &option.available {
-                    collect_keys(reason, found);
-                }
-            }
-        }
-        Prompt::Command | Prompt::Continue | Prompt::End => {}
-    }
-}
-
-#[test]
-fn a_full_session_never_uses_a_key_missing_from_either_language() {
-    let mut game = DemoGame::new(21);
-    let mut found = BTreeSet::new();
+/// A session that goes through the prologue, the stall, errors, alerts and the end.
+fn full_session(seed: u64) -> Vec<Step> {
+    let mut game = DemoGame::new(seed);
     let mut steps = vec![game.start()];
-    let script = [
+    let mut script = vec![
         Input::Continue,
-        line("Neon"),
+        line("Zoë"),
         Input::Confirm(true),
         line("help"),
         line("status"),
@@ -376,40 +332,82 @@ fn a_full_session_never_uses_a_key_missing_from_either_language() {
         line("3"),
         line("banana"),
         Input::Cancel,
-        line("scan"),
-        line("scan"),
-        line("scan"),
-        line("scan"),
-        line("scan"),
-        line("scan"),
-        line("scan"),
-        line("scan"),
-        line("quit"),
-        Input::Confirm(true),
     ];
+    script.extend((0..8).map(|_| line("scan")));
+    script.extend([line("quit"), Input::Confirm(true), Input::Eof]);
     for input in script {
         steps.push(game.handle(input));
     }
-    steps.push(game.handle(Input::Eof));
-    for step in &steps {
-        step.events
-            .iter()
-            .for_each(|event| collect_event_keys(event, &mut found));
-        collect_prompt_keys(&step.prompt, &mut found);
+    steps
+}
+
+#[test]
+fn a_full_session_never_uses_a_key_missing_from_either_language() {
+    let mut found = BTreeSet::new();
+    for step in full_session(21) {
+        for text in texts_of(&step) {
+            collect_keys(&text, &mut found);
+        }
     }
     assert!(
         found.len() > 25,
         "the session should exercise many texts: {}",
         found.len()
     );
-    for catalog in [catalog_en(), catalog_fr()] {
+    for lang in Lang::ALL {
+        let catalog = catalog(lang);
         for key in &found {
             assert!(
-                catalog.lookup(key).is_some(),
-                "key `{key}` is missing from a catalog"
+                catalog.get(key).is_some(),
+                "key `{key}` is missing from the {lang:?} catalog"
             );
         }
     }
+}
+
+/// What a frontend must never show: a missing key, or a placeholder without its argument.
+fn assert_clean(rendered: &str, context: &str) {
+    assert!(!rendered.contains("<missing:"), "{context}: {rendered}");
+    assert!(!rendered.contains("<?"), "{context}: {rendered}");
+}
+
+#[test]
+fn every_text_of_a_session_renders_cleanly_in_every_language_and_mode() {
+    for seed in [3, 21] {
+        for step in full_session(seed) {
+            for text in texts_of(&step) {
+                for lang in Lang::ALL {
+                    let catalog = catalog(lang);
+                    for mode in [
+                        RenderMode::Full,
+                        RenderMode::ScreenReader,
+                        RenderMode::Ascii,
+                    ] {
+                        let rendered = render(&text, &catalog, mode);
+                        assert_clean(&rendered, &format!("{lang:?} {mode:?} {}", text.key));
+                        if mode == RenderMode::Ascii {
+                            assert!(rendered.is_ascii(), "{lang:?} {}: {rendered}", text.key);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn a_scan_reads_correctly_with_one_port_and_with_several() {
+    let lines = |lang, found| {
+        render(
+            &Text::new("demo.scan.found").with_int("found", found),
+            &catalog(lang),
+            RenderMode::Full,
+        )
+    };
+    assert_eq!(lines(Lang::En, 1), "The scan finds 1 open port.");
+    assert_eq!(lines(Lang::En, 4), "The scan finds 4 open ports.");
+    assert_eq!(lines(Lang::Fr, 1), "Le scan trouve 1 port ouvert.");
+    assert_eq!(lines(Lang::Fr, 4), "Le scan trouve 4 ports ouverts.");
 }
 
 // ---- Properties --------------------------------------------------------------------------

@@ -6,7 +6,7 @@
 
 use neon_engine::event::{Event, Gauge, Role, Severity, Table};
 use neon_engine::prompt::{Choice, Prompt};
-use neon_engine::text::{Catalog, RenderMode, Text, render};
+use neon_engine::text::{Catalog, RenderMode, Text, render, to_ascii};
 
 /// How much of the atmosphere the player wants to read.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
@@ -68,7 +68,7 @@ pub(crate) struct PromptView {
 
 /// Turns texts, events and prompts into lines, in one language and one mode.
 pub(crate) struct Renderer<'a> {
-    pub(crate) catalog: &'a dyn Catalog,
+    pub(crate) catalog: &'a Catalog,
     pub(crate) mode: RenderMode,
     pub(crate) verbosity: Verbosity,
 }
@@ -76,6 +76,16 @@ pub(crate) struct Renderer<'a> {
 impl Renderer<'_> {
     pub(crate) fn text(&self, text: &Text) -> String {
         render(text, self.catalog, self.mode)
+    }
+
+    /// Text that is not in the catalogs, such as what the player typed. In ASCII mode it is
+    /// transliterated like everything else, so the output stays 7-bit.
+    pub(crate) fn verbatim(&self, text: &str) -> String {
+        if self.mode == RenderMode::Ascii {
+            to_ascii(text)
+        } else {
+            text.to_owned()
+        }
     }
 
     /// The lines of an event; none when the verbosity hides it.

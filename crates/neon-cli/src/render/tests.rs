@@ -1,13 +1,14 @@
 use neon_engine::Game;
-use neon_engine::demo::{DemoGame, catalog_en, catalog_fr};
+use neon_engine::demo::DemoGame;
 use neon_engine::event::{Event, Gauge, Importance, Role, Severity, Table};
 use neon_engine::ids::ContactId;
 use neon_engine::prompt::{Choice, ChoiceOption, Input, Prompt, Step};
-use neon_engine::text::{RenderMode, StaticCatalog, Text};
+use neon_engine::text::{RenderMode, Text};
 
 use super::*;
+use crate::test_support::{catalog_en, catalog_fr};
 
-fn renderer(catalog: &StaticCatalog, mode: RenderMode, verbosity: Verbosity) -> Renderer<'_> {
+fn renderer(catalog: &Catalog, mode: RenderMode, verbosity: Verbosity) -> Renderer<'_> {
     Renderer {
         catalog,
         mode,
@@ -292,7 +293,7 @@ fn session() -> Vec<Step> {
     let mut steps = vec![game.start()];
     let mut script = vec![
         Input::Continue,
-        Input::Line("Neon".to_owned()),
+        Input::Line("Zoë « 影 »".to_owned()),
         Input::Confirm(true),
     ];
     for word in [
@@ -344,20 +345,25 @@ fn a_full_session_never_renders_a_missing_key_in_any_language_mode_or_verbosity(
 }
 
 #[test]
-fn ascii_mode_gives_ascii_only_text_for_the_english_demo() {
-    let catalog = catalog_en();
-    let r = renderer(&catalog, RenderMode::Ascii, Verbosity::Full);
-    for step in session() {
-        let mut lines: Vec<Line> = step
-            .events
-            .iter()
-            .flat_map(|event| r.event(event))
-            .collect();
-        let view = r.prompt(&step.prompt);
-        lines.extend(view.header);
-        lines.push(Line::new(LineKind::System, view.marker));
-        for line in lines {
-            assert!(line.text.is_ascii(), "not ASCII: {:?}", line.text);
+fn ascii_mode_gives_ascii_only_text_in_both_languages_whatever_the_player_typed() {
+    // The handle of `session()` has an accent, guillemets and a character with no equivalent.
+    for catalog in [catalog_en(), catalog_fr()] {
+        let r = renderer(&catalog, RenderMode::Ascii, Verbosity::Full);
+        let mut greeted = false;
+        for step in session() {
+            let mut lines: Vec<Line> = step
+                .events
+                .iter()
+                .flat_map(|event| r.event(event))
+                .collect();
+            let view = r.prompt(&step.prompt);
+            lines.extend(view.header);
+            lines.push(Line::new(LineKind::System, view.marker));
+            for line in lines {
+                assert!(line.text.is_ascii(), "not ASCII: {:?}", line.text);
+                greeted |= line.text.contains("Zoe \" ? \"");
+            }
         }
+        assert!(greeted, "the handle must be shown, transliterated");
     }
 }

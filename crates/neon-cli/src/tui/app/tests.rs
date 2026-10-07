@@ -1,5 +1,5 @@
-use neon_engine::demo::{DemoGame, catalog_en, catalog_fr};
-use neon_engine::text::{RenderMode, StaticCatalog};
+use neon_engine::demo::DemoGame;
+use neon_engine::text::{Catalog, RenderMode};
 use proptest::prelude::*;
 use ratatui::Terminal;
 use ratatui::backend::TestBackend;
@@ -7,8 +7,9 @@ use ratatui::crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
 use super::*;
 use crate::render::Verbosity;
+use crate::test_support::{catalog_en, catalog_fr};
 
-fn app_with<'a>(game: &'a mut DemoGame, catalog: &'a StaticCatalog, mode: RenderMode) -> App<'a> {
+fn app_with<'a>(game: &'a mut DemoGame, catalog: &'a Catalog, mode: RenderMode) -> App<'a> {
     let first = game.start();
     App::new(
         game,
@@ -363,4 +364,26 @@ fn an_interface_attached_to_a_game_under_way_does_not_replay_the_start() {
         "the player's state is shown: {:?}",
         rows[0]
     );
+}
+
+#[test]
+fn ascii_mode_shows_what_is_typed_as_ascii_and_keeps_every_cell_ascii() {
+    let (catalog, mut game) = (catalog_fr(), DemoGame::new(1));
+    let mut app = app_with(&mut game, &catalog, RenderMode::Ascii);
+    press(&mut app, KeyCode::Enter);
+    for c in "Zoë".chars() {
+        press(&mut app, KeyCode::Char(c));
+    }
+    let rows = screen(&app, 100, 28);
+    assert_eq!(rows[27], "Votre pseudo [Case] : Zoe", "while typing");
+    press(&mut app, KeyCode::Enter);
+    type_line(&mut app, "o");
+    let rows = screen(&app, 100, 28);
+    assert!(
+        has(&rows, "Zoe"),
+        "the handle is shown in the log: {rows:#?}"
+    );
+    for row in &rows {
+        assert!(row.is_ascii(), "not ASCII: {row:?}");
+    }
 }

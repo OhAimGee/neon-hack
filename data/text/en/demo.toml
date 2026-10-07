@@ -1,0 +1,71 @@
+# Texts of the demo game, English.
+# Keys are the table path plus the name; `name@sr` and `name@ascii` are variants of `name`.
+# Templates: {name}, and {count|singular|plural} (see docs/design/architecture-rust.md, section 6).
+
+[demo.banner]
+alt = "NEON HACK"
+
+[demo.intro]
+1 = "Neo-Tokyo, 2087. An old cyberdeck boots up on its own."
+2 = "On the screen, a single line: ENCRYPTED CHANNEL #7 - INCOMING CONNECTION."
+
+[demo.prompt]
+name = "Your handle"
+confirm_name = "Carve \"{name}\" into the net?"
+
+[demo.echo]
+greeting = "Finally. I was starting to think you would never wake up, {name}."
+ready = "Type 'help' to see what you can do."
+
+[demo.help]
+title = "Commands"
+col_command = "Command"
+col_effect = "Effect"
+help = "List the commands"
+status = "Show your situation"
+scan = "Scan the network"
+shop = "Visit the stall"
+quit = "Leave the net"
+
+[demo.status]
+name = "Handle: {name}"
+credits = "Credits: {credits}"
+trace = "Trace: {value}/{max} ({band})"
+
+[demo.scan]
+found = "The scan finds {found} open {found|port|ports}."
+reward = "+{credits} {credits|credit|credits}."
+
+[demo.alert]
+tense = "Security has noticed you."
+critical = "Security is closing in: your trace is critical."
+
+[demo.shop]
+title = "R4Z0R's stall"
+cancel = "Leave the stall"
+owned = "You already own it."
+cannot_afford = "{missing} {missing|credit|credits} short."
+bought = "You bought {item}."
+proxy_effect = "The proxy chain scrubs your trail."
+
+[demo.item.proxy]
+label = "Proxy chain ({price} {price|credit|credits})"
+name = "the proxy chain"
+
+[demo.item.cloak]
+label = "Cloak module ({price} {price|credit|credits})"
+name = "the cloak module"
+
+[demo.item.deck]
+label = "Deck upgrade ({price} {price|credit|credits})"
+name = "the deck upgrade"
+
+[demo.quit]
+confirm = "Leave the net?"
+bye = "Goodbye, {name}."
+
+[demo]
+unknown_command = "Unknown command: {command}"
+
+[demo.objective]
+trace = "Keep your trace under {limit}."

@@ -4,10 +4,6 @@
 //! stall), alerts, rewards, a gauge and a clean end. It is not the real game: it exists so
 //! that both frontends and the tests talk to a real engine while the real one is designed.
 
-mod text;
-
-pub use text::{catalog_en, catalog_fr};
-
 use crate::event::{Event, Gauge, Severity, Table};
 use crate::game::{Game, GaugeReading, View};
 use crate::ids::ContactId;
@@ -34,19 +30,19 @@ struct ItemDef {
 const ITEMS: [ItemDef; 3] = [
     ItemDef {
         id: "proxy",
-        label_key: "demo.item.proxy",
+        label_key: "demo.item.proxy.label",
         name_key: "demo.item.proxy.name",
         price: 30,
     },
     ItemDef {
         id: "cloak",
-        label_key: "demo.item.cloak",
+        label_key: "demo.item.cloak.label",
         name_key: "demo.item.cloak.name",
         price: 60,
     },
     ItemDef {
         id: "deck",
-        label_key: "demo.item.deck",
+        label_key: "demo.item.deck.label",
         name_key: "demo.item.deck.name",
         price: 200,
     },

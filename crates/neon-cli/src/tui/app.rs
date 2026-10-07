@@ -131,7 +131,8 @@ impl<'a> App<'a> {
         match to_input(&self.prompt, &line) {
             Ok(input) => {
                 let marker = self.renderer.prompt(&self.prompt).marker;
-                self.log.push(LogEntry::Echo(format!("{marker}{line}")));
+                let echo = self.renderer.verbatim(&format!("{marker}{line}"));
+                self.log.push(LogEntry::Echo(echo));
                 self.submit(input);
             }
             Err(InputError::NotYesOrNo) => {
@@ -211,7 +212,7 @@ impl<'a> App<'a> {
         } else {
             "│"
         };
-        let mut parts = vec![format!(" {}", view.player)];
+        let mut parts = vec![format!(" {}", self.renderer.verbatim(&view.player))];
         parts.extend(
             view.gauges
                 .iter()
@@ -332,7 +333,9 @@ impl<'a> App<'a> {
             .map(|line| TuiLine::from(Span::styled(line.text.clone(), style_of(line.kind))))
             .collect();
         // Keep the end of the line in view, and the cursor right after it.
-        let typed = format!("{}{}", view.marker, self.input);
+        let typed = self
+            .renderer
+            .verbatim(&format!("{}{}", view.marker, self.input));
         let shown = tail(&typed, width.saturating_sub(1));
         let cursor_x = u16::try_from(shown.width()).unwrap_or(0);
         let cursor_y = u16::try_from(lines.len()).unwrap_or(0);

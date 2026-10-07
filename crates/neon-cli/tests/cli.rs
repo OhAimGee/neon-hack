@@ -151,3 +151,46 @@ fn brief_verbosity_keeps_alerts_and_drops_the_atmosphere() {
     );
     assert!(brief.contains("[Reward]"));
 }
+
+#[test]
+fn ascii_mode_is_seven_bit_in_french_and_when_the_player_types_accents() {
+    let script = "\nZoë « 影 »\no\nscan\nquit\no\n";
+    for lang in ["en", "fr"] {
+        let output = run_with_input(
+            &["--demo", "--ascii", "--lang", lang, "--seed", "1"],
+            script,
+        );
+        assert!(output.status.success());
+        let text = stdout(&output);
+        assert!(text.is_ascii(), "{lang}:\n{text}");
+        assert!(
+            text.contains("Zoe \" ? \""),
+            "{lang}: the handle is kept, in ASCII"
+        );
+    }
+}
+
+#[test]
+fn plurals_follow_the_language_in_a_real_session() {
+    let play = |lang: &str, seed: &str| {
+        stdout(&run_with_input(
+            &["--demo", "--lang", lang, "--seed", seed],
+            "\nNeon\ny\nscan\nquit\ny\n",
+        ))
+    };
+    let mut found_one_port = false;
+    for seed in 1..40 {
+        let seed = seed.to_string();
+        let (en, fr) = (play("en", &seed), play("fr", &seed));
+        // The same seed finds the same number of ports in both languages.
+        assert_eq!(
+            en.contains("finds 1 open port."),
+            fr.contains("trouve 1 port ouvert."),
+            "seed {seed}:\n{en}\n{fr}"
+        );
+        assert!(!en.contains("1 open ports"), "{en}");
+        assert!(!fr.contains("1 ports"), "{fr}");
+        found_one_port |= en.contains("finds 1 open port.");
+    }
+    assert!(found_one_port, "some seed finds exactly one port");
+}
