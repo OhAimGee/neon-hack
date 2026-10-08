@@ -205,7 +205,7 @@ proptest! {
 
     /// Facts about things that do not exist change nothing.
     #[test]
-    fn unknown_ids_are_ignored(w in warm(), h in history(), junk in "[a-z0-9_-]{1,12}") {
+    fn unknown_ids_are_ignored(w in warm(), h in history(), junk in unknown_id()) {
         let c = content();
         let (mut s, _) = reached(w, &h);
         let before = s.clone();
@@ -245,6 +245,29 @@ fn generated_histories_reach_interesting_states() {
         completed >= 100 && opened >= 100 && decided >= 20 && late >= 20,
         "{completed} {opened} {decided} {late}"
     );
+}
+
+/// An id no namespace of the shipped content can contain: the reserved prefix `zz-`.
+fn unknown_id() -> impl Strategy<Value = String> {
+    "[a-z0-9_-]{1,12}".prop_map(|j| format!("zz-{j}"))
+}
+
+#[test]
+fn unknown_ids_never_collide_with_shipped_ids() {
+    let c = content();
+    let mut all: Vec<&str> = Vec::new();
+    all.extend(c.quests.iter().map(|x| x.id.as_str()));
+    all.extend(c.contacts.iter().map(|x| x.id.as_str()));
+    all.extend(c.items.iter().map(|x| x.id.as_str()));
+    all.extend(c.readables.iter().map(|x| x.id.as_str()));
+    all.extend(c.commands.iter().map(|x| x.id.as_str()));
+    all.extend(c.decisions.iter().map(|x| x.id.as_str()));
+    all.extend(c.topics.iter().map(|x| x.id.as_str()));
+    for site in &c.sites {
+        all.push(site.id.as_str());
+        all.extend(site.file.iter().map(|f| f.id.as_str()));
+    }
+    assert!(all.iter().all(|id| !id.starts_with("zz-")));
 }
 
 fn mutate(text: &str, pos: usize, len: usize, junk: &str) -> String {

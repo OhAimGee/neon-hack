@@ -17,11 +17,34 @@ fn k(id: &str) -> String {
 
 /// Every text key the content needs.
 pub fn required_keys(c: &Content) -> BTreeSet<String> {
-    let mut keys = BTreeSet::new();
-    let mut add = |key: String| {
-        keys.insert(key);
-    };
+    derive(c).into_iter().map(|(key, _)| key).collect()
+}
+
+/// Keys that two different things derive: `foo-bar` and `foo_bar` give the same key, so one
+/// catalog entry would serve two ids. Returns `(key, first owner, second owner)`.
+pub fn collisions(c: &Content) -> Vec<(String, String, String)> {
+    let mut seen: std::collections::BTreeMap<String, String> = std::collections::BTreeMap::new();
+    let mut out = Vec::new();
+    for (key, owner) in derive(c) {
+        match seen.get(&key) {
+            Some(first) if *first != owner => out.push((key, first.clone(), owner)),
+            Some(_) => {}
+            None => {
+                seen.insert(key, owner);
+            }
+        }
+    }
+    out
+}
+
+/// `(key, owner)` for every key, the owner being the id (or pair of ids) it comes from.
+fn derive(c: &Content) -> Vec<(String, String)> {
+    let owner = std::cell::RefCell::new(String::new());
+    let mut keys = Vec::new();
+    let mut add = |key: String| keys.push((key, owner.borrow().clone()));
+    let own = |s: String| *owner.borrow_mut() = s;
     for q in &c.quests {
+        own(format!("quest `{}`", q.id));
         let id = k(q.id.as_str());
         for field in ["title", "title_short", "desc", "lore", "loc", "debrief"] {
             add(format!("quest.{id}.{field}"));
@@ -35,8 +58,10 @@ pub fn required_keys(c: &Content) -> BTreeSet<String> {
         }
     }
     for s in &c.sites {
+        own(format!("site `{}`", s.id));
         add(format!("node.{}.desc", k(s.id.as_str())));
         for f in &s.file {
+            own(format!("file `{}` of site `{}`", f.id, s.id));
             add(format!(
                 "file.{}.{}.desc",
                 k(s.id.as_str()),
@@ -45,14 +70,17 @@ pub fn required_keys(c: &Content) -> BTreeSet<String> {
         }
     }
     for i in &c.items {
+        own(format!("item `{}`", i.id));
         add(format!("item.{}.name", k(i.id.as_str())));
         add(format!("item.{}.desc", k(i.id.as_str())));
     }
     for ct in &c.contacts {
+        own(format!("contact `{}`", ct.id));
         add(format!("contact.{}.name", k(ct.id.as_str())));
         add(format!("contact.{}.tagline", k(ct.id.as_str())));
     }
     for t in &c.topics {
+        own(format!("topic `{}` of `{}`", t.id, t.contact));
         let base = format!(
             "contact.{}.topic.{}",
             k(t.contact.as_str()),
@@ -62,6 +90,7 @@ pub fn required_keys(c: &Content) -> BTreeSet<String> {
         add(format!("{base}.a"));
     }
     for r in &c.readables {
+        own(format!("readable `{}`", r.id));
         let id = k(r.id.as_str());
         match r.kind {
             ReadableKind::Fragment => {
@@ -81,8 +110,10 @@ pub fn required_keys(c: &Content) -> BTreeSet<String> {
         }
     }
     for d in &c.decisions {
+        own(format!("decision `{}`", d.id));
         add(format!("decision.{}.prompt", k(d.id.as_str())));
         for ch in &d.choice {
+            own(format!("choice `{}` of decision `{}`", ch.id, d.id));
             add(format!(
                 "decision.{}.choice.{}.label",
                 k(d.id.as_str()),
@@ -91,15 +122,18 @@ pub fn required_keys(c: &Content) -> BTreeSet<String> {
         }
     }
     for e in &c.endings {
+        own(format!("ending `{}`", e.id));
         add(format!("ending.{}.title", k(e.id.as_str())));
         for n in 1..=e.paragraphs {
             add(format!("ending.{}.p{n:02}", k(e.id.as_str())));
         }
     }
     for l in &c.epilogue {
+        own(format!("epilogue line `{}`", l.id));
         add(format!("epilogue.{}", k(l.id.as_str())));
     }
     for cmd in &c.commands {
+        own(format!("command `{}`", cmd.id));
         add(format!("command.{}.help", k(cmd.id.as_str())));
     }
     keys

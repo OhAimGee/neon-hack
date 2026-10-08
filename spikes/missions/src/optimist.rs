@@ -42,6 +42,8 @@ pub struct Report {
     pub log: Vec<Vec<Fact>>,
     /// Quests still active or offered (and not skipped) when nothing more could be done.
     pub stuck: Vec<QuestId>,
+    /// Lowest credit balance seen after a round: negative means the player overspent.
+    pub min_credits: i64,
 }
 
 /// Every combination of the options of every decision, with and without the optional
@@ -74,10 +76,16 @@ pub fn all_plans(c: &Content) -> Vec<Plan> {
 
 /// Plays the whole content with the plan.
 pub fn play(c: &Content, plan: &Plan) -> Report {
-    let (mut s, mut outputs) = new_game(c);
-    let mut now: Turn = 0;
+    let (s, outputs) = new_game(c);
+    play_from(c, plan, s, outputs)
+}
+
+/// Plays from a given state; `fresh` is what the last refresh returned.
+pub fn play_from(c: &Content, plan: &Plan, mut s: State, mut outputs: Vec<Output>) -> Report {
+    let mut now: Turn = s.clock;
     let mut rounds = 0;
     let mut fresh = outputs.clone();
+    let mut min_credits = s.credits(c);
     let mut log: Vec<Vec<Fact>> = Vec::new();
     while rounds < MAX_ROUNDS {
         rounds += 1;
@@ -87,6 +95,7 @@ pub fn play(c: &Content, plan: &Plan) -> Report {
             s: &s,
             now: &mut now,
             facts: Vec::new(),
+            reserved: 0,
         };
         w.round(&fresh);
         let mut facts = w.facts;
@@ -109,6 +118,7 @@ pub fn play(c: &Content, plan: &Plan) -> Report {
         }
         fresh = refresh(c, &mut s);
         outputs.extend(fresh.clone());
+        min_credits = min_credits.min(s.credits(c));
         before.clock = s.clock;
         if s == before {
             break;
@@ -130,6 +140,7 @@ pub fn play(c: &Content, plan: &Plan) -> Report {
         rounds,
         log,
         stuck,
+        min_credits,
     }
 }
 
@@ -139,6 +150,8 @@ struct Walker<'a> {
     s: &'a State,
     now: &'a mut Turn,
     facts: Vec<Fact>,
+    /// Credits already committed by the facts queued in this round.
+    reserved: i64,
 }
 
 impl Walker<'_> {
@@ -307,7 +320,8 @@ impl Walker<'_> {
             }
             Goal::Pay { amount } => {
                 let price = self.c.resolve(*amount, q.tier).0;
-                if self.s.credits(self.c) >= i64::from(price) {
+                if self.spendable() >= i64::from(price) {
+                    self.reserved += i64::from(price);
                     let at = self.next();
                     self.facts.push(Fact::Paid { amount: price, at });
                 }
@@ -351,12 +365,23 @@ impl Walker<'_> {
 
     fn buy(&mut self, item: &ItemId) {
         let Some(def) = self.c.item(item) else { return };
+        let queued = self
+            .facts
+            .iter()
+            .any(|f| matches!(f, Fact::ItemBought { item: i } if i == item));
         if !self.s.owned.contains(item)
+            && !queued
             && self.s.unlocked(&def.unlock)
-            && self.s.credits(self.c) >= i64::from(def.price)
+            && self.spendable() >= i64::from(def.price)
         {
+            self.reserved += i64::from(def.price);
             self.facts.push(Fact::ItemBought { item: item.clone() });
         }
+    }
+
+    /// Credits left once the costs already queued in this round are counted.
+    fn spendable(&self) -> i64 {
+        self.s.credits(self.c) - self.reserved
     }
 
     /// Compromises a site, its relays first. Nothing happens when a gate is closed.

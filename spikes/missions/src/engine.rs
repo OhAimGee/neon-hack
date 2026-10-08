@@ -28,7 +28,8 @@ pub enum Output {
         quest: QuestId,
         key: ObjKey,
     },
-    /// A payment. `key` is unique: it is also in `State::claimed`.
+    /// A payment. `key` is unique: the source's key is in `State::claimed` (`quest-m05`), a
+    /// `grant` effect adds `:<block>.<effect>` to it.
     Reward {
         key: String,
         credits: i64,
@@ -225,6 +226,7 @@ impl Pass<'_> {
             QuestStatus::Available => {
                 if !self.offerable(q) {
                     self.set_status(q, QuestStatus::Unavailable);
+                    self.s.accepted.remove(&q.id);
                     self.out.push(Output::QuestWithdrawn(q.id.clone()));
                 } else if q.kind == QuestKind::Main || self.s.accepted.contains(&q.id) {
                     self.set_status(q, QuestStatus::Active);
@@ -252,10 +254,17 @@ impl Pass<'_> {
             return false;
         };
         let opened_at = run.opened_at;
-        if !q.failable && self.s.restarts.get(&q.id).is_some_and(|t| *t > opened_at) {
-            let clock = self.s.clock;
+        let restart = self
+            .s
+            .restarts
+            .get(&q.id)
+            .copied()
+            .filter(|t| *t > opened_at);
+        if let (false, Some(at)) = (q.failable, restart) {
+            // Reopened at the turn of the restart, not at the end of the batch: a fact of a
+            // later turn in the same batch counts.
             if let Some(run) = self.s.quests.get_mut(&q.id) {
-                run.opened_at = clock;
+                run.opened_at = at;
                 run.done.clear();
             }
             self.out.push(Output::QuestRestarted(q.id.clone()));
@@ -375,11 +384,13 @@ impl Pass<'_> {
         });
     }
 
+    /// Runs the blocks of a source. A `grant` inside gets its own stable key
+    /// (`<source>:<block>.<effect>`) so that every `Output::Reward` key is unique.
     fn blocks(&mut self, blocks: &[Block], tier: u8, key: &str) {
-        for b in blocks {
+        for (bi, b) in blocks.iter().enumerate() {
             if b.when.as_ref().is_none_or(|w| w.eval(self.c, self.s)) {
-                for e in &b.then {
-                    self.effect(e, tier, key);
+                for (ei, e) in b.then.iter().enumerate() {
+                    self.effect(e, tier, &format!("{key}:{bi}.{ei}"));
                 }
             }
         }

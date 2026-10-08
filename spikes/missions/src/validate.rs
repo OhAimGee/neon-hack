@@ -212,19 +212,35 @@ impl V<'_> {
         for t in &c.topics {
             unlocks_in(&t.then, &mut unlocked);
         }
-        for r in &c.readables {
-            let yielded = c
-                .sites
+        // What the player can really get: what is known at the start, handed out by an effect or
+        // yielded by a file, then what the documents among those yield, and so on. Two
+        // documents yielding each other, with no other source, are never obtained.
+        let mut obtainable: BTreeSet<&crate::ids::ReadableId> = unlocked;
+        obtainable.extend(c.readables.iter().filter(|r| r.start).map(|r| &r.id));
+        obtainable.extend(
+            c.sites
                 .iter()
-                .any(|s| s.file.iter().any(|f| f.yields.as_ref() == Some(&r.id)))
-                || c.readables.iter().any(|d| d.yields.as_ref() == Some(&r.id));
-            if !(r.start || yielded || unlocked.contains(&r.id)) {
-                self.err(
-                    File::Catalog,
-                    r.at,
-                    format!("readable `{}` has no source: not `start`, yielded by no file or document, unlocked by no effect", r.id),
-                );
+                .flat_map(|s| s.file.iter().filter_map(|f| f.yields.as_ref())),
+        );
+        loop {
+            let more: Vec<&crate::ids::ReadableId> = c
+                .readables
+                .iter()
+                .filter(|d| obtainable.contains(&d.id))
+                .filter_map(|d| d.yields.as_ref())
+                .filter(|y| !obtainable.contains(y))
+                .collect();
+            if more.is_empty() {
+                break;
             }
+            obtainable.extend(more);
+        }
+        for r in c.readables.iter().filter(|r| !obtainable.contains(&r.id)) {
+            self.err(
+                File::Catalog,
+                r.at,
+                format!("readable `{}` has no source: not `start`, not unlocked by an effect, and no file or obtainable document yields it", r.id),
+            );
         }
     }
 
@@ -352,6 +368,17 @@ impl V<'_> {
             &q.giver,
         );
         self.unlock(f, at, &ctx, &q.unlock);
+        if let Some(u) = &q.unlock.quest {
+            if *u == q.id {
+                self.err(f, at, format!("{ctx}: is locked by itself"));
+            } else if c.quest_index(u).is_some_and(|i| i > idx) {
+                self.err(
+                    f,
+                    at,
+                    format!("{ctx}: its unlock quest `{u}` is written after it"),
+                );
+            }
+        }
         for p in &q.prereq {
             self.refer(f, at, &ctx, "prerequisite", c.quest(p).is_some(), p);
             if *p == q.id {
@@ -564,12 +591,17 @@ impl V<'_> {
     fn prereq_cycles(&mut self) {
         let c = self.c;
         let mut indeg: BTreeMap<&QuestId, usize> = c.quests.iter().map(|q| (&q.id, 0)).collect();
+        // A quest waits for its prerequisites and for its `unlock.quest`.
+        let deps = |q: &QuestDef| -> Vec<QuestId> {
+            q.prereq
+                .iter()
+                .chain(q.unlock.quest.iter())
+                .filter(|p| **p != q.id && c.quest(p).is_some())
+                .cloned()
+                .collect()
+        };
         for q in &c.quests {
-            for p in &q.prereq {
-                if c.quest(p).is_some() && *p != q.id {
-                    *indeg.entry(&q.id).or_insert(0) += 1;
-                }
-            }
+            *indeg.entry(&q.id).or_insert(0) += deps(q).len();
         }
         let mut ready: Vec<&QuestId> = indeg
             .iter()
@@ -992,6 +1024,13 @@ impl V<'_> {
     // --------------------------------------------------------------- texts
 
     fn texts(&mut self) {
+        for (key, first, second) in crate::texts::collisions(self.c) {
+            self.err(
+                File::Texts,
+                0,
+                format!("text key `{key}` is derived from both {first} and {second} (`-` and `_` give the same key)"),
+            );
+        }
         let derived = required_keys(self.c);
         let text = self.c.sources.get(File::Texts).to_owned();
         for key in derived.difference(&self.c.texts) {

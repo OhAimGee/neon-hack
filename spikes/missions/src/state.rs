@@ -315,7 +315,10 @@ impl State {
             {
                 self.topics.insert((contact.clone(), topic.clone()))
             }
-            Fact::QuestAccepted { quest } if c.quest(quest).is_some() => {
+            // Only an offered quest can be accepted: the acceptance cannot be stored in advance.
+            Fact::QuestAccepted { quest }
+                if c.quest(quest).is_some() && self.status(quest) == QuestStatus::Available =>
+            {
                 self.accepted.insert(quest.clone())
             }
             Fact::QuestRestarted { quest, at } if c.quest(quest).is_some() => {
