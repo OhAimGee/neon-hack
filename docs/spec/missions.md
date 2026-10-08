@@ -27,7 +27,7 @@ Un langage déclaratif **petit** suffit :
 5. **Pas de Turing-complétude** : aucune boucle, aucune variable hors des drapeaux déclarés, conditions de profondeur ≤ 6, un effet ne déclenche pas d'effet, une exécution par effet, écritures concurrentes d'un même drapeau refusées au chargement.
 6. **Déterminisme** : collections ordonnées, tableaux `[[…]]` dans l'ordre du fichier, aucun temps réel (un compteur de tours).
 
-## 3. Règles tranchées par défaut
+## 3. Règles tranchées
 
 | Règle | Décision | Raison |
 |---|---|---|
@@ -54,10 +54,10 @@ Seule l'exécution les fait apparaître ; trois sont de vraies impasses. Le spik
 | 8 | D2 « −1 de confiance » : échelon ou point ? | −10 points | précision |
 | 9 | D1 est en M10, pas en M09 | suivre la bible 4.4 | cohérence |
 
-## 5. Ce qui reste à décider (avant R2)
+## 5. Décisions du propriétaire (8 octobre 2026)
 
-- **S-6 (propriétaire)** : valider le langage de missions tel quel (14 objectifs, 9 conditions, 9 effets), la règle R-OPEN et les neuf corrections du § 4.
-- **S-7 (propriétaire)** : « Neon Angel redevient libre si le joueur reprend Radio Veille avant M13 » (bible 3.4) n'est pas exprimable : il faudrait un réacteur sur un fait hors quête (`on_fact`). Option A : ajouter ce bloc (une extension). Option B : retirer la règle (Angel reste `silenced` ou `free` selon un seul choix de M08). **Recommandation : B**, qui garde le langage fermé.
+- **S-6 : validée.** Le langage de missions tel quel (14 objectifs, 9 conditions, 9 effets), la règle R-OPEN et les neuf corrections du § 4.
+- **S-7 : option B retenue, la règle est retirée.** « Neon Angel redevient libre si le joueur reprend Radio Veille avant M13 » (bible 3.4) n'est pas exprimable : il faudrait un réacteur sur un fait hors quête (`on_fact`). Option A : ajouter ce bloc (une extension). Option B : retirer la règle (Angel reste `silenced` ou `free` selon un seul choix de M08). Le langage reste fermé (pas de bloc `on_fact`).
 
 ## 6. Ce que R2 fait de ce spike
 

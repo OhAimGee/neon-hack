@@ -54,7 +54,7 @@ Renommer un **mot** (changer « Trace » en autre chose) ne touche que `terms.to
 
 ## 5. Arbitrages du cross-check 9
 
-Le cross-check demande de trancher cinq divergences ; voici ce qui est écrit dans le glossaire, pour validation du propriétaire (S-1 de [`DECISIONS.md`](../design/DECISIONS.md) § 5).
+Le cross-check demande de trancher cinq divergences ; voici ce qui est écrit dans le glossaire, validé par le propriétaire le 8 octobre 2026 (S-1 de [`DECISIONS.md`](../design/DECISIONS.md) § 5).
 
 | Divergence | Décision | Pourquoi |
 |---|---|---|

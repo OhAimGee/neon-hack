@@ -65,7 +65,7 @@ Ces constats **touchent le design**, pas seulement l'implémentation :
 - [`commands.md`](commands.md) : aucune commande ne change ; `skip` est ouverte en difficulté Histoire seulement.
 - `spikes/solver` reste dans le dépôt comme preuve et comme base de portage ; il est supprimé quand `neon-engine::run::solve` existe (R4), comme `spikes/missions` en R2.
 
-## 7. Décisions pour le propriétaire
+## 7. Décisions (validées par le propriétaire le 8 octobre 2026)
 
 - **S-9** : le rôle du solveur (outil de test et de CI ; exécution bornée avec repli, `AutoResolve` « meilleur effort », § 2).
 - **S-10** : la marge de difficulté se calcule sur le kit minimal du palier (§ 5 a).

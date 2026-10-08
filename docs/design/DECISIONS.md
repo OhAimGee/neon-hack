@@ -71,7 +71,7 @@ D-01 vérité de fond (ECHO-7, AURA, le Courtier) · D-02 périmètre (cible 23 
 | T2 | Troisième langue envisagée ? | Non pour la 1.0 : i18n maison. Oui : Fluent dès maintenant |
 | T3 | Appliquer les réglages GitHub (livraison D6) | Oui, par le propriétaire : ils ne se font pas depuis le dépôt |
 
-Restent à valider **sans bloquer R0, R1 ni P1** : G1 à G4, G6, G8 à G11 et D-04 à D-10. Recommandation : oui à tout, avec véto possible à la relecture de chaque lot.
+**Validées par le propriétaire le 8 octobre 2026 (§ 6)** : G1 à G4, G6, G8 à G11 et D-04 à D-10, avec les recommandations de ce tableau, véto possible à la relecture de chaque lot.
 
 ## 4. Résolutions par défaut, « moindre friction » (7 octobre 2026)
 
@@ -94,7 +94,7 @@ Le propriétaire a demandé la solution la moins frictionnante pour les contradi
 | R-8 | **Textes** (lot R1.2, CROSS-CHECK 3) : catalogues TOML par langue dans `data/text/<langue>/*.toml`, tables imbriquées aplaties en clés pointées (une clé ne peut pas être à la fois un texte et une table) ; variantes `clé@sr` et `clé@ascii` ; gabarits `{nom}` et `{n|singulier|pluriel}` à formes imbriquables, accolades réservées et sans échappement (ce que tape le joueur passe en argument) ; règle de pluriel par langue (`Lang::plural`) ; `--ascii` = translittération complète de la ligne finale en un seul point, `?` pour ce qui n'a pas d'équivalent ; embarquement par `build.rs` (aucune E/S à l'exécution) ; contrôles de contenu `text::check` exécutés par les tests. Les budgets de largeur d'affichage attendent le schéma de contenu (R2) |
 | R-7 | **Sauvegarde** (CROSS-CHECK 8) : trois notions distinctes, autosave courante, points de contrôle jamais écrasés par l'autosave, emplacements manuels (3 visibles, capacité 9) ; spécifiée avec le format en R1 |
 
-## 5. Décisions proposées par les spécifications P1 (à valider par le propriétaire)
+## 5. Décisions des spécifications P1 (validées par le propriétaire, § 6)
 
 Chaque spécification de [`docs/spec/`](../spec/README.md) inscrit ici ce qu'elle tranche **par défaut** (moindre friction : appliqué tel quel sauf véto). Une décision du propriétaire la remplace sans refonte : le glossaire et la table de commandes sont des données.
 
@@ -111,3 +111,22 @@ Chaque spécification de [`docs/spec/`](../spec/README.md) inscrit ici ce qu'ell
 | S-9 | [Solveur](../spec/solver.md) § 7 | Le solveur exact est un outil de test et de CI ; à l'exécution, `AutoResolve` = exact borné (N = 5 000), puis repli `anytime`, puis Trace nominale du palier (« approximatif ») ; la prévision n'utilise pas le solveur |
 | S-10 | [Solveur](../spec/solver.md) § 5 a | La marge de difficulté se calcule sur le kit minimal du palier, pas sur le kit complet |
 | S-11 | [Solveur](../spec/solver.md) § 5 b-e | Spoof limité (pas sous la Trace du début du tour, ou une charge), « grillé » à tout instant, deck de 4 à 8 emplacements avec consommables hors deck, Virus et Overclock à rééquilibrer : décision de design la plus lourde de P1 (les utilitaires effacent la Trace dès le palier 3) |
+
+## 6. Validation du propriétaire (8 octobre 2026)
+
+Le propriétaire a **validé** l'ensemble des décisions ouvertes à la fin de la phase P1, avec les recommandations indiquées. Elles sont fermes ; un véto reste possible à la relecture de chaque lot.
+
+| Décision | Résultat |
+|---|---|
+| G1-G4, G6, G8-G11 | recommandations du § 3.1 : intrusion à tours déterministe en deux temps (`AutoResolve`, puis tactique), hasard limité au butin et aux variantes, pas de game over hors Hardcore, paliers liés aux quêtes principales, neuf contacts avec rôle et arc, mode Histoire, vitesse du texte réglable et interruptible, saisie par numéro ou nom, annulation selon la difficulté |
+| D-04 à D-10 | recommandations du § 3.2 : renommages, ton et notes de contenu, conséquences permanentes, documents chiffrés sans saisie, organisation des textes, voix, tranche verticale des chapitres 1-2 d'abord |
+| **S-1** | vocabulaire du glossaire validé, avec **« niveau »** à l'écran (jamais « palier ») |
+| **S-2** | interface **neutre** (ni tu ni vous), chaque personnage garde sa voix |
+| S-3 à S-5 | commandes, écran d'intrusion, prévision et annulation du tour : validés tels que spécifiés |
+| S-6 | langage de missions validé avec la règle R-OPEN et les neuf corrections de la bible |
+| **S-7** | option B : la règle « Neon Angel redevient libre » est **retirée**, le langage de missions reste fermé (pas de bloc `on_fact`) |
+| S-8 | seuils d'équilibrage en données, barrières et objectifs du départ, cadence de 8 commandes par minute : validés |
+| S-9, S-10 | rôle du solveur (test et CI ; exécution bornée avec repli, `AutoResolve` « meilleur effort ») et marge sur kit minimal : validés |
+| **S-11** | **Spoof est limité** : il ne descend pas sous la Trace du début du tour (ou une seule charge par intrusion, à trancher par la simulation R6) ; « grillé » à tout instant ; deck de 4 à 8 emplacements, consommables hors deck ; Virus et Overclock à rééquilibrer en R6 |
+
+La phase P1 est terminée : R2 (contenu et campagne) peut commencer.
