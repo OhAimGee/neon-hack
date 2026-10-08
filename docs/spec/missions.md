@@ -1,6 +1,6 @@
 # Spécification : le langage de missions
 
-> Phase P1, lot P1.2. Résout la contradiction 12 du [cross-check](../design/CROSS-CHECK.md) : le prototype n'avait que 3 conditions, la bible en demandait une dizaine, des effets, 7 états de contact et des drapeaux typés. **Cette spécification s'appuie sur un spike exécuté** : le crate [`spikes/missions`](../../spikes/missions/README.md) charge, valide et fait jouer les quêtes M01 à M14 de la bible en entier, neuf contrats, les trois décisions et les cinq fins. Sa [référence du langage](../../spikes/missions/README.md) (§ 3) est la définition précise ; ce document en garde les décisions et ce qui change pour R2.
+> Phase P1, lot P1.2. Résout la contradiction 12 du [cross-check](../design/CROSS-CHECK.md) : le prototype n'avait que 3 conditions, la bible en demandait une dizaine, des effets, 7 états de contact et des drapeaux typés. **Cette spécification s'appuie sur un spike exécuté**, porté en R2.1 dans [`crates/neon-engine/src/content`](../../crates/neon-engine/src/content/mod.rs) (le crate `spikes/missions` a été supprimé) : le module charge, valide et fait jouer les quêtes M01 à M14 de la bible en entier, neuf contrats, les trois décisions et les cinq fins. Sa [référence du langage](missions-language.md) (§ 3) est la définition précise ; ce document en garde les décisions et ce qui change pour R2.
 
 ## 1. Verdict du spike
 
@@ -36,7 +36,7 @@ Un langage déclaratif **petit** suffit :
 | `FAILED` | réservé aux quêtes `failable` (S12), **interdit aux quêtes principales** (validé au chargement) ; une quête non `failable` dont le pic est perdu attend `QuestRestarted` | un échec principal serait une impasse |
 | Limite d'objectifs | **8** par quête (la bible a M01 à 7, M12 à 6) ; 4 alternatives par `any_of` ; texte d'objectif ≤ 64 colonnes | huit lignes tiennent dans le journal du palier 64×20 |
 | Récompenses | symboliques (S/M/L/XL) résolues par `rewards.toml` ; verrou d'une quête par `unlock = { tier = n }` ou `{ quest = "id" }` | cross-check 4 |
-| Sauvegarde | le registre est une collection ordonnée de clés texte : la sérialisation de `State` reste à écrire en R2 (le spike ne la fait pas) | R-9 |
+| Sauvegarde | le registre est une collection ordonnée de clés texte ; la sérialisation de `State` et `State::validate(&Content)` sont écrites au lot R2.1 (`persist.rs`), sans changer la version de l'enveloppe | R-9 |
 
 ## 4. Contradictions de la bible révélées par l'exécution
 
@@ -61,12 +61,12 @@ Seule l'exécution les fait apparaître ; trois sont de vraies impasses. Le spik
 
 ## 6. Ce que R2 fait de ce spike
 
-1. **Porter** `schema`, `content`, `validate`, `state`, `eval`, `engine`, `texts`, `ids` dans `neon-engine` (≈ 3 100 lignes ; le chargeur et l'évaluateur seuls ≈ 1 900). Le moteur n'a pas d'E/S : le chargeur prend déjà des chaînes. Le `Fact` du spike devient le `Fact` du bus interne (cross-check 1).
-2. Brancher les **newtypes saturants** (crédits, réputation) et les `Text` réels : les `Output` du spike deviennent des `Event`.
-3. Écrire la **sérialisation de l'état** dans l'enveloppe de sauvegarde (clés texte, versionnée, validation au chargement).
-4. Le **joueur optimiste** (≈ 430 lignes) devient un outil de test et de `neon-sim` (voir [`neon-sim.md`](neon-sim.md)).
-5. Brancher les **budgets de largeur** (`texts::check_budgets`) sur `unicode-width` et les catalogues FR/EN (cross-check 14, [écran d'intrusion](run-screen.md) § 6.3).
-6. **Supprimer `spikes/missions`** une fois porté : c'est une preuve de concept, pas une dépendance.
+1. **Porter** `schema`, `content`, `validate`, `state`, `eval`, `engine`, `texts`, `ids` dans `neon-engine` (≈ 3 100 lignes ; le chargeur et l'évaluateur seuls ≈ 1 900). Le moteur n'a pas d'E/S : le chargeur prend déjà des chaînes. Le `Fact` du spike devient le `Fact` du bus interne (cross-check 1). **Fait en R2.1** : `neon_engine::content::{ids, schema, loader, validate, state, eval, engine, texts}`, données dans `data/world/`, embarquées par `build.rs`.
+2. Brancher les **newtypes saturants** (crédits, réputation) et les `Text` réels : les `Output` du spike deviennent des `Outcome`, que le jeu de campagne transforme en `Event`. **Newtypes et `Outcome` faits en R2.1 ; la transformation en `Event` est le lot R2.2.**
+3. Écrire la **sérialisation de l'état** dans l'enveloppe de sauvegarde (clés texte, versionnée, validation au chargement). **Fait en R2.1** (`content::persist`, aller-retour en propriété).
+4. Le **joueur optimiste** (≈ 430 lignes) devient un outil de test et de `neon-sim` (voir [`neon-sim.md`](neon-sim.md)). **Outil de test fait en R2.1** (`tests/content/optimist.rs`, les 216 plans en ≈ 3 s en debug) ; sa reprise par `neon-sim` viendra avec R6.
+5. Brancher les **budgets de largeur** (`texts::check_budgets`) sur `unicode-width` et les catalogues FR/EN (cross-check 14, [écran d'intrusion](run-screen.md) § 6.3). **Mesure et contrôles branchés en R2.1** (`texts::display_width`, `check_catalog_budgets`, `missing_keys`) ; les catalogues eux-mêmes arrivent avec les textes (R2.3).
+6. **Supprimer `spikes/missions`** une fois porté : c'est une preuve de concept, pas une dépendance. **Fait en R2.1.**
 
 ## 7. Limites
 

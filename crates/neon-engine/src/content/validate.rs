@@ -3,14 +3,17 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Display;
 
-use crate::content::{Content, Diagnostic, File};
-use crate::eval::find_objective;
-use crate::ids::{FlagId, QuestId, valid_id};
-use crate::schema::{
-    Block, Cond, Effect, FlagDef, FlagKind, FlagValue, Goal, Objective, QuestDef, QuestKind,
-    ReadableKind, Size,
+use crate::content::engine::ENDING_FLAG;
+use crate::content::eval::find_objective;
+use crate::content::ids::{FlagId, QuestId, valid_id};
+use crate::content::money::Credits;
+use crate::content::schema::{
+    Block, Cond, Effect, FlagDef, FlagKind, FlagValue, Goal, MAX_TIER, Objective, QuestDef,
+    QuestKind, ReadableKind, Size,
 };
-use crate::texts::required_keys;
+use crate::content::state::HEAT_MAX;
+use crate::content::texts::required_keys;
+use crate::content::{Content, Diagnostic, File};
 
 /// Most objectives in a quest. The bible has M01 with 7 and M12 with 6; the journal shows one
 /// line each and the 64x20 layout leaves about 12 lines for it, so 8 is the ceiling. A quest
@@ -119,8 +122,9 @@ impl V<'_> {
             );
             if let Some(r) = &s.relay {
                 self.refer(f, s.at, &ctx, "relay site", c.site(r).is_some(), r);
-                let tier_of =
-                    |id: &crate::ids::SiteId| c.site(id).and_then(|x| x.unlock.tier).unwrap_or(1);
+                let tier_of = |id: &crate::content::ids::SiteId| {
+                    c.site(id).and_then(|x| x.unlock.tier).unwrap_or(1)
+                };
                 if c.site(r).is_some() && tier_of(r) > s.unlock.tier.unwrap_or(1) {
                     self.err(
                         f,
@@ -186,9 +190,13 @@ impl V<'_> {
         }
     }
 
-    fn unlock(&mut self, file: File, at: usize, ctx: &str, u: &crate::schema::Unlock) {
-        if u.tier.is_some_and(|t| !(1..=6).contains(&t)) {
-            self.err(file, at, format!("{ctx}: unlock tier must be 1 to 6"));
+    fn unlock(&mut self, file: File, at: usize, ctx: &str, u: &crate::content::schema::Unlock) {
+        if u.tier.is_some_and(|t| !(1..=MAX_TIER).contains(&t)) {
+            self.err(
+                file,
+                at,
+                format!("{ctx}: unlock tier must be 1 to {MAX_TIER}"),
+            );
         }
         if let Some(q) = &u.quest {
             self.refer(file, at, ctx, "quest", self.c.quest(q).is_some(), q);
@@ -198,7 +206,7 @@ impl V<'_> {
     /// Every readable must come from somewhere (bible test T9).
     fn sources_of_readables(&mut self) {
         let c = self.c;
-        let mut unlocked: BTreeSet<&crate::ids::ReadableId> = BTreeSet::new();
+        let mut unlocked: BTreeSet<&crate::content::ids::ReadableId> = BTreeSet::new();
         for q in &c.quests {
             unlocks_in(&q.on_open, &mut unlocked);
             unlocks_in(&q.on_complete, &mut unlocked);
@@ -215,7 +223,7 @@ impl V<'_> {
         // What the player can really get: what is known at the start, handed out by an effect or
         // yielded by a file, then what the documents among those yield, and so on. Two
         // documents yielding each other, with no other source, are never obtained.
-        let mut obtainable: BTreeSet<&crate::ids::ReadableId> = unlocked;
+        let mut obtainable: BTreeSet<&crate::content::ids::ReadableId> = unlocked;
         obtainable.extend(c.readables.iter().filter(|r| r.start).map(|r| &r.id));
         obtainable.extend(
             c.sites
@@ -223,7 +231,7 @@ impl V<'_> {
                 .flat_map(|s| s.file.iter().filter_map(|f| f.yields.as_ref())),
         );
         loop {
-            let more: Vec<&crate::ids::ReadableId> = c
+            let more: Vec<&crate::content::ids::ReadableId> = c
                 .readables
                 .iter()
                 .filter(|d| obtainable.contains(&d.id))
@@ -315,9 +323,9 @@ impl V<'_> {
                 );
             }
         }
-        for t in 1..=6u8 {
+        for t in 1..=MAX_TIER {
             let defs: Vec<_> = c.tiers.iter().filter(|x| x.id == t).collect();
-            if defs.len() != 1 || defs.iter().any(|x| x.price == 0) {
+            if defs.len() != 1 || defs.iter().any(|x| x.price == Credits::ZERO) {
                 self.err(
                     File::Rewards,
                     defs.first().map_or(0, |x| x.at),
@@ -325,7 +333,7 @@ impl V<'_> {
                 );
             }
         }
-        if let Some(t) = c.tiers.iter().find(|t| !(1..=6).contains(&t.id)) {
+        if let Some(t) = c.tiers.iter().find(|t| !(1..=MAX_TIER).contains(&t.id)) {
             self.err(File::Rewards, t.at, format!("tier {} out of range", t.id));
         }
     }
@@ -356,8 +364,8 @@ impl V<'_> {
         if !(1..=6).contains(&q.chapter) {
             self.err(f, at, format!("{ctx}: chapter must be 1 to 6"));
         }
-        if !(1..=6).contains(&q.tier) {
-            self.err(f, at, format!("{ctx}: tier must be 1 to 6"));
+        if !(1..=MAX_TIER).contains(&q.tier) {
+            self.err(f, at, format!("{ctx}: tier must be 1 to {MAX_TIER}"));
         }
         self.refer(
             f,
@@ -427,10 +435,11 @@ impl V<'_> {
                 ),
             );
         }
-        if let Some(g) = &q.reward {
-            if g.credits.is_none() && g.reputation.is_none() {
-                self.err(f, at, format!("{ctx}: empty reward"));
-            }
+        if let Some(g) = &q.reward
+            && g.credits.is_none()
+            && g.reputation.is_none()
+        {
+            self.err(f, at, format!("{ctx}: empty reward"));
         }
         let mut ids = BTreeSet::new();
         for (i, o) in q.objective.iter().enumerate() {
@@ -453,14 +462,14 @@ impl V<'_> {
         let c = self.c;
         let f = File::Quests;
         let at = o.at;
-        if let Some(id) = &o.id {
-            if !valid_id(id) || !ids.insert(id.clone()) {
-                self.err(
-                    f,
-                    at,
-                    format!("{ctx}: objective id `{id}` is invalid or duplicated in the quest"),
-                );
-            }
+        if let Some(id) = &o.id
+            && (!valid_id(id) || !ids.insert(id.clone()))
+        {
+            self.err(
+                f,
+                at,
+                format!("{ctx}: objective id `{id}` is invalid or duplicated in the quest"),
+            );
         }
         if let Some(w) = &o.when {
             self.cond(f, at, ctx, w, 1);
@@ -481,7 +490,7 @@ impl V<'_> {
             Goal::Extract { site, what } => {
                 if let Some(s) = site {
                     self.refer(f, at, ctx, "site", c.site(s).is_some(), s);
-                    if let crate::schema::ExtractWhat::File(file) = what {
+                    if let crate::content::schema::ExtractWhat::File(file) = what {
                         let known = c
                             .site(s)
                             .is_some_and(|d| d.file.iter().any(|x| x.id == *file));
@@ -494,13 +503,13 @@ impl V<'_> {
                             file,
                         );
                     }
-                    if matches!(what, crate::schema::ExtractWhat::All)
+                    if matches!(what, crate::content::schema::ExtractWhat::All)
                         && c.site(s).is_some_and(|d| d.file.is_empty())
                     {
                         self.err(f, at, format!("{ctx}: site `{s}` has no file to extract"));
                     }
                 }
-                if let crate::schema::ExtractWhat::Count(n) = what {
+                if let crate::content::schema::ExtractWhat::Count(n) = what {
                     self.positive(f, at, ctx, *n);
                 }
             }
@@ -514,11 +523,10 @@ impl V<'_> {
             ),
             Goal::Link { contact, level } => {
                 self.refer(f, at, ctx, "contact", c.contact(contact).is_some(), contact);
-                if !(1..=3).contains(level) {
+                if !(1..=crate::content::state::MAX_LINK_LEVEL).contains(level) {
                     self.err(f, at, format!("{ctx}: link level must be 1 to 3"));
                 }
             }
-            Goal::Reputation { .. } | Goal::Pay { .. } => {}
             Goal::Use { command, group } => {
                 if let Some(cmd) = command {
                     self.refer(f, at, ctx, "command", c.has_command(cmd.as_str()), cmd);
@@ -532,7 +540,7 @@ impl V<'_> {
                 }
             }
             Goal::SiteState { site, .. } => {
-                self.refer(f, at, ctx, "site", c.site(site).is_some(), site)
+                self.refer(f, at, ctx, "site", c.site(site).is_some(), site);
             }
             Goal::Choice { decision } => {
                 let owner = c.decision(decision).map(|d| d.quest.clone());
@@ -545,10 +553,19 @@ impl V<'_> {
                     );
                 }
             }
-            Goal::HeatEndBelow { max } | Goal::HeatPeakBelow { max } if *max == 0 || *max > 101 => {
-                self.err(f, at, format!("{ctx}: heat bound must be 1 to 101"));
+            Goal::HeatEndBelow { max } | Goal::HeatPeakBelow { max }
+                if *max == 0 || *max > u32::from(HEAT_MAX) + 1 =>
+            {
+                self.err(
+                    f,
+                    at,
+                    format!("{ctx}: heat bound must be 1 to {}", u32::from(HEAT_MAX) + 1),
+                );
             }
-            Goal::HeatEndBelow { .. } | Goal::HeatPeakBelow { .. } => {}
+            Goal::Reputation { .. }
+            | Goal::Pay { .. }
+            | Goal::HeatEndBelow { .. }
+            | Goal::HeatPeakBelow { .. } => {}
             Goal::AnyOf(of) => {
                 if !top {
                     self.err(f, at, format!("{ctx}: `any_of` cannot be nested"));
@@ -664,10 +681,8 @@ impl V<'_> {
                 None => self.err(file, at, format!("{ctx}: unknown flag `{name}`")),
                 Some(def) => {
                     let ok = match (def.kind, is, at_least, has) {
-                        (FlagKind::Bool | FlagKind::Enum, Some(v), None, None) => {
-                            flag_accepts(def, v)
-                        }
-                        (FlagKind::Counter, Some(v @ FlagValue::Int(_)), None, None) => {
+                        (FlagKind::Bool | FlagKind::Enum, Some(v), None, None)
+                        | (FlagKind::Counter, Some(v @ FlagValue::Int(_)), None, None) => {
                             flag_accepts(def, v)
                         }
                         (FlagKind::Counter, None, Some(n), None) => {
@@ -701,7 +716,7 @@ impl V<'_> {
                 contact,
             ),
             Cond::Opened { id } => {
-                self.refer(file, at, ctx, "readable", c.readable(id).is_some(), id)
+                self.refer(file, at, ctx, "readable", c.readable(id).is_some(), id);
             }
             Cond::Objective { quest, id } => {
                 let goal = c.quest(quest).and_then(|q| {
@@ -773,8 +788,8 @@ impl V<'_> {
             Effect::Grant(g) if g.credits.is_none() && g.reputation.is_none() => {
                 self.err(file, at, format!("{ctx}: empty `grant`"));
             }
-            Effect::GrantTier { tier } if !(1..=6).contains(tier) => {
-                self.err(file, at, format!("{ctx}: tier must be 1 to 6"))
+            Effect::GrantTier { tier } if !(1..=MAX_TIER).contains(tier) => {
+                self.err(file, at, format!("{ctx}: tier must be 1 to {MAX_TIER}"));
             }
             Effect::Unlock { readable } => self.refer(
                 file,
@@ -784,14 +799,14 @@ impl V<'_> {
                 c.readable(readable).is_some(),
                 readable,
             ),
-            Effect::HeatForce { value } if *value > 100 => {
-                self.err(file, at, format!("{ctx}: heat is 0 to 100"))
+            Effect::HeatForce { value } if *value > HEAT_MAX => {
+                self.err(file, at, format!("{ctx}: heat is 0 to {HEAT_MAX}"));
             }
             Effect::HeatFloor { until, .. } => {
-                self.refer(file, at, ctx, "quest", c.quest(until).is_some(), until)
+                self.refer(file, at, ctx, "quest", c.quest(until).is_some(), until);
             }
             Effect::SettleEnding => {
-                let ok = c.flag(&FlagId::new("ending")).is_some_and(|d| {
+                let ok = c.flag_named(ENDING_FLAG).is_some_and(|d| {
                     d.kind == FlagKind::Enum
                         && c.endings
                             .iter()
@@ -847,18 +862,17 @@ impl V<'_> {
             }
             let carrier = c.quest(&d.quest);
             self.refer(f, at, &ctx, "quest", carrier.is_some(), &d.quest);
-            if let Some(q) = carrier {
-                if !q
+            if let Some(q) = carrier
+                && !q
                     .objective
                     .iter()
                     .any(|o| matches!(&o.goal, Goal::Choice { decision } if *decision == d.id))
-                {
-                    self.err(
-                        f,
-                        at,
-                        format!("{ctx}: quest `{}` has no `choice` objective for it", q.id),
-                    );
-                }
+            {
+                self.err(
+                    f,
+                    at,
+                    format!("{ctx}: quest `{}` has no `choice` objective for it", q.id),
+                );
             }
             if d.choice.len() < 2 {
                 self.err(
@@ -935,7 +949,7 @@ impl V<'_> {
     fn conflicts(&mut self) {
         let c = self.c;
         let mut writes: Writes<'_> = BTreeMap::new();
-        let ending = c.flag(&FlagId::new("ending")).map(|d| &d.id);
+        let ending = c.flag_named(ENDING_FLAG).map(|d| &d.id);
         for q in &c.quests {
             let w = Writer::Quest(q.id.clone());
             collect_writes(&q.on_open, (&w, q.at, File::Quests), ending, &mut writes);
@@ -977,7 +991,7 @@ impl V<'_> {
                 for (wb, vb, at, file) in list.iter().skip(i + 1) {
                     if wa == wb
                         || (va == vb && !va.starts_with('*'))
-                        || self.exclusive(wa, wb)
+                        || Self::exclusive(wa, wb)
                         || self.ordered(wa, wb)
                     {
                         continue;
@@ -988,7 +1002,7 @@ impl V<'_> {
         }
     }
 
-    fn exclusive(&self, a: &Writer, b: &Writer) -> bool {
+    fn exclusive(a: &Writer, b: &Writer) -> bool {
         matches!((a, b), (Writer::Decision(x, _), Writer::Decision(y, _)) if x == y)
     }
 
@@ -1024,7 +1038,7 @@ impl V<'_> {
     // --------------------------------------------------------------- texts
 
     fn texts(&mut self) {
-        for (key, first, second) in crate::texts::collisions(self.c) {
+        for (key, first, second) in crate::content::texts::collisions(self.c) {
             self.err(
                 File::Texts,
                 0,
@@ -1052,7 +1066,7 @@ impl V<'_> {
 }
 
 /// Whether a value fits the declared type of a flag.
-fn flag_accepts(def: &FlagDef, v: &FlagValue) -> bool {
+pub(crate) fn flag_accepts(def: &FlagDef, v: &FlagValue) -> bool {
     match (def.kind, v) {
         (FlagKind::Bool, FlagValue::Bool(_)) => true,
         (FlagKind::Enum | FlagKind::Bitset, FlagValue::Str(s)) => def.values.contains(s),
@@ -1063,7 +1077,7 @@ fn flag_accepts(def: &FlagDef, v: &FlagValue) -> bool {
 
 type Writes<'a> = BTreeMap<&'a FlagId, Vec<(Writer, String, usize, File)>>;
 
-fn unlocks_in<'a>(blocks: &'a [Block], out: &mut BTreeSet<&'a crate::ids::ReadableId>) {
+fn unlocks_in<'a>(blocks: &'a [Block], out: &mut BTreeSet<&'a crate::content::ids::ReadableId>) {
     for e in blocks.iter().flat_map(|b| &b.then) {
         if let Effect::Unlock { readable } = e {
             out.insert(readable);

@@ -1,44 +1,46 @@
-# Spike P1 : le langage de missions
+# Référence du langage de missions
 
-Ce crate (`neon-spike-missions`, `publish = false`) est le spike « langage de missions » de la phase P1 de la feuille de route. Il répond au point 12 du [cross-check](../../docs/design/CROSS-CHECK.md) : le prototype n'avait que 3 conditions ; la bible demande une vingtaine de types d'objectifs, une dizaine de conditions, des effets, 7 états de contact et des drapeaux typés.
+Cette référence décrit le langage de missions tel que `neon-engine` l'exécute (module `neon_engine::content`, lot R2.1). Elle est née du spike de la phase P1 (`spikes/missions`, supprimé une fois porté) qui répondait au point 12 du [cross-check](../design/CROSS-CHECK.md) : le prototype n'avait que 3 conditions ; la bible demande une vingtaine de types d'objectifs, une dizaine de conditions, des effets, 7 états de contact et des drapeaux typés. Les décisions qu'elle applique sont dans [`missions.md`](missions.md) ; les paragraphes du spike (« le spike prend… ») décrivent les choix faits à l'époque et inscrits dans les données.
 
 **Résultat.** Un langage déclaratif **petit** (14 objectifs, 9 conditions dont 3 combinateurs, 9 effets, 4 types de drapeaux, 5 statuts de quête, 7 états de contact, 16 faits) exprime **les quêtes M01 à M14 de la bible en entier**, plus S06, S07, S08, S10, S11, S12, S13, S14 et S16, les trois décisions D1-D3 et la micro-décision `echo_trust`, les 5 fins, le montage d'épilogue et des sujets de dialogue. Un « joueur optimiste » rejoue tout le contenu pour **216 plans** (D1 × D2 × D3 × `echo_trust` × objectifs optionnels) et finit toujours M14 : pas d'impasse. Ce spike a trouvé **une dizaine d'incohérences de la bible** (§ 8) que seule l'exécution fait apparaître (trois sont de vraies impasses : M01 #5, M03 #3, et la règle A contre la colonne « Palier »).
 
-Rien dans `docs/design/` n'est réécrit (R-0) ; les écarts sont listés ici.
+Rien dans `docs/design/` n'est réécrit (R-0) ; les écarts sont listés au § 8.
 
-## 1. Contenu du crate
+## 1. Où est quoi
 
 ```
-spikes/missions/
-  Cargo.toml          table [lints] propre (pas de « workspace = true »)
-  data/
-    catalog.toml      sites (+ fichiers), objets, contacts, « readables » (fragments, courriers, scènes, documents), commandes
-    flags.toml        drapeaux typés (bool, enum, compteur, bitset)
-    rewards.toml      tailles S/M/L/XL, R(P) par palier, constantes de confiance, crédits de départ
-    quests.toml       [[quest]] M01-M14 + 9 contrats
-    decisions.toml    [[decision]] D1-D3 et echo, [[ending]], [[epilogue]]
-    topics.toml       [[topic]] (sujets de dialogue)
-    texts.toml        clés de texte déclarées (dérivées, voir § 6.8)
-  src/
-    ids.rs            ids textuels typés (un type par espace de noms)
-    schema.rs         ce que le TOML peut dire (serde, deny_unknown_fields)
-    content.rs        chargeur, index, erreurs « fichier:ligne »
-    validate.rs       toutes les règles de validation
-    state.rs          État, Fact (entrée du bus), registre idempotent
-    eval.rs           conditions et mesure des objectifs (fonctions pures)
-    engine.rs         refresh (point fixe), effets, sorties
-    texts.rs          dérivation des clés, budgets de largeur
-    optimist.rs       le joueur optimiste (outil de test, hors moteur)
-  tests/              content, validation, language, walk, props
+data/world/
+  catalog.toml      sites (+ fichiers), objets, contacts, « readables » (fragments, courriers, scènes, documents), commandes
+  flags.toml        drapeaux typés (bool, enum, compteur, bitset)
+  rewards.toml      tailles S/M/L/XL, R(P) par palier, constantes de confiance, crédits de départ
+  quests.toml       [[quest]] M01-M14 + 9 contrats
+  decisions.toml    [[decision]] D1-D3 et echo, [[ending]], [[epilogue]]
+  topics.toml       [[topic]] (sujets de dialogue)
+  texts.toml        clés de texte déclarées (dérivées, voir § 6.8)
+crates/neon-engine/src/content/
+  ids.rs            ids textuels typés (un type par espace de noms, validés à la création)
+  money.rs          Credits et Reputation, saturants (plafonds 10^9 et ±10^6, invariant I11)
+  schema.rs         ce que le TOML peut dire (serde, deny_unknown_fields)
+  loader.rs         chargeur, index, erreurs « fichier:ligne » ; données embarquées par build.rs
+  validate.rs       toutes les règles de validation
+  state.rs          État, Fact (entrée du bus), registre idempotent
+  eval.rs           conditions, mesure des objectifs, journal et progression (fonctions pures)
+  engine.rs         refresh (point fixe), effets, Outcome (sortie)
+  texts.rs          dérivation des clés, budgets de largeur (unicode-width)
+  persist.rs        sérialisation de l'état (clés textuelles) et State::validate
+  view.rs           lectures pour les commandes du hub (quêtes par statut, contacts, fin)
+crates/neon-engine/tests/content/
+  optimist.rs       le joueur optimiste (outil de test, hors moteur)
+  language, validation, regressions, walk, props, persist, shipped, view   les tests
 ```
 
-Commandes : `cargo test -p neon-spike-missions` ; pour régénérer `data/texts.toml` après avoir ajouté une quête : `NEON_SPIKE_REGEN=1 cargo test -p neon-spike-missions --test content regenerate -- --ignored`.
+Commandes : `cargo test -p neon-engine` ; pour régénérer `data/world/texts.toml` après avoir ajouté une quête : `NEON_REGEN_WORLD_TEXTS=1 cargo test -p neon-engine --test content regenerate_the_declared_text_keys -- --ignored`.
 
 ## 2. Principes
 
 1. **Un seul langage de conditions, un seul langage d'effets**, utilisés par les quêtes, les objectifs (`when`), les décisions (`requires`), les sujets de dialogue, les fins et l'épilogue. Aucun second langage.
 2. **Le langage ne contient aucun texte** : des ids et des clés dérivées (§ 6.8).
-3. **Le moteur ne rappelle personne** : `apply(fait)` ne fait qu'inscrire le fait dans un *registre* (ensembles, maxima, front de Pareto) ; `refresh` lit le registre, déplace les statuts, paie les récompenses et renvoie une liste d'`Output`. La chaîne « une quête finie en débloque une autre » est un **point fixe itératif borné**, pas une récursion ni une re-livraison par le bus.
+3. **Le moteur ne rappelle personne** : `apply(fait)` ne fait qu'inscrire le fait dans un *registre* (ensembles, maxima, front de Pareto) ; `refresh` lit le registre, déplace les statuts, paie les récompenses et renvoie une liste d'`Outcome`. La chaîne « une quête finie en débloque une autre » est un **point fixe itératif borné**, pas une récursion ni une re-livraison par le bus.
 4. **Statut posé avant paiement**, et chaque paiement passe par une clé de réclamation unique (`quest-m05`, `breach-nexus-mainframe`, `decision-d1`...) : deux gardes indépendantes (I1, I8).
 5. **Déterminisme** : `BTreeMap`/`BTreeSet`, tableaux `[[...]]` dans l'ordre du fichier, aucun temps réel (le temps est un compteur de tours, `Turn`).
 
@@ -79,7 +81,7 @@ Toute condition ou tout effet qui emploie une valeur non déclarée est une erre
 
 ### 3.5 Faits (entrée, ce que le bus émet)
 
-`SiteCompromised{site,at}`, `FileExtracted{site,file}`, `SiteMarked{site,mark}`, `Read{id}`, `Decrypted{id}`, `ItemBought{item}`, `Talked{contact,at}`, `CommandUsed{command}`, `LinkChanged{contact,level}`, `Paid{amount,at}`, `HeatChanged{heat,at}`, `DecisionMade{decision,choice}`, `TopicChosen{contact,topic}`, `QuestAccepted{quest}`, `QuestRestarted{quest,at}`, `Tick{at}`. Les faits répétables portent le tour `at` : deux conversations sont deux valeurs distinctes, et « depuis l'ouverture » se lit `at > opened_at`. `ContactMet` de la bible = `Talked` (voir § 3.6) ; `WorldPhaseChanged`, `HubChanged`, `ContactStateChanged` sont des changements de drapeau ou d'état renvoyés en `Output`.
+`SiteCompromised{site,at}`, `FileExtracted{site,file}`, `SiteMarked{site,mark}`, `Read{id}`, `Decrypted{id}`, `ItemBought{item}`, `Talked{contact,at}`, `CommandUsed{command}`, `LinkChanged{contact,level}`, `Paid{amount,at}`, `HeatChanged{heat,at}`, `DecisionMade{decision,choice}`, `TopicChosen{contact,topic}`, `QuestAccepted{quest}`, `QuestRestarted{quest,at}`, `Tick{at}`. Les faits répétables portent le tour `at` : deux conversations sont deux valeurs distinctes, et « depuis l'ouverture » se lit `at > opened_at`. `ContactMet` de la bible = `Talked` (voir § 3.6) ; `WorldPhaseChanged`, `HubChanged`, `ContactStateChanged` sont des changements de drapeau ou d'état renvoyés en `Outcome`.
 
 ### 3.6 Objectifs (14 variantes pour les 22 noms de la bible)
 
@@ -122,7 +124,7 @@ Un **bloc** est `{ when = <condition>, then = [effets] }` (`when` facultatif) ; 
 | `grant{credits?,reputation?,penalty?}` | paiement symbolique (S/M/L/XL × R(P)) |
 | `grant_tier{tier}` | monte le palier (jamais ne le baisse) |
 | `unlock{readable}` | livre un courrier, joue une scène, révèle un fragment |
-| `heat_force{value}` | chaleur forcée (trahison B1) → `Output::HeatForced` |
+| `heat_force{value}` | chaleur forcée (trahison B1) → `Outcome::HeatForced` |
 | `heat_floor{delta,until}` | plancher de chaleur jusqu'à l'ouverture d'une quête (B2, D2) |
 | `settle_ending` | écrit dans le drapeau `ending` la première `[[ending]]` dont la condition tient |
 
@@ -141,9 +143,9 @@ Aucun montant dans les quêtes : `rewards.toml` donne `credits_percent` et `repu
 
 ## 4. Chargement et validation
 
-`Content::from_sources(&Sources)` prend des chaînes (le moteur ne fait pas d'E/S), renvoie `Result<Content, LoadError>` ; `LoadError` porte des `Diagnostic { file, line, message }` affichés `data/quests.toml:418: quest `m09`, objective 2: unknown site `freeport-0x``. Un `toml::Spanned` donne la ligne de chaque entrée (`[[quest]]`, `[[decision]]`...) et de chaque objectif. Une erreur de syntaxe ou de schéma arrête le fichier fautif ; la validation sémantique, elle, **rapporte toutes les erreurs** triées par fichier et ligne.
+`Content::from_sources(&Sources)` prend des chaînes (le moteur ne fait pas d'E/S), renvoie `Result<Content, LoadError>` ; `LoadError` porte des `Diagnostic { file, line, message }` affichés `data/world/quests.toml:418: quest `m09`, objective 2: unknown site `freeport-0x``. Un `toml::Spanned` donne la ligne de chaque entrée (`[[quest]]`, `[[decision]]`...) et de chaque objectif. Une erreur de syntaxe ou de schéma arrête le fichier fautif ; la validation sémantique, elle, **rapporte toutes les erreurs** triées par fichier et ligne.
 
-Règles vérifiées (13 tests négatifs dans `tests/validation.rs`, 3 de plus dans `tests/regressions.rs`) : ids uniques et bien formés ; toute référence existe (quêtes, contacts, sites, fichiers d'un site, objets, readables, drapeaux, décisions, commandes) ; prérequis **et `unlock.quest`** acycliques (Kahn, itératif), écrits avant la quête, jamais auto-référents ; relais de sites acycliques, palier monotone le long des relais ; types de drapeaux cohérents, valeurs d'enum/bit déclarées, bornes de compteur ; tailles et paliers de récompense résolus ; objets requis ; au plus **8 objectifs** par quête et 4 alternatives ; profondeur de condition ≤ 6 ; `failable` cohérent (jamais une quête principale) ; chaque décision a un objectif `choice` dans sa quête ; chaque readable a une source *atteignable* (point fixe depuis `start`, les fichiers et les effets `unlock` : deux documents qui se livrent l'un l'autre n'en ont pas) ; les clés de texte déclarées sont exactement les clés dérivées, et deux ids qui donnent la même clé après `-` → `_` (`foo-bar`, `foo_bar`) sont refusés ; **deux écritures du même drapeau non ordonnées** (ni par prérequis, ni choix exclusifs d'une même décision, ni même valeur) sont refusées, ce qui garantit que le résultat ne dépend pas de l'ordre des événements.
+Règles vérifiées (13 tests négatifs dans `tests/content/validation.rs`, 3 de plus dans `tests/content/regressions.rs`) : ids uniques et bien formés ; toute référence existe (quêtes, contacts, sites, fichiers d'un site, objets, readables, drapeaux, décisions, commandes) ; prérequis **et `unlock.quest`** acycliques (Kahn, itératif), écrits avant la quête, jamais auto-référents ; relais de sites acycliques, palier monotone le long des relais ; types de drapeaux cohérents, valeurs d'enum/bit déclarées, bornes de compteur ; tailles et paliers de récompense résolus ; objets requis ; au plus **8 objectifs** par quête et 4 alternatives ; profondeur de condition ≤ 6 ; `failable` cohérent (jamais une quête principale) ; chaque décision a un objectif `choice` dans sa quête ; chaque readable a une source *atteignable* (point fixe depuis `start`, les fichiers et les effets `unlock` : deux documents qui se livrent l'un l'autre n'en ont pas) ; les clés de texte déclarées sont exactement les clés dérivées, et deux ids qui donnent la même clé après `-` → `_` (`foo-bar`, `foo_bar`) sont refusés ; **deux écritures du même drapeau non ordonnées** (ni par prérequis, ni choix exclusifs d'une même décision, ni même valeur) sont refusées, ce qui garantit que le résultat ne dépend pas de l'ordre des événements.
 
 **N = 8 objectifs.** La bible a M01 à 7 et M12 à 6 ; la limite du C (5) est donc relevée. 8 tient en une ligne chacun dans la zone du journal de la disposition 64×20 (≈ 12 lignes utiles) et laisse un objectif de marge à M01 ; au-delà on découpe la quête ou on groupe avec `any_of`. Le texte de chaque objectif est limité à 64 colonnes.
 
@@ -216,7 +218,7 @@ then = [
 ]
 ```
 
-**Déroulé** (`tests/language.rs`, `m04_*`, `m05_*`) : M03 se termine au `Decrypted(doc_phase2)` ; dans le même `refresh`, ses effets débloquent Data Miner et Phoenix, M04 passe `AVAILABLE` puis `ACTIVE` (`opened_at` = tour courant) mais **ne se termine pas** dans ce passage, même si le butin était déjà pris : un tour plus tard (`Tick`), les objectifs de stock tiennent et M04 est `COMPLETED` (palier 4, 200 ¢, +25). Si la chaleur est à 70, M04 reste `ACTIVE` (aucun échec) et se conclut dès qu'elle retombe sous 50. M05 s'ouvre (palier 4, chapitre 3) ; l'achat de `quantum_key` suffit pour l'objectif 1 ; l'objectif 2 **ignore** la brèche de nexus-mainframe faite pendant M03 et attend une nouvelle brèche ; à la fin : 1 000 ¢ (L à P4 = 2 × 500) et +100 de réputation (XL), versés une fois (`Output::Reward { key: "quest-m05" }` ; un effet `grant` d'une source porte sa propre clé `quest-m05:<bloc>.<effet>`, donc toutes les clés de `Reward` sont uniques), AURA, Neon Angel débloqués, le Courtier `busy`.
+**Déroulé** (`tests/content/language.rs`, `m04_*`, `m05_*`) : M03 se termine au `Decrypted(doc_phase2)` ; dans le même `refresh`, ses effets débloquent Data Miner et Phoenix, M04 passe `AVAILABLE` puis `ACTIVE` (`opened_at` = tour courant) mais **ne se termine pas** dans ce passage, même si le butin était déjà pris : un tour plus tard (`Tick`), les objectifs de stock tiennent et M04 est `COMPLETED` (palier 4, 200 ¢, +25). Si la chaleur est à 70, M04 reste `ACTIVE` (aucun échec) et se conclut dès qu'elle retombe sous 50. M05 s'ouvre (palier 4, chapitre 3) ; l'achat de `quantum_key` suffit pour l'objectif 1 ; l'objectif 2 **ignore** la brèche de nexus-mainframe faite pendant M03 et attend une nouvelle brèche ; à la fin : 1 000 ¢ (L à P4 = 2 × 500) et +100 de réputation (XL), versés une fois (`Output::Reward { key: "quest-m05" }` ; un effet `grant` d'une source porte sa propre clé `quest-m05:<bloc>.<effet>`, donc toutes les clés de `Reward` sont uniques), AURA, Neon Angel débloqués, le Courtier `busy`.
 
 ## 6. Réponses à la checklist
 
@@ -249,31 +251,31 @@ Règle **R-OPEN**, fixée par le *type* d'objectif (jamais par un réglage par q
 
 ### 6.6 Épilogue sans second langage
 
-Les fins sont des `[[ending]]` (`when` = `Cond`, première correspondance) ; M13 les « fige » par `settle_ending` ; le montage est une liste de `[[epilogue]]` (contact + `when`). La matrice de la bible (4.4) devient : `e1a` si `d3 = liberate` ∧ `adv ∋ echo_log` ∧ `echo_trust ≥ 1`, `e1b` si `d3 = liberate`, puis `e2`, `e3`, `e4` selon `d3`. `tests/walk.rs` joue les 216 combinaisons et vérifie : **une et une seule fin** par combinaison (ni `none`, ni deux), les 5 fins sont atteintes, et **exactement une ligne d'épilogue par contact**. Un test écrit la fonction attendue indépendamment des données.
+Les fins sont des `[[ending]]` (`when` = `Cond`, première correspondance) ; M13 les « fige » par `settle_ending` ; le montage est une liste de `[[epilogue]]` (contact + `when`). La matrice de la bible (4.4) devient : `e1a` si `d3 = liberate` ∧ `adv ∋ echo_log` ∧ `echo_trust ≥ 1`, `e1b` si `d3 = liberate`, puis `e2`, `e3`, `e4` selon `d3`. `tests/content/walk.rs` joue les 216 combinaisons et vérifie : **une et une seule fin** par combinaison (ni `none`, ni deux), les 5 fins sont atteintes, et **exactement une ligne d'épilogue par contact**. Un test écrit la fonction attendue indépendamment des données.
 
 ### 6.7 Piège de Turing
 
-Aucun, par construction : (1) pas de boucle ni de variable : le seul état modifiable est l'ensemble des drapeaux **déclarés** ; (2) les conditions sont des arbres finis de profondeur ≤ 6, sans appel ; (3) les effets ne déclenchent pas d'effets : ils écrivent et émettent des `Output` ; (4) chaque effet part **au plus une fois** (clé de réclamation) donc le point fixe de `refresh` est borné (`4 × quêtes + décisions + sujets + sites + 16` passes, vérifié par propriété : `BudgetExceeded` n'arrive jamais) ; (5) les écritures concurrentes d'un drapeau sont refusées au chargement. Ce qui *ne* peut pas s'écrire : une quête qui compte jusqu'à n sans objectif dédié, un effet qui dépend d'un compteur arbitraire, une condition sur un nombre d'événements passés autre que `talk`/`pay`/`compromise` « depuis l'ouverture ».
+Aucun, par construction : (1) pas de boucle ni de variable : le seul état modifiable est l'ensemble des drapeaux **déclarés** ; (2) les conditions sont des arbres finis de profondeur ≤ 6, sans appel ; (3) les effets ne déclenchent pas d'effets : ils écrivent et émettent des `Outcome` ; (4) chaque effet part **au plus une fois** (clé de réclamation) donc le point fixe de `refresh` est borné (`4 × quêtes + décisions + sujets + sites + 16` passes, vérifié par propriété : `BudgetExceeded` n'arrive jamais) ; (5) les écritures concurrentes d'un drapeau sont refusées au chargement. Ce qui *ne* peut pas s'écrire : une quête qui compte jusqu'à n sans objectif dédié, un effet qui dépend d'un compteur arbitraire, une condition sur un nombre d'événements passés autre que `talk`/`pay`/`compromise` « depuis l'ouverture ».
 
 ### 6.8 Dérivation des clés de texte et budgets de largeur
 
-Règle (`texts::required_keys`), `-` des ids devenant `_` : `quest.<id>.{title,title_short,desc,lore,loc,debrief}`, `quest.<id>.obj.N` et `quest.<id>.hint.N.1` (+ `.2` pour les quêtes principales, test T13) pour chaque objectif de premier niveau ; `contact.<id>.{name,tagline}`, `contact.<c>.topic.<t>.{q,a}` ; `frag.<id>.{title,body}`, `mail.<id>.{subject,body}`, `cutscene.<id>.pNN` (`paragraphs` du catalogue), `doc.<id>.title` ; `decision.<id>.prompt`, `decision.<d>.choice.<c>.label` ; `ending.<id>.{title,pNN}` ; `epilogue.<ligne>` ; `node.<site>.desc`, `file.<site>.<fichier>.desc` ; `item.<id>.{name,desc}` ; `command.<id>.help`. Les plus de 600 clés de `texts.toml` sont **égales** aux clés dérivées (test) : en ajouter ou en oublier une est une erreur de chargement, avec la clé en cause. Budgets : `texts::budget(clé)` donne la largeur maximale d'après la bible 6.2 (titre 28, `title_short` 18, `desc` 110, objectif 64, indice 160, `debrief` 200, `tagline` 40, sujet 48/340, courrier 48/600, cinématique 280, fragment 40/520, épilogue 300, nœud 60, fichier 40), et `texts::check_budgets(content, texte_de_la_clé, mesure)` rapporte les dépassements pour un catalogue de langue. La mesure est un paramètre : le vrai moteur y branchera `unicode-width` (le spike n'ajoute aucune dépendance). Test : `budgets_are_hooks_the_catalogs_will_plug_into`.
+Règle (`texts::required_keys`), `-` des ids devenant `_` : `quest.<id>.{title,title_short,desc,lore,loc,debrief}`, `quest.<id>.obj.N` et `quest.<id>.hint.N.1` (+ `.2` pour les quêtes principales, test T13) pour chaque objectif de premier niveau ; `contact.<id>.{name,tagline}`, `contact.<c>.topic.<t>.{q,a}` ; `frag.<id>.{title,body}`, `mail.<id>.{subject,body}`, `cutscene.<id>.pNN` (`paragraphs` du catalogue), `doc.<id>.title` ; `decision.<id>.prompt`, `decision.<d>.choice.<c>.label` ; `ending.<id>.{title,pNN}` ; `epilogue.<ligne>` ; `node.<site>.desc`, `file.<site>.<fichier>.desc` ; `item.<id>.{name,desc}` ; `command.<id>.help`. Les plus de 600 clés de `texts.toml` sont **égales** aux clés dérivées (test) : en ajouter ou en oublier une est une erreur de chargement, avec la clé en cause. Budgets : `texts::budget(clé)` donne la largeur maximale d'après la bible 6.2 (titre 28, `title_short` 18, `desc` 110, objectif 64, indice 160, `debrief` 200, `tagline` 40, sujet 48/340, courrier 48/600, cinématique 280, fragment 40/520, épilogue 300, nœud 60, fichier 40), et `texts::check_budgets(content, texte_de_la_clé, mesure)` rapporte les dépassements pour un catalogue de langue. La mesure est un paramètre ; la mesure réelle est `texts::display_width` (`unicode-width`, largeur en colonnes de terminal), et `texts::check_catalog_budgets` / `texts::missing_keys` branchent les budgets et la parité sur un vrai `Catalog`. Tests : `budgets_are_hooks_the_catalogs_plug_into`, `the_real_catalogs_stay_within_the_budgets_of_the_keys_they_define`.
 
-### 6.9 Taille estimée (pour R2)
+### 6.9 Taille du portage (lot R2.1)
 
-Lignes non vides ni de commentaire, après `rustfmt` (largeur 100) :
+Lignes de `crates/neon-engine/src/content/`, documentation et tests unitaires compris (le spike en comptait ≈ 3 100 hors documentation) :
 
-| Module | Lignes | Rôle pour R2 |
+| Module | Lignes | Rôle |
 |---|---:|---|
-| `schema.rs` | ≈ 680 | types serde + conversion des objectifs |
-| `content.rs` | ≈ 315 | chargeur, index, erreurs |
-| `validate.rs` | ≈ 1 000 | validation (la plus grosse part) |
-| `state.rs` + `eval.rs` + `engine.rs` | ≈ 920 | l'évaluateur sans moteur |
-| `ids.rs`, `texts.rs`, `lib.rs` | ≈ 210 | ids, clés de texte |
-| **Total à porter** | **≈ 3 100** | |
-| `optimist.rs` (outil de test, à garder dans `neon-sim`/tests) | ≈ 430 | |
+| `schema.rs` | ≈ 1 050 | types serde, conversion des objectifs, documentation de chaque champ |
+| `loader.rs` | ≈ 450 | chargeur, index, erreurs, données embarquées |
+| `validate.rs` | ≈ 1 100 | validation (la plus grosse part) |
+| `state.rs` + `eval.rs` + `engine.rs` | ≈ 1 300 | l'évaluateur et le moteur de `refresh` |
+| `ids.rs`, `money.rs`, `texts.rs`, `view.rs` | ≈ 650 | ids typés, montants saturants, clés de texte, lectures du hub |
+| `persist.rs` | ≈ 565 | sérialisation de l'état et `State::validate` |
+| `tests/content/optimist.rs` (outil de test) | ≈ 510 | le joueur optimiste |
 
-Le chargeur + l'évaluateur seuls (schéma, chargeur, état, évaluation, moteur) font ≈ 1 900 lignes ; avec la validation, ≈ 3 100. Le lot R2 doit y ajouter l'adaptation au vrai `Fact`/`Ctx`, les newtypes saturants de crédits et de réputation et la sérialisation de l'état (non faite ici). Les données : ≈ 750 lignes de quêtes, ≈ 440 de catalogue, ≈ 250 de décisions, pour 23 quêtes.
+Les données : ≈ 750 lignes de quêtes, ≈ 440 de catalogue, ≈ 250 de décisions, pour 23 quêtes.
 
 ## 7. Le reste de la bible : M07, M09/D1, S07, S12, M13, M14
 
@@ -297,5 +299,16 @@ La consigne demandait de le montrer « sur le papier » ; tout ce qui suit est e
 8. **Neon Angel « redevient libre si le joueur reprend radio-veille avant M13 »** (3.4) n'est pas exprimable sans un réacteur sur un fait hors quête (non prévu par le langage) : non fait. Si c'est voulu, ajouter un bloc `on_fact` serait la seule extension nécessaire (à décider avant R2).
 9. **« −1 de confiance » (D2)** : échelon ou point ? Retenu −10 points. **`broker_deal` (4.4) et `narr.d1` (5.6)** sont le même drapeau. Les 19 contre 22 types d'objectifs de la bible s'expliquent par les alias (`MEET`/`TALK`...).
 10. **D2 / M09 dans la consigne** : D1 est en M10 ; D2 en M08 ; D3 en M13. Seule S11 (« à proposer avant M10 ») dépend de l'ordre : le joueur optimiste fait les contrats d'abord, le vrai joueur choisit.
-11. **Non couvert** : F07 « jalon hors quête » (palier 5), le service `route` de Ghost Walker et les bonus « une fois par chapitre » (S05, S09), le marché fermé à chaleur 80 (moteur). Quêtes non écrites : S01-S05, S09 (ni décision ni avantage) et S15 (donc l'avantage `blind_spot` n'est jamais posé, ce qui ne change aucune fin). La **sauvegarde** de l'état (sérialisation de `State`) n'est pas écrite ; `State` n'a que des collections ordonnées, mais un front de chaleur indexé par tour demandera un format de sauvegarde (clés texte).
-12. **Granularité de l'ordre** : l'indépendance à l'ordre est garantie *au sein d'un lot de faits* (le moteur appelle `apply` pour chaque fait en attente, puis `refresh` une fois). Entre deux lots, l'ordre compte par construction : « après l'ouverture » dépend du moment de l'ouverture. Propriétés vérifiées sur des préfixes de parties réelles (`tests/props.rs`).
+11. **Non couvert** : F07 « jalon hors quête » (palier 5), le service `route` de Ghost Walker et les bonus « une fois par chapitre » (S05, S09), le marché fermé à chaleur 80 (moteur). Quêtes non écrites : S01-S05, S09 (ni décision ni avantage) et S15 (donc l'avantage `blind_spot` n'est jamais posé, ce qui ne change aucune fin). La sérialisation de l'état est faite au lot R2.1 (`persist.rs`, § 1).
+12. **Granularité de l'ordre** : l'indépendance à l'ordre est garantie *au sein d'un lot de faits* (le moteur appelle `apply` pour chaque fait en attente, puis `refresh` une fois). Entre deux lots, l'ordre compte par construction : « après l'ouverture » dépend du moment de l'ouverture. Propriétés vérifiées sur des préfixes de parties réelles (`tests/content/props.rs`).
+
+## 9. Ce que le portage (R2.1) a changé par rapport au spike
+
+Le comportement est identique : les 56 tests du spike (dont les 7 de relecture) passent tels quels, transcrits. Ce qui change :
+
+* **Ids** : validés à la création et à la désérialisation (alphabet et longueur de `neon_engine::ids`, soit `[a-z0-9_-]{1,48}`) ; `ContactId` est le type même que les frontends emploient pour un orateur. Le validateur reste plus strict (pas de `-` ni de `_` en tête, `valid_id`) et signale toujours les ids de noms (valeurs de drapeau, ids d'objectifs, groupes de commandes) avec leur ligne.
+* **Montants** : `Credits` (0 à 10^9) et `Reputation` (±10^6) remplacent les entiers nus ; l'arithmétique sature, une valeur hors plafond lue dans un fichier ou une sauvegarde est refusée. Les crédits en main (`State::credits`) ne descendent jamais sous zéro et `State::overdrawn` dit si le registre a enregistré plus de dépenses que de gains (le registre ne contrôle pas les prix : c'est à l'appelant de vérifier avant d'émettre `ItemBought` ou `Paid`). La confiance gagnée sature à ±10^6, la chaleur lue est ramenée à 100.
+* **Sorties** : `Output` devient `Outcome` ; le futur jeu de campagne (R2.2) en tire des `Event`. `Fact` garde ses 16 faits.
+* **Données** : `data/world/*.toml`, embarquées par `build.rs` (`Content::embedded()`) ; les diagnostics portent `data/world/<fichier>.toml:<ligne>`.
+* **Sauvegarde** : `State` s'écrit en table à clés textuelles (`persist.rs`) et `State::validate(&Content)` la contrôle au chargement ; l'enveloppe `neon_engine::save` garde sa version.
+* **Lectures du hub** : `content::view` (journal par statut avec progression des objectifs comptés, liste des contacts, fin atteinte, chapitre).

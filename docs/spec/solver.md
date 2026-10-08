@@ -63,7 +63,7 @@ Ces constats **touchent le design**, pas seulement l'implémentation :
 - [`run-screen.md`](run-screen.md) § 3.3 : `skip` applique « le meilleur plan du solveur borné » (non l'optimum) et le rapport dit « approximatif » à l'étape 3 de la chaîne.
 - [`neon-sim.md`](neon-sim.md) : T2 se lit comme la **preuve de solvabilité avec le kit minimal** (≤ 56 ms, jamais « inconnu ») ; T4 est calculé sur le kit minimal (mesures de départ : marges de 6 à 58, à calibrer) ; T13 reprend les bornes de § 3.
 - [`commands.md`](commands.md) : aucune commande ne change ; `skip` est ouverte en difficulté Histoire seulement.
-- `spikes/solver` reste dans le dépôt comme preuve et comme base de portage ; il est supprimé quand `neon-engine::run::solve` existe (R4), comme `spikes/missions` en R2.
+- `spikes/solver` reste dans le dépôt comme preuve et comme base de portage ; il est supprimé quand `neon-engine::run::solve` existe (R4), comme `spikes/missions` l'a été en R2.1.
 
 ## 7. Décisions (validées par le propriétaire le 8 octobre 2026)
 

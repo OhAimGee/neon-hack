@@ -1,6 +1,6 @@
 # Text keys the content needs (docs/design/narrative-bible.md, section 6.3).
 # Derived from the structure by `texts::required_keys`: do not edit by hand.
-# Regenerate: NEON_SPIKE_REGEN=1 cargo test -p neon-spike-missions --test content regenerate -- --ignored
+# Regenerate: NEON_REGEN_WORLD_TEXTS=1 cargo test -p neon-engine --test content regenerate_the_declared_text_keys -- --ignored
 keys = [
     "command.blend.help",
     "command.help.help",

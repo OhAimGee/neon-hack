@@ -1,12 +1,10 @@
-//! Regression tests of the review of the first version of the spike.
+//! Regression tests of the review of the first version of the language prototype.
 
-mod common;
-
-use common::{Game, q, shipped};
-use neon_spike_missions::engine::Output;
-use neon_spike_missions::optimist::{Plan, play_from};
-use neon_spike_missions::schema::{FlagValue, QuestStatus};
-use neon_spike_missions::{Content, Diagnostic, Fact, File, Sources};
+use crate::common::{Game, id, q, shipped};
+use crate::optimist::{Plan, play_from};
+use neon_engine::content::engine::Outcome;
+use neon_engine::content::schema::{FlagValue, QuestStatus};
+use neon_engine::content::{Content, Credits, Diagnostic, Fact, File, Sources};
 
 fn broken(edit: impl FnOnce(&mut Sources)) -> Vec<Diagnostic> {
     let mut src = Sources::embedded();
@@ -28,7 +26,7 @@ fn has(errors: &[Diagnostic], file: File, needle: &str) -> bool {
 fn the_optimistic_player_cannot_overspend_within_a_round() {
     let mut g = Game::chapter4(shipped());
     g.s.flags
-        .insert("angel_state".into(), FlagValue::Str("free".into()));
+        .insert(id("angel_state"), FlagValue::Str("free".into()));
     g.send(&[]);
     g.send(&[
         Fact::QuestAccepted { quest: q("s08") },
@@ -37,7 +35,10 @@ fn the_optimistic_player_cannot_overspend_within_a_round() {
     assert_eq!(g.status("s08"), QuestStatus::Active);
     assert_eq!(g.status("s13"), QuestStatus::Active);
     // 1000 credits: S08 asks 400, S13 asks 800; both fit alone, not together.
-    g.s.earned += 1000 - g.s.credits(&g.c);
+    let have = i64::from(g.s.credits(&g.c).get());
+    let earned = i64::from(g.s.earned.get()) + 1000 - have;
+    g.s.earned = Credits::new(u32::try_from(earned).unwrap());
+    assert_eq!(g.s.credits(&g.c), Credits::new(1000));
     let report = play_from(
         &g.c,
         &Plan {
@@ -51,7 +52,7 @@ fn the_optimistic_player_cannot_overspend_within_a_round() {
         .iter()
         .filter_map(|f| {
             if let Fact::Paid { amount, .. } = f {
-                Some(*amount)
+                Some(amount.get())
             } else {
                 None
             }
@@ -62,9 +63,9 @@ fn the_optimistic_player_cannot_overspend_within_a_round() {
         "the first round pays {first_round} with 1000 credits"
     );
     assert!(
-        report.min_credits >= 0,
-        "the player went down to {} credits",
-        report.min_credits
+        !report.overdrawn,
+        "the player spent more than the {} credits earned",
+        report.state.earned
     );
 }
 
@@ -124,7 +125,7 @@ fn a_restart_reopens_at_its_own_turn() {
             at: 10,
         },
         Fact::SiteCompromised {
-            site: "freeport-01".into(),
+            site: id("freeport-01"),
             at: 11,
         },
     ]);
@@ -148,9 +149,7 @@ fn every_reward_output_has_its_own_key() {
     let c = Content::from_sources(&src).unwrap_or_else(|e| panic!("{e}"));
     let mut g = Game::with(c);
     for cmd in ["quests", "help", "scan", "status", "laylow"] {
-        g.send(&[Fact::CommandUsed {
-            command: cmd.into(),
-        }]);
+        g.send(&[Fact::CommandUsed { command: id(cmd) }]);
     }
     g.talk("echo7", 1);
     g.compromise("localhost");
@@ -160,7 +159,7 @@ fn every_reward_output_has_its_own_key() {
         .log
         .iter()
         .filter_map(|o| {
-            if let Output::Reward { key, .. } = o {
+            if let Outcome::Reward { key, .. } = o {
                 Some(key)
             } else {
                 None
@@ -183,12 +182,12 @@ fn a_quest_cannot_be_accepted_before_it_is_offered() {
     g.send(&[Fact::QuestAccepted { quest: q("s07") }]);
     assert!(g.s.accepted.is_empty());
     // Phoenix is then saved: S07 is offered, and must wait for a real acceptance.
-    g.s.granted.insert("f15".into());
+    g.s.granted.insert(id("f15"));
     g.send(&[
-        Fact::Read { id: "f15".into() },
+        Fact::Read { id: id("f15") },
         Fact::DecisionMade {
-            decision: "d2".into(),
-            choice: "save".into(),
+            decision: id("d2"),
+            choice: id("save"),
         },
     ]);
     assert_eq!(g.status("s07"), QuestStatus::Available);
@@ -207,5 +206,33 @@ fn ids_that_normalize_to_the_same_text_key_are_refused() {
         &errors,
         File::Texts,
         "`item.stealth_module.name` is derived from both"
+    ));
+}
+
+/// Nine: a link fact outside the levels 1 to 3 does not enter the state, so a state built
+/// through `apply` always passes the save validation.
+#[test]
+fn link_facts_outside_the_levels_are_ignored() {
+    let c = shipped();
+    let mut state = neon_engine::content::new_game(&c).0;
+    let before = state.clone();
+    for level in [0u8, 4, 255] {
+        let changed = state.apply(
+            &c,
+            &Fact::LinkChanged {
+                contact: id("echo7"),
+                level,
+            },
+        );
+        assert!(!changed, "level {level}");
+    }
+    assert_eq!(state, before);
+    assert!(state.validate(&c).is_ok());
+    assert!(state.apply(
+        &c,
+        &Fact::LinkChanged {
+            contact: id("echo7"),
+            level: 3
+        }
     ));
 }

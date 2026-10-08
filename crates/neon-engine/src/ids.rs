@@ -4,6 +4,7 @@
 //! corrupts anything. They are validated once, when they are created or deserialized.
 
 use std::fmt;
+use std::str::FromStr;
 use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
@@ -25,6 +26,28 @@ pub enum IdError {
     ForbiddenChar(char),
 }
 
+/// Checks the alphabet and the length shared by every identifier of the game, whatever its
+/// namespace: `[a-z0-9_-]{1,48}`.
+///
+/// # Errors
+///
+/// Returns an [`IdError`] saying why the text is not a valid identifier.
+pub(crate) fn check(id: &str) -> Result<(), IdError> {
+    if id.is_empty() {
+        return Err(IdError::Empty);
+    }
+    if id.chars().count() > MAX_LEN {
+        return Err(IdError::TooLong);
+    }
+    let forbidden = id
+        .chars()
+        .find(|c| !(c.is_ascii_lowercase() || c.is_ascii_digit() || *c == '-' || *c == '_'));
+    match forbidden {
+        Some(c) => Err(IdError::ForbiddenChar(c)),
+        None => Ok(()),
+    }
+}
+
 /// Identifier of a contact: a character the player can talk to (`echo7`, `r4z0r`...).
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(try_from = "String", into = "String")]
@@ -37,19 +60,8 @@ impl ContactId {
     ///
     /// Returns an [`IdError`] saying why the text is not a valid identifier.
     pub fn new(id: &str) -> Result<Self, IdError> {
-        if id.is_empty() {
-            return Err(IdError::Empty);
-        }
-        if id.chars().count() > MAX_LEN {
-            return Err(IdError::TooLong);
-        }
-        let forbidden = id
-            .chars()
-            .find(|c| !(c.is_ascii_lowercase() || c.is_ascii_digit() || *c == '-' || *c == '_'));
-        match forbidden {
-            Some(c) => Err(IdError::ForbiddenChar(c)),
-            None => Ok(Self(Arc::from(id))),
-        }
+        check(id)?;
+        Ok(Self(Arc::from(id)))
     }
 
     /// The identifier as text.
@@ -62,6 +74,14 @@ impl ContactId {
 impl fmt::Display for ContactId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(&self.0)
+    }
+}
+
+impl FromStr for ContactId {
+    type Err = IdError;
+
+    fn from_str(id: &str) -> Result<Self, Self::Err> {
+        Self::new(id)
     }
 }
 
