@@ -1,8 +1,9 @@
 //! `neon-hack`: the command-line entry point.
 //!
 //! The engine contract and saving are exercised by a small demo game (`--demo`) through
-//! two frontends, plain and TUI. The real game arrives with phase R2 (see
-//! `docs/ROADMAP.md`); without `--demo` the binary still says it is not playable yet.
+//! two frontends, plain and TUI. The campaign (`--campaign`) is the real game being built in
+//! phase R2 (see `docs/ROADMAP.md`); it becomes the default in lot R2.4, and until then the
+//! binary without either flag still says it is not playable yet.
 
 mod config;
 mod input;
@@ -21,7 +22,8 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use clap::Parser;
+use clap::{Parser, ValueEnum};
+use neon_engine::campaign::{CampaignGame, Difficulty};
 use neon_engine::demo::DemoGame;
 use neon_engine::event::Event;
 use neon_engine::text::{Catalog, RenderMode, Text, to_ascii};
@@ -41,6 +43,8 @@ use crate::store::{Store, Target};
 /// line wins over the file, which wins over the environment's defaults.
 #[derive(Debug, Parser)]
 #[command(name = "neon-hack", version)]
+// The two games exclude each other, and what a game needs (saves, a new game) asks for one.
+#[command(group(clap::ArgGroup::new("game").args(["demo", "campaign"]).multiple(false)))]
 #[allow(
     clippy::struct_excessive_bools,
     reason = "independent command-line flags, not a state machine"
@@ -84,7 +88,7 @@ struct Cli {
     /// as `auto.toml.bak`).
     #[arg(
         long,
-        requires = "demo",
+        requires = "game",
         conflicts_with = "load",
         help_heading = "Game"
     )]
@@ -94,7 +98,7 @@ struct Cli {
     /// slot-1 to slot-9.
     #[arg(
         long,
-        requires = "demo",
+        requires = "game",
         value_name = "SAVE",
         value_parser = Target::parse,
         help_heading = "Game"
@@ -102,8 +106,17 @@ struct Cli {
     load: Option<Target>,
 
     /// List the saves and exit.
-    #[arg(long, requires = "demo", help_heading = "Game")]
+    #[arg(long, requires = "game", help_heading = "Game")]
     list_saves: bool,
+
+    /// Difficulty of a new campaign [default: normal]. A campaign that is resumed keeps its own.
+    #[arg(long, value_enum, requires = "campaign", help_heading = "Game")]
+    difficulty: Option<DifficultyChoice>,
+
+    /// Play the campaign: the hub commands of the real game, with intrusions resolved
+    /// automatically (work in progress, see docs/ROADMAP.md).
+    #[arg(long, help_heading = "Development")]
+    campaign: bool,
 
     /// Play the engine demo: a tiny game that exercises both frontends.
     #[arg(long, help_heading = "Development")]
@@ -114,7 +127,7 @@ struct Cli {
     seed: Option<u64>,
 
     /// Play without writing any save.
-    #[arg(long, requires = "demo", help_heading = "Development")]
+    #[arg(long, requires = "game", help_heading = "Development")]
     no_save: bool,
 
     /// Data folder (saves, settings), instead of `NEON_HACK_DATA_DIR` or the system's.
@@ -124,6 +137,44 @@ struct Cli {
     /// Print the settings in effect, where each one comes from, and exit.
     #[arg(long, help_heading = "Development")]
     print_settings: bool,
+}
+
+/// A difficulty as written on the command line.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
+enum DifficultyChoice {
+    Story,
+    Normal,
+    Expert,
+    Hardcore,
+}
+
+impl From<DifficultyChoice> for Difficulty {
+    fn from(choice: DifficultyChoice) -> Self {
+        match choice {
+            DifficultyChoice::Story => Self::Story,
+            DifficultyChoice::Normal => Self::Normal,
+            DifficultyChoice::Expert => Self::Expert,
+            DifficultyChoice::Hardcore => Self::Hardcore,
+        }
+    }
+}
+
+/// The game being played.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Kind {
+    Demo,
+    Campaign,
+}
+
+impl Kind {
+    /// The folder of the saves inside the data folder: one per game, so a demo save and a
+    /// campaign save can never be mistaken for each other.
+    fn saves_folder(self) -> &'static str {
+        match self {
+            Self::Demo => "saves",
+            Self::Campaign => "saves-campaign",
+        }
+    }
 }
 
 impl Cli {
@@ -146,7 +197,9 @@ fn main() -> ExitCode {
     let outcome = if cli.print_settings {
         print_settings(&cli, &env)
     } else if cli.demo {
-        run_demo(&cli, &env)
+        run_game(&cli, &env, Kind::Demo)
+    } else if cli.campaign {
+        run_game(&cli, &env, Kind::Campaign)
     } else {
         banner::not_playable_yet();
         Ok(())
@@ -237,7 +290,7 @@ fn print_settings(cli: &Cli, env: &Env) -> io::Result<()> {
     Ok(())
 }
 
-fn run_demo(cli: &Cli, env: &Env) -> io::Result<()> {
+fn run_game(cli: &Cli, env: &Env, kind: Kind) -> io::Result<()> {
     let setup = setup(cli, env)?;
     let shown = setup.presentation;
     // The catalogs are checked by the tests, so this only fails on a broken build.
@@ -256,13 +309,13 @@ fn run_demo(cli: &Cli, env: &Env) -> io::Result<()> {
             .0
             .then(|| Palette::new(shown.palette.value, shown.truecolor)),
     };
-    let store = Store::new(setup.data_dir.join("saves"));
+    let store = Store::new(setup.data_dir.join(kind.saves_folder()));
     if cli.list_saves {
         return list_saves(&store, &renderer, &mut io::stdout().lock());
     }
     // The owner of the game starts or resumes it once and hands the step to whichever
     // frontend runs.
-    let (mut game, mut first) = open_game(cli, &store, &renderer)?;
+    let (mut game, mut first) = open_game(cli, kind, &store, &renderer)?;
     if let FileState::Damaged(reason) = &setup.file_state {
         let notice = Text::new("ui.settings.damaged").with_str("reason", reason.clone());
         first.events.insert(0, Event::system(notice));
@@ -279,14 +332,14 @@ fn run_demo(cli: &Cli, env: &Env) -> io::Result<()> {
     let use_tui = cfg!(feature = "tui") && interactive && !cli.plain && !shown.screen_reader.value;
     if use_tui {
         #[cfg(feature = "tui")]
-        return tui::run(&mut game, first, renderer, persistence);
+        return tui::run(&mut *game, first, renderer, persistence);
     }
     // On a pipe the lines read are repeated in the output so that it reads as a transcript;
     // on a terminal the terminal echoes by itself.
     let echo_input = !stdin.is_terminal();
     let mut persistence = persistence;
     plain::run(
-        &mut game,
+        &mut *game,
         first,
         &renderer,
         &mut BufReader::new(stdin.lock()),
@@ -297,10 +350,23 @@ fn run_demo(cli: &Cli, env: &Env) -> io::Result<()> {
 }
 
 /// A game to play: the save asked for (the autosave by default), or a new one.
-fn open_game(cli: &Cli, store: &Store, renderer: &Renderer<'_>) -> io::Result<(DemoGame, Step)> {
+fn open_game(
+    cli: &Cli,
+    kind: Kind,
+    store: &Store,
+    renderer: &Renderer<'_>,
+) -> io::Result<(Box<dyn Game>, Step)> {
     if !cli.new {
         let target = cli.load.unwrap_or(Target::Auto);
-        match store.read(target, DemoGame::from_save) {
+        let load = |text: &str| -> Result<Box<dyn Game>, neon_engine::save::SaveError> {
+            match kind {
+                Kind::Demo => DemoGame::from_save(text).map(|game| Box::new(game) as Box<dyn Game>),
+                Kind::Campaign => {
+                    CampaignGame::from_save(text).map(|game| Box::new(game) as Box<dyn Game>)
+                }
+            }
+        };
+        match store.read(target, load) {
             Ok(Some(loaded)) => {
                 let notice = if loaded.from_backup {
                     "ui.save.resumed_backup"
@@ -323,7 +389,16 @@ fn open_game(cli: &Cli, store: &Store, renderer: &Renderer<'_>) -> io::Result<(D
             }
         }
     }
-    let mut game = DemoGame::new(cli.seed.unwrap_or_else(clock_seed));
+    let seed = cli.seed.unwrap_or_else(clock_seed);
+    let mut game: Box<dyn Game> = match kind {
+        Kind::Demo => Box::new(DemoGame::new(seed)),
+        Kind::Campaign => {
+            let difficulty = cli.difficulty.map_or(Difficulty::Normal, Difficulty::from);
+            let game = CampaignGame::new(difficulty, seed)
+                .map_err(|error| io::Error::other(error.to_string()))?;
+            Box::new(game)
+        }
+    };
     let first = game.start();
     Ok((game, first))
 }

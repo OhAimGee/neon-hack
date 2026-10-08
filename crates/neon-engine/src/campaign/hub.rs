@@ -78,7 +78,7 @@ impl CampaignGame {
         }
         self.checkpoint = true;
         events.push(Event::system(
-            Text::new("campaign.welcome.hint").with_term("quest", "quest"),
+            Text::new("campaign.welcome_hint").with_term("quest", "quest"),
         ));
     }
 
