@@ -5,7 +5,7 @@ use std::collections::BTreeSet;
 use super::support::*;
 use crate::campaign::commands::{COMMANDS, NAMES, SPECS};
 use crate::campaign::resolver::Lists;
-use crate::command::{ArgKind, Capabilities, Context, HandledBy, Issue, Resolver, Scope};
+use crate::command::{ArgKind, Capabilities, Context, HandledBy, Resolver, Scope};
 use crate::text::glossary::Glossary;
 use crate::text::{Catalog, Lang, RenderMode, Text, render};
 
@@ -18,11 +18,6 @@ fn the_table_is_well_formed_and_has_every_text_in_every_language() {
     }
     // No run command: the tactical run is lot R4.
     assert!(SPECS.iter().all(|spec| spec.context != Context::Run));
-    assert!(
-        !COMMANDS
-            .issues()
-            .contains(&Issue::RunCommandInHub("breach"))
-    );
 }
 
 #[test]

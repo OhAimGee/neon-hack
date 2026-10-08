@@ -1,6 +1,6 @@
 # Proper names of the world: contacts and shop items. They are keys derived from the data
 # (`contact.<id>.name`, `item.<id>.name`) but they are names, not story text, and the interface
-# needs them from the start. ECHO-7 is in ui.toml. Names are not translated.
+# needs them from the start. ECHO-7 is in ui.toml. Names are not translated (the Broker's title is the one exception).
 
 [contact.r4z0r]
 name = "R4Z0R"

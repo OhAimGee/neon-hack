@@ -1,6 +1,6 @@
 # Noms propres du monde : contacts et objets de l'étal. Ce sont des clés dérivées des données
 # (`contact.<id>.name`, `item.<id>.name`) mais des noms, pas des textes d'histoire, et
-# l'interface en a besoin dès le départ. ECHO-7 est dans ui.toml. Les noms ne se traduisent pas.
+# l'interface en a besoin dès le départ. ECHO-7 est dans ui.toml. Les noms ne se traduisent pas (le titre du Courtier est la seule exception).
 
 [contact.r4z0r]
 name = "R4Z0R"

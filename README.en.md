@@ -8,7 +8,7 @@ A cyberpunk text RPG for the terminal. You are a novice hacker in Neo-Tokyo, in 
 
 ## Status
 
-**The game is not playable yet**: the repository holds the Rust technical skeleton (three crates, CI, lint rules) but not the game engine yet. The groundwork, the foundation (phase R1) and the specifications (phase P1) are done; the content and campaign (phase R2) are the next step.
+**The game is not playable yet**: the repository holds the Rust technical skeleton (three crates, CI, lint rules), the campaign content engine and, since lot R2.2b, the **campaign core** (the hub commands, with intrusions resolved automatically), which you can try with `--campaign`; the story texts are not written (`TODO` drafts stand in for them) and the campaign is not the default game yet. The groundwork, the foundation (phase R1) and the specifications (phase P1) are done; writing the opening texts and the prologue (R2.3), then the campaign end to end (R2.4), are the next step.
 
 | Step | State |
 |---|---|
@@ -24,7 +24,9 @@ A cyberpunk text RPG for the terminal. You are a novice hacker in Neo-Tokyo, in 
 | Phase R1.5: complete toy game, end to end (goal, win, loss, epilogue) | done |
 | Phase R1 (foundation) | **finished** |
 | Phase P1: specifications (glossary, commands, mission language, run screen, solver, balancing harness) and validated design decisions | **finished**; next step: content and campaign (R2) |
-| Game engine, TUI, campaign | to come |
+| Phase R2.1: campaign content engine and data (quests, decisions, endings, validation, state saving) | done |
+| Phase R2.2: command registry of the full game (R2.2a) and campaign core, hub commands, automatic intrusions, saving (R2.2b) | done; try it with `--campaign` |
+| Story texts, prologue and tutorial (R2.3), campaign end to end (R2.4), tactical run (R4), full TUI (R3) | to come |
 
 ## Play locally
 
@@ -82,6 +84,8 @@ In a real terminal the demo opens **full screen** (status bar, log, side panel).
 | `--ascii` | 7-bit ASCII: symbols, accents and typed text transliterated, no decoration |
 | `--lang fr` / `--lang en` | language of the texts (English by default) |
 | `--verbosity brief\|normal\|full` | how much atmosphere is shown |
+| `--campaign` | play the start of the campaign (development: story texts to come; same save options, folder `saves-campaign/`) |
+| `--difficulty story\|normal\|expert\|hardcore` | difficulty of a new campaign (a resumed one keeps its own) |
 | `--seed 7` | reproducible game (for a new game) |
 | `--color auto\|always\|never`, `--no-color` | colour: on by default for a terminal that can show it; `NO_COLOR` turns it off, and these options win over it |
 | `--palette default\|high-contrast\|cvd\|mono` | colours of the full-screen interface |
