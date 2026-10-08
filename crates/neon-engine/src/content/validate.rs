@@ -1066,7 +1066,7 @@ impl V<'_> {
 }
 
 /// Whether a value fits the declared type of a flag.
-fn flag_accepts(def: &FlagDef, v: &FlagValue) -> bool {
+pub(crate) fn flag_accepts(def: &FlagDef, v: &FlagValue) -> bool {
     match (def.kind, v) {
         (FlagKind::Bool, FlagValue::Bool(_)) => true,
         (FlagKind::Enum | FlagKind::Bitset, FlagValue::Str(s)) => def.values.contains(s),

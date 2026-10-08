@@ -11,7 +11,7 @@ use proptest::prelude::*;
 use crate::common::{self, id};
 use crate::optimist::{all_plans, play};
 
-fn content() -> &'static Content {
+pub(crate) fn content() -> &'static Content {
     static C: OnceLock<Content> = OnceLock::new();
     C.get_or_init(common::shipped)
 }
@@ -87,9 +87,9 @@ fn traces() -> &'static Vec<Vec<Vec<Fact>>> {
 }
 
 /// `(trace, cut)`: which play, and after how many rounds.
-type Warm = (usize, usize);
+pub(crate) type Warm = (usize, usize);
 
-fn warm() -> impl Strategy<Value = Warm> {
+pub(crate) fn warm() -> impl Strategy<Value = Warm> {
     (0..8usize, 0..80usize)
 }
 
@@ -110,7 +110,7 @@ fn next_round(w: Warm) -> Vec<Fact> {
 }
 
 /// A state reached by the prefix of a real play, then random batches, each followed by a refresh.
-fn reached(w: Warm, history: &[Vec<Fact>]) -> (State, Vec<Outcome>) {
+pub(crate) fn reached(w: Warm, history: &[Vec<Fact>]) -> (State, Vec<Outcome>) {
     let c = content();
     let (mut s, mut out) = new_game(c);
     for batch in prefix(w).iter().chain(history) {
@@ -122,7 +122,7 @@ fn reached(w: Warm, history: &[Vec<Fact>]) -> (State, Vec<Outcome>) {
     (s, out)
 }
 
-fn history() -> impl Strategy<Value = Vec<Vec<Fact>>> {
+pub(crate) fn history() -> impl Strategy<Value = Vec<Vec<Fact>>> {
     proptest::collection::vec(proptest::collection::vec(fact(), 0..8), 0..4)
 }
 

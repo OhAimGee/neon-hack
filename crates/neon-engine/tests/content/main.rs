@@ -5,9 +5,18 @@
 //! checks. The shipped data is `data/world/*.toml`; no test reads the disk, they all go
 //! through the embedded copy.
 
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::indexing_slicing,
+    reason = "this crate is test code: a failed expectation is the failure to report, and clippy only \
+              exempts the `#[test]` functions themselves, not the helpers they share"
+)]
+
 mod common;
 mod language;
 mod optimist;
+mod persist;
 mod props;
 mod regressions;
 mod shipped;

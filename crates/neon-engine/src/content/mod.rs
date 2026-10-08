@@ -15,6 +15,9 @@
 //! There is no clock (the time is a turn counter), no I/O, no callback, no loop in the data.
 //! The language reference, in French, is `docs/spec/missions-language.md`; the decisions it
 //! rests on are in `docs/spec/missions.md`.
+//!
+//! The state is saved with [`persist`]: an ordered, text-keyed table that
+//! [`State::validate`] checks against the content when a save is loaded.
 
 #![warn(missing_docs)]
 
@@ -23,6 +26,7 @@ pub mod eval;
 pub mod ids;
 pub mod loader;
 pub mod money;
+pub mod persist;
 pub mod schema;
 pub mod state;
 pub mod texts;

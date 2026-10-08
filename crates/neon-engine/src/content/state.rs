@@ -3,6 +3,7 @@
 //! [`State::apply`] only records facts in a *ledger* made of sets, maxima and a Pareto
 //! frontier: it is idempotent and commutative. Everything that has consequences (statuses,
 //! rewards, effects) happens in [`crate::content::engine::refresh`], which reads the ledger.
+//! The state is saved through [`crate::content::persist`].
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -164,6 +165,7 @@ pub struct QuestRun {
 ///
 /// The fields are public so that the campaign game and the tests can read the ledger; the
 /// only writers that keep the invariants are [`State::apply`] and the engine's `refresh`.
+/// A state read from a save must pass [`State::validate`] before it is used.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct State {
     /// The latest turn any fact carried.
