@@ -7,6 +7,8 @@
 //! * `{count|one|other}` picks a form with the plural rule of the language, from the
 //!   numeric argument `count`. A form may hold placeholders, `count` included:
 //!   `{n|a node|{n} nodes}`, or `{n} {n|node|nodes}`.
+//! * `{name^}` is `{name}` with its first letter in capitals (Unicode, whatever the language):
+//!   a sentence that opens with a glossary term, which the catalogs hold in lowercase.
 //! * Braces are reserved for placeholders; `|` is only special inside a plural.
 
 use std::collections::BTreeSet;
@@ -24,6 +26,8 @@ pub struct Template {
 pub(super) enum Part {
     Literal(String),
     Placeholder(String),
+    /// `{name^}`: the argument with its first letter in capitals.
+    Capitalized(String),
     Plural {
         selector: String,
         one: Template,
@@ -90,7 +94,7 @@ impl Template {
         for part in &self.parts {
             match part {
                 Part::Literal(_) => {}
-                Part::Placeholder(name) => {
+                Part::Placeholder(name) | Part::Capitalized(name) => {
                     names.insert(name);
                 }
                 Part::Plural {
@@ -117,7 +121,7 @@ impl Template {
         for part in &self.parts {
             match part {
                 Part::Literal(text) => found.push(text),
-                Part::Placeholder(_) => {}
+                Part::Placeholder(_) | Part::Capitalized(_) => {}
                 Part::Plural { one, other, .. } => {
                     one.collect_literals(found);
                     other.collect_literals(found);
@@ -163,10 +167,15 @@ fn parse_sequence(chars: &mut Chars<'_>, in_form: bool) -> Result<(Template, End
 /// Parses what follows a `{`: a name, then `}` or a plural's two forms.
 fn parse_placeholder(chars: &mut Chars<'_>) -> Result<Part, TemplateError> {
     let mut name = String::new();
+    let mut capitalize = false;
     let separator = loop {
         match chars.next() {
             None => return Err(TemplateError::Unclosed),
             Some(c @ ('}' | '|')) => break c,
+            // The marker closes a plain placeholder: `{name^}`.
+            Some('^') if !name.is_empty() && !capitalize && chars.peek() == Some(&'}') => {
+                capitalize = true;
+            }
             Some(c) if c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_' => name.push(c),
             Some(c) => return Err(TemplateError::BadName(c)),
         }
@@ -175,7 +184,15 @@ fn parse_placeholder(chars: &mut Chars<'_>) -> Result<Part, TemplateError> {
         return Err(TemplateError::EmptyName);
     }
     if separator == '}' {
-        return Ok(Part::Placeholder(name));
+        return Ok(if capitalize {
+            Part::Capitalized(name)
+        } else {
+            Part::Placeholder(name)
+        });
+    }
+    if capitalize {
+        // A plural picks a form; capitalizing is for a plain argument.
+        return Err(TemplateError::BadName('^'));
     }
     let (one, end) = parse_sequence(chars, true)?;
     if end != End::Pipe {
@@ -222,6 +239,21 @@ mod tests {
     }
 
     #[test]
+    fn the_capital_marker_is_a_placeholder_that_capitalizes() {
+        assert_eq!(
+            Template::parse("{a^} then {b}").unwrap().parts,
+            [
+                Part::Capitalized("a".into()),
+                Part::Literal(" then ".into()),
+                Part::Placeholder("b".into()),
+            ]
+        );
+        // Same names as without the marker: translations may use either.
+        assert_eq!(names("{a^} and {a}"), ["a"]);
+        assert_eq!(names("{n|{a^} has one|{a^} has {n}}"), ["a", "n"]);
+    }
+
+    #[test]
     fn plurals_hold_placeholders_and_count_toward_the_set() {
         assert_eq!(names("{n|a node|{n} nodes}"), ["n"]);
         assert_eq!(names("{n} {n|node|nodes}"), ["n"]);
@@ -248,6 +280,10 @@ mod tests {
             ("{Name}", TemplateError::BadName('N')),
             ("{a.b}", TemplateError::BadName('.')),
             ("{a{b}}", TemplateError::BadName('{')),
+            ("{a^b}", TemplateError::BadName('^')),
+            ("{^a}", TemplateError::BadName('^')),
+            ("{a^^}", TemplateError::BadName('^')),
+            ("{n^|a|b}", TemplateError::BadName('^')),
             ("{n|only}", TemplateError::PluralForms),
             ("{n|a|b|c}", TemplateError::PluralForms),
         ];

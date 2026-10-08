@@ -1,7 +1,9 @@
 //! The shipped content is valid and its declared text keys are the derived ones.
 
+use std::fmt::Write as _;
+
 use neon_engine::content::texts::{
-    check_budgets, check_catalog_budgets, display_width, missing_keys, render_catalog,
+    check_budgets, check_catalog_budgets, display_width, draft_keys, missing_keys, render_catalog,
     required_keys,
 };
 use neon_engine::content::{Content, Sources};
@@ -27,6 +29,103 @@ fn regenerate_the_declared_text_keys() {
         Content::from_sources_without_texts(&Sources::embedded()).unwrap_or_else(|e| panic!("{e}"));
     let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../data/world/texts.toml");
     std::fs::write(path, render_catalog(&c)).unwrap();
+}
+
+/// Regenerates `data/text/<lang>/world_draft.toml`: a placeholder `TODO <key>` for every derived
+/// key that no other text file of the language defines. Like the declared keys, this is a
+/// writers' tool: it is ignored, and refuses to run without the variable. Writing a text moves
+/// its key to a real file; run the tool again and its placeholder goes away.
+/// `NEON_REGEN_WORLD_DRAFTS=1 cargo test -p neon-engine --test content regenerate_the_draft_texts -- --ignored`
+#[test]
+#[ignore = "writes data/text/<lang>/world_draft.toml"]
+#[allow(
+    clippy::disallowed_methods,
+    reason = "the regeneration tool reads its switch from the environment and the other text files, and writes the draft file"
+)]
+fn regenerate_the_draft_texts() {
+    assert!(
+        std::env::var("NEON_REGEN_WORLD_DRAFTS").is_ok(),
+        "set NEON_REGEN_WORLD_DRAFTS=1"
+    );
+    let c = shipped();
+    for lang in Lang::ALL {
+        let dir = format!(
+            "{}/../../data/text/{}",
+            env!("CARGO_MANIFEST_DIR"),
+            lang.code()
+        );
+        let mut files: Vec<(String, String)> = Vec::new();
+        for entry in std::fs::read_dir(&dir).unwrap() {
+            let path = entry.unwrap().path();
+            let name = path.file_name().unwrap().to_str().unwrap().to_owned();
+            if name.ends_with(".toml") && name != "world_draft.toml" {
+                files.push((name, std::fs::read_to_string(&path).unwrap()));
+            }
+        }
+        files.sort();
+        let sources: Vec<(&str, &str)> = files
+            .iter()
+            .map(|(name, text)| (name.as_str(), text.as_str()))
+            .collect();
+        let catalog = Catalog::from_sources(lang, &sources).unwrap();
+        let mut out = String::from(
+            "# Placeholders for the derived text keys that are not written yet: `TODO <key>`.\n\
+             # Generated, do not edit by hand. Writing a text means defining its key in a real\n\
+             # file of this folder; then regenerate this one and the placeholder goes away.\n\
+             # Regenerate: NEON_REGEN_WORLD_DRAFTS=1 cargo test -p neon-engine --test content regenerate_the_draft_texts -- --ignored\n\n",
+        );
+        for key in missing_keys(&c, &catalog) {
+            writeln!(out, "\"{key}\" = \"TODO {key}\"").unwrap();
+        }
+        std::fs::write(format!("{dir}/world_draft.toml"), out).unwrap();
+    }
+}
+
+#[test]
+fn every_derived_key_has_a_text_in_every_language() {
+    let c = shipped();
+    for lang in Lang::ALL {
+        let catalog = Catalog::embedded(lang).unwrap();
+        let missing = missing_keys(&c, &catalog);
+        assert!(
+            missing.is_empty(),
+            "{lang:?} lacks {} derived key(s), for example {:?}: regenerate the draft texts",
+            missing.len(),
+            missing.iter().take(3).collect::<Vec<_>>()
+        );
+    }
+}
+
+/// Says how many derived texts are still placeholders, per language. It never fails: the count
+/// is the writers' progress (`data/text/<lang>/world_draft.toml` shrinks as texts are written).
+#[test]
+fn the_number_of_draft_texts_is_reported() {
+    let c = shipped();
+    let total = required_keys(&c).len();
+    for lang in Lang::ALL {
+        let catalog = Catalog::embedded(lang).unwrap();
+        let drafts = draft_keys(&c, &catalog).len();
+        // The test harness shows this with `--nocapture`.
+        println!("{lang:?}: {drafts} of {total} derived texts are still drafts");
+        assert!(drafts <= total);
+    }
+}
+
+/// To be un-ignored at the end of R5, when every narrative text is written.
+#[test]
+#[ignore = "fails while a derived text is still a draft: un-ignore at the end of R5"]
+fn no_draft_text_remains() {
+    let c = shipped();
+    for lang in Lang::ALL {
+        let catalog = Catalog::embedded(lang).unwrap();
+        let drafts = draft_keys(&c, &catalog);
+        assert!(
+            drafts.is_empty(),
+            "{lang:?}: {} draft text(s) remain, for example {:?}",
+            drafts.len(),
+            drafts.iter().take(5).collect::<Vec<_>>()
+        );
+    }
 }
 
 #[test]

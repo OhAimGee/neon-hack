@@ -1425,7 +1425,7 @@ proptest! {
     ) {
         let rows = vec![
             Row::open("a", &[format!("{word}1").as_str(), format!("{word}2").as_str()]),
-            Row::open("b", &["zzz"]),
+            Row::open("b", &["0zz"]),
         ];
         // Both names of row `a` start with the word: still one row.
         prop_assert_eq!(resolve(&word, &rows), Resolution::Found(1));

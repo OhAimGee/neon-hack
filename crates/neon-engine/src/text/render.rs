@@ -90,6 +90,14 @@ fn push_template(
                 Some(arg) => push_arg(arg, catalog, mode, out),
                 None => push_unknown(name, out),
             },
+            Part::Capitalized(name) => match find(name) {
+                Some(arg) => {
+                    let mut word = String::new();
+                    push_arg(arg, catalog, mode, &mut word);
+                    push_capitalized(&word, out);
+                }
+                None => push_unknown(name, out),
+            },
             Part::Plural {
                 selector,
                 one,
@@ -106,6 +114,15 @@ fn push_template(
                 _ => push_unknown(selector, out),
             },
         }
+    }
+}
+
+/// The text with its first character in capitals (Unicode: `é` becomes `É`, `ß` becomes `SS`).
+fn push_capitalized(word: &str, out: &mut String) {
+    let mut chars = word.chars();
+    if let Some(first) = chars.next() {
+        out.extend(first.to_uppercase());
+        out.push_str(chars.as_str());
     }
 }
 
@@ -180,6 +197,29 @@ mod tests {
         assert_eq!(full(&nested), "Bought a proxy.");
         let term = Text::new("with_term").with_term("gauge", "trace");
         assert_eq!(full(&term), "Watch the Trace.");
+    }
+
+    #[test]
+    fn the_capital_marker_capitalizes_the_first_letter_of_what_it_renders() {
+        let catalog = catalog(
+            Lang::Fr,
+            "line = \"{what^} est ici, {what}.\"\nthing = \"écran\"\n[term]\nsite = \"site\"\n",
+        );
+        let text = Text::new("line").with_term("what", "site");
+        assert_eq!(
+            render(&text, &catalog, RenderMode::FULL),
+            "Site est ici, site."
+        );
+        let nested = Text::new("line").with_text("what", Text::new("thing"));
+        assert_eq!(
+            render(&nested, &catalog, RenderMode::FULL),
+            "Écran est ici, écran."
+        );
+        let missing = Text::new("line");
+        assert_eq!(
+            render(&missing, &catalog, RenderMode::FULL),
+            "<?what> est ici, <?what>."
+        );
     }
 
     #[test]
