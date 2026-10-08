@@ -31,6 +31,7 @@ pub mod schema;
 pub mod state;
 pub mod texts;
 pub mod validate;
+pub mod view;
 
 pub use engine::{Outcome, new_game, refresh};
 pub use loader::{Content, Diagnostic, File, LoadError, Sources};

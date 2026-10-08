@@ -21,4 +21,5 @@ mod props;
 mod regressions;
 mod shipped;
 mod validation;
+mod view;
 mod walk;

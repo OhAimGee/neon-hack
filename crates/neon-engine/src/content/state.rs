@@ -501,3 +501,6 @@ fn raise<K: Ord + Clone, V: Ord + Copy>(m: &mut BTreeMap<K, V>, k: &K, v: V) -> 
         }
     }
 }
+
+#[cfg(test)]
+mod tests;
