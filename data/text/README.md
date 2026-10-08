@@ -32,6 +32,10 @@ Les deux modes se combinent (`--screen-reader --ascii`) : la variante `@sr` pass
 - Aucun texte vide ; une seule ligne (pas de retour à la ligne) ; pas d'espace insécable, pas de `…` (écrire `...`), pas d'émoji.
 - `--ascii` translittère tout le texte affiché (`é` devient `e`, `«` devient `"`, `→` devient `->`, `¢` devient `cr`, ce qui n'a pas d'équivalent devient `?`) : il n'y a donc pas besoin d'une variante `@ascii` pour les accents.
 
+## Vocabulaire
+
+Les mots du jeu (Trace, Notoriété, nœud, quête…) ne s'écrivent pas à la main dans une phrase : `terms.toml` en donne le mot canonique (`term.<id>`), le code le cite par `Arg::Term`, et `data/glossary.toml` liste les variantes interdites. Règles et arbitrages : [`docs/spec/glossary.md`](../../docs/spec/glossary.md).
+
 ## Vérifier
 
 ```bash

@@ -1,5 +1,6 @@
 //! The embedded catalogs, as the program ships them.
 
+use neon_engine::text::glossary::Glossary;
 use neon_engine::text::{Catalog, Lang, check};
 
 fn load_all() -> Vec<Catalog> {
@@ -28,6 +29,22 @@ fn every_language_has_an_embedded_catalog() {
 #[test]
 fn the_embedded_content_follows_every_rule() {
     let issues = check(&load_all());
+    assert!(
+        issues.is_empty(),
+        "{} issue(s):\n{}",
+        issues.len(),
+        issues
+            .iter()
+            .map(ToString::to_string)
+            .collect::<Vec<_>>()
+            .join("\n")
+    );
+}
+
+#[test]
+fn the_embedded_content_follows_the_glossary() {
+    let glossary = Glossary::embedded().expect("the embedded glossary loads");
+    let issues = glossary.check(&load_all());
     assert!(
         issues.is_empty(),
         "{} issue(s):\n{}",

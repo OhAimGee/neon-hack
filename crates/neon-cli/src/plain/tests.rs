@@ -269,11 +269,11 @@ fn ascii_mode_keeps_the_echo_of_typed_lines_seven_bit_too() {
     let script = "\nZoë\no\nscan\nquit\no\n".as_bytes();
     let ascii = play(&catalog_fr(), RenderMode::ASCII, 1, script, true);
     assert!(ascii.is_ascii(), "{ascii}");
-    assert!(ascii.contains("Votre pseudo [Case] : Zoe\n"), "{ascii}");
+    assert!(ascii.contains("Votre handle [Case] : Zoe\n"), "{ascii}");
     assert!(ascii.contains("> scan\n"));
     // The same session keeps its accents everywhere else.
     let full = play(&catalog_fr(), RenderMode::FULL, 1, script, true);
-    assert!(full.contains("Votre pseudo [Case] : Zoë\n"), "{full}");
+    assert!(full.contains("Votre handle [Case] : Zoë\n"), "{full}");
 }
 
 #[test]

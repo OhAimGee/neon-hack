@@ -1,0 +1,361 @@
+# Glossaire unique de Neon Hack (spécification : docs/spec/glossary.md).
+#
+# Un concept = un terme canonique par langue + les variantes interdites. Les termes canoniques
+# vivent dans les catalogues de textes (`data/text/<langue>/terms.toml`, clé `term.<id>`), pour
+# que le code les cite par `Arg::Term` et que la parité FR/EN soit contrôlée comme le reste.
+# Ce fichier ajoute ce que les catalogues ne disent pas : la note de sens et les variantes
+# interdites. `cargo test -p neon-engine` fait respecter tout ce qui suit.
+#
+# Règles de lecture des variantes interdites :
+#   - mot entier, sans tenir compte de la casse ; une variante de plusieurs mots est cherchée
+#     telle quelle ;
+#   - cherchées dans les textes de l'interface (clés hors `narrative_prefixes`) ; avec
+#     `strict = true`, aussi dans les textes de narration ;
+#   - les étiquettes de rôle `ui.tag.*` ([ALERT]...) sont exemptées : ce sont des rôles
+#     d'événement, pas des mots du jeu.
+
+[settings]
+# Les clés de narration (quêtes, dialogues, documents...) : un auteur y écrit librement, sauf
+# pour les concepts `strict`.
+narrative_prefixes = ["quest.", "dialogue.", "document.", "mail.", "scene.", "ending."]
+# Clés exemptées de toute variante interdite.
+exempt_prefixes = ["ui.tag."]
+
+# ---- Chaleur : trois notions, trois mots -------------------------------------------------
+
+[[concept]]
+id = "trace"
+note = "Jauge 0-100 locale à une intrusion (ce que la défense sait de vous). Remplace « alerte » comme nom de jauge."
+[concept.forbid]
+fr = ["chaleur", "niveau d'alerte", "jauge d'alerte"]
+en = ["heat", "alert level", "alert gauge"]
+
+[[concept]]
+id = "trace_calm"
+note = "Bande de Trace 0-29."
+
+[[concept]]
+id = "trace_wary"
+note = "Bande de Trace 30-49 (« vigilance » : les Patrouilles s'intéressent à vous)."
+
+[[concept]]
+id = "trace_alert"
+note = "Bande de Trace 50-69 (les Patrouilles voient à distance 2)."
+
+[[concept]]
+id = "trace_danger"
+note = "Bande de Trace 70-99 (+2 de bruit par brèche)."
+
+[[concept]]
+id = "burned"
+note = "Trace à 100 : l'intrusion échoue. Jamais « game over » (réservé au Hardcore)."
+[concept.forbid]
+fr = ["échec critique"]
+en = ["busted"]
+
+[[concept]]
+id = "notoriety"
+note = "Jauge 0-100 persistante de la campagne (ce que le monde sait de vous). Quatre bandes."
+[concept.forbid]
+fr = ["niveau de recherche"]
+en = ["wanted level", "infamy"]
+
+[[concept]]
+id = "notoriety_discreet"
+note = "Notoriété 0-29."
+
+[[concept]]
+id = "notoriety_watched"
+note = "Notoriété 30-49."
+
+[[concept]]
+id = "notoriety_tracked"
+note = "Notoriété 50-79 (+1 de force aux ICE corporatives)."
+
+[[concept]]
+id = "notoriety_hunted"
+note = "Notoriété 80+ (marché fermé, raid)."
+
+[[concept]]
+id = "reputation"
+note = "Monnaie d'histoire, par faction, jamais achetable. Sans rapport avec la Notoriété."
+[concept.forbid]
+fr = ["renommée"]
+en = ["street cred"]
+
+# ---- L'intrusion ---------------------------------------------------------------------------
+
+[[concept]]
+id = "run"
+note = "Une intrusion tour par tour dans un graphe. « Run » en anglais, « intrusion » en français : jamais « run » dans un texte français."
+[concept.forbid]
+fr = ["run", "runs"]
+
+[[concept]]
+id = "turn"
+note = "Un tour d'intrusion : on dépense ses cycles, puis `end`."
+
+[[concept]]
+id = "cycle"
+note = "Ce qu'une action coûte dans un tour (3 à 5 par tour)."
+[concept.forbid]
+fr = ["point d'action", "points d'action"]
+en = ["action point", "action points"]
+
+[[concept]]
+id = "node"
+note = "Sommet du graphe d'une intrusion. Jamais la carte du monde (voir « site »)."
+[concept.forbid]
+fr = ["noeud", "noeuds"]
+
+[[concept]]
+id = "site"
+note = "Lieu de la carte du monde (`net`) : il contient le graphe d'une intrusion. Ni « système » ni « serveur » comme nom de lieu."
+[concept.forbid]
+fr = ["système cible"]
+en = ["target system"]
+
+[[concept]]
+id = "ice"
+note = "Défense d'un nœud. Famille et force. Première occurrence glosée « défense (ICE) » dans le tutoriel."
+[concept.forbid]
+fr = ["sentinelle", "sentinelles"]
+
+[[concept]]
+id = "patrol"
+note = "ICE mobile qui suit un itinéraire annoncé. Remplace l'ancienne « Sentinelle » (SENTINEL, en capitales, reste la division de Nexus)."
+
+[[concept]]
+id = "program"
+note = "Ce que le deck contient et que `breach` ou `use` lance. Remplace outils, méthodes et virus tirés au hasard."
+[concept.forbid]
+fr = ["méthode de piratage"]
+en = ["hacking method"]
+
+[[concept]]
+id = "family"
+note = "Famille d'une ICE et d'un programme : Réseau, Chiffrement, Humain, Gardien IA."
+
+[[concept]]
+id = "family_network"
+note = "Famille Réseau."
+
+[[concept]]
+id = "family_encryption"
+note = "Famille Chiffrement."
+
+[[concept]]
+id = "family_human"
+note = "Famille Humain."
+
+[[concept]]
+id = "family_guardian"
+note = "Famille Gardien IA."
+
+[[concept]]
+id = "power"
+note = "Ce qu'un programme ajoute à la progression d'une ICE (valeur affichée avec sa force : 2/4)."
+
+[[concept]]
+id = "noise"
+note = "La Trace qu'une action ajoute."
+[concept.forbid]
+fr = ["bruit sonore"]
+
+[[concept]]
+id = "forecast"
+note = "La ligne qui annonce ce qui arrivera à la fin du tour. Même fonction que la résolution."
+[concept.forbid]
+fr = ["prédiction"]
+en = ["prediction"]
+
+[[concept]]
+id = "loot"
+note = "Ce qu'on ramasse dans un nœud (`loot`) : crédits, documents, Intel. Une fois."
+[concept.forbid]
+fr = ["trésor"]
+en = ["treasure"]
+
+[[concept]]
+id = "jackout"
+note = "Sortir de l'intrusion en gardant le butin."
+
+[[concept]]
+id = "intel"
+note = "Information sur un site (graphe, ICE) vendue par le Courtier ou gagnée par `probe`."
+
+[[concept]]
+id = "backdoor"
+note = "Accès posé qui fait démarrer la prochaine intrusion sur ce site depuis ce nœud. Sur les écrans techniques : « backdoor » dans les deux langues."
+[concept.forbid]
+fr = ["porte dérobée"]
+en = ["back door"]
+
+# ---- Le hub et l'équipement -----------------------------------------------------------------
+
+[[concept]]
+id = "safehouse"
+note = "Le hub : planque du joueur (peut changer de lieu dans l'histoire, voir la bible)."
+[concept.forbid]
+fr = ["repaire"]
+en = ["hideout"]
+
+[[concept]]
+id = "deck"
+note = "Le cyberdeck ET le jeu de programmes équipés pour une intrusion : on dit « deck » dans les deux cas."
+
+[[concept]]
+id = "credit"
+strict = true
+note = "Monnaie, symbole ¢. Un seul sens, pas de yens."
+[concept.forbid]
+fr = ["yen", "yens"]
+en = ["yen"]
+
+[[concept]]
+id = "shop"
+note = "L'étal de R4Z0R."
+
+[[concept]]
+id = "upgrade"
+note = "Niveau 1 à 3 d'un programme."
+
+[[concept]]
+id = "consumable"
+note = "Objet à charges limitées (Ghost, Spoof, Overclock)."
+
+[[concept]]
+id = "companion"
+note = "L'emplacement qui accueille ECHO, puis AURA."
+
+[[concept]]
+id = "level"
+note = "Le rang du joueur, de Novice à Légende. L'interface dit « niveau » ; « palier » est un terme de conception qui ne s'affiche jamais (proposition P1.1, à valider)."
+[concept.forbid]
+fr = ["palier", "paliers"]
+en = ["tier", "tiers"]
+
+# ---- Histoire --------------------------------------------------------------------------------
+
+[[concept]]
+id = "quest"
+note = "Une entrée du journal de quêtes (principale ou contrat)."
+[concept.forbid]
+fr = ["tâche"]
+en = ["task"]
+
+[[concept]]
+id = "contract"
+note = "Une quête annexe qui porte un avantage. Jamais « quête secondaire »."
+[concept.forbid]
+fr = ["quête annexe", "quête secondaire", "quêtes annexes", "quêtes secondaires"]
+en = ["side quest", "sidequest", "side quests"]
+
+[[concept]]
+id = "mission"
+note = "Le mot des personnages pour parler d'une quête. L'interface dit « quête »."
+
+[[concept]]
+id = "objective"
+note = "Une ligne d'une quête."
+
+[[concept]]
+id = "chapter"
+note = "Un des six chapitres de la campagne."
+
+[[concept]]
+id = "journal"
+note = "Le journal de quêtes. Le panneau d'événements de la TUI s'appelle « terminal »."
+
+[[concept]]
+id = "terminal"
+note = "Le panneau principal de la TUI, où défilent les événements."
+
+[[concept]]
+id = "contact"
+note = "Un des neuf personnages joignables."
+
+[[concept]]
+id = "handle"
+strict = true
+note = "Le pseudonyme du joueur."
+[concept.forbid]
+fr = ["pseudo", "pseudonyme"]
+en = ["nickname", "username"]
+
+[[concept]]
+id = "message"
+note = "Un message reçu. Jamais « mail » ni « courriel » dans l'interface."
+[concept.forbid]
+fr = ["mail", "e-mail", "courriel", "courrier"]
+en = ["mail", "e-mail", "email"]
+
+[[concept]]
+id = "inbox"
+note = "La boîte de réception."
+
+[[concept]]
+id = "document"
+note = "Un texte obtenu dans une intrusion ; certains sont chiffrés."
+
+[[concept]]
+id = "fragment"
+note = "Un document du Projet Aurora, rangé dans les archives."
+
+[[concept]]
+id = "archives"
+note = "La liste des fragments lus."
+
+[[concept]]
+id = "decision"
+note = "Un choix de l'histoire qui change la fin."
+
+[[concept]]
+id = "net"
+strict = true
+note = "Le réseau mondial. Jamais la toile, le web ni Internet."
+[concept.forbid]
+fr = ["la toile", "le web", "internet"]
+en = ["the web", "the internet", "cyberspace"]
+
+[[concept]]
+id = "hint"
+note = "Un indice d'ECHO-7, compté par mission selon la difficulté."
+
+# ---- Difficulté, sauvegardes, interface ------------------------------------------------------
+
+[[concept]]
+id = "difficulty_story"
+note = "Préréglage Histoire."
+
+[[concept]]
+id = "difficulty_normal"
+note = "Préréglage Normal."
+
+[[concept]]
+id = "difficulty_expert"
+note = "Préréglage Expert."
+
+[[concept]]
+id = "difficulty_hardcore"
+note = "Préréglage Hardcore (seul mode où une partie se perd)."
+
+[[concept]]
+id = "undo"
+note = "Annule le dernier tour (nombre limité selon la difficulté)."
+
+[[concept]]
+id = "autosave"
+note = "Sauvegarde automatique : la plus récente, écrasée à chaque commande."
+
+[[concept]]
+id = "checkpoint"
+note = "Point de contrôle : début de mission, avant une décision ; jamais écrasé par l'autosave."
+
+[[concept]]
+id = "slot"
+note = "Emplacement de sauvegarde manuelle (1 à 9)."
+
+[[concept]]
+id = "panel"
+note = "Le panneau latéral de la TUI."

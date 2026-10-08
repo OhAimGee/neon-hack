@@ -7,13 +7,14 @@
 //! The templates and catalogs are TOML files embedded in the program (`data/text/<lang>/`):
 //! see [`template`] for the syntax (`{name}`, `{count|one|other}`), [`Catalog`] for the
 //! keys and their `@sr` and `@ascii` variants, [`render()`] for the modes, and [`check()`]
-//! for the rules the content must follow.
+//! for the rules the content must follow, and [`glossary`] for the vocabulary.
 
 use std::borrow::Cow;
 
 mod ascii;
 mod catalog;
 pub mod check;
+pub mod glossary;
 mod render;
 pub mod template;
 
