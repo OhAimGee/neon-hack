@@ -9,5 +9,6 @@ Ces documents sont les **spécifications normatives** que la phase R2 implément
 | [`run-screen.md`](run-screen.md) | L'écran d'intrusion : contrat `RunView`, ordre des lignes, prévision, trois présentations d'un même tour (plain, français, lecteur d'écran + ASCII), panneau TUI à 30 colonnes, exigences RUN-1 à RUN-14 | R4 (contrat de `View` dès R2) |
 | [`missions.md`](missions.md) | Le langage de missions (14 objectifs, 9 conditions, 9 effets), la règle « objectif déjà vrai à l'ouverture », les neuf contradictions de la bible révélées par l'exécution ; s'appuie sur le spike [`spikes/missions`](../../spikes/missions/README.md) | R2 (portage du spike) |
 | [`neon-sim.md`](neon-sim.md) | Le banc d'équilibrage : bots, métriques, seuils chiffrés (barrières et objectifs), interface, intégration CI | R6 |
+| [`solver.md`](solver.md) | Le solveur d'intrusion : verdict mesuré, rôle (test et CI contre exécution bornée), représentation, bornes, repli, constats de design, règles proposées ; s'appuie sur le spike [`spikes/solver`](../../spikes/solver/README.md) | R4 |
 
 Chaque spécification dit aussi ce qu'elle laisse ouvert et ce que le propriétaire doit valider ; la liste consolidée est dans [`DECISIONS.md`](../design/DECISIONS.md) (§ 5).

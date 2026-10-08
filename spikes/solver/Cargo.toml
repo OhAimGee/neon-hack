@@ -1,0 +1,32 @@
+[package]
+name = "neon-spike-solver"
+description = "Spike P1: exact deterministic solver on a realistic run model (patrols, ICE families, 8 nodes)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+# No dependency on purpose: the question is what the standard library alone costs.
+[dependencies]
+
+# Own lint table (the spike is throw-away code, it does not follow the engine rules:
+# `Instant` is used to time the runs, indexing and casts are fine on small fixed arrays).
+[lints.rust]
+unsafe_code = "forbid"
+rust_2018_idioms = { level = "warn", priority = -1 }
+unused_qualifications = "warn"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+unimplemented = "warn"
+explicit_iter_loop = "warn"
+needless_pass_by_value = "warn"
+redundant_closure_for_method_calls = "warn"
+semicolon_if_nothing_returned = "warn"
+manual_assert = "warn"
+cloned_instead_of_copied = "warn"
+map_unwrap_or = "warn"
+uninlined_format_args = "warn"
