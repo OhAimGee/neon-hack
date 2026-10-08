@@ -6,5 +6,6 @@ Ces documents sont les **spécifications normatives** que la phase R2 implément
 |---|---|---|
 | [`glossary.md`](glossary.md) | Le vocabulaire du jeu : un terme canonique par concept et par langue, les variantes interdites, comment on cite un terme | `data/glossary.toml`, `data/text/<langue>/terms.toml`, `neon_engine::text::glossary` : contrôlé par `cargo test` dès maintenant |
 | [`commands.md`](commands.md) | La table unique des commandes du jeu complet (hub, intrusion, système), leurs arguments, leur ouverture, la correspondance avec les 29 commandes du C | R2 (hub), R4 (intrusion) |
+| [`run-screen.md`](run-screen.md) | L'écran d'intrusion : contrat `RunView`, ordre des lignes, prévision, trois présentations d'un même tour (plain, français, lecteur d'écran + ASCII), panneau TUI à 30 colonnes, exigences RUN-1 à RUN-14 | R4 (contrat de `View` dès R2) |
 
 Chaque spécification dit aussi ce qu'elle laisse ouvert et ce que le propriétaire doit valider ; la liste consolidée est dans [`DECISIONS.md`](../design/DECISIONS.md) (§ 5).
