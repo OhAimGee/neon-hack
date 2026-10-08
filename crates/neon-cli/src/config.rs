@@ -73,7 +73,8 @@ impl Env {
             system_data_dir: ProjectDirs::from("", "", "neon-hack")
                 .map(|dirs| dirs.data_dir().to_path_buf()),
             neon_palette: text("NEON_HACK_PALETTE"),
-            no_color: text("NO_COLOR").is_some(),
+            // Presence and non-emptiness are what counts, so a value that is not UTF-8 counts too.
+            no_color: std::env::var_os("NO_COLOR").is_some_and(|value| !value.is_empty()),
             term: text("TERM"),
             colorterm: text("COLORTERM"),
             stdout_is_terminal: io::stdout().is_terminal(),

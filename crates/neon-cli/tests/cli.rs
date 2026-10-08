@@ -771,3 +771,19 @@ fn print_settings_shows_the_colour_decision_and_the_palette() {
         "{reader}"
     );
 }
+
+#[cfg(unix)]
+#[test]
+fn a_no_color_value_that_is_not_utf8_still_turns_colour_off() {
+    use std::os::unix::ffi::OsStrExt;
+    let dir = tempfile::tempdir().unwrap();
+    settings_in(dir.path(), "color = \"always\"\n");
+    let output = Command::new(env!("CARGO_BIN_EXE_neon-hack"))
+        .env_clear()
+        .env("NO_COLOR", std::ffi::OsStr::from_bytes(&[0xff, 0xfe]))
+        .args(["--print-settings", "--data-dir", dir_arg(&dir)])
+        .output()
+        .expect("failed to run neon-hack");
+    let shown = stdout(&output);
+    assert!(shown.contains("color = false  # NO_COLOR"), "{shown}");
+}
