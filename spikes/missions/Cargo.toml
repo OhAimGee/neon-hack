@@ -1,0 +1,52 @@
+[package]
+name = "neon-spike-missions"
+description = "P1 spike: declarative mission language (quests M01-M05 and the rest of the bible), evaluator and optimistic player"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[dependencies]
+serde = { workspace = true }
+thiserror = { workspace = true }
+toml = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
+
+# A spike has its own lint table (it must not inherit the engine's purity rules): it
+# stays warning-free under `cargo clippy --workspace --all-targets -- -D warnings`.
+[lints.rust]
+unsafe_code = "forbid"
+unreachable_pub = "warn"
+rust_2018_idioms = { level = "warn", priority = -1 }
+unused_qualifications = "warn"
+
+[lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+unwrap_used = "warn"
+expect_used = "warn"
+indexing_slicing = "warn"
+dbg_macro = "warn"
+todo = "warn"
+unimplemented = "warn"
+print_stdout = "warn"
+print_stderr = "warn"
+# Pedantic lints that cost more than they bring in a spike.
+too_many_lines = "allow"
+similar_names = "allow"
+struct_excessive_bools = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+module_name_repetitions = "allow"
+must_use_candidate = "allow"
+return_self_not_must_use = "allow"
+many_single_char_names = "allow"
+match_same_arms = "allow"
+collapsible_if = "allow"
+semicolon_if_nothing_returned = "allow"
+unused_self = "allow"
+format_push_string = "allow"
+assert_is_empty = "allow"

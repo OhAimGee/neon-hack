@@ -1,0 +1,752 @@
+# Quests of the bible: the whole main line M01-M14 and the side quests the endings,
+# the decisions and the conditions of chapter 4 need (S06 S07 S08 S10 S11 S12 S13 S14 S16).
+# Order = prerequisites first. `tier` is the reference tier P of the rewards (palier column of
+# the bible); `unlock.tier` is the gate. Tiers are granted by the main line (`grant_tier`).
+# Text keys are derived from the ids (quest.<id>.title, .obj.N ...): no text here.
+#
+# Objective kinds: talk buy compromise extract open link reputation use site_state pay
+# choice heat_end_below heat_peak_below any_of. Indicators: optional, secret, when, id.
+
+# =========================================================================== M01
+# Bible 5.3: 7 objectives. #5 `REACH_TIER(2)` cannot be met (this very quest grants tier 2):
+# replaced by a first talk with ECHO-7.
+[[quest]]
+id = "m01"
+code = "INTRO_TUTORIAL"
+kind = "main"
+chapter = 1
+giver = "echo7"
+tier = 1
+reward = { credits = "M", reputation = "S" }
+[[quest.objective]]
+kind = "use"
+command = "quests"
+[[quest.objective]]
+kind = "use"
+command = "help"
+[[quest.objective]]
+kind = "use"
+command = "scan"
+[[quest.objective]]
+kind = "use"
+command = "status"
+[[quest.objective]]
+kind = "talk"
+contact = "echo7"
+[[quest.objective]]
+kind = "compromise"
+site = "localhost"
+[[quest.objective]]
+kind = "use"
+group = "cover"
+[[quest.on_complete]]
+then = [
+    { kind = "grant_tier", tier = 2 },
+    { kind = "unlock", readable = "mail-welcome" },
+    { kind = "set_contact_state", contact = "r4z0r", state = "available" },
+]
+
+# =========================================================================== M02
+[[quest]]
+id = "m02"
+code = "FIRST_INFILTRATION"
+kind = "main"
+chapter = 1
+giver = "echo7"
+tier = 2
+unlock = { tier = 2 }
+prereq = ["m01"]
+reward = { credits = "M", reputation = "M" }
+[[quest.objective]]
+kind = "compromise"
+site = "corp-server-01"
+[[quest.objective]]
+kind = "heat_end_below"
+below = 50
+[[quest.objective]]
+id = "loot"
+kind = "extract"
+site = "corp-server-01"
+optional = true
+[[quest.on_complete]]
+then = [
+    { kind = "grant_tier", tier = 3 },
+    { kind = "unlock", readable = "f01" },
+]
+
+# =========================================================================== M03
+[[quest]]
+id = "m03"
+code = "GATHER_INTEL"
+kind = "main"
+chapter = 2
+giver = "r4z0r"
+tier = 3
+unlock = { tier = 3 }
+prereq = ["m02"]
+reward = { credits = "M", reputation = "L" }
+[[quest.on_open]]
+then = [{ kind = "set_flag", flag = "chapter", value = 2 }]
+[[quest.objective]]
+kind = "talk"
+contact = "r4z0r"
+[[quest.objective]]
+kind = "buy"
+item = "stealth_module"
+[[quest.objective]]
+kind = "compromise"
+count = 3
+[[quest.objective]]
+kind = "reputation"
+min = 50
+[[quest.objective]]
+kind = "open"
+readable = "doc_phase2"
+secret = true
+[[quest.on_complete]]
+then = [
+    { kind = "unlock", readable = "f03" },
+    { kind = "unlock", readable = "cs02" },
+    { kind = "unlock", readable = "mail-phoenix" },
+    { kind = "unlock", readable = "mail-miner" },
+    { kind = "set_contact_state", contact = "phoenix", state = "available" },
+    { kind = "set_contact_state", contact = "miner", state = "available" },
+]
+
+# =========================================================================== M04
+[[quest]]
+id = "m04"
+code = "FOLLOW_THE_MONEY"
+kind = "main"
+chapter = 2
+giver = "miner"
+tier = 3
+unlock = { tier = 3 }
+prereq = ["m03"]
+reward = { credits = "M", reputation = "M" }
+[[quest.objective]]
+kind = "extract"
+site = "corp-server-01"
+all = true
+[[quest.objective]]
+kind = "extract"
+site = "underground-market"
+file = "black_ledger"
+[[quest.objective]]
+kind = "open"
+readable = "doc_ledger"
+[[quest.objective]]
+kind = "heat_end_below"
+below = 50
+[[quest.on_complete]]
+then = [
+    { kind = "grant_tier", tier = 4 },
+    { kind = "unlock", readable = "f06" },
+]
+
+# =========================================================================== M05
+[[quest]]
+id = "m05"
+code = "NEXUS_DATA_BREACH"
+kind = "main"
+chapter = 3
+giver = "phoenix"
+tier = 4
+unlock = { tier = 4 }
+prereq = ["m04"]
+reward = { credits = "L", reputation = "XL" }
+[[quest.on_open]]
+then = [{ kind = "set_flag", flag = "chapter", value = 3 }]
+[[quest.objective]]
+kind = "any_of"
+of = [
+    { kind = "buy", item = "quantum_key" },
+    { kind = "buy", item = "neural_assistant" },
+    { kind = "buy", item = "quantum_chip" },
+]
+[[quest.objective]]
+kind = "compromise"
+site = "nexus-mainframe"
+[[quest.objective]]
+kind = "extract"
+site = "nexus-mainframe"
+[[quest.on_complete]]
+then = [
+    { kind = "unlock", readable = "f08" },
+    { kind = "unlock", readable = "f09" },
+    { kind = "unlock", readable = "f10" },
+    { kind = "unlock", readable = "cs03" },
+    { kind = "unlock", readable = "mail-aura" },
+    { kind = "unlock", readable = "mail-angel" },
+    { kind = "set_contact_state", contact = "aura", state = "available" },
+    { kind = "set_contact_state", contact = "angel", state = "available" },
+    { kind = "set_contact_state", contact = "broker", state = "busy" },
+]
+
+# =========================================================================== S06
+[[quest]]
+id = "s06"
+code = "PHOENIX_PAST"
+kind = "side"
+chapter = 3
+giver = "phoenix"
+tier = 4
+unlock = { tier = 4 }
+prereq = ["m05"]
+reward = { credits = "S", reputation = "S" }
+[[quest.objective]]
+kind = "talk"
+contact = "phoenix"
+count = 3
+[[quest.objective]]
+kind = "open"
+readable = "doc_phoenix"
+[[quest.objective]]
+kind = "site_state"
+site = "nexus-mainframe"
+mark = "analyzed"
+[[quest.on_complete]]
+then = [{ kind = "trust", contact = "phoenix", delta = 10 }]
+
+# =========================================================================== M06
+[[quest]]
+id = "m06"
+code = "UNDERGROUND_CONTACT"
+kind = "main"
+chapter = 3
+giver = "angel"
+tier = 4
+unlock = { tier = 4 }
+prereq = ["m05"]
+reward = { credits = "M", reputation = "M" }
+[[quest.objective]]
+kind = "talk"
+contact = "angel"
+[[quest.objective]]
+kind = "extract"
+site = "nexus-mainframe"
+file = "neural_maps"
+[[quest.objective]]
+kind = "talk"
+contact = "angel"
+count = 2
+[[quest.objective]]
+kind = "reputation"
+min = 75
+[[quest.on_complete]]
+then = [
+    { kind = "grant_tier", tier = 5 },
+    { kind = "set_contact_state", contact = "ghost", state = "available" },
+]
+
+# =========================================================================== M07
+# Sabotage. The secret objective only changes how hard the betrayal B1 hits: forced heat 65
+# when the player knew (S06 done, or the honeypot found), 85 otherwise.
+[[quest]]
+id = "m07"
+code = "CORPORATE_SABOTAGE"
+kind = "main"
+chapter = 3
+giver = "phoenix"
+tier = 5
+unlock = { tier = 5 }
+prereq = ["m06"]
+reward = { credits = "L", reputation = "L" }
+[[quest.objective]]
+kind = "site_state"
+site = "banking-network"
+mark = "virus"
+[[quest.objective]]
+kind = "site_state"
+site = "research-lab"
+mark = "backdoor"
+[[quest.objective]]
+kind = "extract"
+site = "research-lab"
+file = "prototype_specs"
+[[quest.objective]]
+kind = "heat_end_below"
+below = 60
+[[quest.objective]]
+id = "honeypot"
+kind = "site_state"
+site = "research-lab"
+mark = "analyzed"
+secret = true
+optional = true
+[[quest.on_complete]]
+then = [
+    { kind = "unlock", readable = "f15" },
+    { kind = "unlock", readable = "cs04" },
+    { kind = "set_flag", flag = "sabotage_done", value = true },
+    { kind = "set_flag", flag = "phoenix_state", value = "compromised" },
+    { kind = "set_flag", flag = "hub", value = "safehouse" },
+    { kind = "set_contact_state", contact = "phoenix", state = "compromised" },
+    { kind = "set_contact_state", contact = "insider", state = "available" },
+]
+[[quest.on_complete]]
+when = { kind = "any", of = [
+    { kind = "quest", id = "s06", is = "completed" },
+    { kind = "objective", quest = "m07", id = "honeypot" },
+] }
+then = [{ kind = "heat_force", value = 65 }]
+[[quest.on_complete]]
+when = { kind = "not", of = { kind = "any", of = [
+    { kind = "quest", id = "s06", is = "completed" },
+    { kind = "objective", quest = "m07", id = "honeypot" },
+] } }
+then = [{ kind = "heat_force", value = 85 }]
+
+# =========================================================================== M08
+# The Lull. Decision D2 (Phoenix). The optional objective decides the state of Neon Angel.
+[[quest]]
+id = "m08"
+code = "THE_LULL"
+kind = "main"
+chapter = 4
+giver = "angel"
+tier = 5
+unlock = { tier = 5 }
+prereq = ["m07"]
+reward = { credits = "M", reputation = "M" }
+[[quest.on_open]]
+then = [
+    { kind = "set_flag", flag = "chapter", value = 4 },
+    { kind = "set_flag", flag = "lull_done", value = true },
+    { kind = "unlock", readable = "cs05" },
+]
+[[quest.objective]]
+kind = "heat_end_below"
+below = 50
+[[quest.objective]]
+kind = "compromise"
+site = "halcyon-clinic-7"
+[[quest.objective]]
+kind = "extract"
+site = "halcyon-clinic-7"
+file = "lull_protocol"
+[[quest.objective]]
+kind = "choice"
+decision = "d2"
+[[quest.objective]]
+id = "radio"
+kind = "compromise"
+site = "radio-veille"
+optional = true
+[[quest.on_complete]]
+when = { kind = "objective", quest = "m08", id = "radio" }
+then = [
+    { kind = "set_flag", flag = "angel_state", value = "free" },
+    { kind = "set_contact_state", contact = "angel", state = "available" },
+]
+[[quest.on_complete]]
+when = { kind = "not", of = { kind = "objective", quest = "m08", id = "radio" } }
+then = [
+    { kind = "set_flag", flag = "angel_state", value = "silenced" },
+    { kind = "set_contact_state", contact = "angel", state = "silenced" },
+]
+[[quest.on_complete]]
+then = [{ kind = "unlock", readable = "f13" }]
+
+# =========================================================================== S07
+# Branch of D2 = save: offered only when Phoenix was saved.
+[[quest]]
+id = "s07"
+code = "PHOENIX_CUT"
+kind = "branch"
+chapter = 4
+giver = "phoenix"
+tier = 5
+unlock = { tier = 5 }
+prereq = ["m08"]
+available_if = { kind = "flag", name = "d2", is = "save" }
+reward = { credits = "S", reputation = "L" }
+[[quest.objective]]
+kind = "open"
+readable = "f15"
+[[quest.objective]]
+kind = "compromise"
+site = "halcyon-clinic-7"
+[[quest.objective]]
+kind = "link"
+contact = "echo7"
+level = 2
+[[quest.objective]]
+kind = "heat_end_below"
+below = 60
+[[quest.on_complete]]
+then = [{ kind = "set_flag", flag = "adv", value = "cutter" }]
+
+# =========================================================================== S08
+[[quest]]
+id = "s08"
+code = "R4Z0R_RAID"
+kind = "side"
+chapter = 4
+giver = "r4z0r"
+tier = 5
+unlock = { tier = 5 }
+prereq = ["m08"]
+available_if = { kind = "not", of = { kind = "contact", id = "r4z0r", is = ["hostile"] } }
+reward = { reputation = "M" }
+[[quest.objective]]
+kind = "site_state"
+site = "halcyon-clinic-7"
+mark = "backdoor"
+[[quest.objective]]
+kind = "extract"
+site = "halcyon-clinic-7"
+file = "raid_orders"
+[[quest.objective]]
+kind = "pay"
+amount = "S"
+
+# =========================================================================== M09
+[[quest]]
+id = "m09"
+code = "AI_LIBERATION"
+kind = "main"
+chapter = 4
+giver = "aura"
+tier = 5
+unlock = { tier = 5 }
+prereq = ["m08"]
+reward = { credits = "M", reputation = "M" }
+[[quest.objective]]
+kind = "compromise"
+site = "freeport-01"
+[[quest.objective]]
+kind = "compromise"
+site = "freeport-02"
+[[quest.objective]]
+kind = "compromise"
+site = "freeport-03"
+[[quest.objective]]
+kind = "link"
+contact = "aura"
+level = 1
+[[quest.objective]]
+kind = "heat_end_below"
+below = 50
+[[quest.on_complete]]
+then = [
+    { kind = "unlock", readable = "f16" },
+    { kind = "unlock", readable = "cs06" },
+    { kind = "set_contact_state", contact = "broker", state = "available" },
+]
+
+# =========================================================================== S10
+[[quest]]
+id = "s10"
+code = "AURA_HOSTS"
+kind = "side"
+chapter = 4
+giver = "aura"
+tier = 5
+unlock = { tier = 5 }
+prereq = ["m09"]
+reward = { reputation = "S" }
+[[quest.objective]]
+kind = "site_state"
+site = "freeport-01"
+mark = "backdoor"
+[[quest.objective]]
+kind = "site_state"
+site = "freeport-02"
+mark = "backdoor"
+[[quest.objective]]
+kind = "site_state"
+site = "freeport-03"
+mark = "backdoor"
+[[quest.objective]]
+kind = "link"
+contact = "aura"
+level = 2
+[[quest.on_complete]]
+then = [{ kind = "set_flag", flag = "adv", value = "aura_redundancy" }]
+
+# =========================================================================== S12
+# The only quest that can fail: a heat peak of 60 or more, or the finale starting before
+# the player is done, costs Mizuki Arai her cover.
+[[quest]]
+id = "s12"
+code = "INSIDER_WINDOW"
+kind = "side"
+chapter = 4
+giver = "insider"
+tier = 5
+unlock = { tier = 5 }
+prereq = ["m08"]
+available_if = { kind = "not", of = { kind = "any", of = [
+    { kind = "quest", id = "m13", is = "active" },
+    { kind = "quest", id = "m13", is = "completed" },
+] } }
+fail_if = { kind = "quest", id = "m13", is = "active" }
+failable = true
+reward = { credits = "S", reputation = "M" }
+[[quest.objective]]
+kind = "compromise"
+site = "sentinel-hub"
+[[quest.objective]]
+kind = "extract"
+site = "sentinel-hub"
+file = "maintenance_schedule"
+[[quest.objective]]
+kind = "heat_peak_below"
+below = 60
+[[quest.on_complete]]
+then = [{ kind = "set_flag", flag = "adv", value = "maintenance_window" }]
+[[quest.on_fail]]
+then = [{ kind = "set_contact_state", contact = "insider", state = "compromised" }]
+
+# =========================================================================== S13
+[[quest]]
+id = "s13"
+code = "ANGEL_VIGIL"
+kind = "side"
+chapter = 4
+giver = "angel"
+tier = 5
+unlock = { tier = 5 }
+prereq = ["m08"]
+available_if = { kind = "flag", name = "angel_state", is = "free" }
+reward = { reputation = "M" }
+[[quest.objective]]
+kind = "talk"
+contact = "angel"
+count = 3
+[[quest.objective]]
+kind = "reputation"
+min = 120
+[[quest.objective]]
+kind = "pay"
+amount = "M"
+[[quest.on_complete]]
+then = [{ kind = "set_flag", flag = "adv", value = "vigil" }]
+
+# =========================================================================== M10
+# The Broker. D1. Objective 2 mixes three ways to pay; the `pay` alternatives are guarded by
+# the retainer of S11 (half price = one size down). The ledger was already extracted in M04,
+# so `betray` is open from the start (open point in the README).
+[[quest]]
+id = "m10"
+code = "SHADOW_BROKER"
+kind = "main"
+chapter = 5
+giver = "broker"
+tier = 5
+unlock = { tier = 5 }
+prereq = ["m09"]
+[[quest.on_open]]
+then = [{ kind = "set_flag", flag = "chapter", value = 5 }]
+[[quest.objective]]
+kind = "talk"
+contact = "broker"
+[[quest.objective]]
+kind = "any_of"
+of = [
+    { id = "pay", kind = "pay", amount = "L", when = { kind = "flag", name = "broker_retainer", is = false } },
+    { id = "pay_retainer", kind = "pay", amount = "M", when = { kind = "flag", name = "broker_retainer", is = true } },
+    { id = "betray", kind = "extract", site = "underground-market", file = "black_ledger" },
+    { id = "steal", kind = "extract", site = "shadow-exchange" },
+]
+[[quest.objective]]
+kind = "choice"
+decision = "d1"
+[[quest.on_complete]]
+then = [
+    { kind = "grant_tier", tier = 6 },
+    { kind = "unlock", readable = "cs07" },
+]
+
+# =========================================================================== S11
+[[quest]]
+id = "s11"
+code = "BROKER_FAVOR"
+kind = "side"
+chapter = 5
+giver = "broker"
+tier = 5
+unlock = { tier = 5 }
+prereq = ["m09"]
+reward = { reputation = "S" }
+[[quest.objective]]
+kind = "extract"
+count = 3
+[[quest.objective]]
+kind = "pay"
+amount = "S"
+[[quest.on_complete]]
+then = [
+    { kind = "set_flag", flag = "broker_retainer", value = true },
+    { kind = "unlock", readable = "f18" },
+]
+
+# =========================================================================== M11
+# The seventh echo. F19 and the confession (CS08) are there from the opening.
+[[quest]]
+id = "m11"
+code = "SEVENTH_ECHO"
+kind = "main"
+chapter = 5
+giver = "echo7"
+tier = 6
+unlock = { tier = 6 }
+prereq = ["m10"]
+[[quest.on_open]]
+then = [
+    { kind = "unlock", readable = "f19" },
+    { kind = "unlock", readable = "cs08" },
+]
+[[quest.objective]]
+kind = "talk"
+contact = "echo7"
+count = 2
+[[quest.objective]]
+kind = "open"
+readable = "f19"
+[[quest.objective]]
+kind = "link"
+contact = "echo7"
+level = 3
+[[quest.objective]]
+kind = "choice"
+decision = "echo"
+
+# =========================================================================== S14
+[[quest]]
+id = "s14"
+code = "MINER_VAULT"
+kind = "side"
+chapter = 5
+giver = "miner"
+tier = 6
+unlock = { tier = 6 }
+prereq = ["m05", "m11"]
+reward = { credits = "S", reputation = "S" }
+[[quest.objective]]
+kind = "buy"
+item = "quantum_chip"
+[[quest.objective]]
+kind = "open"
+readable = "doc_vault"
+[[quest.on_complete]]
+then = [{ kind = "unlock", readable = "f22" }]
+
+# =========================================================================== S16
+[[quest]]
+id = "s16"
+code = "ECHO_LOG"
+kind = "side"
+chapter = 5
+giver = "echo7"
+tier = 6
+unlock = { tier = 6 }
+prereq = ["m11", "s14"]
+reward = { reputation = "S" }
+[[quest.objective]]
+kind = "open"
+readable = "f22"
+[[quest.objective]]
+kind = "link"
+contact = "echo7"
+level = 3
+[[quest.objective]]
+kind = "talk"
+contact = "echo7"
+count = 2
+[[quest.on_complete]]
+then = [{ kind = "set_flag", flag = "adv", value = "echo_log" }]
+
+# =========================================================================== M12
+# Six objectives (bible: the second largest quest).
+[[quest]]
+id = "m12"
+code = "THREE_KEYS"
+kind = "main"
+chapter = 5
+giver = "aura"
+tier = 6
+unlock = { tier = 6 }
+prereq = ["m11"]
+reward = { credits = "L", reputation = "L" }
+[[quest.objective]]
+kind = "buy"
+item = "quantum_chip"
+[[quest.objective]]
+kind = "extract"
+site = "nexus-mainframe"
+file = "quantum_keys"
+[[quest.objective]]
+kind = "compromise"
+site = "gov-database"
+[[quest.objective]]
+kind = "extract"
+site = "gov-database"
+file = "citizen_registry"
+[[quest.objective]]
+kind = "compromise"
+site = "sentinel-hub"
+[[quest.objective]]
+kind = "heat_end_below"
+below = 80
+[[quest.on_complete]]
+then = [
+    { kind = "set_flag", flag = "three_keys", value = true },
+    { kind = "unlock", readable = "f20" },
+    { kind = "unlock", readable = "f24" },
+    { kind = "unlock", readable = "f07" },
+]
+
+# =========================================================================== M13
+# The boss site. D3. Completing the quest settles the ending from the flags.
+[[quest]]
+id = "m13"
+code = "FINAL_SHOWDOWN"
+kind = "main"
+chapter = 6
+giver = "aura"
+tier = 6
+unlock = { tier = 6 }
+prereq = ["m12"]
+reward = { credits = "XL" }
+[[quest.on_open]]
+then = [
+    { kind = "set_flag", flag = "chapter", value = 6 },
+    { kind = "unlock", readable = "cs09" },
+]
+[[quest.objective]]
+kind = "compromise"
+site = "aurora-core"
+[[quest.objective]]
+kind = "extract"
+site = "aurora-core"
+count = 3
+[[quest.objective]]
+kind = "choice"
+decision = "d3"
+[[quest.on_complete]]
+then = [
+    { kind = "settle_ending" },
+    { kind = "unlock", readable = "f23" },
+    { kind = "unlock", readable = "ending-screen" },
+    { kind = "unlock", readable = "epilogue-montage" },
+]
+
+# =========================================================================== M14
+[[quest]]
+id = "m14"
+code = "EPILOGUE"
+kind = "main"
+chapter = 6
+giver = "echo7"
+tier = 6
+unlock = { tier = 6 }
+prereq = ["m13"]
+reward = { credits = "M" }
+[[quest.objective]]
+kind = "open"
+readable = "ending-screen"
+[[quest.objective]]
+kind = "open"
+readable = "epilogue-montage"

@@ -1,0 +1,45 @@
+# Symbolic reward sizes (bible 5.1). A quest says "credits = M", never a number:
+# credits = credits_percent % of R(P), P being the tier of the quest.
+
+[[size]]
+id = "S"
+credits_percent = 50
+reputation = 10
+[[size]]
+id = "M"
+credits_percent = 100
+reputation = 25
+[[size]]
+id = "L"
+credits_percent = 200
+reputation = 40
+[[size]]
+id = "XL"
+credits_percent = 400
+reputation = 100
+
+# R(P): price of the flagship item of each tier.
+[[tier]]
+id = 1
+price = 80
+[[tier]]
+id = 2
+price = 150
+[[tier]]
+id = 3
+price = 200
+[[tier]]
+id = 4
+price = 500
+[[tier]]
+id = 5
+price = 800
+[[tier]]
+id = 6
+price = 800
+
+[rules]
+start_credits = 100
+# Trust: +per_talk per conversation, +quest_completed to the giver of a completed quest.
+per_talk = 3
+quest_completed = 10
