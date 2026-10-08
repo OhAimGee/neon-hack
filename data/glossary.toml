@@ -359,3 +359,23 @@ note = "Emplacement de sauvegarde manuelle (1 à 9)."
 [[concept]]
 id = "panel"
 note = "Le panneau latéral de la TUI."
+
+[[concept]]
+id = "number"
+note = "Un nombre tapé tel quel (argument `Number`), pas une ligne d'une liste."
+
+[[concept]]
+id = "item"
+note = "Un objet : équipement ou article de la vitrine (argument `Item`)."
+
+[[concept]]
+id = "service"
+note = "Un service qui baisse la Notoriété (`laylow`)."
+
+[[concept]]
+id = "word"
+note = "Un mot d'un ensemble fixe (argument `Word`, par exemple une verbosité)."
+
+[[concept]]
+id = "path"
+note = "Un chemin de fichier tapé tel quel (argument `Path`)."

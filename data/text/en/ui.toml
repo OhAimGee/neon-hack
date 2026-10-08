@@ -72,3 +72,17 @@ list_damaged = "{save}: damaged ({reason})"
 
 [ui.settings]
 damaged = "settings.toml could not be used ({reason}): the default settings are in effect. The file was not changed."
+
+[error]
+unknown_command = "Unknown command: {command}. See `help`."
+
+[error.wrong_context]
+run = "Only during a {run}."
+hub = "Not during a {run}."
+tui = "Only in full screen."
+
+[error.arg]
+missing = "Missing argument. {usage}"
+unknown = "Unknown {kind}: {value}. See `{see}`."
+ambiguous = "\"{value}\" fits several {kind}s: {candidates}."
+unavailable = "{name} is unavailable: {reason}."
