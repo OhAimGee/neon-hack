@@ -19,7 +19,8 @@ RPG textuel cyberpunk pour le terminal. Vous êtes un hacker novice à Neo-Tokyo
 | Phase R1.1 : contrat moteur ↔ frontends, deux interfaces (plain et plein écran), jeu de démonstration | fait |
 | Phase R1.2 : textes en TOML embarqués, pluriels, `--ascii` strictement 7 bits, contrôles de parité FR/EN | fait |
 | Phase R1.3 : sauvegarde (autosave, points de contrôle, emplacements, copie de secours, versions de format) | fait |
-| Phases R1.4 et R1.5 : commandes et réglages, jeu jouet complet | **prochaine étape** |
+| Phase R1.4a et R1.4b : registre des commandes, réglages (`settings.toml`, variables d'environnement, trois familles d'options) | fait |
+| Phases R1.4c et R1.5 : couleurs et palettes, jeu jouet complet | **prochaine étape** |
 | Moteur de jeu, TUI, campagne | à venir |
 
 ## Jouer en local
@@ -78,6 +79,7 @@ Dans un vrai terminal, la démonstration s'ouvre en **plein écran** (barre d'é
 | `--lang fr` / `--lang en` | langue des textes (anglais par défaut) |
 | `--verbosity brief\|normal\|full` | quantité d'ambiance affichée |
 | `--seed 7` | partie reproductible (pour une nouvelle partie) |
+| `--print-settings` | affiche les réglages en vigueur et d'où chacun vient |
 | `--new` | recommence au lieu de reprendre la sauvegarde automatique (l'ancienne devient `auto.toml.bak`) |
 | `--load auto\|checkpoint-1\|slot-2` | reprend cette sauvegarde (`checkpoint-1` à `checkpoint-3`, `slot-1` à `slot-9`) |
 | `--list-saves` | liste les sauvegardes et le dossier où elles sont |
@@ -87,6 +89,19 @@ Dans un vrai terminal, la démonstration s'ouvre en **plein écran** (barre d'é
 L'interface plein écran demande au moins **64×20** caractères, et **100×28** pour afficher le panneau latéral ; en dessous, un message le dit : agrandissez la fenêtre ou utilisez `--plain`.
 
 Les sauvegardes sont dans le dossier de données de l'utilisateur, sous-dossier `saves` : `~/.local/share/neon-hack` sous Linux, `~/Library/Application Support/neon-hack` sous macOS, `%APPDATA%\neon-hack\data` sous Windows. Une sauvegarde abîmée n'est jamais écrasée : le jeu reprend la copie précédente (`.bak`) et le dit, ou explique comment recommencer.
+
+### Réglages
+
+Les options de présentation (`lang`, `verbosity`, `ascii`, `screen_reader`) se fixent une fois pour toutes dans un fichier `settings.toml`, à écrire à la main dans le dossier de données (le dossier parent de celui que montre `--list-saves`, qui est `saves`) :
+
+```toml
+lang = "fr"
+verbosity = "brief"
+ascii = false
+screen_reader = false
+```
+
+Pour chaque réglage, la source la plus précise gagne : la ligne de commande, puis la variable d'environnement (`NEON_HACK_LANG` pour la langue), puis `settings.toml`, puis la configuration du système (`LANG` pour la langue ; une locale qui nomme un autre jeu de caractères que l'UTF-8, comme `fr_FR.ISO-8859-1`, active `--ascii`), puis la valeur par défaut. `NEON_HACK_DATA_DIR` change le dossier de données. Un fichier abîmé est signalé, n'est jamais modifié, et les valeurs par défaut s'appliquent. `neon-hack --print-settings` montre le résultat.
 
 ### En cas de problème
 

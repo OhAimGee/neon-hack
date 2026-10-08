@@ -69,3 +69,6 @@ unreadable = "La sauvegarde est abîmée et aucune copie précédente ne fonctio
 none = "Aucune partie sauvegardée."
 list_entry = "{save} : {player}, {turn} {turn|action|actions}"
 list_damaged = "{save} : abîmée ({reason})"
+
+[ui.settings]
+damaged = "settings.toml est inutilisable ({reason}) : les réglages par défaut s'appliquent. Le fichier n'a pas été modifié."

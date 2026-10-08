@@ -69,3 +69,6 @@ unreadable = "The save is damaged and no previous copy works ({details}). Nothin
 none = "No saved game."
 list_entry = "{save}: {player}, {turn} {turn|action|actions}"
 list_damaged = "{save}: damaged ({reason})"
+
+[ui.settings]
+damaged = "settings.toml could not be used ({reason}): the default settings are in effect. The file was not changed."

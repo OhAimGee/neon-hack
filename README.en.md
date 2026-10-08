@@ -19,7 +19,8 @@ A cyberpunk text RPG for the terminal. You are a novice hacker in Neo-Tokyo, in 
 | Phase R1.1: engine ↔ frontends contract, two interfaces (plain and full-screen), demo game | done |
 | Phase R1.2: embedded TOML texts, plurals, strictly 7-bit `--ascii`, FR/EN parity checks | done |
 | Phase R1.3: saving (autosave, checkpoints, slots, backup copy, format versions) | done |
-| Phases R1.4 and R1.5: commands and settings, complete toy game | **next step** |
+| Phases R1.4a and R1.4b: command registry, settings (`settings.toml`, environment variables, three families of options) | done |
+| Phases R1.4c and R1.5: colours and palettes, complete toy game | **next step** |
 | Game engine, TUI, campaign | to come |
 
 ## Play locally
@@ -78,6 +79,7 @@ In a real terminal the demo opens **full screen** (status bar, log, side panel).
 | `--lang fr` / `--lang en` | language of the texts (English by default) |
 | `--verbosity brief\|normal\|full` | how much atmosphere is shown |
 | `--seed 7` | reproducible game (for a new game) |
+| `--print-settings` | show the settings in effect and where each one comes from |
 | `--new` | start over instead of resuming the autosave (the old one becomes `auto.toml.bak`) |
 | `--load auto\|checkpoint-1\|slot-2` | resume that save (`checkpoint-1` to `checkpoint-3`, `slot-1` to `slot-9`) |
 | `--list-saves` | list the saves and the folder they are in |
@@ -87,6 +89,19 @@ In a real terminal the demo opens **full screen** (status bar, log, side panel).
 The full-screen interface needs at least **64×20** characters, and **100×28** to show the side panel; below that, a message says so: enlarge the window or use `--plain`.
 
 Saves live in the user's data folder, in a `saves` subfolder: `~/.local/share/neon-hack` on Linux, `~/Library/Application Support/neon-hack` on macOS, `%APPDATA%\neon-hack\data` on Windows. A damaged save is never overwritten: the game resumes from the previous copy (`.bak`) and says so, or explains how to start over.
+
+### Settings
+
+The presentation options (`lang`, `verbosity`, `ascii`, `screen_reader`) can be set once and for all in a `settings.toml` file, to be written by hand in the data folder (the parent of the folder `--list-saves` shows, which is `saves`):
+
+```toml
+lang = "fr"
+verbosity = "brief"
+ascii = false
+screen_reader = false
+```
+
+For each setting the most specific source wins: the command line, then the environment variable (`NEON_HACK_LANG` for the language), then `settings.toml`, then the system's configuration (`LANG` for the language; a locale that names a charset other than UTF-8, such as `fr_FR.ISO-8859-1`, turns `--ascii` on), then the default. `NEON_HACK_DATA_DIR` changes the data folder. A damaged file is reported, never modified, and the defaults apply. `neon-hack --print-settings` shows the result.
 
 ### If something goes wrong
 
