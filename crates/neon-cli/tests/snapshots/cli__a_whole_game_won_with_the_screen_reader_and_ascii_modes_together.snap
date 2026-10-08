@@ -1,0 +1,140 @@
+---
+source: crates/neon-cli/tests/cli.rs
+expression: text
+---
+A l'ecran, une seule ligne : CANAL CHIFFRE #7 - CONNEXION ENTRANTE.
+[Entree] pour continuer
+
+Votre pseudo [Case] : Neon
+Graver " Neon " dans le reseau ? [O/n] y
+ECHO-7: Enfin. Je commencais a croire que tu ne te reveillerais jamais, Neon.
+ECHO-7: Ta cible : l'amelioration du deck, a l'etal de R4Z0R. Garde ta trace basse pendant que tu la gagnes.
+ECHO-7: Tape 'help' pour voir ce que tu peux faire.
+> scan
+Le scan trouve 4 ports ouverts.
+[Gain] +8 credits.
+Trace en hausse de 20, de 0 a 20, niveau calme.
+> scan
+Le scan trouve 5 ports ouverts.
+[Gain] +10 credits.
+Trace en hausse de 25, de 20 a 45, niveau tendu.
+[ALERTE] La securite vous a repere.
+> laylow
+Vous disparaissez un moment. La piste refroidit.
+Trace en baisse de 25, de 45 a 20, niveau calme.
+> shop
+L'etal de R4Z0R
+1. Chaine de proxys (30 credits)
+2. Module de camouflage (60 credits)
+3. Amelioration du deck (120 credits) (Il manque 52 credits.)
+0. Quitter l'etal
+? cloak
+[Gain] Vous avez achete le module de camouflage.
+L'etal de R4Z0R
+1. Chaine de proxys (30 credits) (Il manque 22 credits.)
+2. Module de camouflage (60 credits) (Vous le possedez deja.)
+3. Amelioration du deck (120 credits) (Il manque 112 credits.)
+0. Quitter l'etal
+? 0
+> scan
+Le scan trouve 5 ports ouverts.
+[Gain] +10 credits.
+Trace en hausse de 13, de 20 a 33, niveau tendu.
+[ALERTE] La securite vous a repere.
+> scan
+Le scan trouve 3 ports ouverts.
+[Gain] +6 credits.
+Trace en hausse de 8, de 33 a 41, niveau tendu.
+> scan
+Le scan trouve 1 port ouvert.
+[Gain] +2 credits.
+Trace en hausse de 3, de 41 a 44, niveau tendu.
+> scan
+Le scan trouve 2 ports ouverts.
+[Gain] +4 credits.
+Trace en hausse de 5, de 44 a 49, niveau tendu.
+> laylow
+Vous disparaissez un moment. La piste refroidit.
+Trace en baisse de 25, de 49 a 24, niveau calme.
+> scan
+Le scan trouve 4 ports ouverts.
+[Gain] +8 credits.
+Trace en hausse de 10, de 24 a 34, niveau tendu.
+[ALERTE] La securite vous a repere.
+> scan
+Le scan trouve 3 ports ouverts.
+[Gain] +6 credits.
+Trace en hausse de 8, de 34 a 42, niveau tendu.
+> scan
+Le scan trouve 4 ports ouverts.
+[Gain] +8 credits.
+Trace en hausse de 10, de 42 a 52, niveau tendu.
+> laylow
+Vous disparaissez un moment. La piste refroidit.
+Trace en baisse de 25, de 52 a 27, niveau calme.
+> scan
+Le scan trouve 2 ports ouverts.
+[Gain] +4 credits.
+Trace en hausse de 5, de 27 a 32, niveau tendu.
+[ALERTE] La securite vous a repere.
+> scan
+Le scan trouve 5 ports ouverts.
+[Gain] +10 credits.
+Trace en hausse de 13, de 32 a 45, niveau tendu.
+> laylow
+Vous disparaissez un moment. La piste refroidit.
+Trace en baisse de 25, de 45 a 20, niveau calme.
+> scan
+Le scan trouve 2 ports ouverts.
+[Gain] +4 credits.
+Trace en hausse de 5, de 20 a 25, niveau calme.
+> scan
+Le scan trouve 5 ports ouverts.
+[Gain] +10 credits.
+Trace en hausse de 13, de 25 a 38, niveau tendu.
+[ALERTE] La securite vous a repere.
+> scan
+Le scan trouve 4 ports ouverts.
+[Gain] +8 credits.
+Trace en hausse de 10, de 38 a 48, niveau tendu.
+> laylow
+Vous disparaissez un moment. La piste refroidit.
+Trace en baisse de 25, de 48 a 23, niveau calme.
+> scan
+Le scan trouve 1 port ouvert.
+[Gain] +2 credits.
+Trace en hausse de 3, de 23 a 26, niveau calme.
+> scan
+Le scan trouve 2 ports ouverts.
+[Gain] +4 credits.
+Trace en hausse de 5, de 26 a 31, niveau tendu.
+[ALERTE] La securite vous a repere.
+> scan
+Le scan trouve 5 ports ouverts.
+[Gain] +10 credits.
+Trace en hausse de 13, de 31 a 44, niveau tendu.
+> scan
+Le scan trouve 5 ports ouverts.
+[Gain] +10 credits.
+Trace en hausse de 13, de 44 a 57, niveau tendu.
+> laylow
+Vous disparaissez un moment. La piste refroidit.
+Trace en baisse de 25, de 57 a 32, niveau tendu.
+> scan
+Le scan trouve 2 ports ouverts.
+[Gain] +4 credits.
+Trace en hausse de 5, de 32 a 37, niveau tendu.
+> scan
+Le scan trouve 1 port ouvert.
+[Gain] +2 credits.
+Trace en hausse de 3, de 37 a 40, niveau tendu.
+> shop
+L'etal de R4Z0R
+1. Chaine de proxys (30 credits)
+2. Module de camouflage (60 credits) (Vous le possedez deja.)
+3. Amelioration du deck (120 credits)
+0. Quitter l'etal
+? deck
+[Gain] Vous avez achete l'amelioration du deck.
+ECHO-7: Ce deck est a toi. Le reseau t'est grand ouvert maintenant, Neon. On se retrouve dedans.
+[Gain] Mission accomplie en 28 actions, il vous reste 0 credit.

@@ -21,7 +21,8 @@ A cyberpunk text RPG for the terminal. You are a novice hacker in Neo-Tokyo, in 
 | Phase R1.3: saving (autosave, checkpoints, slots, backup copy, format versions) | done |
 | Phases R1.4a and R1.4b: command registry, settings (`settings.toml`, environment variables, three families of options) | done |
 | Phase R1.4c: colours, `NO_COLOR`, palettes (`default`, `high-contrast`, `cvd`, `mono`) | done |
-| Phase R1.5: complete toy game, end to end | **next step** |
+| Phase R1.5: complete toy game, end to end (goal, win, loss, epilogue) | done |
+| Phase R1 (foundation) | **finished**; next step: the remaining specifications (P1), then content and campaign (R2) |
 | Game engine, TUI, campaign | to come |
 
 ## Play locally
@@ -67,7 +68,8 @@ neon-hack --demo
 In a real terminal the demo opens **full screen** (status bar, log, side panel). If the input is redirected, or with `--plain`, it is played **line by line**.
 
 - At the start: *Enter* to continue, a handle, then `y` or `n` to confirm.
-- Commands: `help` lists what is possible; `status`, `scan`, `shop` (the stall), `save` and `quit`. There are shortcuts (`h`, `st`, `buy`, `exit`) and case does not matter.
+- Goal: buy the **deck upgrade** (120 credits) at R4Z0R's stall before your **trace** reaches 100. `scan` earns credits but raises the trace; `laylow` brings it down; the cloak module at the stall makes it rise half as fast. Reaching 100 loses the game; buying the deck wins it. Either way, running the game again resumes just before the end (`--new` to start over).
+- Commands: `help` lists what is possible; `status`, `scan`, `laylow`, `shop` (the stall), `save` and `quit`. There are shortcuts (`h`, `st`, `buy`, `exit`) and case does not matter.
 - Menus: type an entry's **number** (in the stall, `proxy`, `cloak` and `deck` work too); `0` or an empty line goes back (*Esc* in full screen).
 - Saving: the game is **saved automatically** and resumed at the next launch (`--new` to start over); `save` or `save 2` writes it to a slot (1 to 9); entering the stall makes a **checkpoint** (the last 3 are kept). `neon-hack --demo --list-saves` shows the folder and what it holds.
 - Full screen: *TAB* completes a command, *Ctrl+D* or *Ctrl+C* ends the game, then one more key closes the interface.

@@ -15,6 +15,7 @@ confirm_name = "Carve \"{name}\" into the net?"
 
 [demo.echo]
 greeting = "Finally. I was starting to think you would never wake up, {name}."
+mission = "Your target is the deck upgrade at R4Z0R's stall. Keep your trace down while you earn it."
 ready = "Type 'help' to see what you can do."
 
 [demo.help]
@@ -27,6 +28,7 @@ scan = "Scan the network"
 shop = "Visit the stall"
 quit = "Leave the net"
 save = "Save the game (save 1 to 9)"
+laylow = "Lie low and let the trace cool down"
 
 [demo.status]
 name = "Handle: {name}"
@@ -69,7 +71,19 @@ bye = "Goodbye, {name}."
 unknown_command = "Unknown command: {command}"
 
 [demo.objective]
+deck = "Buy the deck upgrade ({price} {price|credit|credits})."
 trace = "Keep your trace under {limit}."
 
 [demo.save]
 bad_slot = "Slots go from 1 to {max}."
+
+[demo.laylow]
+done = "You go dark for a while. The trail cools."
+
+[demo.end.win]
+echo = "That deck is yours. The net is wide open now, {name}. See you inside."
+summary = "Mission complete in {turns} {turns|action|actions}, {credits} {credits|credit|credits} left."
+
+[demo.end.lose]
+caught = "Security traced you. The connection is cut and the deck is bricked."
+hint = "Run the game again to resume from your last save."

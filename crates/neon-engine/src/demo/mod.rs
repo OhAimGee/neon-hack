@@ -21,12 +21,21 @@ const TRACE_MAX: i32 = 100;
 const TRACE_TENSE: i32 = 30;
 const TRACE_CRITICAL: i32 = 70;
 const STARTING_CREDITS: i32 = 50;
+/// How much trace `laylow` removes.
+const LAY_LOW_COOLING: i32 = 25;
+/// The price of the mission item, shown in the objectives.
+const DECK_PRICE: i32 = 120;
 const MAX_CREDITS: i32 = 1_000_000;
 const SPECS: &[CommandSpec] = &[
     CommandSpec {
         name: "help",
         aliases: &["h"],
         help: "demo.help.help",
+    },
+    CommandSpec {
+        name: "laylow",
+        aliases: &[],
+        help: "demo.help.laylow",
     },
     CommandSpec {
         name: "quit",
@@ -87,7 +96,7 @@ const ITEMS: [ItemDef; 3] = [
         id: "deck",
         label_key: "demo.item.deck.label",
         name_key: "demo.item.deck.name",
-        price: 200,
+        price: DECK_PRICE,
     },
 ];
 
@@ -197,6 +206,7 @@ impl DemoGame {
                     echo7(),
                     Text::new("demo.echo.greeting").with_str("name", name.clone()),
                 ));
+                events.push(Event::say(echo7(), Text::new("demo.echo.mission")));
                 events.push(Event::say(echo7(), Text::new("demo.echo.ready")));
                 self.name = name;
             }
@@ -244,8 +254,9 @@ impl DemoGame {
                 None
             }
             "save" => save_command(args.first().copied(), events),
-            "scan" => {
-                self.scan(events);
+            "scan" => self.scan(events),
+            "laylow" => {
+                self.lay_low(events);
                 Some(SaveRequest::Autosave)
             }
             "shop" => {
@@ -280,11 +291,21 @@ impl DemoGame {
         ));
     }
 
-    fn scan(&mut self, events: &mut Vec<Event>) {
+    fn owns(&self, item: &str) -> bool {
+        self.owned.iter().any(|owned| owned == item)
+    }
+
+    /// Scans for ports. Returns the save it asks for: none when the scan ends the game.
+    fn scan(&mut self, events: &mut Vec<Event>) -> Option<SaveRequest> {
         let found = self.roll(5) + 1;
         let credits = found * 2;
+        // The cloak module halves the trace a scan leaves (rounded up).
+        let mut gain = found * 5;
+        if self.owns("cloak") {
+            gain = (gain + 1) / 2;
+        }
         let from = self.trace;
-        self.trace = (self.trace + found * 5).min(TRACE_MAX);
+        self.trace = (self.trace + gain).min(TRACE_MAX);
         self.credits += credits;
         events.push(Event::system(
             Text::new("demo.scan.found").with_int("found", i64::from(found)),
@@ -305,6 +326,44 @@ impl DemoGame {
                 Text::new("demo.alert.critical"),
             ));
         }
+        if self.trace >= TRACE_MAX {
+            self.lose(events);
+            // The last save is kept: the game resumes from before the fatal scan.
+            return None;
+        }
+        Some(SaveRequest::Autosave)
+    }
+
+    /// Lies low: the trace cools down.
+    fn lay_low(&mut self, events: &mut Vec<Event>) {
+        let from = self.trace;
+        self.trace = (self.trace - LAY_LOW_COOLING).max(0);
+        events.push(Event::narration(Text::new("demo.laylow.done")));
+        events.extend(trace_changed(from, self.trace));
+    }
+
+    /// The mission is done: the deck is bought.
+    fn win(&mut self, events: &mut Vec<Event>) {
+        self.over = true;
+        events.push(Event::say(
+            echo7(),
+            Text::new("demo.end.win.echo").with_str("name", self.name.clone()),
+        ));
+        events.push(Event::reward(
+            Text::new("demo.end.win.summary")
+                .with_int("turns", i64::from(self.turn))
+                .with_int("credits", i64::from(self.credits)),
+        ));
+    }
+
+    /// The trace is full: the game is lost.
+    fn lose(&mut self, events: &mut Vec<Event>) {
+        self.over = true;
+        events.push(Event::alert(
+            Severity::Danger,
+            Text::new("demo.end.lose.caught"),
+        ));
+        events.push(Event::system(Text::new("demo.end.lose.hint")));
     }
 
     fn shop_choice(&self) -> Choice {
@@ -313,7 +372,7 @@ impl DemoGame {
             .map(|item| ChoiceOption {
                 id: item.id.to_owned(),
                 label: Text::new(item.label_key).with_int("price", i64::from(item.price)),
-                available: if self.owned.iter().any(|owned| owned == item.id) {
+                available: if self.owns(item.id) {
                     Err(Text::new("demo.shop.owned"))
                 } else if self.credits < item.price {
                     Err(Text::new("demo.shop.cannot_afford")
@@ -365,6 +424,11 @@ impl DemoGame {
         events.push(Event::reward(
             Text::new("demo.shop.bought").with_text("item", Text::new(item.name_key)),
         ));
+        if item.id == "deck" {
+            // The mission item: buying it ends the game, and the last save is kept.
+            self.win(events);
+            return None;
+        }
         if item.id == "proxy" {
             let from = self.trace;
             self.trace = (self.trace - 10).max(0);
@@ -473,6 +537,7 @@ impl Game for DemoGame {
                 band: band(self.trace),
             }],
             objectives: vec![
+                Text::new("demo.objective.deck").with_int("price", i64::from(DECK_PRICE)),
                 Text::new("demo.objective.trace").with_int("limit", i64::from(TRACE_CRITICAL)),
             ],
         }

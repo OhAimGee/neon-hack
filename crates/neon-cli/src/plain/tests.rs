@@ -60,15 +60,17 @@ On the screen, a single line: ENCRYPTED CHANNEL #7 - INCOMING CONNECTION.
 Your handle [Case]: Neon
 Carve \"Neon\" into the net? [Y/n] y
 ECHO-7 » Finally. I was starting to think you would never wake up, Neon.
+ECHO-7 » Your target is the deck upgrade at R4Z0R's stall. Keep your trace down while you earn it.
 ECHO-7 » Type 'help' to see what you can do.
 > help
 Commands
 [1] help - List the commands
-[2] quit - Leave the net
-[3] save - Save the game (save 1 to 9)
-[4] scan - Scan the network
-[5] shop - Visit the stall
-[6] status - Show your situation
+[2] laylow - Lie low and let the trace cool down
+[3] quit - Leave the net
+[4] save - Save the game (save 1 to 9)
+[5] scan - Scan the network
+[6] shop - Visit the stall
+[7] status - Show your situation
 > quit
 Leave the net? [y/N] y
 Goodbye, Neon.

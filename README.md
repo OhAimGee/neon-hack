@@ -21,7 +21,8 @@ RPG textuel cyberpunk pour le terminal. Vous êtes un hacker novice à Neo-Tokyo
 | Phase R1.3 : sauvegarde (autosave, points de contrôle, emplacements, copie de secours, versions de format) | fait |
 | Phase R1.4a et R1.4b : registre des commandes, réglages (`settings.toml`, variables d'environnement, trois familles d'options) | fait |
 | Phase R1.4c : couleurs, `NO_COLOR`, palettes (`default`, `high-contrast`, `cvd`, `mono`) | fait |
-| Phase R1.5 : jeu jouet complet de bout en bout | **prochaine étape** |
+| Phase R1.5 : jeu jouet complet de bout en bout (objectif, victoire, défaite, épilogue) | fait |
+| Phase R1 (socle) | **terminée** ; prochaine étape : les spécifications restantes (P1) puis le contenu et la campagne (R2) |
 | Moteur de jeu, TUI, campagne | à venir |
 
 ## Jouer en local
@@ -67,7 +68,8 @@ neon-hack --demo
 Dans un vrai terminal, la démonstration s'ouvre en **plein écran** (barre d'état, journal, panneau latéral). Si l'entrée est redirigée, ou avec `--plain`, elle se joue **ligne par ligne**.
 
 - Au début : *Entrée* pour continuer, un pseudo, puis `o` ou `n` pour confirmer.
-- Commandes : `help` liste ce qui est possible ; `status`, `scan`, `shop` (la boutique), `save` et `quit`. Des raccourcis existent (`h`, `st`, `buy`, `exit`) et la casse n'importe pas.
+- But : acheter l'**amélioration du deck** (120 crédits) à l'étal de R4Z0R sans que votre **trace** atteigne 100. `scan` rapporte des crédits mais augmente la trace ; `laylow` la fait baisser ; le module de camouflage de l'étal la fait monter deux fois moins vite. Atteindre 100 de trace perd la partie ; acheter le deck la gagne. Dans les deux cas, relancer le jeu reprend juste avant la fin (`--new` pour recommencer).
+- Commandes : `help` liste ce qui est possible ; `status`, `scan`, `laylow`, `shop` (la boutique), `save` et `quit`. Des raccourcis existent (`h`, `st`, `buy`, `exit`) et la casse n'importe pas.
 - Menus : tapez le **numéro** d'une entrée (dans l'étal, `proxy`, `cloak` et `deck` marchent aussi) ; `0` ou une ligne vide revient en arrière (*Échap* en plein écran).
 - Sauvegarde : la partie est **sauvegardée automatiquement** et reprise au lancement suivant (`--new` pour recommencer) ; `save` ou `save 2` l'écrit dans un emplacement (1 à 9) ; entrer dans l'étal crée un **point de contrôle** (les 3 derniers sont gardés). `neon-hack --demo --list-saves` montre le dossier et ce qu'il contient.
 - Plein écran : *TAB* complète une commande, *Ctrl+D* ou *Ctrl+C* termine la partie, puis une touche ferme l'interface.

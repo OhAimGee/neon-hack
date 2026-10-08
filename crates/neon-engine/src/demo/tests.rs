@@ -216,7 +216,11 @@ fn scanning_moves_the_gauge_and_warns_when_security_closes_in() {
     }
     assert_eq!(game.view().gauges[0].value, last_to);
     assert_eq!(last_to, TRACE_MAX, "thirty scans always saturate the gauge");
-    assert_eq!(warnings, [Severity::Warning, Severity::Danger]);
+    // Tense, critical, and then the game is lost (the later scans do nothing).
+    assert_eq!(
+        warnings,
+        [Severity::Warning, Severity::Danger, Severity::Danger]
+    );
 }
 
 #[test]
@@ -259,6 +263,175 @@ fn completion_only_offers_what_can_be_used_now() {
         game.complete("s").is_empty(),
         "no completion on a yes/no question"
     );
+}
+
+// ---- Playing to the end --------------------------------------------------------------------
+
+/// The result of a whole game.
+struct Played {
+    won: bool,
+    /// The lines typed, from the prologue to the end.
+    script: Vec<String>,
+}
+
+/// A prudent player: lies low when the trace gets high, buys the cloak when it can, then
+/// the deck, and scans otherwise. `None` when the game does not end within 400 actions.
+fn prudent_player(seed: u64) -> Option<Played> {
+    let mut game = DemoGame::new(seed);
+    game.start();
+    let mut script = Vec::new();
+    let mut last = game.handle(Input::Continue);
+    script.push(String::new());
+    for (typed, input) in [("Neon", line("Neon")), ("y", Input::Confirm(true))] {
+        last = game.handle(input);
+        script.push(typed.to_owned());
+    }
+    for _ in 0..400 {
+        let lines: &[&str] = if game.trace >= 45 {
+            &["laylow"]
+        } else if game.credits >= DECK_PRICE {
+            &["shop", "deck"]
+        } else if game.credits >= 60 && !game.owns("cloak") {
+            &["shop", "cloak", "0"]
+        } else {
+            &["scan"]
+        };
+        for typed in lines {
+            last = game.handle(line(typed));
+            script.push((*typed).to_owned());
+        }
+        if last.prompt == Prompt::End {
+            let won = last.events.iter().any(|event| {
+                matches!(event, Event::Message { text, .. } if text.key == "demo.end.win.summary")
+            });
+            return Some(Played { won, script });
+        }
+    }
+    None
+}
+
+#[test]
+fn a_prudent_player_wins_whatever_the_seed_and_within_reason() {
+    let mut longest = 0;
+    for seed in 0..300 {
+        let played = prudent_player(seed).unwrap_or_else(|| panic!("seed {seed} never ends"));
+        assert!(played.won, "seed {seed} was lost");
+        longest = longest.max(played.script.len());
+    }
+    assert!(longest < 120, "the longest win takes {longest} lines");
+}
+
+#[test]
+fn a_reckless_player_is_always_traced_and_the_last_save_is_kept() {
+    for seed in 0..100 {
+        let mut game = at_command_line(seed);
+        let mut previous = game.handle(line("scan"));
+        let mut scans = 1;
+        let last = loop {
+            let step = game.handle(line("scan"));
+            scans += 1;
+            if step.prompt == Prompt::End {
+                break step;
+            }
+            previous = step;
+            assert!(scans < 30, "seed {seed}: thirty scans cannot all be safe");
+        };
+        let caught = last.events.iter().any(|event| {
+            matches!(event, Event::Message { text, .. } if text.key == "demo.end.lose.caught")
+        });
+        assert!(caught, "seed {seed}");
+        assert_eq!(last.save, None, "the fatal scan is not saved");
+        assert_eq!(
+            previous.save,
+            Some(SaveRequest::Autosave),
+            "the one before is"
+        );
+    }
+}
+
+#[test]
+fn buying_the_deck_ends_the_game_with_the_epilogue_and_keeps_the_save_before_it() {
+    let mut game = at_command_line(7);
+    game.credits = DECK_PRICE;
+    game.handle(line("shop"));
+    let before = text_of(&game);
+    let bought = game.handle(line("deck"));
+    assert_eq!(bought.prompt, Prompt::End);
+    assert_eq!(
+        bought.save, None,
+        "an ending does not overwrite the last save"
+    );
+    let keys: Vec<String> = bought
+        .events
+        .iter()
+        .filter_map(|event| match event {
+            Event::Message { text, .. } => Some(text.key.to_string()),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(
+        keys,
+        [
+            "demo.shop.bought",
+            "demo.end.win.echo",
+            "demo.end.win.summary"
+        ]
+    );
+    // The game that was saved before still resumes in the stall, with the deck unbought.
+    let resumed = DemoGame::from_save(&before).unwrap();
+    assert!(matches!(resumed.prompt(), Prompt::Choice(_)));
+    assert!(!resumed.owns("deck"));
+    // And once it is over, nothing more happens.
+    let after = game.handle(line("scan"));
+    assert!(after.events.is_empty());
+    assert_eq!(after.prompt, Prompt::End);
+}
+
+#[test]
+fn laying_low_cools_the_trace_and_never_below_zero() {
+    let mut game = at_command_line(3);
+    game.trace = 60;
+    let step = game.handle(line("laylow"));
+    assert_eq!(game.trace, 60 - LAY_LOW_COOLING);
+    assert_eq!(step.save, Some(SaveRequest::Autosave));
+    assert!(step.events.iter().any(|event| matches!(
+        event,
+        Event::Changed {
+            from: 60,
+            to: 35,
+            ..
+        }
+    )));
+    game.trace = 10;
+    let cooled = game.handle(line("laylow"));
+    assert_eq!(game.trace, 0);
+    assert!(cooled.events.iter().any(|event| matches!(
+        event,
+        Event::Changed {
+            from: 10,
+            to: 0,
+            ..
+        }
+    )));
+    // At zero there is nothing to announce but the flavour.
+    let nothing = game.handle(line("laylow"));
+    assert!(
+        !nothing
+            .events
+            .iter()
+            .any(|event| matches!(event, Event::Changed { .. }))
+    );
+}
+
+#[test]
+fn the_cloak_halves_the_trace_a_scan_leaves_rounding_up() {
+    for seed in 0..40 {
+        let (mut bare, mut cloaked) = (at_command_line(seed), at_command_line(seed));
+        cloaked.owned.push("cloak".to_owned());
+        bare.handle(line("scan"));
+        cloaked.handle(line("scan"));
+        assert_eq!(cloaked.trace, (bare.trace + 1) / 2, "seed {seed}");
+    }
 }
 
 // ---- Commands ------------------------------------------------------------------------------

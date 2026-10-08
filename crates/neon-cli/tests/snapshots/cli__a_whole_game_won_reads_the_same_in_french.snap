@@ -1,0 +1,141 @@
+---
+source: crates/neon-cli/tests/cli.rs
+expression: "transcript(&[\"--lang\", \"fr\"], WINNING_GAME)"
+---
+== N E O N   H A C K ==
+À l'écran, une seule ligne : CANAL CHIFFRÉ #7 - CONNEXION ENTRANTE.
+[Entrée] pour continuer
+
+Votre pseudo [Case] : Neon
+Graver « Neon » dans le réseau ? [O/n] y
+ECHO-7 » Enfin. Je commençais à croire que tu ne te réveillerais jamais, Neon.
+ECHO-7 » Ta cible : l'amélioration du deck, à l'étal de R4Z0R. Garde ta trace basse pendant que tu la gagnes.
+ECHO-7 » Tape 'help' pour voir ce que tu peux faire.
+> scan
+Le scan trouve 4 ports ouverts.
+[Gain] +8 crédits.
+Trace +20 (0 → 20, calme).
+> scan
+Le scan trouve 5 ports ouverts.
+[Gain] +10 crédits.
+Trace +25 (20 → 45, tendu).
+[ALERTE] La sécurité vous a repéré.
+> laylow
+Vous disparaissez un moment. La piste refroidit.
+Trace -25 (45 → 20, calme).
+> shop
+L'étal de R4Z0R
+[1] Chaîne de proxys (30 crédits)
+[2] Module de camouflage (60 crédits)
+[3] Amélioration du deck (120 crédits) (Il manque 52 crédits.)
+[0] Quitter l'étal
+? cloak
+[Gain] Vous avez acheté le module de camouflage.
+L'étal de R4Z0R
+[1] Chaîne de proxys (30 crédits) (Il manque 22 crédits.)
+[2] Module de camouflage (60 crédits) (Vous le possédez déjà.)
+[3] Amélioration du deck (120 crédits) (Il manque 112 crédits.)
+[0] Quitter l'étal
+? 0
+> scan
+Le scan trouve 5 ports ouverts.
+[Gain] +10 crédits.
+Trace +13 (20 → 33, tendu).
+[ALERTE] La sécurité vous a repéré.
+> scan
+Le scan trouve 3 ports ouverts.
+[Gain] +6 crédits.
+Trace +8 (33 → 41, tendu).
+> scan
+Le scan trouve 1 port ouvert.
+[Gain] +2 crédits.
+Trace +3 (41 → 44, tendu).
+> scan
+Le scan trouve 2 ports ouverts.
+[Gain] +4 crédits.
+Trace +5 (44 → 49, tendu).
+> laylow
+Vous disparaissez un moment. La piste refroidit.
+Trace -25 (49 → 24, calme).
+> scan
+Le scan trouve 4 ports ouverts.
+[Gain] +8 crédits.
+Trace +10 (24 → 34, tendu).
+[ALERTE] La sécurité vous a repéré.
+> scan
+Le scan trouve 3 ports ouverts.
+[Gain] +6 crédits.
+Trace +8 (34 → 42, tendu).
+> scan
+Le scan trouve 4 ports ouverts.
+[Gain] +8 crédits.
+Trace +10 (42 → 52, tendu).
+> laylow
+Vous disparaissez un moment. La piste refroidit.
+Trace -25 (52 → 27, calme).
+> scan
+Le scan trouve 2 ports ouverts.
+[Gain] +4 crédits.
+Trace +5 (27 → 32, tendu).
+[ALERTE] La sécurité vous a repéré.
+> scan
+Le scan trouve 5 ports ouverts.
+[Gain] +10 crédits.
+Trace +13 (32 → 45, tendu).
+> laylow
+Vous disparaissez un moment. La piste refroidit.
+Trace -25 (45 → 20, calme).
+> scan
+Le scan trouve 2 ports ouverts.
+[Gain] +4 crédits.
+Trace +5 (20 → 25, calme).
+> scan
+Le scan trouve 5 ports ouverts.
+[Gain] +10 crédits.
+Trace +13 (25 → 38, tendu).
+[ALERTE] La sécurité vous a repéré.
+> scan
+Le scan trouve 4 ports ouverts.
+[Gain] +8 crédits.
+Trace +10 (38 → 48, tendu).
+> laylow
+Vous disparaissez un moment. La piste refroidit.
+Trace -25 (48 → 23, calme).
+> scan
+Le scan trouve 1 port ouvert.
+[Gain] +2 crédits.
+Trace +3 (23 → 26, calme).
+> scan
+Le scan trouve 2 ports ouverts.
+[Gain] +4 crédits.
+Trace +5 (26 → 31, tendu).
+[ALERTE] La sécurité vous a repéré.
+> scan
+Le scan trouve 5 ports ouverts.
+[Gain] +10 crédits.
+Trace +13 (31 → 44, tendu).
+> scan
+Le scan trouve 5 ports ouverts.
+[Gain] +10 crédits.
+Trace +13 (44 → 57, tendu).
+> laylow
+Vous disparaissez un moment. La piste refroidit.
+Trace -25 (57 → 32, tendu).
+> scan
+Le scan trouve 2 ports ouverts.
+[Gain] +4 crédits.
+Trace +5 (32 → 37, tendu).
+> scan
+Le scan trouve 1 port ouvert.
+[Gain] +2 crédits.
+Trace +3 (37 → 40, tendu).
+> shop
+L'étal de R4Z0R
+[1] Chaîne de proxys (30 crédits)
+[2] Module de camouflage (60 crédits) (Vous le possédez déjà.)
+[3] Amélioration du deck (120 crédits)
+[0] Quitter l'étal
+? deck
+[Gain] Vous avez acheté l'amélioration du deck.
+ECHO-7 » Ce deck est à toi. Le réseau t'est grand ouvert maintenant, Neon. On se retrouve dedans.
+[Gain] Mission accomplie en 28 actions, il vous reste 0 crédit.
