@@ -54,7 +54,15 @@ fn configs() -> Vec<(&'static str, Config)> {
                 ..b
             },
         ),
-        ("macro+h", Config::tuned()),
+        (
+            "macro+h",
+            Config {
+                macro_turns: true,
+                heuristic: true,
+                ..b
+            },
+        ),
+        ("tuned (fine+h+dom+close)", Config::tuned()),
         (
             "fine+h+dom+close",
             Config {
@@ -84,7 +92,7 @@ fn configs() -> Vec<(&'static str, Config)> {
 
 fn plan_cost(m: &Mission, cfg: &Config) -> (u8, u16) {
     let r = solve(m, cfg);
-    let Outcome::Solved { plan, optimal } = &r.outcome else {
+    let Outcome::Solved { plan, optimal, .. } = &r.outcome else {
         panic!("{}: {:?}", m.name, r.outcome)
     };
     assert!(optimal);
@@ -444,4 +452,150 @@ fn preview_line_is_built_from_events() {
     let f = forecast(&m, &s, &[]).unwrap();
     let line = f.line(&m);
     assert!(line.contains("ambient +2"), "{line}");
+}
+
+#[test]
+fn a_burning_scan_stops_the_remaining_scans() {
+    // Two sentinels see the player, the Trace cap is the value of one scan: the first scan
+    // burns the run and the second one must neither be announced nor added.
+    use neon_spike_solver::model::{Family, Loot, MissionBuilder};
+    let mut b = MissionBuilder::new("burn", 1, Difficulty::Normal);
+    let g = b.node("gateway", None, Loot::None);
+    let s1 = b.node("guard-1", Some((Family::AiGuardian, 3)), Loot::None);
+    let s2 = b.node("guard-2", Some((Family::AiGuardian, 3)), Loot::None);
+    let v = b.node("vault", Some((Family::Network, 2)), Loot::Objective);
+    b.edge(g, s1).edge(g, s2).edge(g, v);
+    b.sentinel(&[s1], Some(s1)).sentinel(&[s2], Some(s2));
+    b.program(Program::BruteForce).trace_cap(5);
+    let m = b.build();
+    let mut events = Vec::new();
+    let end = step_with(&m, &m.initial(), Action::End, &mut events).unwrap();
+    assert_eq!(end.status, Status::Burned);
+    let scans: Vec<u8> = events
+        .iter()
+        .filter_map(|e| {
+            if let Event::Scan { added, .. } = e {
+                Some(*added)
+            } else {
+                None
+            }
+        })
+        .collect();
+    assert_eq!(scans.len(), 1, "{events:?}");
+    assert_eq!(
+        scans.iter().sum::<u8>(),
+        end.trace,
+        "announced Trace must be the added Trace"
+    );
+    // The forecast shares the same path.
+    let f = forecast(&m, &m.initial(), &[]).unwrap();
+    assert_eq!(
+        f.events
+            .iter()
+            .filter(|e| matches!(e, Event::Scan { .. }))
+            .count(),
+        1
+    );
+}
+
+#[test]
+fn tuned_is_the_measured_best_configuration() {
+    let t = Config::tuned();
+    assert!(!t.macro_turns, "end-of-turn merging never wins in time");
+    assert!(t.heuristic && t.dominance && t.close_first);
+    assert_eq!(t.tables, TableKind::Fx);
+    assert_eq!(t.goal, Goal::Optimal);
+}
+
+#[test]
+fn optimality_guarantees_are_reported_separately() {
+    // The Trace is always optimal in `Goal::Optimal`, the number of turns only for the
+    // plain search; wherever the turns differ the flag must say so.
+    let base = Config::baseline();
+    let mut differing = 0;
+    for m in [
+        missions::tiny_4(0),
+        missions::tiny_4(1),
+        missions::easy_4(1),
+        missions::audit_6(0),
+        missions::audit_6(1),
+        missions::patrol_5(0),
+    ] {
+        let exact = solve(&m, &base);
+        let Outcome::Solved {
+            plan: p0,
+            optimal,
+            turns_minimal,
+        } = &exact.outcome
+        else {
+            panic!()
+        };
+        assert!(*optimal && *turns_minimal, "plain search guarantees both");
+        for cfg in [
+            Config {
+                heuristic: true,
+                ..base
+            },
+            Config {
+                dominance: true,
+                ..base
+            },
+            Config::tuned(),
+        ] {
+            let r = solve(&m, &cfg);
+            let Outcome::Solved {
+                plan,
+                optimal,
+                turns_minimal,
+            } = &r.outcome
+            else {
+                panic!()
+            };
+            assert!(*optimal);
+            assert_eq!(plan.cost, p0.cost);
+            assert!(
+                !*turns_minimal,
+                "heuristic or dominance: turns are not guaranteed minimal"
+            );
+            assert!(plan.turns >= p0.turns);
+            differing += usize::from(plan.turns > p0.turns);
+        }
+    }
+    // The flag is conservative: no counter-example was found on these missions, but A* with
+    // an inconsistent bound or dominance does not prove the minimum of turns, so it is not claimed.
+    let _ = differing;
+}
+
+#[test]
+fn the_expansion_limit_is_exact() {
+    let m = missions::audit_6(1);
+    for limit in [1u64, 20, 100] {
+        let cfg = Config {
+            max_expanded: limit,
+            ..Config::tuned()
+        };
+        let r = solve(&m, &cfg);
+        assert!(
+            matches!(r.outcome, Outcome::Unknown { .. }),
+            "limit {limit}"
+        );
+        assert_eq!(
+            r.stats.expanded, limit,
+            "the state that hits the limit is not expanded"
+        );
+    }
+}
+
+#[test]
+fn anytime_never_exceeds_its_budget() {
+    use neon_spike_solver::analysis::anytime_plan;
+    for m in [missions::audit_6(1), missions::patrol_5(2)] {
+        for budget in [50u64, 300, 2_000] {
+            if let Some((plan, used)) = anytime_plan(&m, &m.initial(), budget) {
+                assert!(used <= budget, "{}: used {used} of {budget}", m.name);
+                let (end, _) = resolve(&m, &m.initial(), &plan.actions).unwrap();
+                assert_eq!(end.status, Status::Won);
+            }
+        }
+    }
 }

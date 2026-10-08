@@ -1010,6 +1010,11 @@ fn end_turn<S: Sink>(m: &Mission, t: &mut State, sink: &mut S) {
                 added,
             });
             add_trace(m, t, added, sink);
+            if t.status != Status::Running {
+                // The run is burned: later sentinels must not announce Trace that is
+                // never added.
+                return;
+            }
         }
     }
     if t.status != Status::Running {

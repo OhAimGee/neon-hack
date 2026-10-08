@@ -160,10 +160,10 @@ pub struct Bracket {
 pub fn bracket(m: &Mission, cfg: &Config, beam_width: usize) -> Bracket {
     let r = solve(m, cfg);
     match r.outcome {
-        Outcome::Solved { plan, .. } => Bracket {
-            lower: plan.cost,
+        Outcome::Solved { plan, optimal, .. } => Bracket {
+            lower: if optimal { plan.cost } else { 0 },
             upper: Some(plan.cost),
-            exact: true,
+            exact: optimal,
             expanded: r.stats.expanded,
             elapsed: r.stats.elapsed,
         },

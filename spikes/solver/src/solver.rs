@@ -51,14 +51,16 @@ impl Config {
         }
     }
 
-    /// The best combination found by the measurements.
+    /// The best combination found by the measurements: individual states (no end-of-turn
+    /// merging, which never wins in time), A*, dominance, "closest to the goal" tie-break,
+    /// open-addressing table.
     pub const fn tuned() -> Self {
         Config {
             tables: TableKind::Fx,
-            macro_turns: true,
+            macro_turns: false,
             heuristic: true,
-            dominance: false,
-            close_first: false,
+            dominance: true,
+            close_first: true,
             max_expanded: 0,
             goal: Goal::Optimal,
         }
@@ -76,9 +78,14 @@ pub struct Plan {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Outcome {
+    /// A plan. `optimal`: its final Trace is the lowest possible. `turns_minimal`: among the
+    /// plans with that Trace it also has the fewest turns; only the plain search without
+    /// heuristic nor dominance guarantees it (an inconsistent bound or a skipped dominated
+    /// state can leave a later, slower path to the same Trace).
     Solved {
         plan: Plan,
         optimal: bool,
+        turns_minimal: bool,
     },
     /// Proven: no plan keeps the Trace under the cap.
     Unsolvable,
@@ -572,6 +579,7 @@ fn run<T: Tables>(m: &Mission, start: &State, cfg: &Config) -> Report {
                 outcome = Outcome::Solved {
                     plan: s.plan(idx),
                     optimal: cfg.goal == Goal::Optimal,
+                    turns_minimal: cfg.goal == Goal::Optimal && !cfg.heuristic && !cfg.dominance,
                 };
                 break;
             }
@@ -582,8 +590,9 @@ fn run<T: Tables>(m: &Mission, start: &State, cfg: &Config) -> Report {
                 s.stats.dominated += 1;
                 continue;
             }
-            s.stats.expanded += 1;
-            if cfg.max_expanded != 0 && s.stats.expanded > cfg.max_expanded {
+            // The limit is checked before the count: the state popped here is not expanded
+            // when the limit is reached, so `expanded` never exceeds `max_expanded`.
+            if cfg.max_expanded != 0 && s.stats.expanded >= cfg.max_expanded {
                 let best =
                     (s.incumbent != i32::MAX).then(|| u8::try_from(s.incumbent).unwrap_or(u8::MAX));
                 // The queue holds every unexpanded state: the priority of the entry just
@@ -600,6 +609,7 @@ fn run<T: Tables>(m: &Mission, start: &State, cfg: &Config) -> Report {
                 };
                 break 'search;
             }
+            s.stats.expanded += 1;
             let goal = if cfg.macro_turns {
                 s.expand_turn(idx, &state, turns, &mut actions)
             } else {
@@ -609,6 +619,7 @@ fn run<T: Tables>(m: &Mission, start: &State, cfg: &Config) -> Report {
                 outcome = Outcome::Solved {
                     plan: s.plan(g),
                     optimal: false,
+                    turns_minimal: false,
                 };
                 break;
             }

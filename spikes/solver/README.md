@@ -333,7 +333,10 @@ but », filtres d'actions canoniques. Ne pas retenir : fusion en fin de tour.
 * **Exactitude** : le solveur est validé contre une force brute sur 4 petites missions (≤ 170 000
   états) et par accord entre 10 configurations sur 3 missions ; `h` n'est testé que sur des états
   aléatoires de deux petites missions (pas de preuve). Avec A\* ou la dominance, le **départage par
-  nombre de tours n'est plus garanti minimal** (la Trace, elle, reste exacte). Le repli `anytime`
+  nombre de tours n'est plus garanti minimal** (la Trace, elle, reste exacte) : `Outcome::Solved`
+  porte deux drapeaux séparés, `optimal` (Trace) et `turns_minimal` (tours, vrai seulement pour la
+  recherche simple sans heuristique ni dominance). Aucun contre-exemple n'a été trouvé sur 6 missions
+  × 3 configurations : le drapeau est prudent, pas démontré faux. Le repli `anytime`
   ignore les plans dont le pic de Trace dépasse la valeur finale cible.
 * **Non réalisé** : clé `u64` en base mixte, optimisation fine de la boucle (la mise en cache de `h` et la
   dominance en voies de bits ont déjà divisé le temps par 2 à 3), parallélisme, comparaison avec un
