@@ -175,6 +175,7 @@ yield = "Nouveau {fragment} dans les {archives} : {title}."
 
 [campaign.net]
 title = "== {net^} =="
+more = "{n} {n|autre {site} encore inconnu|autres {site}s encore inconnus}."
 
 [campaign.site_status]
 unknown = "inconnu"
@@ -243,7 +244,7 @@ reputation = "{reputation^} : {value}"
 chapter = "{chapter^} : {value}"
 difficulty = "Difficulté : {difficulty}"
 quests = "{quest^}s en cours : {active}"
-hints = "{hint^}s restants pour {title} : {left}"
+hints = "{hint^}s restants pour la {quest} en cours : {left}"
 
 [campaign.situation]
 active = "En cours : {title}"

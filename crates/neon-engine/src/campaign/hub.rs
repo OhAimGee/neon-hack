@@ -26,7 +26,7 @@ const TRUST_TRUSTED: i32 = 80;
 fn table(title: &'static str, columns: &[&'static str], rows: Vec<Vec<Text>>) -> Event {
     Event::Screen(Table {
         title: Text::new(title),
-        columns: columns.iter().map(|key| Text::new(*key)).collect(),
+        columns: columns.iter().map(|key| Text::new(key)).collect(),
         rows,
     })
 }
@@ -59,7 +59,7 @@ impl CampaignGame {
             }
         };
         self.state.flows.pop();
-        self.state.handle = handle.clone();
+        self.state.handle.clone_from(&handle);
         events.push(Event::narration(
             Text::new("campaign.welcome")
                 .with_term("net", "net")
@@ -176,8 +176,7 @@ impl CampaignGame {
             lines.push(
                 line("campaign.status.hints")
                     .with_term("hint", "hint")
-                    .with_int("left", i64::from(self.hints_left(&quest)))
-                    .with_text("title", keys::quest_title_short(&quest)),
+                    .with_int("left", i64::from(self.hints_left(&quest))),
             );
         }
         events.extend(lines.into_iter().map(Event::system));
@@ -484,10 +483,19 @@ impl CampaignGame {
     pub(super) fn cmd_net(&mut self, args: &[ArgRef], events: &mut Vec<Event>) {
         match arg_id::<SiteId>(args, 0) {
             None => {
-                let rows: Vec<Vec<Text>> = self
-                    .content
-                    .sites
+                let sites = &self.content.sites;
+                let known = |site: &&crate::content::schema::SiteDef| {
+                    self.state.site_status(site) != SiteStatus::Unknown
+                };
+                // The table stops at the last site the player knows: the numbers of the rows
+                // are those of the whole list, and the sites beyond are only counted.
+                let shown = sites
                     .iter()
+                    .rposition(|site| known(&site))
+                    .map_or(0, |at| at + 1);
+                let rows: Vec<Vec<Text>> = sites
+                    .iter()
+                    .take(shown)
                     .map(|site| {
                         let status = self.state.site_status(site);
                         if status == SiteStatus::Unknown {
@@ -513,6 +521,12 @@ impl CampaignGame {
                     ],
                     rows,
                 ));
+                let beyond = sites.len() - shown;
+                if beyond > 0 {
+                    events.push(Event::system(
+                        Text::new("campaign.net.more").with_int("n", count(beyond)),
+                    ));
+                }
             }
             Some(id) => self.site_detail(&id, events),
         }
@@ -617,7 +631,7 @@ impl CampaignGame {
         // main quests (contracts have only the lead).
         let level = if given >= 1 { 2 } else { 1 };
         let mut text_key = keys::quest_hint_key(&quest, number, level);
-        if level == 2 && self.content.texts.get(&text_key).is_none() {
+        if level == 2 && !self.content.texts.contains(&text_key) {
             text_key = keys::quest_hint_key(&quest, number, 1);
         }
         self.state.hints.insert(key, given.saturating_add(1));

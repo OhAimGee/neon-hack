@@ -1,6 +1,11 @@
 //! A driver that plays a campaign with typed lines, the way a frontend does, and renders
 //! what the game says.
 
+#![allow(
+    clippy::format_push_string,
+    reason = "a test renderer that builds small strings, where `write!` would only add noise"
+)]
+
 use std::collections::BTreeSet;
 
 use crate::campaign::{CampaignGame, Difficulty};
@@ -111,19 +116,6 @@ impl Driver {
                 }
             )
         })
-    }
-
-    /// Plays a whole script, returning a transcript with the echoes and the prompts.
-    pub(super) fn script(&mut self, lines: &[&str]) -> String {
-        let cat = catalog(Lang::En);
-        let mut out = String::new();
-        for line in lines {
-            out.push_str(&format!("> {line}\n"));
-            self.line(line);
-            out.push_str(&self.text());
-            out.push_str(&render_prompt(&self.last.prompt, &cat));
-        }
-        out
     }
 
     // ------------------------------------------------------------------ shortcuts

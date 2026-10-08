@@ -465,6 +465,10 @@ impl CampaignState {
     }
 }
 
+#[allow(
+    clippy::trivially_copy_pass_by_ref,
+    reason = "serde calls `skip_serializing_if` with a reference"
+)]
 fn is_zero(n: &u32) -> bool {
     *n == 0
 }

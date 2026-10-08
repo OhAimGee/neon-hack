@@ -181,10 +181,10 @@ proptest! {
         let mut driver = begin(depth);
         let ceiling = credit_ceiling(driver.game.content());
         let (mut quests, mut contacts, mut inbox, mut archive) = (
-            driver.game.state().quest_log.to_vec(),
-            driver.game.state().contact_book.to_vec(),
-            driver.game.state().inbox.to_vec(),
-            driver.game.state().archive.to_vec(),
+            driver.game.state().quest_log.clone(),
+            driver.game.state().contact_book.clone(),
+            driver.game.state().inbox.clone(),
+            driver.game.state().archive.clone(),
         );
         let mut earned = driver.game.state().missions.earned.get();
         for input in inputs {
@@ -204,10 +204,10 @@ proptest! {
             prop_assert!(state.contact_book.starts_with(&contacts));
             prop_assert!(state.inbox.starts_with(&inbox));
             prop_assert!(state.archive.starts_with(&archive));
-            quests = state.quest_log.to_vec();
-            contacts = state.contact_book.to_vec();
-            inbox = state.inbox.to_vec();
-            archive = state.archive.to_vec();
+            quests.clone_from(&state.quest_log);
+            contacts.clone_from(&state.contact_book);
+            inbox.clone_from(&state.inbox);
+            archive.clone_from(&state.archive);
             prop_assert!(state.missions.earned.get() >= earned, "credits are never taken back");
             earned = state.missions.earned.get();
             // Saves and loads back as it was.

@@ -191,7 +191,7 @@ impl CampaignGame {
                     credits,
                     reputation,
                     ..
-                } => self.announce_reward(credits.get(), reputation.get(), events),
+                } => Self::announce_reward(credits.get(), reputation.get(), events),
                 Outcome::TierGranted(tier) => events.push(Event::reward(
                     Text::new("campaign.out.level")
                         .with_term("level", "level")
@@ -225,7 +225,7 @@ impl CampaignGame {
                     }
                 }
                 Outcome::DecisionRejected { .. } => {
-                    events.push(Event::error(Text::new("campaign.out.decision_rejected")))
+                    events.push(Event::error(Text::new("campaign.out.decision_rejected")));
                 }
                 Outcome::BudgetExceeded => events.push(Event::alert(
                     Severity::Danger,
@@ -244,7 +244,7 @@ impl CampaignGame {
         follow_up
     }
 
-    fn announce_reward(&self, credits: u32, reputation: i32, events: &mut Vec<Event>) {
+    fn announce_reward(credits: u32, reputation: i32, events: &mut Vec<Event>) {
         if credits > 0 {
             events.push(Event::reward(
                 Text::new("campaign.out.credits").with_int("amount", i64::from(credits)),

@@ -58,7 +58,10 @@ fn regenerate_the_draft_texts() {
         for entry in std::fs::read_dir(&dir).unwrap() {
             let path = entry.unwrap().path();
             let name = path.file_name().unwrap().to_str().unwrap().to_owned();
-            if name.ends_with(".toml") && name != "world_draft.toml" {
+            let is_toml = path
+                .extension()
+                .is_some_and(|extension| extension == "toml");
+            if is_toml && name != "world_draft.toml" {
                 files.push((name, std::fs::read_to_string(&path).unwrap()));
             }
         }
@@ -99,6 +102,10 @@ fn every_derived_key_has_a_text_in_every_language() {
 /// Says how many derived texts are still placeholders, per language. It never fails: the count
 /// is the writers' progress (`data/text/<lang>/world_draft.toml` shrinks as texts are written).
 #[test]
+#[allow(
+    clippy::disallowed_macros,
+    reason = "the report is the point of this test: it prints how many texts are still drafts"
+)]
 fn the_number_of_draft_texts_is_reported() {
     let c = shipped();
     let total = required_keys(&c).len();

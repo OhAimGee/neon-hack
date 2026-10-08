@@ -55,7 +55,6 @@ impl Lists<'_> {
                 let names = [id.as_str()];
                 let status = self.s.missions.status(id);
                 match (command, status) {
-                    ("accept", QuestStatus::Available) => Row::open(id.as_str(), &names),
                     ("accept", QuestStatus::Active) => Row::closed(
                         id.as_str(),
                         &names,

@@ -244,7 +244,7 @@ fn status_gives_the_situation_in_words() {
         "Chapter: 1",
         "Difficulty: Normal",
         "Quests in progress: 1",
-        "Hints left for ",
+        "Hints left for the current quest: 3",
     ] {
         assert!(said.contains(line), "{line} is missing from:\n{said}");
     }
@@ -592,7 +592,8 @@ fn the_net_lists_every_site_and_hides_the_unknown_ones() {
     let mut driver = Driver::new();
     let said = driver.line("net");
     assert!(said.contains("[1] localhost - known - 1"), "{said}");
-    assert_eq!(said.matches("??? - unknown").count(), 15, "{said}");
+    assert_eq!(said.matches("??? - unknown").count(), 0, "{said}");
+    assert!(said.contains("15 more sites still unknown."), "{said}");
     assert!(!said.contains("corp-server-01"), "{said}");
     let said = driver.line("net 2");
     assert!(driver.errored() && said.contains("not known yet"), "{said}");
@@ -606,7 +607,7 @@ fn a_site_becomes_known_through_its_relay_and_its_level() {
     let mut driver = Driver::new();
     driver.lines(&["hack localhost", "y"]);
     // Level 2 is not reached yet: the big server stays unknown.
-    assert!(driver.line("net").contains("??? - unknown"));
+    assert!(driver.line("net").contains("more sites still unknown."));
     driver.finish_m01();
     let said = driver.line("net");
     assert!(said.contains("corp-server-01 - known - 2"), "{said}");

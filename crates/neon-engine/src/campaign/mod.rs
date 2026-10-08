@@ -275,14 +275,18 @@ impl CampaignGame {
                 .with_int("active", count(active))
                 .with_int("unread", count(unread)),
         )];
-        events.extend(self.state.quest_log.iter().filter_map(|id| {
-            (missions.status(id) == QuestStatus::Active).then(|| {
-                Event::system(
-                    Text::new("campaign.situation.active")
-                        .with_text("title", keys::quest_title(id)),
-                )
-            })
-        }));
+        events.extend(
+            self.state
+                .quest_log
+                .iter()
+                .filter(|id| missions.status(id) == QuestStatus::Active)
+                .map(|id| {
+                    Event::system(
+                        Text::new("campaign.situation.active")
+                            .with_text("title", keys::quest_title(id)),
+                    )
+                }),
+        );
         events
     }
 }

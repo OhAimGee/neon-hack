@@ -43,7 +43,7 @@ impl CampaignGame {
                 "campaign.col.status",
             ]
             .iter()
-            .map(|key| Text::new(*key))
+            .map(|key| Text::new(key))
             .collect(),
             rows,
         }));
@@ -121,7 +121,7 @@ impl CampaignGame {
                         "campaign.col.status",
                     ]
                     .iter()
-                    .map(|key| Text::new(*key))
+                    .map(|key| Text::new(key))
                     .collect(),
                     rows,
                 }));
