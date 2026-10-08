@@ -1,16 +1,19 @@
 //! `hack`: an intrusion resolved by rule, instantly (`AutoResolve`).
 //!
 //! The tactical run of lot R4 replaces this without changing the campaign: both hand the
-//! content the same facts. The rule is nominal. The intrusion compromises the site and takes
-//! the files the player may take (all of them for now), and it costs notoriety by the level of
-//! the site (`[auto_resolve]` in `rewards.toml`). The first breach of a site pays what the
+//! content the same facts. The rule is nominal. The intrusion compromises the site, takes
+//! the files the player may take (all of them for now), leaves the marks (a backdoor, a virus,
+//! an analysis) that the quests in progress ask for on this site, and costs notoriety by the
+//! level of the site (`[auto_resolve]` in `rewards.toml`). The first breach of a site pays what the
 //! content says (`first_breach`), once: an intrusion on a pierced site pays nothing, which is
 //! the anti-farm rule (invariant I1). It still counts as a new breach for the quests that ask
 //! for one after they opened, and it still costs notoriety.
 
 use crate::command::ArgRef;
 use crate::content::Fact;
+use crate::content::eval::applicable;
 use crate::content::ids::SiteId;
+use crate::content::schema::{Goal, Objective, QuestStatus, SiteMark};
 use crate::event::Event;
 use crate::prompt::Input;
 use crate::text::Text;
@@ -69,6 +72,12 @@ impl CampaignGame {
                 taken += 1;
             }
         }
+        for mark in self.wanted_marks(site) {
+            facts.push(Fact::SiteMarked {
+                site: site.clone(),
+                mark,
+            });
+        }
         // The intrusion leaves a trace in the world, whatever it takes.
         let tier = usize::from(def.unlock.tier.unwrap_or(1)).max(1);
         let nominal = c
@@ -89,5 +98,32 @@ impl CampaignGame {
                 .with_int("n", count(taken)),
         ));
         self.apply(facts, at, events);
+    }
+
+    /// The marks the quests in progress still ask for on a site.
+    fn wanted_marks(&self, site: &SiteId) -> Vec<SiteMark> {
+        let (c, missions) = (self.content, &self.state.missions);
+        let mut marks = Vec::new();
+        let mut want = |objective: &Objective| {
+            if let Goal::SiteState { site: at, mark } = &objective.goal
+                && at == site
+                && applicable(c, missions, objective)
+                && !missions.marks.contains(&(site.clone(), *mark))
+                && !marks.contains(mark)
+            {
+                marks.push(*mark);
+            }
+        };
+        for quest in c
+            .quests
+            .iter()
+            .filter(|quest| missions.status(&quest.id) == QuestStatus::Active)
+        {
+            for objective in &quest.objective {
+                want(objective);
+                objective.children().iter().for_each(&mut want);
+            }
+        }
+        marks
     }
 }

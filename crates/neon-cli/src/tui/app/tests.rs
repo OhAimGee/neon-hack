@@ -579,3 +579,46 @@ fn danger_is_reverse_video_and_errors_are_underlined_whatever_the_palette() {
         );
     }
 }
+
+// ---- The campaign in the full-screen interface -----------------------------------------------
+
+/// The campaign runs in the same model: the notoriety is a gauge of the status bar and the
+/// panel, named and numbered with its band, and the active quest is listed in the panel.
+#[test]
+fn the_campaign_shows_the_notoriety_and_the_quest_in_the_status_bar_and_the_panel() {
+    use neon_engine::campaign::{CampaignGame, Difficulty};
+
+    let catalog = catalog_en();
+    let mut game = CampaignGame::new(Difficulty::Normal, 1).unwrap();
+    let first = game.start();
+    let mut app = App::new(
+        &mut game,
+        Renderer {
+            catalog: &catalog,
+            mode: RenderMode::FULL,
+            verbosity: Verbosity::Normal,
+            colors: None,
+        },
+        first,
+        Persistence::disabled(),
+    );
+    type_line(&mut app, "Neon");
+    type_line(&mut app, "hack localhost");
+    type_line(&mut app, "y");
+    let rows = screen(&app, 100, 28);
+    // The status bar says it in words and numbers, never by colour alone.
+    assert!(has(&rows[..1], "Neon"), "{rows:#?}");
+    assert!(has(&rows[..1], "Notoriety 4/100 (Discreet)"), "{rows:#?}");
+    // The panel repeats it with a bar, and lists what is left to do in the quest.
+    assert!(has(&rows, "Notoriety 4/100"), "{rows:#?}");
+    assert!(has(&rows, "[░░░░░░░░░░] Discreet"), "{rows:#?}");
+    assert!(has(&rows, "TODO quest.m01.title_short"), "{rows:#?}");
+    // The log carries the line of the gauge that moved.
+    assert!(has(&rows, "Notoriety +4"), "{rows:#?}");
+    // The compact layout keeps the figure in the status bar.
+    let compact = screen(&app, 80, 24);
+    assert!(
+        has(&compact[..1], "Notoriety 4/100 (Discreet)"),
+        "{compact:#?}"
+    );
+}

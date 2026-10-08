@@ -934,3 +934,40 @@ fn texts_read_in_both_languages_without_a_missing_key() {
         }
     }
 }
+
+#[test]
+fn an_intrusion_leaves_the_marks_the_quests_in_progress_ask_for_on_that_site() {
+    use crate::content::schema::SiteMark;
+
+    let mut driver = Driver::new();
+    driver.jump_to(&["m01", "m02", "m03", "m04", "m05", "s06", "m06"]);
+    for relay in ["localhost", "corp-server-01", "underground-market"] {
+        driver
+            .game
+            .state
+            .missions
+            .compromised
+            .insert(relay.parse().unwrap(), 1);
+    }
+    driver.feed(Vec::new());
+    // M07 asks for a backdoor on the research lab and a virus on the banking network.
+    assert_eq!(driver.status("m07"), QuestStatus::Active);
+    driver.lines(&["hack research-lab", "y"]);
+    let marks = &driver.game.state.missions.marks;
+    assert!(marks.contains(&("research-lab".parse().unwrap(), SiteMark::Backdoor)));
+    assert!(!marks.contains(&("research-lab".parse().unwrap(), SiteMark::Virus)));
+    // A site nobody asks anything of is left unmarked.
+    driver.lines(&["hack corp-server-01", "y"]);
+    assert!(
+        driver
+            .game
+            .state
+            .missions
+            .marks
+            .iter()
+            .all(|(site, _)| site.as_str() == "research-lab")
+    );
+    driver.lines(&["hack banking-network", "y"]);
+    let marks = &driver.game.state.missions.marks;
+    assert!(marks.contains(&("banking-network".parse().unwrap(), SiteMark::Virus)));
+}
