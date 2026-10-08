@@ -5,7 +5,7 @@
 //! `TestBackend`. Everything the screen shows is also said by the plain frontend: the log
 //! uses the very same renderer, and the panel only repeats what `status` would say.
 
-use neon_engine::event::{Event, Severity};
+use neon_engine::event::Event;
 use neon_engine::text::{RenderMode, Text};
 use neon_engine::{Game, Input, Prompt, Step, View};
 use ratatui::Frame;
@@ -18,6 +18,7 @@ use ratatui::widgets::{Block, Borders, Paragraph};
 use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 
 use crate::input::{InputError, to_input};
+use crate::palette::{Ansi, Hue, Palette, Style as PaletteStyle};
 use crate::persist::Persistence;
 use crate::render::{LineKind, Renderer};
 
@@ -167,6 +168,16 @@ impl<'a> App<'a> {
 
     pub(crate) fn draw(&self, frame: &mut Frame<'_>) {
         let area = frame.area();
+        let palette = self.renderer.palette();
+        // An opaque palette paints its background under every cell, so that its contrast
+        // does not depend on the terminal's theme.
+        if let Some(background) = palette.background {
+            let mut base = Style::default().bg(color_of(background, &palette));
+            if let Some(foreground) = palette.foreground {
+                base = base.fg(color_of(foreground, &palette));
+            }
+            frame.render_widget(Block::default().style(base), area);
+        }
         match tier(area) {
             Tier::TooSmall => self.draw_too_small(frame, area),
             tier => self.draw_main(frame, area, tier == Tier::Full),
@@ -212,6 +223,11 @@ impl<'a> App<'a> {
         };
         self.draw_log(frame, log_area);
         self.draw_prompt(frame, prompt_area, &prompt_view);
+    }
+
+    fn style_of(&self, kind: LineKind) -> Style {
+        let palette = self.renderer.palette();
+        to_style(palette.style(kind), &palette)
     }
 
     fn status_line(&self, view: &View) -> String {
@@ -298,7 +314,7 @@ impl<'a> App<'a> {
             match entry {
                 LogEntry::Event(event) => {
                     for line in self.renderer.event(event) {
-                        let style = style_of(line.kind);
+                        let style = self.style_of(line.kind);
                         rows.extend(wrap(&line.text, width).into_iter().map(|row| (row, style)));
                     }
                 }
@@ -334,7 +350,7 @@ impl<'a> App<'a> {
             .header
             .iter()
             .skip(skipped)
-            .map(|line| TuiLine::from(Span::styled(line.text.clone(), style_of(line.kind))))
+            .map(|line| TuiLine::from(Span::styled(line.text.clone(), self.style_of(line.kind))))
             .collect();
         // Keep the end of the line in view, and the cursor right after it.
         let typed = self
@@ -354,23 +370,42 @@ impl<'a> App<'a> {
     }
 }
 
-fn style_of(kind: LineKind) -> Style {
-    match kind {
-        LineKind::Narration | LineKind::System | LineKind::Blank => Style::default(),
-        LineKind::Dialogue | LineKind::Table => Style::default().fg(Color::Cyan),
-        LineKind::Alert(Severity::Danger) => {
-            Style::default().add_modifier(Modifier::REVERSED | Modifier::BOLD)
-        }
-        LineKind::Alert(_) => Style::default()
-            .fg(Color::Yellow)
-            .add_modifier(Modifier::BOLD),
-        LineKind::Reward => Style::default().fg(Color::Green),
-        LineKind::Error => Style::default()
-            .fg(Color::Red)
-            .add_modifier(Modifier::UNDERLINED),
-        LineKind::Decor => Style::default().fg(Color::Magenta),
-        LineKind::Gauge => Style::default().fg(Color::Yellow),
+/// A palette colour as a terminal colour: exact where the palette and the terminal allow it,
+/// the terminal's own named colour otherwise.
+fn color_of(hue: Hue, palette: &Palette) -> Color {
+    if palette.uses_exact_colors() {
+        let (red, green, blue) = hue.rgb;
+        return Color::Rgb(red, green, blue);
     }
+    match hue.ansi {
+        Ansi::Black => Color::Black,
+        Ansi::Red => Color::Red,
+        Ansi::Green => Color::Green,
+        Ansi::Yellow => Color::Yellow,
+        Ansi::Magenta => Color::Magenta,
+        Ansi::Cyan => Color::Cyan,
+        Ansi::White => Color::White,
+    }
+}
+
+/// A palette style as a widget style. There is no blink in it, and in `mono` no colour.
+fn to_style(style: PaletteStyle, palette: &Palette) -> Style {
+    let mut out = Style::default();
+    if let Some(hue) = style.hue {
+        out = out.fg(color_of(hue, palette));
+    }
+    let attributes = [
+        (style.bold, Modifier::BOLD),
+        (style.reverse, Modifier::REVERSED),
+        (style.underline, Modifier::UNDERLINED),
+        (style.dim, Modifier::DIM),
+    ];
+    for (on, modifier) in attributes {
+        if on {
+            out = out.add_modifier(modifier);
+        }
+    }
+    out
 }
 
 /// The longest start shared by every candidate.

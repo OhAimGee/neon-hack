@@ -18,7 +18,7 @@
 //! process environment.
 
 use std::fs;
-use std::io;
+use std::io::{self, IsTerminal};
 use std::path::{Path, PathBuf};
 
 use clap::ValueEnum;
@@ -26,6 +26,7 @@ use directories::ProjectDirs;
 use neon_engine::text::Lang;
 use serde::Deserialize;
 
+use crate::palette::{ColorChoice, ColorInputs, ColorSource, PaletteChoice, Terminal, decide};
 use crate::render::Verbosity;
 
 /// Largest settings file read. Settings are a few lines.
@@ -46,6 +47,14 @@ pub(crate) struct Env {
     /// `~/Library/Application Support`, `%APPDATA%`), looked up with the variables so that
     /// nothing else touches the environment.
     pub(crate) system_data_dir: Option<PathBuf>,
+    /// `NEON_HACK_PALETTE`
+    pub(crate) neon_palette: Option<String>,
+    /// `NO_COLOR` is set to something (an empty value is ignored, as no-color.org says).
+    pub(crate) no_color: bool,
+    pub(crate) term: Option<String>,
+    pub(crate) colorterm: Option<String>,
+    /// Standard output is a terminal.
+    pub(crate) stdout_is_terminal: bool,
 }
 
 impl Env {
@@ -63,6 +72,21 @@ impl Env {
                 .map(PathBuf::from),
             system_data_dir: ProjectDirs::from("", "", "neon-hack")
                 .map(|dirs| dirs.data_dir().to_path_buf()),
+            neon_palette: text("NEON_HACK_PALETTE"),
+            // Presence and non-emptiness are what counts, so a value that is not UTF-8 counts too.
+            no_color: std::env::var_os("NO_COLOR").is_some_and(|value| !value.is_empty()),
+            term: text("TERM"),
+            colorterm: text("COLORTERM"),
+            stdout_is_terminal: io::stdout().is_terminal(),
+        }
+    }
+
+    /// What the terminal is known to do.
+    pub(crate) fn terminal(&self) -> Terminal {
+        Terminal {
+            is_tty: self.stdout_is_terminal,
+            dumb: self.term.as_deref() == Some("dumb"),
+            truecolor: matches!(self.colorterm.as_deref(), Some("truecolor" | "24bit")),
         }
     }
 
@@ -155,6 +179,8 @@ pub(crate) struct CliPresentation {
     pub(crate) verbosity: Option<VerbosityChoice>,
     pub(crate) ascii: bool,
     pub(crate) screen_reader: bool,
+    pub(crate) color: Option<ColorChoice>,
+    pub(crate) palette: Option<PaletteChoice>,
 }
 
 /// The content of `settings.toml`. A key that is absent leaves the next source in charge;
@@ -165,6 +191,8 @@ pub(crate) struct FileSettings {
     verbosity: Option<VerbosityChoice>,
     ascii: Option<bool>,
     screen_reader: Option<bool>,
+    color: Option<ColorChoice>,
+    palette: Option<PaletteChoice>,
 }
 
 /// Where a resolved value came from, for `--print-settings` and for tests.
@@ -172,9 +200,12 @@ pub(crate) struct FileSettings {
 pub(crate) enum Source {
     Cli,
     EnvLang,
+    EnvPalette,
     EnvDataDir,
     File,
     Locale,
+    /// There is no colour, so the palette is `mono`.
+    NoColor,
     Default,
 }
 
@@ -183,6 +214,8 @@ impl Source {
         match self {
             Self::Cli => "command line",
             Self::EnvLang => "NEON_HACK_LANG",
+            Self::EnvPalette => "NEON_HACK_PALETTE",
+            Self::NoColor => "no colour",
             Self::EnvDataDir => "NEON_HACK_DATA_DIR",
             Self::File => "settings.toml",
             Self::Locale => "locale",
@@ -209,6 +242,11 @@ pub(crate) struct Presentation {
     pub(crate) verbosity: Sourced<VerbosityChoice>,
     pub(crate) ascii: Sourced<bool>,
     pub(crate) screen_reader: Sourced<bool>,
+    /// Whether there is colour at all, and why.
+    pub(crate) color: (bool, ColorSource),
+    pub(crate) palette: Sourced<PaletteChoice>,
+    /// The terminal does 24-bit colour.
+    pub(crate) truecolor: bool,
 }
 
 /// Applies the table of the module documentation.
@@ -248,11 +286,37 @@ pub(crate) fn resolve(cli: CliPresentation, env: &Env, file: FileSettings) -> Pr
     } else {
         sourced(false, Source::Default)
     };
+    let color = decide(ColorInputs {
+        cli: cli.color,
+        no_color: env.no_color,
+        file: file.color,
+        terminal: env.terminal(),
+        screen_reader: screen_reader.value,
+    });
+    // Without colour the palette is `mono`: attributes only.
+    let palette = if !color.0 {
+        sourced(PaletteChoice::Mono, Source::NoColor)
+    } else if let Some(choice) = cli.palette {
+        sourced(choice, Source::Cli)
+    } else if let Some(choice) = env
+        .neon_palette
+        .as_deref()
+        .and_then(PaletteChoice::from_name)
+    {
+        sourced(choice, Source::EnvPalette)
+    } else if let Some(choice) = file.palette {
+        sourced(choice, Source::File)
+    } else {
+        sourced(PaletteChoice::Default, Source::Default)
+    };
     Presentation {
         lang,
         verbosity,
         ascii,
         screen_reader,
+        color,
+        palette,
+        truecolor: env.terminal().truecolor,
     }
 }
 

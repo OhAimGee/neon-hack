@@ -20,7 +20,8 @@ A cyberpunk text RPG for the terminal. You are a novice hacker in Neo-Tokyo, in 
 | Phase R1.2: embedded TOML texts, plurals, strictly 7-bit `--ascii`, FR/EN parity checks | done |
 | Phase R1.3: saving (autosave, checkpoints, slots, backup copy, format versions) | done |
 | Phases R1.4a and R1.4b: command registry, settings (`settings.toml`, environment variables, three families of options) | done |
-| Phases R1.4c and R1.5: colours and palettes, complete toy game | **next step** |
+| Phase R1.4c: colours, `NO_COLOR`, palettes (`default`, `high-contrast`, `cvd`, `mono`) | done |
+| Phase R1.5: complete toy game, end to end | **next step** |
 | Game engine, TUI, campaign | to come |
 
 ## Play locally
@@ -79,6 +80,8 @@ In a real terminal the demo opens **full screen** (status bar, log, side panel).
 | `--lang fr` / `--lang en` | language of the texts (English by default) |
 | `--verbosity brief\|normal\|full` | how much atmosphere is shown |
 | `--seed 7` | reproducible game (for a new game) |
+| `--color auto\|always\|never`, `--no-color` | colour: on by default for a terminal that can show it; `NO_COLOR` turns it off, and these options win over it |
+| `--palette default\|high-contrast\|cvd\|mono` | colours of the full-screen interface |
 | `--print-settings` | show the settings in effect and where each one comes from |
 | `--new` | start over instead of resuming the autosave (the old one becomes `auto.toml.bak`) |
 | `--load auto\|checkpoint-1\|slot-2` | resume that save (`checkpoint-1` to `checkpoint-3`, `slot-1` to `slot-9`) |
@@ -101,7 +104,7 @@ ascii = false
 screen_reader = false
 ```
 
-For each setting the most specific source wins: the command line, then the environment variable (`NEON_HACK_LANG` for the language), then `settings.toml`, then the system's configuration (`LANG` for the language; a locale that names a charset other than UTF-8, such as `fr_FR.ISO-8859-1`, turns `--ascii` on), then the default. `NEON_HACK_DATA_DIR` changes the data folder. A damaged file is reported, never modified, and the defaults apply. `neon-hack --print-settings` shows the result.
+For each setting the most specific source wins: the command line, then the environment variable (`NEON_HACK_LANG` for the language), then `settings.toml`, then the system's configuration (`LANG` for the language; a locale that names a charset other than UTF-8, such as `fr_FR.ISO-8859-1`, turns `--ascii` on), then the default. `NEON_HACK_DATA_DIR` changes the data folder. For colours: `color` (`auto`, `always`, `never`) and `palette` can also be set in `settings.toml` (`NEON_HACK_PALETTE` for the palette); the standard `NO_COLOR` variable turns colour off (the `mono` palette only uses bold, underline and reverse video), unless `--color` is given; screen-reader mode never sends an escape sequence. `high-contrast` (white on black) and `cvd` (colours chosen for colour-vision deficiencies) paint their own background; their exact colours need a 24-bit terminal (`COLORTERM=truecolor`), otherwise the terminal approximates them. A damaged file is reported, never modified, and the defaults apply. `neon-hack --print-settings` shows the result.
 
 ### If something goes wrong
 

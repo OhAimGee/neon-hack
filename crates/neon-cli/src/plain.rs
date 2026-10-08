@@ -57,12 +57,12 @@ pub(crate) fn run(
 fn write_step(out: &mut dyn Write, renderer: &Renderer<'_>, step: &Step) -> io::Result<()> {
     for event in &step.events {
         for line in renderer.event(event) {
-            writeln!(out, "{}", line.text)?;
+            writeln!(out, "{}", renderer.paint(&line))?;
         }
     }
     let view = renderer.prompt(&step.prompt);
     for line in &view.header {
-        writeln!(out, "{}", line.text)?;
+        writeln!(out, "{}", renderer.paint(line))?;
     }
     write!(out, "{}", view.marker)?;
     out.flush()
@@ -92,7 +92,7 @@ fn read_input(
             Err(InputError::NotYesOrNo) => {
                 let error = Event::error(Text::new("ui.invalid_confirm"));
                 for rendered in renderer.event(&error) {
-                    writeln!(out, "{}", rendered.text)?;
+                    writeln!(out, "{}", renderer.paint(&rendered))?;
                 }
                 write!(out, "{}", renderer.prompt(prompt).marker)?;
                 out.flush()?;

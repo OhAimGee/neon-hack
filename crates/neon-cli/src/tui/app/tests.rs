@@ -6,6 +6,7 @@ use ratatui::backend::TestBackend;
 use ratatui::crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
 use super::*;
+use crate::palette::{Palette, PaletteChoice};
 use crate::persist::Persistence;
 use crate::render::Verbosity;
 use crate::test_support::{catalog_en, catalog_fr};
@@ -18,6 +19,7 @@ fn app_with<'a>(game: &'a mut DemoGame, catalog: &'a Catalog, mode: RenderMode) 
             catalog,
             mode,
             verbosity: Verbosity::Normal,
+            colors: None,
         },
         first,
         Persistence::disabled(),
@@ -352,6 +354,7 @@ fn an_interface_attached_to_a_game_under_way_does_not_replay_the_start() {
         catalog: &catalog,
         mode: RenderMode::FULL,
         verbosity: Verbosity::Full,
+        colors: None,
     };
     let app = App::new(&mut game, renderer, attach, Persistence::disabled());
     let rows = screen(&app, 100, 28);
@@ -387,5 +390,192 @@ fn ascii_mode_shows_what_is_typed_as_ascii_and_keeps_every_cell_ascii() {
     );
     for row in &rows {
         assert!(row.is_ascii(), "not ASCII: {row:?}");
+    }
+}
+
+// ---- Colour --------------------------------------------------------------------------------
+
+fn app_colored<'a>(
+    game: &'a mut DemoGame,
+    catalog: &'a Catalog,
+    colors: Option<Palette>,
+) -> App<'a> {
+    let first = game.start();
+    App::new(
+        game,
+        Renderer {
+            catalog,
+            mode: RenderMode::FULL,
+            verbosity: Verbosity::Normal,
+            colors,
+        },
+        first,
+        Persistence::disabled(),
+    )
+}
+
+/// Every cell of the screen at a size.
+fn cells(app: &App<'_>, width: u16, height: u16) -> Vec<ratatui::buffer::Cell> {
+    let mut terminal = Terminal::new(TestBackend::new(width, height)).unwrap();
+    terminal.draw(|frame| app.draw(frame)).unwrap();
+    terminal.backend().buffer().content().to_vec()
+}
+
+const SIZES: [(u16, u16); 4] = [(100, 28), (80, 24), (64, 20), (40, 10)];
+
+/// A game with enough history to show every kind of line: dialogue, rewards, gauges,
+/// alerts and an error.
+fn busy(app: &mut App<'_>) {
+    reach_command_line(app);
+    for _ in 0..8 {
+        type_line(app, "scan");
+    }
+    type_line(app, "nonsense");
+}
+
+#[test]
+fn without_colour_only_attributes_are_used_at_every_size() {
+    let (catalog, mut game) = (catalog_en(), DemoGame::new(3));
+    let mut app = app_colored(&mut game, &catalog, None);
+    busy(&mut app);
+    for (width, height) in SIZES {
+        for cell in cells(&app, width, height) {
+            assert_eq!(cell.fg, Color::Reset, "{width}x{height}: {cell:?}");
+            assert_eq!(cell.bg, Color::Reset, "{width}x{height}: {cell:?}");
+        }
+    }
+}
+
+#[test]
+fn nothing_ever_blinks_in_any_palette() {
+    for choice in [
+        PaletteChoice::Default,
+        PaletteChoice::HighContrast,
+        PaletteChoice::Cvd,
+        PaletteChoice::Mono,
+    ] {
+        for truecolor in [false, true] {
+            let (catalog, mut game) = (catalog_en(), DemoGame::new(3));
+            let mut app = app_colored(&mut game, &catalog, Some(Palette::new(choice, truecolor)));
+            busy(&mut app);
+            for (width, height) in SIZES {
+                for cell in cells(&app, width, height) {
+                    let modifier = cell.modifier;
+                    assert!(
+                        !modifier.contains(Modifier::SLOW_BLINK)
+                            && !modifier.contains(Modifier::RAPID_BLINK),
+                        "{choice:?} {width}x{height}"
+                    );
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn an_opaque_palette_paints_its_background_under_every_cell() {
+    for (choice, exact, plain) in [
+        (
+            PaletteChoice::HighContrast,
+            Color::Rgb(0, 0, 0),
+            Color::Black,
+        ),
+        (
+            PaletteChoice::Cvd,
+            Color::Rgb(0x10, 0x10, 0x10),
+            Color::Black,
+        ),
+    ] {
+        for truecolor in [true, false] {
+            let (catalog, mut game) = (catalog_en(), DemoGame::new(3));
+            let mut app = app_colored(&mut game, &catalog, Some(Palette::new(choice, truecolor)));
+            busy(&mut app);
+            let expected = if truecolor { exact } else { plain };
+            for (width, height) in SIZES {
+                for cell in cells(&app, width, height) {
+                    // Reverse video swaps the colours on purpose (the status bar, danger).
+                    if cell.modifier.contains(Modifier::REVERSED) {
+                        continue;
+                    }
+                    assert_eq!(
+                        cell.bg, expected,
+                        "{choice:?} truecolor={truecolor} {width}x{height}"
+                    );
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn the_default_palette_is_transparent_and_uses_the_terminals_named_colours() {
+    let (catalog, mut game) = (catalog_en(), DemoGame::new(3));
+    let colors = Palette::new(PaletteChoice::Default, true);
+    let mut app = app_colored(&mut game, &catalog, Some(colors));
+    busy(&mut app);
+    let all = cells(&app, 100, 28);
+    assert!(
+        all.iter().all(|cell| cell.bg == Color::Reset),
+        "the theme shows through"
+    );
+    let colours: Vec<Color> = all
+        .iter()
+        .map(|cell| cell.fg)
+        .filter(|c| *c != Color::Reset)
+        .collect();
+    assert!(!colours.is_empty(), "something is coloured");
+    assert!(
+        colours.iter().all(|c| !matches!(c, Color::Rgb(..))),
+        "even on a 24-bit terminal, the default palette stays with named colours"
+    );
+}
+
+#[test]
+fn the_cvd_palette_uses_exact_colours_only_on_a_24_bit_terminal() {
+    let colours = |truecolor: bool| {
+        let (catalog, mut game) = (catalog_en(), DemoGame::new(3));
+        let mut app = app_colored(
+            &mut game,
+            &catalog,
+            Some(Palette::new(PaletteChoice::Cvd, truecolor)),
+        );
+        busy(&mut app);
+        cells(&app, 100, 28)
+            .into_iter()
+            .map(|cell| cell.fg)
+            .collect::<Vec<_>>()
+    };
+    assert!(
+        colours(true)
+            .iter()
+            .any(|c| matches!(c, Color::Rgb(0xD5, 0x5E, 0x00)))
+    );
+    assert!(colours(false).iter().all(|c| !matches!(c, Color::Rgb(..))));
+}
+
+#[test]
+fn danger_is_reverse_video_and_errors_are_underlined_whatever_the_palette() {
+    for choice in [
+        PaletteChoice::Default,
+        PaletteChoice::HighContrast,
+        PaletteChoice::Cvd,
+        PaletteChoice::Mono,
+    ] {
+        let palette = Palette::new(choice, true);
+        let danger = to_style(
+            palette.style(LineKind::Alert(neon_engine::event::Severity::Danger)),
+            &palette,
+        );
+        assert!(
+            danger
+                .add_modifier
+                .contains(Modifier::REVERSED | Modifier::BOLD),
+            "{choice:?}"
+        );
+        let error = to_style(palette.style(LineKind::Error), &palette);
+        assert!(
+            error.add_modifier.contains(Modifier::UNDERLINED),
+            "{choice:?}"
+        );
     }
 }
