@@ -96,7 +96,7 @@ Dans l'ordre :
 
 ### 3.3 Les trois cas qui terminent l'intrusion
 
-`jackout` (rapport, § 9) ; **Trace à 100** (« grillé », rôle `Alert(Danger)`, rapport, § 9) ; `skip` en difficulté Histoire (le plan optimal du solveur est appliqué ; mêmes lignes de rapport, marquées « automatique »).
+`jackout` (rapport, § 9) ; **Trace à 100** (« grillé », rôle `Alert(Danger)`, rapport, § 9) ; `skip` en difficulté Histoire (le meilleur plan que le solveur borné trouve est appliqué, jamais pire que la Trace nominale du palier : voir [`solver.md`](solver.md) § 2 ; mêmes lignes de rapport, marquées « automatique », et « approximatif » quand seule la Trace nominale a servi).
 
 ## 4. La prévision
 

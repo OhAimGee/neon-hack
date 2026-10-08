@@ -60,9 +60,9 @@ Les nombres sont des **hypothèses de départ** `[H]`, issues de l'audit et de l
 | # | Seuil | Réf. | Type |
 |---|---|---|---|
 | T1 | `optimist` termine la campagne sur 100 % des graines, dans les 4 difficultés et pour les 216 combinaisons de décisions ; les 5 fins sont atteintes | I2 | P |
-| T2 | chaque site est **soluble** par le solveur avec le kit minimal du niveau où il apparaît, en Normal ; aucun repli « inconnu » sur le contenu livré | I2, cross-check 11 | P |
+| T2 | chaque site est **prouvé soluble** par le solveur avec le **kit minimal** du palier où il apparaît, en Normal (preuve en ≤ 56 ms au pire sur le spike) ; aucun résultat « inconnu » sur le contenu livré | I2, cross-check 11, [solver.md](solver.md) | P |
 | T3 | toute intrusion se termine en au plus **50 tours** sans action du joueur (Trace ambiante ≥ +2 par tour, 100 ÷ 2) ; la solution optimale d'un site fait entre 3 et 12 tours | I17 | P |
-| T4 | **marge** du solveur (plafond − Trace minimale) : Normal entre 25 et 70 sur les quêtes principales (ni couteau, ni cadeau) ; Histoire ≥ Normal + 10 ; Normal ≥ Expert ≥ Hardcore, pour chaque site | I21 | P (ordre), O (bornes) |
+| T4 | **marge** du solveur (plafond − Trace minimale) : Normal entre 25 et 70 sur les quêtes principales (ni couteau, ni cadeau), **calculée sur le kit minimal** ([solver.md](solver.md) § 5 : le spike mesure 6 à 58) ; Histoire ≥ Normal + 10 ; Normal ≥ Expert ≥ Hardcore, pour chaque site | I21 | P (ordre), O (bornes) |
 | T5 | `prudent` en Normal : campagne terminée ≥ 95 % ; intrusions « grillées » entre 10 et 25 % ; au plus 4 « grillé » consécutifs sur un site | — | O |
 | T6 | `reckless` en Expert : campagne terminée ≤ 10 % ; en Histoire : ≥ 80 % | — | O |
 | T7 | **économie** : catalogue permanent total entre 1,2 et 1,5 × revenus maximaux de la campagne (ordre de grandeur 12-14 k¢ de revenus, 15-18 k¢ de catalogue) ; le revenu minimal d'un palier couvre le kit du palier suivant ; `hoarder` et `prudent` ne peuvent pas tout acheter | I20 | P |
@@ -71,7 +71,7 @@ Les nombres sont des **hypothèses de départ** `[H]`, issues de l'audit et de l
 | T10 | **durée** de campagne du `prudent` : entre 1 500 et 2 500 commandes (≈ 4 à 5 h à la cadence de référence) ; jamais plus de 30 % du temps en intrusion | audit 5 | O |
 | T11 | **Notoriété** : `prudent` reste au plus « Surveillé » en moyenne et n'est « Chassé » que dans 10 % des campagnes ; `reckless` atteint « Chassé » dans ≥ 50 % | audit 3.7 | O |
 | T12 | **robustesse** : `monkey` sur 1 000 parties ne produit ni panique, ni partie non quittable ; `snapshot → load → snapshot` identique pour tout état visité | I3-I5, I13 | P |
-| T13 | **performance** (lue dans `bench.json`) : 1 000 campagnes en `AutoResolve` en moins de 60 s (release, machine de CI) ; résolution d'un site dans le pire cas en moins de 50 ms ; **déterminisme** (lu dans le rapport canonique) : identique d'une exécution à l'autre et d'un système à l'autre | I5 | P |
+| T13 | **performance** (lue dans `bench.json`) : 1 000 campagnes en `AutoResolve` en moins de 60 s (release, machine de CI) ; résolution bornée d'un site (N = 5 000 expansions, [solver.md](solver.md) § 3) dans le pire cas en moins de 50 ms ; **déterminisme** (lu dans le rapport canonique) : identique d'une exécution à l'autre et d'un système à l'autre | I5 | P |
 
 Un seuil « O » qui échoue produit un avertissement avec la graine la plus défavorable ; il devient « P » quand le propriétaire valide la valeur.
 
@@ -104,5 +104,5 @@ neon-sim list-worst --report target/sim/prudent-normal.json          # graines �
 
 - Les bots ne reproduisent pas un humain : ils bornent le jeu (plancher, plafond, robustesse), ils ne mesurent pas l'ennui ni la lisibilité. R7 y ajoute un essai humain.
 - La durée dépend de la cadence supposée (§ 6) et du volume de texte lu, que le moteur ne connaît pas.
-- Le *bot solveur* dépend de la borne du solveur et de son repli ; tant que le second spike n'est pas intégré, T2-T4 et T13 sont des **cibles**, pas des mesures.
+- Le *bot solveur* dépend de la borne du solveur et de son repli ([`solver.md`](solver.md)) ; les seuils T2-T4 et T13 sont recalés sur les mesures du spike, mais le contenu final reste à écrire : ce sont des **cibles**, pas encore des mesures.
 - **S-8** (propriétaire, [`DECISIONS.md`](../design/DECISIONS.md) § 5) : valider le principe des seuils en données, les barrières P/O du § 5 comme point de départ, et la cadence de 8 commandes par minute.
