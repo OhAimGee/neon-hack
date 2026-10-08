@@ -538,7 +538,7 @@ impl Game for DemoGame {
             }],
             objectives: vec![
                 Text::new("demo.objective.deck").with_int("price", i64::from(DECK_PRICE)),
-                Text::new("demo.objective.trace").with_int("limit", i64::from(TRACE_CRITICAL)),
+                Text::new("demo.objective.trace").with_int("limit", i64::from(TRACE_MAX)),
             ],
         }
     }
@@ -571,6 +571,11 @@ impl SaveState for DemoGame {
         }
         if clean_name(&self.name) != self.name {
             return Err("the player name is not a clean name".to_owned());
+        }
+        // Buying the deck ends the game and is never saved: a save that owns it could not
+        // finish the mission, so it is not a state the game can be in.
+        if self.owns("deck") {
+            return Err("the deck is the mission item: owning it means the game is won".to_owned());
         }
         for (index, owned) in self.owned.iter().enumerate() {
             if !ITEMS.iter().any(|item| item.id == owned) {

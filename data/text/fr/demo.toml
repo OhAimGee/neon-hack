@@ -85,5 +85,5 @@ echo = "Ce deck est à toi. Le réseau t'est grand ouvert maintenant, {name}. On
 summary = "Mission accomplie en {turns} {turns|action|actions}, il vous reste {credits} {credits|crédit|crédits}."
 
 [demo.end.lose]
-caught = "La sécurité vous a tracé. La connexion est coupée et le deck est brique."
+caught = "La sécurité vous a tracé. La connexion est coupée et le deck est briqué."
 hint = "Relancez le jeu pour reprendre depuis votre dernière sauvegarde."

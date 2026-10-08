@@ -100,7 +100,7 @@ fn the_full_layout_has_a_status_bar_a_log_a_panel_and_an_input_line() {
     // Side panel: the gauge with its number, a bar and the level, then the objective.
     assert!(has(&rows, "Trace ") && has(&rows, "/100"));
     assert!(has(&rows, "[█") || has(&rows, "[░"), "a bar is drawn");
-    assert!(has(&rows, "Keep your trace under 70."));
+    assert!(has(&rows, "Keep your trace under 100."));
     assert_eq!(rows[27], ">", "the input line is the last row");
 }
 

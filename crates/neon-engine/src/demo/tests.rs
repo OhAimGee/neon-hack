@@ -805,7 +805,8 @@ fn impossible_states_are_rejected_not_loaded() {
         (name.clone(), "name = \"tab\\there\""),
         (name, "name = \"123456789012345678901\""),
         (owned.clone(), "owned = [\"deck-of-doom\"]"),
-        (owned, "owned = [\"proxy\", \"proxy\"]"),
+        (owned.clone(), "owned = [\"proxy\", \"proxy\"]"),
+        (owned, "owned = [\"deck\"]"),
     ];
     for (original, replacement) in cases {
         let hostile = text.replacen(&original, replacement, 1);

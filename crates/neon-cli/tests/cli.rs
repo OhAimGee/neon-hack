@@ -846,10 +846,12 @@ fn an_ending_keeps_the_last_save_so_the_game_resumes_just_before_it() {
         stdout(&won)
     );
     let resumed = play_in(dir.path(), &[], "shop\n0\nquit\ny\n");
+    assert!(resumed.status.success(), "{}", stderr(&resumed));
     let text = stdout(&resumed);
     assert!(text.contains("Resuming your saved game."), "{text}");
     assert!(
-        text.contains("R4Z0R's stall"),
+        text.contains("\n[3] Deck upgrade (120 credits)\n"),
         "the deck is still for sale:\n{text}"
     );
+    assert!(!text.contains("Mission complete"), "{text}");
 }
