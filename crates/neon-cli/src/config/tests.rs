@@ -247,4 +247,16 @@ fn the_data_folder_comes_from_the_command_line_then_the_environment_then_the_sys
         data_dir(None, &from_env).unwrap(),
         (PathBuf::from("/from/env"), Source::EnvDataDir)
     );
+    let system = Env {
+        system_data_dir: Some(PathBuf::from("/system/neon-hack")),
+        ..Env::default()
+    };
+    assert_eq!(
+        data_dir(None, &system).unwrap(),
+        (PathBuf::from("/system/neon-hack"), Source::Default)
+    );
+    assert!(
+        data_dir(None, &Env::default()).is_err(),
+        "no folder anywhere is an error that suggests --data-dir"
+    );
 }

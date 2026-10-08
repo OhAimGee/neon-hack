@@ -572,6 +572,23 @@ fn a_damaged_settings_file_is_reported_used_as_defaults_and_never_rewritten() {
 }
 
 #[test]
+fn print_settings_in_ascii_mode_transliterates_paths_and_reasons_too() {
+    let dir = tempfile::tempdir().unwrap();
+    let accented = dir.path().join("dossier-é");
+    settings_in(&accented, "lang = \"élan\"\n");
+    let args = [
+        "--print-settings",
+        "--ascii",
+        "--data-dir",
+        accented.to_str().unwrap(),
+    ];
+    let text = stdout(&run_in_env(&args, "", &[]));
+    assert!(text.is_ascii(), "{text}");
+    assert!(text.contains("dossier-e"), "{text}");
+    assert!(text.contains("damaged"), "the bad file is reported: {text}");
+}
+
+#[test]
 fn the_data_folder_can_come_from_the_environment() {
     let dir = tempfile::tempdir().unwrap();
     let vars = [("NEON_HACK_DATA_DIR", dir_arg(&dir))];

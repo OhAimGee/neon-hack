@@ -92,7 +92,7 @@ Les sauvegardes sont dans le dossier de données de l'utilisateur, sous-dossier 
 
 ### Réglages
 
-Les options de présentation (`lang`, `verbosity`, `ascii`, `screen_reader`) se fixent une fois pour toutes dans un fichier `settings.toml`, à écrire à la main dans le dossier de données (celui que montre `--list-saves`, un niveau au-dessus de `saves`) :
+Les options de présentation (`lang`, `verbosity`, `ascii`, `screen_reader`) se fixent une fois pour toutes dans un fichier `settings.toml`, à écrire à la main dans le dossier de données (le dossier parent de celui que montre `--list-saves`, qui est `saves`) :
 
 ```toml
 lang = "fr"

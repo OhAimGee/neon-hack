@@ -42,6 +42,10 @@ pub(crate) struct Env {
     pub(crate) neon_lang: Option<String>,
     /// `NEON_HACK_DATA_DIR`
     pub(crate) neon_data_dir: Option<PathBuf>,
+    /// The data folder of the platform for this user (`$XDG_DATA_HOME` or `~/.local/share`,
+    /// `~/Library/Application Support`, `%APPDATA%`), looked up with the variables so that
+    /// nothing else touches the environment.
+    pub(crate) system_data_dir: Option<PathBuf>,
 }
 
 impl Env {
@@ -57,6 +61,8 @@ impl Env {
             neon_data_dir: std::env::var_os("NEON_HACK_DATA_DIR")
                 .filter(|value| !value.is_empty())
                 .map(PathBuf::from),
+            system_data_dir: ProjectDirs::from("", "", "neon-hack")
+                .map(|dirs| dirs.data_dir().to_path_buf()),
         }
     }
 
@@ -315,8 +321,9 @@ pub(crate) fn data_dir(cli: Option<&Path>, env: &Env) -> io::Result<(PathBuf, So
     if let Some(dir) = &env.neon_data_dir {
         return Ok((dir.clone(), Source::EnvDataDir));
     }
-    ProjectDirs::from("", "", "neon-hack")
-        .map(|dirs| (dirs.data_dir().to_path_buf(), Source::Default))
+    env.system_data_dir
+        .clone()
+        .map(|dir| (dir, Source::Default))
         .ok_or_else(|| io::Error::other("no data folder found for this user: use --data-dir"))
 }
 

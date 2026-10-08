@@ -23,7 +23,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use clap::Parser;
 use neon_engine::demo::DemoGame;
 use neon_engine::event::Event;
-use neon_engine::text::{Catalog, RenderMode, Text};
+use neon_engine::text::{Catalog, RenderMode, Text, to_ascii};
 use neon_engine::{Game, Step};
 
 use crate::config::{
@@ -203,7 +203,13 @@ fn print_settings(cli: &Cli, env: &Env) -> io::Result<()> {
             setup.settings_file.display().to_string()
         ),
     ];
-    banner::print(&lines.join("\n"));
+    // Like everything printed in ASCII mode, a path or a reason with accents is transliterated.
+    let text = lines.join("\n");
+    banner::print(&if shown.ascii.value {
+        to_ascii(&text)
+    } else {
+        text
+    });
     Ok(())
 }
 

@@ -92,7 +92,7 @@ Saves live in the user's data folder, in a `saves` subfolder: `~/.local/share/ne
 
 ### Settings
 
-The presentation options (`lang`, `verbosity`, `ascii`, `screen_reader`) can be set once and for all in a `settings.toml` file, to be written by hand in the data folder (the one `--list-saves` shows, one level above `saves`):
+The presentation options (`lang`, `verbosity`, `ascii`, `screen_reader`) can be set once and for all in a `settings.toml` file, to be written by hand in the data folder (the parent of the folder `--list-saves` shows, which is `saves`):
 
 ```toml
 lang = "fr"
