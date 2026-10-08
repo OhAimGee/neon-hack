@@ -10,7 +10,7 @@ alt = "NEON HACK"
 2 = "À l'écran, une seule ligne : CANAL CHIFFRÉ #7 - CONNEXION ENTRANTE."
 
 [demo.prompt]
-name = "Votre pseudo"
+name = "Votre handle"
 confirm_name = "Graver « {name} » dans le réseau ?"
 
 [demo.echo]
@@ -31,7 +31,7 @@ save = "Sauvegarder la partie (save 1 à 9)"
 laylow = "Se faire oublier le temps que la trace refroidisse"
 
 [demo.status]
-name = "Pseudo : {name}"
+name = "Handle : {name}"
 credits = "Crédits : {credits}"
 trace = "Trace : {value}/{max} ({band})"
 

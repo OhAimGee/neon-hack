@@ -380,7 +380,7 @@ fn ascii_mode_shows_what_is_typed_as_ascii_and_keeps_every_cell_ascii() {
         press(&mut app, KeyCode::Char(c));
     }
     let rows = screen(&app, 100, 28);
-    assert_eq!(rows[27], "Votre pseudo [Case] : Zoe", "while typing");
+    assert_eq!(rows[27], "Votre handle [Case] : Zoe", "while typing");
     press(&mut app, KeyCode::Enter);
     type_line(&mut app, "o");
     let rows = screen(&app, 100, 28);

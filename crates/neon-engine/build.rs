@@ -1,4 +1,5 @@
-//! Embeds the text catalogs (`data/text/<lang>/*.toml`) into the crate.
+//! Embeds the text catalogs (`data/text/<lang>/*.toml`) and the glossary (`data/glossary.toml`)
+//! into the crate.
 //!
 //! The engine does no I/O at run time: it receives strings. This script, which only runs
 //! at build time, walks the data directory and generates the list of files with
@@ -23,6 +24,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     let out_dir = PathBuf::from(std::env::var_os("OUT_DIR").ok_or("no out dir")?);
     let text_dir = manifest_dir.join("../../data/text");
     println!("cargo:rerun-if-changed={}", text_dir.display());
+    let glossary = manifest_dir.join("../../data/glossary.toml");
+    println!("cargo:rerun-if-changed={}", glossary.display());
 
     let mut files = Vec::new();
     for language in sorted_entries(&text_dir)? {
@@ -53,6 +56,13 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
     generated.push_str("];\n");
     fs::write(out_dir.join("embedded_text.rs"), generated)?;
+    fs::write(
+        out_dir.join("embedded_glossary.rs"),
+        format!(
+            "/// The contents of `data/glossary.toml`.\nconst EMBEDDED_GLOSSARY: &str = include_str!({:?});\n",
+            glossary.to_string_lossy()
+        ),
+    )?;
     Ok(())
 }
 

@@ -1,6 +1,6 @@
 # Dossiers de conception de la refonte en Rust
 
-Ces documents préparent la réécriture complète de Neon Hack en Rust (conception libre, moteur pur, deux frontends). Le plan d'exécution est [`docs/ROADMAP.md`](../ROADMAP.md).
+Ces documents préparent la réécriture complète de Neon Hack en Rust (conception libre, moteur pur, deux frontends). Le plan d'exécution est [`docs/ROADMAP.md`](../ROADMAP.md) ; les spécifications normatives qui complètent ces dossiers sont dans [`docs/spec/`](../spec/README.md).
 
 | Fichier | Contenu | Cité dans les documents comme |
 |---|---|---|
