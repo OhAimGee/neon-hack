@@ -12,7 +12,7 @@
 6. **L'écran n'annonce jamais ce que l'action refuserait.** Une ligne « disponible » est exécutable ; sinon la raison est écrite en mots (`Choice::unavailable` existe déjà).
 7. **Une seule action par ligne**, jamais de chaîne `a; b`. Pas de commande qui attend : le temps ne passe qu'aux commandes (P7 de l'audit).
 8. **Une erreur dit ce qui s'est passé, puis ce qu'on peut faire** (VOC-4) : « Nœud inconnu : 9. Voir `map`. » Les clés sont `error.*` (§ 4). Les textes d'interface sont neutres (S-2 : ni tu ni vous).
-9. **Toute commande a une forme sans argument qui liste ou résume** : `quests`, `net`, `deck`, `contacts`, `messages`, `archives`, `shop`, `laylow`. C'est l'exigence de lecteur d'écran « une action = une réponse complète ».
+9. **Les commandes de liste ont une forme sans argument qui liste** : `quests`, `net`, `deck`, `contacts`, `messages`, `archives`, `shop`, `laylow`, `load`, `map` (C'est l'exigence de lecteur d'écran « une action = une réponse complète »). **Toute autre commande à argument obligatoire** (`talk`, `accept`, `read`, `decrypt`, `hack`, `equip`, `unequip`, `buy`, `upgrade`, `probe`, `move`, `breach`, `use`) répond `error.arg.missing` avec son usage et un exemple, sans rien faire : jamais de deviner, jamais de liste implicite.
 10. **Les raccourcis clavier de la TUI ont une commande équivalente** (CLA-4) : `F2` ↔ `panel`, `Ctrl+P` ↔ `plain`.
 
 ## 2. La table
@@ -31,14 +31,14 @@
 
 ### 2.1 bis Commandes de frontend
 
-Ces commandes agissent sur l'affichage ou remplacent la partie, pas sur l'état du jeu : le **frontend** les traite avant le moteur (le plain par son interpréteur de lignes, la TUI par ses menus et raccourcis). Elles sont déclarées dans la **même table** (`Context::Anywhere`, drapeau `frontend`) pour apparaître dans `help`, être complétées et vérifiées par `Registry::issues` comme les autres.
+Ces commandes agissent sur l'affichage ou remplacent la partie, pas sur l'état du jeu : le **frontend** les traite avant le moteur (le plain par son interpréteur de lignes, la TUI par ses menus et raccourcis). Elles sont déclarées dans la **même table** avec le champ `handled_by: HandledBy::Frontend(scope)` (§ 7), où `scope` vaut `AnyFrontend` ou `TuiOnly`, pour apparaître dans `help`, être complétées et vérifiées par `Registry::issues` comme les autres. `help` et la complétion reçoivent les capacités du frontend (`Capabilities { tui: bool }`) et filtrent par `scope` : le plain ne voit jamais `panel` ni `plain`. Le contexte reste celui de la table (`load` est `Hub`, donc refusé en intrusion, les autres `Anywhere`).
 
 | Commande | Alias | Arguments | Effet | Disponible | Raccourci TUI |
 |---|---|---|---|---|---|
 | `load` | — | `[emplacement]` | sans argument, liste les sauvegardes (autosave, points de contrôle, emplacements) ; avec un argument, charge celle-ci après confirmation ; refusé en intrusion (la partie en cours serait perdue : message « Terminer d'abord l'intrusion ») | plain et TUI, hors intrusion | — |
 | `panel` | — | — | ouvre ou ferme le panneau latéral (tiroir au palier compact) | TUI seulement | `F2` |
 | `plain` | — | — | bascule vers l'affichage plain en gardant la partie (voir dossier TUI § 4.4) | TUI seulement | `Ctrl+P` |
-| `export` | — | `[fichier]` | écrit le transcript de la session (EXP-3) | plain et TUI | — |
+| `export` | — | `[chemin]` | écrit le transcript de la session (EXP-3) ; le chemin est du type `Path` (§ 3) | plain et TUI | — |
 
 Dans le plain, `panel` et `plain` répondent « Seulement en plein écran. » (même mécanisme que le contexte, § 1 règle 2).
 
@@ -99,7 +99,7 @@ Un argument est lu en quatre étapes, la même pour toutes les commandes (une se
 3. **Préfixe unique** : un début de nom qui ne convient qu'à une chose (`pass` → passerelle).
 4. Sinon : **ambigu** (liste des candidats, numérotés) ou **inconnu**.
 
-La complétion (`TAB`) propose les choix des étapes 2 et 3 qui sont **ouverts** ; elle ne propose jamais une chose verrouillée ou inconnue (pas de spoiler, I7). Les arguments à plusieurs mots n'existent pas : un nom de chose tient en un mot de saisie (le nom affiché peut en avoir plusieurs, la saisie en a un : « Stealth Module v2.0 » se tape `stealth`).
+La complétion (`TAB`) propose les choix des étapes 2 et 3 qui sont **ouverts** ; elle ne propose jamais une chose verrouillée ou inconnue (pas de spoiler, I7). **Exception unique, le chemin** (`ArgKind::Path`, seulement pour `export`) : le reste de la ligne, tel quel, espaces conservés, sans normalisation de casse ni d'accents, sans numéro ni complétion de nom (le frontend complète les fichiers). Les autres arguments à plusieurs mots n'existent pas : un nom de chose tient en un mot de saisie (le nom affiché peut en avoir plusieurs, la saisie en a un : « Stealth Module v2.0 » se tape `stealth`).
 
 ## 4. Erreurs
 
@@ -157,12 +157,13 @@ pub struct CommandSpec {
     pub aliases: &'static [&'static str],
     pub help: &'static str,        // « help.<nom> » : une ligne
     pub context: Context,          // Anywhere | Hub | Run
+    pub handled_by: HandledBy,     // Engine | Frontend(Scope), Scope = AnyFrontend | TuiOnly
     pub args: &'static [ArgSpec],  // { kind: ArgKind, optional: bool }
 }
-pub enum ArgKind { Number, Quest, Contact, Message, Document, Site, Node, Program, Item, Slot, Service, Word(&'static [&'static str]) }
+pub enum ArgKind { Number, Quest, Contact, Message, Document, Site, Node, Program, Item, Slot, Service, Word(&'static [&'static str]), Path }
 ```
 
-`Registry::parse` rend alors `Lookup::Found { spec, args }` avec des `ArgRef` déjà **résolus** (§ 3) par un `Resolver` fourni par le jeu, de sorte que l'ambiguïté et l'inconnu soient traités une seule fois, avant le code de la commande. `Registry::issues` contrôle en plus : chaque `help.<nom>` et `help.<nom>.usage` existe, aucun nom de commande n'est un mot interdit du glossaire, tout `ArgKind` a un résolveur, et la table du hub ne contient pas de commande d'intrusion.
+`Registry::parse`, `complete` et `help` reçoivent aussi les `Capabilities` du frontend. `Registry::parse` rend alors `Lookup::Found { spec, args }` avec des `ArgRef` déjà **résolus** (§ 3) par un `Resolver` fourni par le jeu, de sorte que l'ambiguïté et l'inconnu soient traités une seule fois, avant le code de la commande. `Registry::issues` contrôle en plus : chaque `help.<nom>` et `help.<nom>.usage` existe, aucun nom de commande n'est un mot interdit du glossaire, tout `ArgKind` a un résolveur, et la table du hub ne contient pas de commande d'intrusion.
 
 ## 8. Tests exigés (I7 et suivants)
 

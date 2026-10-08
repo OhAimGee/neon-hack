@@ -43,17 +43,18 @@ pub struct NodeView {
     pub id: NodeId,                  // numéro affiché, stable pendant l'intrusion
     pub name: Text,                  // ≤ 10 colonnes (§ 6.3)
     pub state: NodeState,            // Here | Open | Closed | Unknown
-    pub defense: Option<DefenseView>,// None = pas de défense ; connue ou non
-    pub links: Vec<NodeId>,
-    pub loot: LootState,             // None | Visible | Taken
+    pub defense: Knowledge<Option<DefenseView>>, // Unknown | Known(None = pas de défense, Some)
+    pub links: Knowledge<Vec<NodeId>>,           // Unknown tant que le nœud n'est ni vu ni sondé
+    pub loot: LootState,             // Unknown | None | Visible | Taken
 }
 
-pub struct DefenseView { pub family: Term, pub strength: u8, pub progress: u8, pub known: bool }
+pub enum Knowledge<T> { Unknown, Known(T) }
+pub struct DefenseView { pub family: Term, pub strength: u8, pub progress: u8 }
 pub struct PatrolView { pub id: u8, pub at: NodeId, pub next: NodeId, pub neutralized_turns: u8 }
 pub struct ProgramView { pub name: Text, pub family: Term, pub power: u8, pub cycles: u8, pub noise: u8, pub charges: Charges }
 ```
 
-`Cycles`, `Undo`, `Charges` sont des types du moteur, jamais des entiers nus. Un nœud ou une défense **inconnus** (avant `probe`, sans Intel) ont `known: false` : le texte dit « inconnue » et le panneau « ? ». La `View` est de la donnée ; **chaque champ a son équivalent texte** (§ 3-4), c'est ce que RUN-1 vérifie.
+`Cycles`, `Undo`, `Charges` sont des types du moteur, jamais des entiers nus. Ce qui n'est **pas encore su** (avant `probe`, sans Intel) est `Knowledge::Unknown` ou `LootState::Unknown`, jamais « aucun » : le moteur ne met **aucune information cachée** dans la vue, le texte dit « inconnue » et le panneau « ? ». Absence certaine (`Known(None)`, `LootState::None`) et ignorance sont donc deux états distincts, vérifiés par RUN-1. La `View` est de la donnée ; **chaque champ a son équivalent texte** (§ 3-4), c'est ce que RUN-1 vérifie.
 
 ### 2.2 `Event`
 
@@ -91,7 +92,7 @@ Dans l'ordre :
 3. la **Trace ambiante** (`run.end.ambient`) ;
 4. la variation de Trace **totale** (`Changed`) et l'éventuel changement de bande ;
 5. l'entrée dans le **tour suivant** : `Event::Break`, puis `run.turn.start` ;
-6. la **prévision détaillée** (§ 4).
+6. la **prévision** (§ 4) : le total d'abord, puis le détail.
 
 ### 3.3 Les trois cas qui terminent l'intrusion
 
@@ -105,6 +106,7 @@ Elle est calculée par `RunState::forecast()`, **la même fonction** que celle q
 
 | Fait | Clé | Exemple (anglais) |
 |---|---|---|
+| total | `run.forecast.total` | « Forecast: Trace +7 at the end of the turn. » |
 | mouvement d'une patrouille | `run.forecast.patrol_moves` | « Forecast: Patrol 1 moves to Archives (3). » |
 | scan | `run.forecast.scan` | « Forecast: Patrol 1 scans Gateway (1): Trace +5, unless Cloak is active. » |
 | scan déjà annulé | `run.forecast.scan_blocked` | « Forecast: Patrol 1 scans Firewall (2): cancelled by Cloak. » |
@@ -114,7 +116,7 @@ La phrase « sauf si Cloak est actif » n'apparaît que si Cloak est dans le dec
 
 **Pas de prévision de l'aléa.** Le butin et les variantes de texte ne figurent jamais dans la prévision ; toute règle future qui rendrait un scan aléatoire casserait le contrat et devra passer par une décision G2.
 
-**Au brief.** La prévision détaillée est d'importance `Normal` ; une ligne résumée (`run.forecast.total` : « Forecast: Trace +7 at the end of the turn. ») est `Essential`. Le total se lit aussi dans `status`.
+**Verbosité.** `Essential` veut dire « affiché dans tous les modes » : la ligne de **total** (`run.forecast.total` : « Forecast: Trace +7 at the end of the turn. ») est `Essential` et s'écrit donc **toujours**, en premier ; les lignes détaillées sont `Normal` et la suivent à partir de `normal`. Au `brief`, le joueur lit le total seul ; au `normal`, le total puis son détail (une ligne de redondance par tour, assumée : elle sert aussi de repère à voix haute). Le total se lit aussi dans `status`.
 
 ## 5. Un tour entier, en trois présentations
 
@@ -125,6 +127,7 @@ Les chiffres sont ceux de la mission d'exemple : site « MegaCorp Industries, se
 ```
 Run: MegaCorp Industries, payroll server. Intel: every defense is known.
 Turn 1: Trace 0/100 (calm), cycles 3/3.
+Forecast: Trace +7 at the end of the turn.
 Forecast: Patrol 1 moves to Archives (3).
 Forecast: Patrol 1 scans Gateway (1): Trace +5, unless Cloak is active.
 Forecast: ambient Trace +2.
@@ -155,6 +158,7 @@ Ambient Trace +2.
 Trace +2 (5 → 7, calm).
 
 Turn 2: Trace 7/100 (calm), cycles 3/3.
+Forecast: Trace +7 at the end of the turn.
 Forecast: Patrol 1 moves to Firewall (2).
 Forecast: Patrol 1 scans Firewall (2): Trace +5, unless Cloak is active.
 Forecast: ambient Trace +2.
@@ -176,6 +180,7 @@ Ambient Trace +2.
 Trace +2 (12 → 14, calm).
 
 Turn 3: Trace 14/100 (calm), cycles 3/3.
+Forecast: Trace +7 at the end of the turn.
 Forecast: Patrol 1 moves to Archives (3).
 Forecast: Patrol 1 scans Archives (3): Trace +5.
 Forecast: ambient Trace +2.
@@ -194,6 +199,7 @@ Ambient Trace +2.
 Trace +7 (16 → 23, calm).
 
 Turn 4: Trace 23/100 (calm), cycles 3/3.
+Forecast: Trace +7 at the end of the turn.
 Forecast: Patrol 1 moves to Cameras (5).
 Forecast: Patrol 1 scans Vault (4): Trace +5.
 Forecast: ambient Trace +2.
@@ -216,6 +222,7 @@ Deux choses à lire dans cet exemple. À la turn 3, la phrase « unless Cloak is
 ```
 Intrusion : MegaCorp Industries, serveur de paie. Intel : toutes les défenses sont connues.
 Tour 1 : Trace 0/100 (calme), cycles 3/3.
+Prévision : Trace +7 en fin de tour.
 Prévision : la patrouille 1 va en Archives (3).
 Prévision : la patrouille 1 scanne la Passerelle (1) : Trace +5, sauf si Cloak est actif.
 Prévision : Trace ambiante +2.
@@ -230,6 +237,7 @@ Cycles 2/3.
 ```
 Run: MegaCorp Industries, payroll server. Intel: every defense is known.
 Turn 1. Trace 0 out of 100, level calm. 3 of 3 cycles.
+Forecast: Trace plus 7 at the end of the turn.
 Forecast: Patrol 1 moves to Archives, node 3.
 Forecast: Patrol 1 scans Gateway, node 1: Trace plus 5, unless Cloak is active.
 Forecast: ambient Trace plus 2.
@@ -259,16 +267,16 @@ Le panneau remplace le panneau du hub (Trace, quêtes, réseau, inventaire) pend
 │Trace ambiante +2 (12 → 14, calme).                             │╰──────────────────────────────╯
 │                                                                │╭ Nœuds ───────────────────────╮
 │Tour 3 : Trace 14/100 (calme), cycles 3/3.                      ││ 1 Passerelle ouvert          │
-│Prévision : la patrouille 1 va en Archives (3).                 ││ 2 Pare-feu   ouvert          │
-│Prévision : la patrouille 1 scanne Archives (3) :               ││▶3 Archives   ici             │
-│Trace +5, sauf si Cloak est actif.                              ││ 4 Coffre     ouvert          │
-│Prévision : Trace ambiante +2.                                  ││ 5 Caméras    Gardien IA 0/3  │
-│> breach 4 exploit                                              │╰──────────────────────────────╯
-│Exploit sur Coffre (4) : progression 4/4.                       │╭ Patrouilles ─────────────────╮
-│Coffre (4) est ouvert.                                          ││Patrouille 1 : 2 puis 3       │
-│Trace +2 (14 → 16, calme).                                      ││                              │
-│Cycles 1/3.                                                     │╰──────────────────────────────╯
-│                                                                │╭ Prévision ───────────────────╮
+│Prévision : Trace +7 en fin de tour.                            ││ 2 Pare-feu   ouvert          │
+│Prévision : la patrouille 1 va en Archives (3).                 ││▶3 Archives   ici             │
+│Prévision : la patrouille 1 scanne Archives (3) :               ││ 4 Coffre     ouvert          │
+│Trace +5, sauf si Cloak est actif.                              ││ 5 Caméras    Gardien IA 0/3  │
+│Prévision : Trace ambiante +2.                                  │╰──────────────────────────────╯
+│> breach 4 exploit                                              │╭ Patrouilles ─────────────────╮
+│Exploit sur Coffre (4) : progression 4/4.                       ││Patrouille 1 : 2 puis 3       │
+│Coffre (4) est ouvert.                                          ││                              │
+│Trace +2 (14 → 16, calme).                                      │╰──────────────────────────────╯
+│Cycles 1/3.                                                     │╭ Prévision ───────────────────╮
 │                                                                ││Fin de tour : Trace +7        │
 │                                                                ││  Patrouille 1 : +5           │
 │                                                                ││  Trace ambiante : +2         │
@@ -325,7 +333,7 @@ Un texte de panneau qui dépasserait est tronqué **dans le panneau seulement** 
 | projection « Fin de tour maintenant » | `System` | Essential | oui | oui | oui |
 | reste de cycles | `System` | Essential | oui | oui | oui |
 | début de tour | `System` | Essential | oui | oui | oui |
-| résumé de la prévision (`run.forecast.total`) | `System` | Essential | oui | non | non |
+| total de la prévision (`run.forecast.total`) | `System` | Essential | oui | oui | oui |
 | prévision détaillée | `System` | Normal | non | oui | oui |
 | mouvement et scans de fin de tour | `System` | Normal | non | oui | oui |
 | scan qui coûte de la Trace | `Alert(Warning)` | Essential (critique) | oui | oui | oui |
@@ -362,12 +370,12 @@ Budget d'écriture de l'engine d'intrusion lui-même (sans le contenu des sites)
 
 | ID | Exigence | Test |
 |---|---|---|
-| RUN-1 | Tout champ de `RunView` a son équivalent texte (carte, état, défense, patrouilles, deck, prévision, cycles, annulations restantes) : un test produit les deux depuis le même état et vérifie qu'aucun chiffre de la vue n'est absent du texte de `map` + `status` | U |
+| RUN-1 | Tout champ de `RunView` a son équivalent texte (carte, état, défense, patrouilles, deck, prévision, cycles, annulations restantes) : un test produit les deux depuis le même état et vérifie que **chaque champ** (nom, état, défense, liens, butin, patrouilles, deck, prévision, cycles, annulations ; connu et inconnu) est représenté : le test projette la vue en une liste de faits sémantiques (champ, valeur) et exige que les `Text` (clés et arguments, pas les chaînes rendues) de `map` + `status` les contiennent tous, ce qui détecte aussi un nom ou un état omis | U |
 | RUN-2 | **Prévision = résolution** : pour chaque état d'un bot sur 300 graines, `forecast()` égale les faits de `end_turn()` (mêmes patrouilles, mêmes nœuds, mêmes montants, même total) | U + proptest |
 | RUN-3 | Ordre des lignes (§ 3) fixe : un snapshot `insta` par action de la table de commandes d'intrusion, en anglais et en français | S |
 | RUN-4 | La projection n'est écrite que si la variation annoncée change ; si elle est écrite, son chiffre égale la prévision recalculée | U |
 | RUN-5 | Aucune ligne de l'intrusion n'emploie un symbole de `SPOKEN_BADLY` sans variante `@sr` (`text::check` déjà en place) ; aucun glyphe de dessin n'est nécessaire à la compréhension | U |
-| RUN-6 | `map` linéarisé (`--screen-reader`) : chaque ligne nomme ses colonnes ; le nombre de lignes = nœuds + 1 (patrouilles) | U |
+| RUN-6 | `map` linéarisé (`--screen-reader`) : chaque ligne nomme ses colonnes ; le nombre de lignes = nœuds + une par patrouille | U |
 | RUN-7 | Panneau 30 colonnes : pour chaque site du contenu et chaque langue, toutes les lignes du § 6.2 tiennent (largeur d'affichage) ; test de contenu au chargement | U |
 | RUN-8 | Rendu de la TUI aux paliers 100×28, 64×20 et sous le seuil, FR et EN, `default`/`mono`/ASCII : aucune ligne ne déborde, aucune panique (I16) ; snapshots `TestBackend` | S |
 | RUN-9 | En `mono`, aucun état n'est porté par la seule couleur ; en ASCII, tout octet < 0x80 (COL-3, ASC-1) | S |
