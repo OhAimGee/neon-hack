@@ -15,7 +15,7 @@ Il ne **modifie** jamais les données : il produit un rapport ; un humain règle
 ## 2. Principes
 
 - **Mêmes entrées qu'un humain.** Un bot joue par le contrat public (`Game::handle(Input)`, `Game::view()`, `Prompt`) : aucun accès privilégié à l'état. Seul le *bot solveur* appelle `run::solve`, qui est une fonction publique du moteur (même chose que la prévision et `AutoResolve`).
-- **Déterministe.** Une graine de partie (celle du jeu) et une graine de bot (flux séparé, PCG32 du moteur) : même paire ⇒ mêmes octets de rapport. Aucune horloge, aucun `HashMap` dans les calculs ; les rapports sont triés.
+- **Déterministe.** Une graine de partie (celle du jeu) et une graine de bot (flux séparé, PCG32 du moteur) : même paire ⇒ mêmes octets de rapport. Le rapport canonique ne contient **aucune durée mesurée** (elle varie d'une machine à l'autre) : le travail du solveur s'y lit en compteurs ; les chronométrages vont dans un rapport séparé, `bench.json`. Aucune horloge, aucun `HashMap` dans les calculs ; les rapports sont triés.
 - **Pas de dépendance cachée.** `neon-sim` peut dépendre de `clap` et `serde_json` (le JSON est réservé aux rapports : décision D2 d'architecture) ; le moteur, non.
 - **Les seuils sont des données** (`data/sim/targets.toml`), validés avec le propriétaire en R6 : le code ne contient aucun chiffre d'équilibre.
 
@@ -47,7 +47,8 @@ Le rapport (JSON, `schema_version`) contient, par couple (bot, difficulté), pou
 | Notoriété | valeur moyenne et maximale, part des campagnes ayant atteint chaque bande |
 | Économie | crédits gagnés par source (missions, butin, brèches), dépensés par puits, solde final, part du catalogue acheté |
 | Utilité des programmes | par programme : parties où il est équipé, utilisations, **Δ marge sans lui** (invariant I19) |
-| Solveur | états étendus, temps, taux de repli (« inconnu »), pire cas |
+| Solveur | états étendus et stockés, profondeur, taux de repli (« inconnu »), pire cas : des **compteurs de travail** déterministes, jamais de durée |
+| Chronométrage (rapport **à part**, non canonique) | temps du solveur par site, durée d'une campagne en `AutoResolve`, débit : écrits dans `bench.json`, hors de la comparaison d'octets |
 | Robustesse | paniques, parties non quittables, états invalides refusés, chargement de sauvegarde `snapshot → load → snapshot` identique |
 
 Chaque métrique a une valeur par graine, agrégée à la fin ; les **pires graines** sont listées pour être rejouées (`--seed`).
@@ -70,7 +71,7 @@ Les nombres sont des **hypothèses de départ** `[H]`, issues de l'audit et de l
 | T10 | **durée** de campagne du `prudent` : entre 1 500 et 2 500 commandes (≈ 4 à 5 h à la cadence de référence) ; jamais plus de 30 % du temps en intrusion | audit 5 | O |
 | T11 | **Notoriété** : `prudent` reste au plus « Surveillé » en moyenne et n'est « Chassé » que dans 10 % des campagnes ; `reckless` atteint « Chassé » dans ≥ 50 % | audit 3.7 | O |
 | T12 | **robustesse** : `monkey` sur 1 000 parties ne produit ni panique, ni partie non quittable ; `snapshot → load → snapshot` identique pour tout état visité | I3-I5, I13 | P |
-| T13 | **performance** : 1 000 campagnes en `AutoResolve` en moins de 60 s (release, machine de CI) ; résolution d'un site dans le pire cas en moins de 50 ms ; le rapport est identique d'une exécution à l'autre et d'un système à l'autre | I5 | P |
+| T13 | **performance** (lue dans `bench.json`) : 1 000 campagnes en `AutoResolve` en moins de 60 s (release, machine de CI) ; résolution d'un site dans le pire cas en moins de 50 ms ; **déterminisme** (lu dans le rapport canonique) : identique d'une exécution à l'autre et d'un système à l'autre | I5 | P |
 
 Un seuil « O » qui échoue produit un avertissement avec la graine la plus défavorable ; il devient « P » quand le propriétaire valide la valeur.
 
