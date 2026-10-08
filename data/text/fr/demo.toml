@@ -15,6 +15,7 @@ confirm_name = "Graver « {name} » dans le réseau ?"
 
 [demo.echo]
 greeting = "Enfin. Je commençais à croire que tu ne te réveillerais jamais, {name}."
+mission = "Ta cible : l'amélioration du deck, à l'étal de R4Z0R. Garde ta trace basse pendant que tu la gagnes."
 ready = "Tape 'help' pour voir ce que tu peux faire."
 
 [demo.help]
@@ -27,6 +28,7 @@ scan = "Scanner le réseau"
 shop = "Visiter l'étal"
 quit = "Quitter le réseau"
 save = "Sauvegarder la partie (save 1 à 9)"
+laylow = "Se faire oublier le temps que la trace refroidisse"
 
 [demo.status]
 name = "Pseudo : {name}"
@@ -69,7 +71,19 @@ bye = "Au revoir, {name}."
 unknown_command = "Commande inconnue : {command}"
 
 [demo.objective]
+deck = "Acheter l'amélioration du deck ({price} {price|crédit|crédits})."
 trace = "Gardez votre trace sous {limit}."
 
 [demo.save]
 bad_slot = "Les emplacements vont de 1 à {max}."
+
+[demo.laylow]
+done = "Vous disparaissez un moment. La piste refroidit."
+
+[demo.end.win]
+echo = "Ce deck est à toi. Le réseau t'est grand ouvert maintenant, {name}. On se retrouve dedans."
+summary = "Mission accomplie en {turns} {turns|action|actions}, il vous reste {credits} {credits|crédit|crédits}."
+
+[demo.end.lose]
+caught = "La sécurité vous a tracé. La connexion est coupée et le deck est briqué."
+hint = "Relancez le jeu pour reprendre depuis votre dernière sauvegarde."

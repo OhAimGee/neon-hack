@@ -787,3 +787,71 @@ fn a_no_color_value_that_is_not_utf8_still_turns_colour_off() {
     let shown = stdout(&output);
     assert!(shown.contains("color = false  # NO_COLOR"), "{shown}");
 }
+
+// ---- Whole games, as golden transcripts -----------------------------------------------------
+
+/// A winning game of the prudent player (found by the engine's own tests for seed 5).
+const WINNING_GAME: &str = "\nNeon\ny\nscan\nscan\nlaylow\nshop\ncloak\n0\nscan\nscan\nscan\nscan\n\
+    laylow\nscan\nscan\nscan\nlaylow\nscan\nscan\nlaylow\nscan\nscan\nscan\nlaylow\nscan\n\
+    scan\nscan\nscan\nlaylow\nscan\nscan\nshop\ndeck\n";
+
+fn transcript(extra: &[&str], script: &str) -> String {
+    let mut args = vec!["--demo", "--seed", "5"];
+    args.extend_from_slice(extra);
+    let output = run_with_input(&args, script);
+    assert!(output.status.success(), "{}", stderr(&output));
+    stdout(&output)
+}
+
+#[test]
+fn a_whole_game_won_reads_the_same_in_english() {
+    insta::assert_snapshot!(transcript(&[], WINNING_GAME));
+}
+
+#[test]
+fn a_whole_game_won_reads_the_same_in_french() {
+    insta::assert_snapshot!(transcript(&["--lang", "fr"], WINNING_GAME));
+}
+
+#[test]
+fn a_whole_game_won_with_the_screen_reader_and_ascii_modes_together() {
+    let text = transcript(
+        &["--lang", "fr", "--screen-reader", "--ascii"],
+        WINNING_GAME,
+    );
+    assert!(text.is_ascii());
+    insta::assert_snapshot!(text);
+}
+
+#[test]
+fn a_whole_game_lost_to_reckless_scanning() {
+    let script = format!("{PROLOGUE}{}", "scan\n".repeat(30));
+    let text = transcript(&[], &script);
+    assert!(text.contains("Security traced you."), "{text}");
+    insta::assert_snapshot!(text);
+}
+
+#[test]
+fn an_ending_keeps_the_last_save_so_the_game_resumes_just_before_it() {
+    let dir = tempfile::tempdir().unwrap();
+    let won = run_in_env(
+        &["--demo", "--data-dir", dir_arg(&dir), "--seed", "5"],
+        WINNING_GAME,
+        &[],
+    );
+    assert!(won.status.success(), "{}", stderr(&won));
+    assert!(
+        stdout(&won).contains("Mission complete"),
+        "{}",
+        stdout(&won)
+    );
+    let resumed = play_in(dir.path(), &[], "shop\n0\nquit\ny\n");
+    assert!(resumed.status.success(), "{}", stderr(&resumed));
+    let text = stdout(&resumed);
+    assert!(text.contains("Resuming your saved game."), "{text}");
+    assert!(
+        text.contains("\n[3] Deck upgrade (120 credits)\n"),
+        "the deck is still for sale:\n{text}"
+    );
+    assert!(!text.contains("Mission complete"), "{text}");
+}
