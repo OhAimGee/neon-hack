@@ -2,17 +2,21 @@
 //!
 //! Every struct denies unknown fields. Arrays of tables (`[[quest]]`, `[[site]]`...) keep
 //! the file order, which is the display order and the canonical evaluation order.
-//! Ids are only checked against the catalogs by [`crate::validate`], never here.
+//! Ids are only checked against the catalogs by [`crate::content::validate`], never here.
 
 use std::collections::BTreeSet;
 
 use serde::{Deserialize, Serialize};
 use toml::Spanned;
 
-use crate::ids::{
+use crate::content::ids::{
     ChoiceId, CommandId, ContactId, DecisionId, EndingId, FileId, FlagId, ItemId, LineId, QuestId,
     ReadableId, SiteId, TopicId,
 };
+use crate::content::money::{Credits, Reputation};
+
+/// Highest tier of the campaign. Tiers go from 1 to this value.
+pub const MAX_TIER: u8 = 6;
 
 /// Game time: the number of player turns. The engine has no clock.
 pub type Turn = u32;
@@ -20,15 +24,19 @@ pub type Turn = u32;
 /// Symbolic reward size, resolved by `rewards.toml`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum Size {
+    /// Small.
     S,
+    /// Medium.
     M,
+    /// Large.
     L,
+    /// Extra large.
     XL,
 }
 
 impl Size {
     /// The four sizes, in increasing order.
-    pub const ALL: [Size; 4] = [Size::S, Size::M, Size::L, Size::XL];
+    pub const ALL: [Self; 4] = [Self::S, Self::M, Self::L, Self::XL];
 }
 
 /// How a quest is offered.
@@ -63,22 +71,31 @@ pub enum QuestStatus {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ContactState {
+    /// Can be talked to and can give quests.
     Available,
+    /// Cannot be reached for now.
     Busy,
+    /// Not unlocked yet, or gone silent.
     Offline,
+    /// Still reachable and can still give quests, but burnt.
     Compromised,
+    /// Refuses to talk.
     Hostile,
+    /// Can be talked to but gives nothing.
     Silenced,
+    /// Gone for good.
     Dead,
 }
 
 impl ContactState {
     /// Whether the player can talk to a contact in this state.
+    #[must_use]
     pub fn reachable(self) -> bool {
         matches!(self, Self::Available | Self::Compromised | Self::Silenced)
     }
 
     /// Whether the contact can hand out quests in this state.
+    #[must_use]
     pub fn can_give(self) -> bool {
         matches!(self, Self::Available | Self::Compromised)
     }
@@ -88,8 +105,11 @@ impl ContactState {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum SiteMark {
+    /// A backdoor was left on the site.
     Backdoor,
+    /// A virus was uploaded.
     Virus,
+    /// The site was analyzed.
     Analyzed,
 }
 
@@ -97,8 +117,11 @@ pub enum SiteMark {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ReadableKind {
+    /// A story fragment (`f01`...).
     Fragment,
+    /// A mail.
     Mail,
+    /// A cutscene or an ending screen.
     Scene,
     /// Encrypted: "opening" it means decrypting it.
     Document,
@@ -108,9 +131,13 @@ pub enum ReadableKind {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum FlagKind {
+    /// True or false (false by default).
     Bool,
+    /// One of the declared values (the first is the default).
     Enum,
+    /// A number from 0 to `max`.
     Counter,
+    /// A set of the declared bit names.
     Bitset,
 }
 
@@ -118,9 +145,13 @@ pub enum FlagKind {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum FlagValue {
+    /// A boolean flag.
     Bool(bool),
+    /// A counter.
     Int(u32),
+    /// An enum value, or the name of the bit a `set_flag` adds to a bitset.
     Str(String),
+    /// The bits of a bitset.
     Bits(BTreeSet<String>),
 }
 
@@ -128,7 +159,9 @@ pub enum FlagValue {
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Unlock {
+    /// The tier the player must have reached.
     pub tier: Option<u8>,
+    /// The quest that must be completed.
     pub quest: Option<QuestId>,
 }
 
@@ -140,42 +173,63 @@ pub struct Unlock {
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Cond {
+    /// Every sub-condition holds.
     All {
+        /// The sub-conditions.
         of: Vec<Cond>,
     },
+    /// At least one sub-condition holds.
     Any {
+        /// The sub-conditions.
         of: Vec<Cond>,
     },
+    /// The sub-condition does not hold.
     Not {
+        /// The negated condition.
         of: Box<Cond>,
     },
     /// Exactly one of `is` (bool / enum / counter equality), `at_least` (counter), `has` (bit).
     Flag {
+        /// The flag read.
         name: FlagId,
+        /// Equality with a value.
         is: Option<FlagValue>,
+        /// Counter at least this high.
         at_least: Option<u32>,
+        /// The bitset holds this bit.
         has: Option<String>,
     },
+    /// The quest has the status.
     Quest {
+        /// The quest.
         id: QuestId,
+        /// The expected status.
         is: QuestStatus,
     },
     /// The contact is in one of the listed states.
     Contact {
+        /// The contact.
         id: ContactId,
+        /// The accepted states.
         is: Vec<ContactState>,
     },
+    /// The trust in a contact reaches a value.
     Trust {
+        /// The contact.
         contact: ContactId,
+        /// The least trust.
         at_least: i32,
     },
     /// A fragment/mail/scene was read, or a document decrypted.
     Opened {
+        /// The readable.
         id: ReadableId,
     },
     /// An objective (or an alternative of an `any_of`) of a quest was achieved.
     Objective {
+        /// The quest.
         quest: QuestId,
+        /// The `id` of the objective or of the alternative.
         id: String,
     },
 }
@@ -186,7 +240,9 @@ pub enum Cond {
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Grant {
+    /// Credits paid, as a size.
     pub credits: Option<Size>,
+    /// Reputation paid, as a size.
     pub reputation: Option<Size>,
     /// Negative reputation instead of positive.
     #[serde(default)]
@@ -199,34 +255,47 @@ pub struct Grant {
 pub enum Effect {
     /// Sets a flag. A bitset flag gets the named bit; the other types take the value.
     SetFlag {
+        /// The flag written.
         flag: FlagId,
+        /// The new value.
         value: FlagValue,
     },
+    /// Unlocks or closes a contact.
     SetContactState {
+        /// The contact.
         contact: ContactId,
+        /// The new state.
         state: ContactState,
     },
     /// Adds to the bonus trust of a contact.
     Trust {
+        /// The contact.
         contact: ContactId,
+        /// Points gained (or lost when negative).
         delta: i32,
     },
+    /// Pays credits and/or reputation.
     Grant(Grant),
     /// Raises the player's tier (never lowers it).
     GrantTier {
+        /// The tier reached.
         tier: u8,
     },
     /// Delivers a mail, plays a scene, reveals a fragment or a document.
     Unlock {
+        /// The readable handed out.
         readable: ReadableId,
     },
     /// Forces the heat to a value (betrayal of Phoenix).
     HeatForce {
+        /// The heat, 0 to 100.
         value: u8,
     },
     /// Adds a floor to the heat until the given quest opens.
     HeatFloor {
+        /// The floor added.
         delta: i8,
+        /// The quest whose opening lifts the floor.
         until: QuestId,
     },
     /// Stores the first ending whose condition holds in the `ending` flag.
@@ -237,7 +306,9 @@ pub enum Effect {
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Block {
+    /// The guard (always true when absent).
     pub when: Option<Cond>,
+    /// The effects, in order.
     pub then: Vec<Effect>,
 }
 
@@ -247,19 +318,33 @@ pub struct Block {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ObjectiveKind {
+    /// Talk to a contact.
     Talk,
+    /// Own an item.
     Buy,
+    /// Breach a site, or several.
     Compromise,
+    /// Extract files.
     Extract,
+    /// Read or decrypt a readable.
     Open,
+    /// Reach a neural link level.
     Link,
+    /// Reach a reputation.
     Reputation,
+    /// Use a command.
     Use,
+    /// Leave a mark on a site.
     SiteState,
+    /// Make a payment.
     Pay,
+    /// Make a decision.
     Choice,
+    /// Heat below a bound when the quest concludes.
     HeatEndBelow,
+    /// Heat peak below a bound since the quest opened.
     HeatPeakBelow,
+    /// One of several alternatives.
     AnyOf,
 }
 
@@ -268,28 +353,49 @@ pub enum ObjectiveKind {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct RawObjective {
+    /// The kind of objective.
     pub kind: ObjectiveKind,
+    /// Name other conditions can refer to.
     pub id: Option<String>,
+    /// Bonus objective.
     #[serde(default)]
     pub optional: bool,
+    /// Shown as `???` until achieved.
     #[serde(default)]
     pub secret: bool,
+    /// Applicability guard.
     pub when: Option<Cond>,
+    /// A site (`compromise`, `extract`, `site_state`).
     pub site: Option<SiteId>,
+    /// A file of the site (`extract`).
     pub file: Option<FileId>,
+    /// A contact (`talk`, `link`).
     pub contact: Option<ContactId>,
+    /// An item (`buy`).
     pub item: Option<ItemId>,
+    /// A readable (`open`).
     pub readable: Option<ReadableId>,
+    /// A decision (`choice`).
     pub decision: Option<DecisionId>,
+    /// A command (`use`).
     pub command: Option<CommandId>,
+    /// A command group (`use`).
     pub group: Option<String>,
+    /// A mark (`site_state`).
     pub mark: Option<SiteMark>,
+    /// A number of times, sites or files.
     pub count: Option<u32>,
+    /// Every file of the site (`extract`).
     pub all: Option<bool>,
+    /// A neural link level (`link`).
     pub level: Option<u8>,
-    pub min: Option<u32>,
+    /// The reputation to reach (`reputation`).
+    pub min: Option<Reputation>,
+    /// The heat bound (`heat_end_below`, `heat_peak_below`).
     pub below: Option<u32>,
+    /// The size of the payment (`pay`).
     pub amount: Option<Size>,
+    /// The alternatives (`any_of`).
     #[serde(default)]
     pub of: Vec<Spanned<RawObjective>>,
 }
@@ -297,8 +403,11 @@ pub struct RawObjective {
 /// What an `extract` objective asks for.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ExtractWhat {
+    /// A named file.
     File(FileId),
+    /// Every file of the site.
     All,
+    /// This many files.
     Count(u32),
 }
 
@@ -307,59 +416,79 @@ pub enum ExtractWhat {
 pub enum Goal {
     /// `n` conversations with a contact since the quest opened (event). `MEET` is `count = 1`.
     Talk {
+        /// The contact.
         contact: ContactId,
+        /// How many conversations.
         count: u32,
     },
     /// The item is owned (stock).
     Buy {
+        /// The item.
         item: ItemId,
     },
     /// `site`, or `count` different sites, compromised since the quest opened (event).
     Compromise {
+        /// The site, when a named one is asked.
         site: Option<SiteId>,
+        /// How many different sites when no site is named.
         count: u32,
     },
     /// Files extracted (stock): a named one, all of a site, or `n` (of a site or anywhere).
     Extract {
+        /// The site, or any site when absent (with a count).
         site: Option<SiteId>,
+        /// What is asked.
         what: ExtractWhat,
     },
     /// A readable was read or a document decrypted (stock).
     Open {
+        /// The readable.
         readable: ReadableId,
     },
     /// Neural link level with a contact (stock).
     Link {
+        /// The contact.
         contact: ContactId,
+        /// The level, 1 to 3.
         level: u8,
     },
+    /// The reputation reaches a value (stock).
     Reputation {
-        min: u32,
+        /// The least reputation.
+        min: Reputation,
     },
     /// A command (or any command of a group) was used at least once (stock).
     Use {
+        /// The command.
         command: Option<CommandId>,
+        /// A group of commands, any of which counts.
         group: Option<String>,
     },
     /// A backdoor/virus/analysis is on the site (stock).
     SiteState {
+        /// The site.
         site: SiteId,
+        /// The mark.
         mark: SiteMark,
     },
     /// A payment of the given size since the quest opened (event).
     Pay {
+        /// The size, resolved at the tier of the quest.
         amount: Size,
     },
     /// The decision was made (stock).
     Choice {
+        /// The decision.
         decision: DecisionId,
     },
     /// Heat below the bound at the instant the quest concludes (condition).
     HeatEndBelow {
+        /// The bound (exclusive).
         max: u32,
     },
     /// Heat peak since the quest opened below the bound (condition, can be lost).
     HeatPeakBelow {
+        /// The bound (exclusive).
         max: u32,
     },
     /// One of the alternatives is enough.
@@ -371,6 +500,7 @@ pub enum Goal {
 /// A typed objective.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Objective {
+    /// Name other conditions can refer to.
     pub id: Option<String>,
     /// Bonus: does not block the conclusion.
     pub optional: bool,
@@ -378,6 +508,7 @@ pub struct Objective {
     pub secret: bool,
     /// Applicable only when this holds; a non-applicable objective is ignored.
     pub when: Option<Cond>,
+    /// What is asked.
     pub goal: Goal,
     /// Byte offset of the table in `quests.toml`, for line numbers.
     pub at: usize,
@@ -385,6 +516,7 @@ pub struct Objective {
 
 impl Goal {
     /// Event objectives count only what happens after the quest opened.
+    #[must_use]
     pub fn is_event(&self) -> bool {
         match self {
             Goal::Talk { .. } | Goal::Compromise { .. } | Goal::Pay { .. } => true,
@@ -394,6 +526,7 @@ impl Goal {
     }
 
     /// Condition objectives are not latched: they must hold when the quest concludes.
+    #[must_use]
     pub fn is_condition(&self) -> bool {
         matches!(self, Goal::HeatEndBelow { .. } | Goal::HeatPeakBelow { .. })
     }
@@ -401,6 +534,7 @@ impl Goal {
 
 impl Objective {
     /// The alternatives of an `any_of`, or nothing.
+    #[must_use]
     pub fn children(&self) -> &[Objective] {
         match &self.goal {
             Goal::AnyOf(of) => of,
@@ -428,7 +562,7 @@ fn convert(raw: &RawObjective, at: usize) -> Objective {
 }
 
 fn build_goal(raw: &RawObjective) -> Result<Goal, String> {
-    let provided: Vec<(&str, bool)> = vec![
+    let provided = [
         ("site", raw.site.is_some()),
         ("file", raw.file.is_some()),
         ("contact", raw.contact.is_some()),
@@ -555,6 +689,7 @@ fn build_goal(raw: &RawObjective) -> Result<Goal, String> {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct FileDef {
+    /// Id of the file in its site.
     pub id: FileId,
     /// Original file name (`neural_maps.bin`), for traceability.
     pub file_name: String,
@@ -566,15 +701,19 @@ pub struct FileDef {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct SiteDef {
+    /// Id of the site.
     pub id: SiteId,
+    /// Gate of the site.
     #[serde(default)]
     pub unlock: Unlock,
     /// The site that must have been compromised before this one can be reached.
     pub relay: Option<SiteId>,
     /// Paid once, the first time the site is compromised.
     pub first_breach: Option<Size>,
+    /// The loot files.
     #[serde(default)]
     pub file: Vec<FileDef>,
+    /// Byte offset of the entry in its file, for line numbers.
     #[serde(skip)]
     pub at: usize,
 }
@@ -583,12 +722,16 @@ pub struct SiteDef {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ItemDef {
+    /// Id of the item.
     pub id: ItemId,
     /// Name in the original game (`Stealth Module v2.0`), for traceability.
     pub legacy_name: String,
-    pub price: u32,
+    /// Price in credits.
+    pub price: Credits,
+    /// Gate of the item.
     #[serde(default)]
     pub unlock: Unlock,
+    /// Byte offset of the entry in its file, for line numbers.
     #[serde(skip)]
     pub at: usize,
 }
@@ -597,11 +740,14 @@ pub struct ItemDef {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ContactDef {
+    /// Id of the contact.
     pub id: ContactId,
     /// State at the start of the game (`offline` until a quest unlocks the contact).
     pub state: ContactState,
+    /// Trust at the start of the game.
     #[serde(default)]
     pub trust: i32,
+    /// Byte offset of the entry in its file, for line numbers.
     #[serde(skip)]
     pub at: usize,
 }
@@ -610,7 +756,9 @@ pub struct ContactDef {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ReadableDef {
+    /// Id of the readable.
     pub id: ReadableId,
+    /// What it is.
     pub kind: ReadableKind,
     /// Code in the bible (`DOC_LEDGER`), for traceability.
     pub legacy_code: Option<String>,
@@ -621,11 +769,13 @@ pub struct ReadableDef {
     /// Known from the start of the game (once its `unlock` holds).
     #[serde(default)]
     pub start: bool,
+    /// Gate of the readable.
     #[serde(default)]
     pub unlock: Unlock,
     /// Number of paragraphs (scenes only): `cutscene.<id>.pNN` keys.
     #[serde(default)]
     pub paragraphs: u8,
+    /// Byte offset of the entry in its file, for line numbers.
     #[serde(skip)]
     pub at: usize,
 }
@@ -634,8 +784,11 @@ pub struct ReadableDef {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct CommandDef {
+    /// Id of the command.
     pub id: CommandId,
+    /// The group `use` objectives can name.
     pub group: Option<String>,
+    /// Byte offset of the entry in its file, for line numbers.
     #[serde(skip)]
     pub at: usize,
 }
@@ -644,14 +797,18 @@ pub struct CommandDef {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct FlagDef {
+    /// Id of the flag.
     pub id: FlagId,
+    /// Its type.
     pub kind: FlagKind,
     /// Enum values, or bit names of a bitset.
     #[serde(default)]
     pub values: Vec<String>,
     /// Upper bound of a counter.
     pub max: Option<u32>,
+    /// Value at the start of the game (the type's natural default when absent).
     pub default: Option<FlagValue>,
+    /// Byte offset of the entry in its file, for line numbers.
     #[serde(skip)]
     pub at: usize,
 }
@@ -660,10 +817,13 @@ pub struct FlagDef {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct SizeDef {
+    /// The size.
     pub id: Size,
     /// Credits = this percentage of `R(P)`.
     pub credits_percent: u32,
-    pub reputation: i32,
+    /// Reputation paid.
+    pub reputation: Reputation,
+    /// Byte offset of the entry in its file, for line numbers.
     #[serde(skip)]
     pub at: usize,
 }
@@ -672,8 +832,11 @@ pub struct SizeDef {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct TierDef {
+    /// The tier, 1 to [`MAX_TIER`].
     pub id: u8,
-    pub price: u32,
+    /// `R(P)` in credits.
+    pub price: Credits,
+    /// Byte offset of the entry in its file, for line numbers.
     #[serde(skip)]
     pub at: usize,
 }
@@ -682,8 +845,11 @@ pub struct TierDef {
 #[derive(Debug, Clone, Copy, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Rules {
-    pub start_credits: u32,
+    /// Credits at the start of the game.
+    pub start_credits: Credits,
+    /// Trust gained per conversation.
     pub per_talk: i32,
+    /// Trust gained by the giver of a completed quest.
     pub quest_completed: i32,
 }
 
@@ -693,34 +859,46 @@ pub struct Rules {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct QuestDef {
+    /// Id of the quest.
     pub id: QuestId,
     /// Code of the original enum (`NEXUS_DATA_BREACH`), for traceability.
     pub code: String,
+    /// How it is offered.
     pub kind: QuestKind,
+    /// Chapter of the story, 1 to 6.
     pub chapter: u8,
+    /// The contact who offers it.
     pub giver: ContactId,
     /// Reference tier `P` of the rewards and payments (not a gate).
     pub tier: u8,
+    /// Gate of the quest.
     #[serde(default)]
     pub unlock: Unlock,
+    /// Quests that must be completed first.
     #[serde(default)]
     pub prereq: Vec<QuestId>,
     /// Offered only while this holds (re-checked until the quest is accepted).
     pub available_if: Option<Cond>,
     /// The quest fails as soon as this holds (failable quests only).
     pub fail_if: Option<Cond>,
+    /// Whether the quest can fail (never a main quest).
     #[serde(default)]
     pub failable: bool,
+    /// The objectives, at most [`crate::content::validate::MAX_OBJECTIVES`].
     #[serde(default)]
     pub objective: Vec<Objective>,
+    /// Paid when the quest completes.
     pub reward: Option<Grant>,
     /// Effects fired once, when the quest opens (a scene, a chapter change...).
     #[serde(default)]
     pub on_open: Vec<Block>,
+    /// Effects fired once, when the quest completes.
     #[serde(default)]
     pub on_complete: Vec<Block>,
+    /// Effects fired once, when the quest fails.
     #[serde(default)]
     pub on_fail: Vec<Block>,
+    /// Byte offset of the entry in its file, for line numbers.
     #[serde(skip)]
     pub at: usize,
 }
@@ -729,9 +907,11 @@ pub struct QuestDef {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ChoiceDef {
+    /// Id of the choice.
     pub id: ChoiceId,
     /// The option is offered only while this holds.
     pub requires: Option<Cond>,
+    /// What the choice does.
     #[serde(default)]
     pub then: Vec<Block>,
 }
@@ -740,11 +920,15 @@ pub struct ChoiceDef {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct DecisionDef {
+    /// Id of the decision.
     pub id: DecisionId,
+    /// The enum flag that records the choice.
     pub flag: FlagId,
     /// The quest that carries the `choice` objective (and the tier for payments).
     pub quest: QuestId,
+    /// The options.
     pub choice: Vec<ChoiceDef>,
+    /// Byte offset of the entry in its file, for line numbers.
     #[serde(skip)]
     pub at: usize,
 }
@@ -753,11 +937,16 @@ pub struct DecisionDef {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct TopicDef {
+    /// Id of the topic, unique for its contact.
     pub id: TopicId,
+    /// The contact who talks about it.
     pub contact: ContactId,
+    /// The topic is offered only while this holds.
     pub when: Option<Cond>,
+    /// What choosing the topic does.
     #[serde(default)]
     pub then: Vec<Block>,
+    /// Byte offset of the entry in its file, for line numbers.
     #[serde(skip)]
     pub at: usize,
 }
@@ -766,11 +955,14 @@ pub struct TopicDef {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct EndingDef {
+    /// Id of the ending.
     pub id: EndingId,
+    /// The condition of the ending.
     pub when: Cond,
     /// Number of paragraphs: `ending.<id>.pNN` keys.
     #[serde(default)]
     pub paragraphs: u8,
+    /// Byte offset of the entry in its file, for line numbers.
     #[serde(skip)]
     pub at: usize,
 }
@@ -779,9 +971,13 @@ pub struct EndingDef {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct EpilogueDef {
+    /// Id of the line.
     pub id: LineId,
+    /// The contact the line is about.
     pub contact: ContactId,
+    /// The line is shown while this holds.
     pub when: Cond,
+    /// Byte offset of the entry in its file, for line numbers.
     #[serde(skip)]
     pub at: usize,
 }

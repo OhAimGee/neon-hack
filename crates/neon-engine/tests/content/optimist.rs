@@ -9,46 +9,48 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use crate::content::Content;
-use crate::engine::{Output, available_topics, new_game, offered_choices, refresh};
-use crate::eval::applicable;
-use crate::ids::{ChoiceId, DecisionId, ItemId, QuestId, ReadableId, SiteId};
-use crate::schema::{
+use neon_engine::content::engine::{Outcome, available_topics, new_game, offered_choices, refresh};
+use neon_engine::content::eval::{applicable, holds};
+use neon_engine::content::ids::{
+    ChoiceId, DecisionId, FileId, ItemId, QuestId, ReadableId, SiteId,
+};
+use neon_engine::content::schema::{
     ExtractWhat, Goal, Objective, QuestDef, QuestKind, QuestStatus, ReadableKind, Turn,
 };
-use crate::state::{Fact, State};
+use neon_engine::content::{Content, Fact, State};
 
 /// Safety net: no content of the campaign needs more rounds than this.
 const MAX_ROUNDS: usize = 400;
 
 /// How the optimistic player behaves.
 #[derive(Debug, Clone, Default)]
-pub struct Plan {
+pub(crate) struct Plan {
     /// The option to pick for each decision (the first offered one when absent).
-    pub choices: BTreeMap<DecisionId, ChoiceId>,
+    pub(crate) choices: BTreeMap<DecisionId, ChoiceId>,
     /// Also do the optional objectives.
-    pub optional: bool,
+    pub(crate) optional: bool,
     /// Offered quests that are never accepted.
-    pub skip: BTreeSet<QuestId>,
+    pub(crate) skip: BTreeSet<QuestId>,
 }
 
 /// What the walk ended with.
 #[derive(Debug, Clone)]
-pub struct Report {
-    pub state: State,
-    pub outputs: Vec<Output>,
-    pub rounds: usize,
+pub(crate) struct Report {
+    pub(crate) state: State,
+    pub(crate) outcomes: Vec<Outcome>,
+    pub(crate) rounds: usize,
     /// The facts of each round, in order: a legal history to replay or shuffle in tests.
-    pub log: Vec<Vec<Fact>>,
+    pub(crate) log: Vec<Vec<Fact>>,
     /// Quests still active or offered (and not skipped) when nothing more could be done.
-    pub stuck: Vec<QuestId>,
-    /// Lowest credit balance seen after a round: negative means the player overspent.
-    pub min_credits: i64,
+    pub(crate) stuck: Vec<QuestId>,
+    /// Whether, after any round, the purchases and payments cost more than the credits
+    /// earned: the player overspent.
+    pub(crate) overdrawn: bool,
 }
 
 /// Every combination of the options of every decision, with and without the optional
 /// objectives: the plans the "no dead end" invariant must hold for.
-pub fn all_plans(c: &Content) -> Vec<Plan> {
+pub(crate) fn all_plans(c: &Content) -> Vec<Plan> {
     let mut plans = vec![BTreeMap::new()];
     for d in &c.decisions {
         plans = plans
@@ -75,17 +77,22 @@ pub fn all_plans(c: &Content) -> Vec<Plan> {
 }
 
 /// Plays the whole content with the plan.
-pub fn play(c: &Content, plan: &Plan) -> Report {
-    let (s, outputs) = new_game(c);
-    play_from(c, plan, s, outputs)
+pub(crate) fn play(c: &Content, plan: &Plan) -> Report {
+    let (s, outcomes) = new_game(c);
+    play_from(c, plan, s, outcomes)
 }
 
 /// Plays from a given state; `fresh` is what the last refresh returned.
-pub fn play_from(c: &Content, plan: &Plan, mut s: State, mut outputs: Vec<Output>) -> Report {
+pub(crate) fn play_from(
+    c: &Content,
+    plan: &Plan,
+    mut s: State,
+    mut outcomes: Vec<Outcome>,
+) -> Report {
     let mut now: Turn = s.clock;
     let mut rounds = 0;
-    let mut fresh = outputs.clone();
-    let mut min_credits = s.credits(c);
+    let mut fresh = outcomes.clone();
+    let mut overdrawn = s.overdrawn(c);
     let mut log: Vec<Vec<Fact>> = Vec::new();
     while rounds < MAX_ROUNDS {
         rounds += 1;
@@ -117,8 +124,8 @@ pub fn play_from(c: &Content, plan: &Plan, mut s: State, mut outputs: Vec<Output
             s.apply(c, f);
         }
         fresh = refresh(c, &mut s);
-        outputs.extend(fresh.clone());
-        min_credits = min_credits.min(s.credits(c));
+        outcomes.extend(fresh.clone());
+        overdrawn |= s.overdrawn(c);
         before.clock = s.clock;
         if s == before {
             break;
@@ -136,11 +143,11 @@ pub fn play_from(c: &Content, plan: &Plan, mut s: State, mut outputs: Vec<Output
         .collect();
     Report {
         state: s,
-        outputs,
+        outcomes,
         rounds,
         log,
         stuck,
-        min_credits,
+        overdrawn,
     }
 }
 
@@ -160,10 +167,10 @@ impl Walker<'_> {
         *self.now
     }
 
-    fn round(&mut self, fresh: &[Output]) {
+    fn round(&mut self, fresh: &[Outcome]) {
         let c = self.c;
         for o in fresh {
-            if let Output::HeatForced(v) = o {
+            if let Outcome::HeatForced(v) = o {
                 let at = self.next();
                 self.facts.push(Fact::HeatChanged { heat: *v, at });
             }
@@ -239,8 +246,7 @@ impl Walker<'_> {
     fn pursue(&mut self, q: &QuestDef, opened_at: Turn, o: &Objective) -> bool {
         let before = self.facts.len();
         let is_any = matches!(o.goal, Goal::AnyOf(_));
-        if crate::eval::holds(self.c, self.s, q, opened_at, o) && !o.goal.is_condition() && !is_any
-        {
+        if holds(self.c, self.s, q, opened_at, o) && !o.goal.is_condition() && !is_any {
             return false;
         }
         match &o.goal {
@@ -320,8 +326,8 @@ impl Walker<'_> {
             }
             Goal::Pay { amount } => {
                 let price = self.c.resolve(*amount, q.tier).0;
-                if self.spendable() >= i64::from(price) {
-                    self.reserved += i64::from(price);
+                if self.spendable() >= i64::from(price.get()) {
+                    self.reserved += i64::from(price.get());
                     let at = self.next();
                     self.facts.push(Fact::Paid { amount: price, at });
                 }
@@ -341,9 +347,7 @@ impl Walker<'_> {
                     if !applicable(self.c, self.s, ch) {
                         continue;
                     }
-                    if crate::eval::holds(self.c, self.s, q, opened_at, ch)
-                        || self.pursue(q, opened_at, ch)
-                    {
+                    if holds(self.c, self.s, q, opened_at, ch) || self.pursue(q, opened_at, ch) {
                         break;
                     }
                 }
@@ -372,16 +376,16 @@ impl Walker<'_> {
         if !self.s.owned.contains(item)
             && !queued
             && self.s.unlocked(&def.unlock)
-            && self.spendable() >= i64::from(def.price)
+            && self.spendable() >= i64::from(def.price.get())
         {
-            self.reserved += i64::from(def.price);
+            self.reserved += i64::from(def.price.get());
             self.facts.push(Fact::ItemBought { item: item.clone() });
         }
     }
 
     /// Credits left once the costs already queued in this round are counted.
     fn spendable(&self) -> i64 {
-        self.s.credits(self.c) - self.reserved
+        i64::from(self.s.credits(self.c).get()) - self.reserved
     }
 
     /// Compromises a site, its relays first. Nothing happens when a gate is closed.
@@ -415,7 +419,7 @@ impl Walker<'_> {
 
     fn extract(&mut self, site: Option<&SiteId>, what: &ExtractWhat) {
         let c = self.c;
-        let todo: Vec<(SiteId, crate::ids::FileId)> = match (site, what) {
+        let todo: Vec<(SiteId, FileId)> = match (site, what) {
             (Some(site), ExtractWhat::File(f)) => vec![(site.clone(), f.clone())],
             (Some(site), ExtractWhat::All) => c
                 .site(site)
@@ -447,7 +451,7 @@ impl Walker<'_> {
     }
 
     /// Files not extracted yet, of one site or of any site open to the player.
-    fn unextracted(&self, only: Option<&SiteId>, n: usize) -> Vec<(SiteId, crate::ids::FileId)> {
+    fn unextracted(&self, only: Option<&SiteId>, n: usize) -> Vec<(SiteId, FileId)> {
         self.c
             .sites
             .iter()

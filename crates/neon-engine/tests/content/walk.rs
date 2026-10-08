@@ -2,26 +2,19 @@
 
 use std::collections::BTreeSet;
 
-use neon_spike_missions::engine::{Output, montage};
-use neon_spike_missions::ids::{ContactId, DecisionId, QuestId};
-use neon_spike_missions::optimist::{Plan, all_plans, play};
-use neon_spike_missions::schema::{QuestKind, QuestStatus};
-use neon_spike_missions::{Content, Sources};
+use neon_engine::content::engine::{Outcome, montage};
+use neon_engine::content::ids::{ContactId, DecisionId};
+use neon_engine::content::schema::{QuestKind, QuestStatus};
+use neon_engine::content::{Content, Sources};
 
-fn shipped() -> Content {
-    Content::embedded().unwrap_or_else(|e| panic!("{e}"))
-}
+use crate::common::{id, q, shipped};
+use crate::optimist::{Plan, all_plans, play};
 
-fn q(id: &str) -> QuestId {
-    QuestId::new(id)
-}
-
-fn plan(c: &Content, choices: &[(&str, &str)], optional: bool) -> Plan {
-    let _ = c;
+fn plan(choices: &[(&str, &str)], optional: bool) -> Plan {
     Plan {
         choices: choices
             .iter()
-            .map(|(d, ch)| (DecisionId::new(*d), (*ch).into()))
+            .map(|(d, ch)| (id::<DecisionId>(d), id(ch)))
             .collect(),
         optional,
         skip: BTreeSet::new(),
@@ -55,7 +48,7 @@ fn the_main_line_can_always_be_finished() {
                 p.choices
             );
         }
-        assert!(!r.outputs.contains(&Output::BudgetExceeded));
+        assert!(!r.outcomes.contains(&Outcome::BudgetExceeded));
     }
 }
 
@@ -71,12 +64,12 @@ fn every_quest_ends_up_done_or_legitimately_unavailable() {
                 let why_not = match quest.id.as_str() {
                     "s07" => p
                         .choices
-                        .get(&DecisionId::new("d2"))
+                        .get(&id::<DecisionId>("d2"))
                         .is_some_and(|d| d.as_str() != "save"),
                     "s13" => !p.optional,
                     "s08" => p
                         .choices
-                        .get(&DecisionId::new("d1"))
+                        .get(&id::<DecisionId>("d1"))
                         .is_some_and(|d| d.as_str() == "betray"),
                     _ => false,
                 };
@@ -100,20 +93,20 @@ fn every_decision_leads_to_exactly_one_ending_and_each_ending_is_reached() {
         let r = play(&c, p);
         let ending = r
             .state
-            .flag(&c, &"ending".into())
+            .flag(&c, &id("ending"))
             .map(|v| format!("{v:?}"))
             .unwrap_or_default();
         assert!(!ending.contains("none"), "no ending with {:?}", p.choices);
         let d3 = p
             .choices
-            .get(&DecisionId::new("d3"))
+            .get(&id::<DecisionId>("d3"))
             .map(ToString::to_string)
             .unwrap_or_default();
         let expected = match d3.as_str() {
             "liberate" => {
                 let echo = p
                     .choices
-                    .get(&DecisionId::new("echo"))
+                    .get(&id::<DecisionId>("echo"))
                     .map(ToString::to_string)
                     .unwrap_or_default();
                 // echo_log (S16) is always earned by the optimistic player.
@@ -146,32 +139,32 @@ fn every_decision_leads_to_exactly_one_ending_and_each_ending_is_reached() {
 #[test]
 fn without_the_s16_advantage_liberation_ends_in_e1b() {
     let c = shipped();
-    let mut p = plan(&c, &[("d3", "liberate"), ("echo", "believe")], true);
+    let mut p = plan(&[("d3", "liberate"), ("echo", "believe")], true);
     p.skip.insert(q("s16"));
     let r = play(&c, &p);
-    assert!(format!("{:?}", r.state.flag(&c, &"ending".into())).contains("e1b"));
+    assert!(format!("{:?}", r.state.flag(&c, &id("ending"))).contains("e1b"));
 }
 
 #[test]
 fn a_skipped_optional_objective_silences_neon_angel_and_closes_s13() {
     let c = shipped();
-    let r = play(&c, &plan(&c, &[], false));
-    assert!(format!("{:?}", r.state.flag(&c, &"angel_state".into())).contains("silenced"));
+    let r = play(&c, &plan(&[], false));
+    assert!(format!("{:?}", r.state.flag(&c, &id("angel_state"))).contains("silenced"));
     assert_eq!(r.state.status(&q("s13")), QuestStatus::Unavailable);
-    let r = play(&c, &plan(&c, &[], true));
+    let r = play(&c, &plan(&[], true));
     assert_eq!(r.state.status(&q("s13")), QuestStatus::Completed);
 }
 
 #[test]
 fn betraying_r4z0r_closes_her_raid_quest_and_makes_her_hostile() {
     let c = shipped();
-    let r = play(&c, &plan(&c, &[("d1", "betray")], true));
+    let r = play(&c, &plan(&[("d1", "betray")], true));
     assert_eq!(
         r.state.status(&q("s08")),
         QuestStatus::Completed,
         "S08 was done before M10"
     );
-    assert!(format!("{:?}", r.state.contact(&ContactId::new("r4z0r"))).contains("Hostile"));
+    assert!(format!("{:?}", r.state.contact(&id::<ContactId>("r4z0r"))).contains("Hostile"));
 }
 
 #[test]
@@ -179,13 +172,13 @@ fn rewards_are_paid_once_each() {
     let c = shipped();
     let r = play(
         &c,
-        &plan(&c, &[("d1", "steal"), ("d2", "turn"), ("d3", "sign")], true),
+        &plan(&[("d1", "steal"), ("d2", "turn"), ("d3", "sign")], true),
     );
     let keys: Vec<&String> = r
-        .outputs
+        .outcomes
         .iter()
         .filter_map(|o| {
-            if let Output::Reward { key, .. } = o {
+            if let Outcome::Reward { key, .. } = o {
                 Some(key)
             } else {
                 None

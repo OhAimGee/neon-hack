@@ -1,4 +1,7 @@
 //! The loaded content: typed tables, indices, and the loader with line-numbered errors.
+//!
+//! The data files are embedded in the program (`data/world/*.toml`, see `build.rs`); the loader
+//! itself takes strings, so tests can load a broken copy without touching the disk.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
@@ -7,37 +10,48 @@ use serde::de::DeserializeOwned;
 use thiserror::Error;
 use toml::Spanned;
 
-use crate::ids::{ContactId, DecisionId, FlagId, ItemId, QuestId, ReadableId, SiteId};
-use crate::schema::{
+use crate::content::ids::{ContactId, DecisionId, FlagId, ItemId, QuestId, ReadableId, SiteId};
+use crate::content::money::{Credits, Reputation};
+use crate::content::schema::{
     CatalogFile, CommandDef, ContactDef, DecisionDef, DecisionsFile, EndingDef, EpilogueDef,
     FlagDef, FlagsFile, ItemDef, QuestDef, QuestsFile, ReadableDef, RewardsFile, Rules, SiteDef,
-    SizeDef, TextsFile, TierDef, TopicDef, TopicsFile,
+    Size, SizeDef, TextsFile, TierDef, TopicDef, TopicsFile,
 };
-use crate::validate;
+use crate::content::validate;
+
+include!(concat!(env!("OUT_DIR"), "/embedded_world.rs"));
 
 /// The data files, in the order errors are reported.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum File {
+    /// `catalog.toml`: sites, items, contacts, readables, commands.
     Catalog,
+    /// `flags.toml`: the typed flags.
     Flags,
+    /// `rewards.toml`: sizes, tier prices, trust constants.
     Rewards,
+    /// `quests.toml`: the quests.
     Quests,
+    /// `decisions.toml`: decisions, endings, epilogue.
     Decisions,
+    /// `topics.toml`: dialogue topics.
     Topics,
+    /// `texts.toml`: the declared text keys.
     Texts,
 }
 
 impl File {
     /// Path shown in error messages.
+    #[must_use]
     pub fn name(self) -> &'static str {
         match self {
-            File::Catalog => "data/catalog.toml",
-            File::Flags => "data/flags.toml",
-            File::Rewards => "data/rewards.toml",
-            File::Quests => "data/quests.toml",
-            File::Decisions => "data/decisions.toml",
-            File::Topics => "data/topics.toml",
-            File::Texts => "data/texts.toml",
+            File::Catalog => "data/world/catalog.toml",
+            File::Flags => "data/world/flags.toml",
+            File::Rewards => "data/world/rewards.toml",
+            File::Quests => "data/world/quests.toml",
+            File::Decisions => "data/world/decisions.toml",
+            File::Topics => "data/world/topics.toml",
+            File::Texts => "data/world/texts.toml",
         }
     }
 }
@@ -45,30 +59,39 @@ impl File {
 /// The text of the data files. The engine does no I/O: callers hand over strings.
 #[derive(Debug, Clone, Default)]
 pub struct Sources {
+    /// `catalog.toml`.
     pub catalog: String,
+    /// `flags.toml`.
     pub flags: String,
+    /// `rewards.toml`.
     pub rewards: String,
+    /// `quests.toml`.
     pub quests: String,
+    /// `decisions.toml`.
     pub decisions: String,
+    /// `topics.toml`.
     pub topics: String,
+    /// `texts.toml`.
     pub texts: String,
 }
 
 impl Sources {
     /// The shipped data, embedded in the binary.
+    #[must_use]
     pub fn embedded() -> Self {
         Self {
-            catalog: include_str!("../data/catalog.toml").to_owned(),
-            flags: include_str!("../data/flags.toml").to_owned(),
-            rewards: include_str!("../data/rewards.toml").to_owned(),
-            quests: include_str!("../data/quests.toml").to_owned(),
-            decisions: include_str!("../data/decisions.toml").to_owned(),
-            topics: include_str!("../data/topics.toml").to_owned(),
-            texts: include_str!("../data/texts.toml").to_owned(),
+            catalog: WORLD_CATALOG.to_owned(),
+            flags: WORLD_FLAGS.to_owned(),
+            rewards: WORLD_REWARDS.to_owned(),
+            quests: WORLD_QUESTS.to_owned(),
+            decisions: WORLD_DECISIONS.to_owned(),
+            topics: WORLD_TOPICS.to_owned(),
+            texts: WORLD_TEXTS.to_owned(),
         }
     }
 
     /// The text of one file.
+    #[must_use]
     pub fn get(&self, file: File) -> &str {
         match file {
             File::Catalog => &self.catalog,
@@ -85,8 +108,11 @@ impl Sources {
 /// One error, with the file and line it comes from.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Diagnostic {
+    /// The file the error is in.
     pub file: File,
+    /// The line (1-based; 0 for an error that belongs to no line).
     pub line: u32,
+    /// What is wrong, in English, for the writers of the content.
     pub message: String,
 }
 
@@ -96,12 +122,13 @@ impl fmt::Display for Diagnostic {
     }
 }
 
-/// Why the content could not be loaded.
+/// Why the content could not be loaded: every error found, ordered by file then line.
 #[derive(Debug, Clone, Error)]
 #[error("{}", .0.iter().map(ToString::to_string).collect::<Vec<_>>().join("\n"))]
 pub struct LoadError(pub Vec<Diagnostic>);
 
 /// Line (1-based) of a byte offset.
+#[must_use]
 pub fn line_of(text: &str, at: usize) -> u32 {
     let newlines = text
         .as_bytes()
@@ -181,19 +208,33 @@ fn index<T>(v: &[T], key: impl Fn(&T) -> &str) -> Index {
 /// All the content of the game, validated.
 #[derive(Debug, Clone)]
 pub struct Content {
+    /// The sites of the macro map, in file order.
     pub sites: Vec<SiteDef>,
+    /// The items.
     pub items: Vec<ItemDef>,
+    /// The contacts.
     pub contacts: Vec<ContactDef>,
+    /// The fragments, mails, scenes and documents.
     pub readables: Vec<ReadableDef>,
+    /// The commands the objectives can name.
     pub commands: Vec<CommandDef>,
+    /// The typed flags.
     pub flags: Vec<FlagDef>,
+    /// The reward sizes.
     pub sizes: Vec<SizeDef>,
+    /// The `R(P)` of each tier.
     pub tiers: Vec<TierDef>,
+    /// Trust constants and starting credits.
     pub rules: Rules,
+    /// The quests, in file order (the order they are evaluated in).
     pub quests: Vec<QuestDef>,
+    /// The decisions.
     pub decisions: Vec<DecisionDef>,
+    /// The dialogue topics.
     pub topics: Vec<TopicDef>,
+    /// The endings, first match wins.
     pub endings: Vec<EndingDef>,
+    /// The lines of the epilogue montage.
     pub epilogue: Vec<EpilogueDef>,
     /// The text keys declared in `texts.toml`.
     pub texts: BTreeSet<String>,
@@ -209,7 +250,11 @@ pub struct Content {
 }
 
 impl Content {
-    /// The shipped content.
+    /// The shipped campaign content, embedded in the program.
+    ///
+    /// # Errors
+    ///
+    /// A [`LoadError`] when the embedded data is invalid; the tests make sure it is not.
     pub fn embedded() -> Result<Self, LoadError> {
         Self::from_sources(&Sources::embedded())
     }
@@ -217,12 +262,20 @@ impl Content {
     /// Parses and validates the data files. All the errors found are returned, ordered by
     /// file then line; a syntax or schema error stops the file it is in (the parser cannot go
     /// on), and semantic validation only runs when every file parsed.
+    ///
+    /// # Errors
+    ///
+    /// A [`LoadError`] with every problem found.
     pub fn from_sources(src: &Sources) -> Result<Self, LoadError> {
         Self::load(src, true)
     }
 
     /// Like [`Content::from_sources`] but without comparing `texts.toml` to the derived keys:
     /// the tool that regenerates that file needs the structure before the file exists.
+    ///
+    /// # Errors
+    ///
+    /// A [`LoadError`] with every problem found.
     pub fn from_sources_without_texts(src: &Sources) -> Result<Self, LoadError> {
         Self::load(src, false)
     }
@@ -292,6 +345,7 @@ impl Content {
     }
 
     /// Builds a diagnostic for a byte offset of a file.
+    #[must_use]
     pub fn diag(&self, file: File, at: usize, message: impl Into<String>) -> Diagnostic {
         Diagnostic {
             file,
@@ -300,40 +354,54 @@ impl Content {
         }
     }
 
+    /// The site with this id.
+    #[must_use]
     pub fn site(&self, id: &SiteId) -> Option<&SiteDef> {
         self.site_ix
             .get(id.as_str())
             .and_then(|i| self.sites.get(*i))
     }
 
+    /// The item with this id.
+    #[must_use]
     pub fn item(&self, id: &ItemId) -> Option<&ItemDef> {
         self.item_ix
             .get(id.as_str())
             .and_then(|i| self.items.get(*i))
     }
 
+    /// The contact with this id.
+    #[must_use]
     pub fn contact(&self, id: &ContactId) -> Option<&ContactDef> {
         self.contact_ix
             .get(id.as_str())
             .and_then(|i| self.contacts.get(*i))
     }
 
+    /// The readable with this id.
+    #[must_use]
     pub fn readable(&self, id: &ReadableId) -> Option<&ReadableDef> {
         self.readable_ix
             .get(id.as_str())
             .and_then(|i| self.readables.get(*i))
     }
 
+    /// Whether a command with this id exists.
+    #[must_use]
     pub fn has_command(&self, id: &str) -> bool {
         self.command_ix.contains_key(id)
     }
 
+    /// The flag with this id.
+    #[must_use]
     pub fn flag(&self, id: &FlagId) -> Option<&FlagDef> {
         self.flag_ix
             .get(id.as_str())
             .and_then(|i| self.flags.get(*i))
     }
 
+    /// The quest with this id.
+    #[must_use]
     pub fn quest(&self, id: &QuestId) -> Option<&QuestDef> {
         self.quest_ix
             .get(id.as_str())
@@ -341,31 +409,42 @@ impl Content {
     }
 
     /// Position of a quest in file order.
+    #[must_use]
     pub fn quest_index(&self, id: &QuestId) -> Option<usize> {
         self.quest_ix.get(id.as_str()).copied()
     }
 
+    /// The decision with this id.
+    #[must_use]
     pub fn decision(&self, id: &DecisionId) -> Option<&DecisionDef> {
         self.decision_ix
             .get(id.as_str())
             .and_then(|i| self.decisions.get(*i))
     }
 
+    /// The flag with this name, when the name is not a typed id yet (`ending`).
+    #[must_use]
+    pub fn flag_named(&self, name: &str) -> Option<&FlagDef> {
+        self.flag_ix.get(name).and_then(|i| self.flags.get(*i))
+    }
+
     /// `R(P)` for a tier.
-    pub fn tier_price(&self, tier: u8) -> u32 {
+    #[must_use]
+    pub fn tier_price(&self, tier: u8) -> Credits {
         self.tiers
             .iter()
             .find(|t| t.id == tier)
-            .map_or(0, |t| t.price)
+            .map_or(Credits::ZERO, |t| t.price)
     }
 
     /// Resolves a symbolic size at a tier: `(credits, reputation)`.
-    pub fn resolve(&self, size: crate::schema::Size, tier: u8) -> (u32, i32) {
+    #[must_use]
+    pub fn resolve(&self, size: Size, tier: u8) -> (Credits, Reputation) {
         let Some(def) = self.sizes.iter().find(|s| s.id == size) else {
-            return (0, 0);
+            return (Credits::ZERO, Reputation::ZERO);
         };
         (
-            self.tier_price(tier).saturating_mul(def.credits_percent) / 100,
+            self.tier_price(tier).percent(def.credits_percent),
             def.reputation,
         )
     }

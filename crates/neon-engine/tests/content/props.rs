@@ -1,15 +1,15 @@
 //! Properties of the evaluator and of the loader.
 
-mod common;
-
 use std::collections::BTreeSet;
 use std::sync::OnceLock;
 
-use neon_spike_missions::engine::{Output, refresh};
-use neon_spike_missions::optimist::{all_plans, play};
-use neon_spike_missions::schema::SiteMark;
-use neon_spike_missions::{Content, Fact, Sources, State, new_game};
+use neon_engine::content::engine::{Outcome, refresh};
+use neon_engine::content::schema::SiteMark;
+use neon_engine::content::{Content, Credits, Fact, Sources, State, new_game};
 use proptest::prelude::*;
+
+use crate::common::{self, id};
+use crate::optimist::{all_plans, play};
 
 fn content() -> &'static Content {
     static C: OnceLock<Content> = OnceLock::new();
@@ -51,22 +51,22 @@ fn fact() -> BoxedStrategy<Fact> {
     let quests: Vec<String> = c.quests.iter().map(|x| x.id.to_string()).collect();
     let at = 1u32..40;
     prop_oneof![
-        3 => (proptest::sample::select(sites.clone()), at.clone()).prop_map(|(s, at)| Fact::SiteCompromised { site: s.as_str().into(), at }),
-        3 => proptest::sample::select(files).prop_map(|(s, f)| Fact::FileExtracted { site: s.as_str().into(), file: f.as_str().into() }),
+        3 => (proptest::sample::select(sites.clone()), at.clone()).prop_map(|(s, at)| Fact::SiteCompromised { site: id(s.as_str()), at }),
+        3 => proptest::sample::select(files).prop_map(|(s, f)| Fact::FileExtracted { site: id(s.as_str()), file: id(f.as_str()) }),
         1 => (proptest::sample::select(sites), prop_oneof![Just(SiteMark::Backdoor), Just(SiteMark::Virus), Just(SiteMark::Analyzed)])
-            .prop_map(|(s, mark)| Fact::SiteMarked { site: s.as_str().into(), mark }),
-        2 => proptest::sample::select(readables.clone()).prop_map(|r| Fact::Read { id: r.as_str().into() }),
-        2 => proptest::sample::select(readables).prop_map(|r| Fact::Decrypted { id: r.as_str().into() }),
-        2 => proptest::sample::select(items).prop_map(|i| Fact::ItemBought { item: i.as_str().into() }),
-        3 => (proptest::sample::select(contacts.clone()), at.clone()).prop_map(|(x, at)| Fact::Talked { contact: x.as_str().into(), at }),
-        1 => proptest::sample::select(commands).prop_map(|x| Fact::CommandUsed { command: x.as_str().into() }),
-        1 => (proptest::sample::select(contacts), 1u8..4).prop_map(|(x, level)| Fact::LinkChanged { contact: x.as_str().into(), level }),
-        1 => (prop_oneof![Just(400u32), Just(800), Just(1600)], at.clone()).prop_map(|(amount, at)| Fact::Paid { amount, at }),
+            .prop_map(|(s, mark)| Fact::SiteMarked { site: id(s.as_str()), mark }),
+        2 => proptest::sample::select(readables.clone()).prop_map(|r| Fact::Read { id: id(r.as_str()) }),
+        2 => proptest::sample::select(readables).prop_map(|r| Fact::Decrypted { id: id(r.as_str()) }),
+        2 => proptest::sample::select(items).prop_map(|i| Fact::ItemBought { item: id(i.as_str()) }),
+        3 => (proptest::sample::select(contacts.clone()), at.clone()).prop_map(|(x, at)| Fact::Talked { contact: id(x.as_str()), at }),
+        1 => proptest::sample::select(commands).prop_map(|x| Fact::CommandUsed { command: id(x.as_str()) }),
+        1 => (proptest::sample::select(contacts), 1u8..4).prop_map(|(x, level)| Fact::LinkChanged { contact: id(x.as_str()), level }),
+        1 => (prop_oneof![Just(400u32), Just(800), Just(1600)], at.clone()).prop_map(|(amount, at)| Fact::Paid { amount: Credits::new(amount), at }),
         2 => (0u8..101, at.clone()).prop_map(|(heat, at)| Fact::HeatChanged { heat, at }),
-        2 => proptest::sample::select(choices).prop_map(|(d, ch)| Fact::DecisionMade { decision: d.as_str().into(), choice: ch.as_str().into() }),
-        1 => proptest::sample::select(topics).prop_map(|(x, t)| Fact::TopicChosen { contact: x.as_str().into(), topic: t.as_str().into() }),
-        2 => proptest::sample::select(quests.clone()).prop_map(|x| Fact::QuestAccepted { quest: x.as_str().into() }),
-        1 => (proptest::sample::select(quests), at.clone()).prop_map(|(x, at)| Fact::QuestRestarted { quest: x.as_str().into(), at }),
+        2 => proptest::sample::select(choices).prop_map(|(d, ch)| Fact::DecisionMade { decision: id(d.as_str()), choice: id(ch.as_str()) }),
+        1 => proptest::sample::select(topics).prop_map(|(x, t)| Fact::TopicChosen { contact: id(x.as_str()), topic: id(t.as_str()) }),
+        2 => proptest::sample::select(quests.clone()).prop_map(|x| Fact::QuestAccepted { quest: id(x.as_str()) }),
+        1 => (proptest::sample::select(quests), at.clone()).prop_map(|(x, at)| Fact::QuestRestarted { quest: id(x.as_str()), at }),
         1 => at.prop_map(|at| Fact::Tick { at }),
     ]
     .boxed()
@@ -110,7 +110,7 @@ fn next_round(w: Warm) -> Vec<Fact> {
 }
 
 /// A state reached by the prefix of a real play, then random batches, each followed by a refresh.
-fn reached(w: Warm, history: &[Vec<Fact>]) -> (State, Vec<Output>) {
+fn reached(w: Warm, history: &[Vec<Fact>]) -> (State, Vec<Outcome>) {
     let c = content();
     let (mut s, mut out) = new_game(c);
     for batch in prefix(w).iter().chain(history) {
@@ -134,7 +134,7 @@ proptest! {
     fn refresh_is_idempotent(w in warm(), h in history()) {
         let c = content();
         let (mut s, out) = reached(w, &h);
-        prop_assert!(!out.contains(&Output::BudgetExceeded));
+        prop_assert!(!out.contains(&Outcome::BudgetExceeded));
         let before = s.clone();
         prop_assert!(refresh(c, &mut s).is_empty());
         prop_assert_eq!(s, before);
@@ -193,14 +193,14 @@ proptest! {
             for f in batch { s2.apply(c, f); }
             out.extend(refresh(c, &mut s2));
         }
-        let keys: Vec<&String> = out.iter().filter_map(|o| if let Output::Reward { key, .. } = o { Some(key) } else { None }).collect();
+        let keys: Vec<&String> = out.iter().filter_map(|o| if let Outcome::Reward { key, .. } = o { Some(key) } else { None }).collect();
         let unique: BTreeSet<&&String> = keys.iter().collect();
         prop_assert_eq!(keys.len(), unique.len());
-        let completed: Vec<_> = out.iter().filter(|o| matches!(o, Output::QuestCompleted(_))).collect();
+        let completed: Vec<_> = out.iter().filter(|o| matches!(o, Outcome::QuestCompleted(_))).collect();
         let distinct: BTreeSet<String> = completed.iter().map(|o| format!("{o:?}")).collect();
         prop_assert_eq!(completed.len(), distinct.len());
-        let paid: i64 = out.iter().map(|o| if let Output::Reward { credits, .. } = o { *credits } else { 0 }).sum();
-        prop_assert_eq!(s2.earned, i64::from(c.rules.start_credits) + paid);
+        let paid: u64 = out.iter().map(|o| if let Outcome::Reward { credits, .. } = o { u64::from(credits.get()) } else { 0 }).sum();
+        prop_assert_eq!(u64::from(s2.earned.get()), u64::from(c.rules.start_credits.get()) + paid);
     }
 
     /// Facts about things that do not exist change nothing.
@@ -210,12 +210,12 @@ proptest! {
         let (mut s, _) = reached(w, &h);
         let before = s.clone();
         let facts = [
-            Fact::FileExtracted { site: junk.as_str().into(), file: "x".into() },
-            Fact::ItemBought { item: junk.as_str().into() },
-            Fact::Read { id: junk.as_str().into() },
-            Fact::QuestAccepted { quest: junk.as_str().into() },
-            Fact::DecisionMade { decision: junk.as_str().into(), choice: "x".into() },
-            Fact::TopicChosen { contact: junk.as_str().into(), topic: "x".into() },
+            Fact::FileExtracted { site: id(junk.as_str()), file: id("x") },
+            Fact::ItemBought { item: id(junk.as_str()) },
+            Fact::Read { id: id(junk.as_str()) },
+            Fact::QuestAccepted { quest: id(junk.as_str()) },
+            Fact::DecisionMade { decision: id(junk.as_str()), choice: id("x") },
+            Fact::TopicChosen { contact: id(junk.as_str()), topic: id("x") },
         ];
         for f in &facts { s.apply(c, f); }
         prop_assert_eq!(s, before);
@@ -236,8 +236,8 @@ fn generated_histories_reach_interesting_states() {
             .map(|t| t.current())
             .unwrap_or_default();
         let (s, out) = reached(w, &h);
-        completed += usize::from(out.iter().any(|o| matches!(o, Output::QuestCompleted(_))));
-        opened += usize::from(out.iter().any(|o| matches!(o, Output::QuestOpened(_))));
+        completed += usize::from(out.iter().any(|o| matches!(o, Outcome::QuestCompleted(_))));
+        opened += usize::from(out.iter().any(|o| matches!(o, Outcome::QuestOpened(_))));
         decided += usize::from(!s.decisions.is_empty());
         late += usize::from(s.tier >= 5);
     }

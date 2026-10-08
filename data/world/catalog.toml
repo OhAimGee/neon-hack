@@ -5,7 +5,7 @@
 
 # ---------------------------------------------------------------------------- sites
 # `unlock.tier` is the "palier mini" of the bible. `relay` must be compromised first.
-# `first_breach` is a spike assumption: without it, nothing pays enough reputation before M03.
+# `first_breach` is an assumption of the first prototype: without it, nothing pays enough reputation before M03.
 
 [[site]]
 id = "localhost"

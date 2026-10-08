@@ -867,6 +867,7 @@ dependencies = [
  "serde",
  "thiserror 2.0.21",
  "toml",
+ "unicode-width",
 ]
 
 [[package]]
@@ -874,16 +875,6 @@ name = "neon-sim"
 version = "0.1.0"
 dependencies = [
  "neon-engine",
-]
-
-[[package]]
-name = "neon-spike-missions"
-version = "0.1.0"
-dependencies = [
- "proptest",
- "serde",
- "thiserror 2.0.21",
- "toml",
 ]
 
 [[package]]

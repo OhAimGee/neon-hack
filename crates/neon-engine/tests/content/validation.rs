@@ -1,6 +1,6 @@
 //! Every validation rule fires on a broken copy of the shipped data, with a file and a line.
 
-use neon_spike_missions::{Content, Diagnostic, File, Sources};
+use neon_engine::content::{Content, Diagnostic, File, Sources};
 
 /// Loads a copy of the shipped data after `edit`, and returns its error report.
 fn broken(edit: impl FnOnce(&mut Sources)) -> Vec<Diagnostic> {
@@ -30,7 +30,7 @@ fn an_unknown_reference_is_reported_at_its_line() {
             &mut s.quests,
             "site = \"freeport-02\"",
             "site = \"freeport-0x\"",
-        )
+        );
     });
     let line = Sources::embedded()
         .quests
@@ -45,7 +45,7 @@ fn an_unknown_reference_is_reported_at_its_line() {
     assert_eq!(hit.file, File::Quests);
     // An objective is located at its `[[quest.objective]]` header, two lines above `site`.
     assert_eq!(hit.line as usize, line - 2, "{hit}");
-    assert!(hit.to_string().starts_with("data/quests.toml:"));
+    assert!(hit.to_string().starts_with("data/world/quests.toml:"));
 }
 
 #[test]
@@ -61,7 +61,7 @@ fn prerequisites_must_come_first_and_cannot_loop() {
             &mut s.quests,
             "tier = 1\nreward",
             "tier = 1\nprereq = [\"m02\"]\nreward",
-        )
+        );
     });
     assert!(has(&errors, File::Quests, "written after it"));
     assert!(has(&errors, File::Quests, "prerequisite cycle"));
@@ -74,7 +74,7 @@ fn flags_are_typed_and_enum_values_must_be_declared() {
             &mut s.quests,
             "value = \"compromised\" }",
             "value = \"comprimised\" }",
-        )
+        );
     });
     assert!(has(
         &errors,
@@ -86,7 +86,7 @@ fn flags_are_typed_and_enum_values_must_be_declared() {
             &mut s.quests,
             "flag = \"hub\", value = \"safehouse\"",
             "flag = \"hub\", value = true",
-        )
+        );
     });
     assert!(has(&errors, File::Quests, "does not fit flag `hub`"));
     let errors = broken(|s| {
@@ -94,7 +94,7 @@ fn flags_are_typed_and_enum_values_must_be_declared() {
             &mut s.quests,
             "name = \"angel_state\", is = \"free\"",
             "name = \"angel_state\", is = \"freed\"",
-        )
+        );
     });
     assert!(has(&errors, File::Quests, "wrong or undeclared value"));
     let errors = broken(|s| {
@@ -102,7 +102,7 @@ fn flags_are_typed_and_enum_values_must_be_declared() {
             &mut s.decisions,
             "has = \"echo_log\"",
             "has = \"echo_logs\"",
-        )
+        );
     });
     assert!(has(&errors, File::Decisions, "wrong or undeclared value"));
 }
@@ -147,7 +147,7 @@ fn text_keys_are_checked_both_ways() {
             &mut s.texts,
             "keys = [\n",
             "keys = [\n    \"quest.zz.title\",\n",
-        )
+        );
     });
     let orphan = errors
         .iter()
@@ -175,7 +175,7 @@ fn objective_shapes_are_checked() {
             &mut s.quests,
             "kind = \"talk\"\ncontact = \"echo7\"\n",
             "kind = \"talk\"\n",
-        )
+        );
     });
     assert!(has(&errors, File::Quests, "needs `contact`"));
     let errors = broken(|s| {
@@ -183,7 +183,7 @@ fn objective_shapes_are_checked() {
             &mut s.quests,
             "kind = \"compromise\"\ncount = 3\n",
             "kind = \"compromise\"\ncount = 3\nsite = \"localhost\"\n",
-        )
+        );
     });
     assert!(has(&errors, File::Quests, "`site` or `count`, not both"));
     let errors = broken(|s| {
@@ -191,7 +191,7 @@ fn objective_shapes_are_checked() {
             &mut s.quests,
             "kind = \"buy\"\nitem = \"stealth_module\"\n",
             "kind = \"buy\"\nitem = \"stealth_module\"\nsite = \"localhost\"\n",
-        )
+        );
     });
     assert!(has(
         &errors,
@@ -232,7 +232,7 @@ fn conditions_cannot_nest_forever() {
 fn a_readable_without_a_source_and_a_forgotten_decision_objective_are_caught() {
     let errors = broken(|s| {
         s.catalog
-            .push_str("\n[[readable]]\nid = \"f99\"\nkind = \"fragment\"\n")
+            .push_str("\n[[readable]]\nid = \"f99\"\nkind = \"fragment\"\n");
     });
     assert!(has(&errors, File::Catalog, "readable `f99` has no source"));
     let errors = broken(|s| {
@@ -240,7 +240,7 @@ fn a_readable_without_a_source_and_a_forgotten_decision_objective_are_caught() {
             &mut s.quests,
             "kind = \"choice\"\ndecision = \"d3\"\n",
             "kind = \"use\"\ncommand = \"help\"\n",
-        )
+        );
     });
     assert!(has(
         &errors,
@@ -256,7 +256,7 @@ fn a_main_quest_cannot_fail_and_a_failable_one_needs_a_reason() {
             &mut s.quests,
             "code = \"EPILOGUE\"\nkind = \"main\"",
             "code = \"EPILOGUE\"\nkind = \"main\"\nfailable = true",
-        )
+        );
     });
     assert!(has(&errors, File::Quests, "a main quest cannot fail"));
     let errors = broken(|s| replace_once(&mut s.quests, "failable = true\n", ""));
