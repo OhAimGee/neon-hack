@@ -28,6 +28,7 @@ scan = "Scanner le réseau"
 shop = "Visiter l'étal"
 quit = "Quitter le réseau"
 save = "Sauvegarder la partie (save 1 à 9)"
+"save.usage" = "Usage : save [emplacement de 1 à 9]"
 laylow = "Se faire oublier le temps que la trace refroidisse"
 
 [demo.status]

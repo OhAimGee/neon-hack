@@ -289,7 +289,12 @@ impl DemoGame {
                 self.status(events);
                 None
             }
-            "save" => save_command(args.first().and_then(ArgRef::as_path), events),
+            "save" => save_command(
+                args.first()
+                    .and_then(ArgRef::as_path)
+                    .and_then(|path| path.split_whitespace().next()),
+                events,
+            ),
             "scan" => self.scan(events),
             "laylow" => {
                 self.lay_low(events);

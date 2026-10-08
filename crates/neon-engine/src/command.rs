@@ -263,8 +263,6 @@ pub enum Issue {
     RequiredAfterOptional(&'static str),
     /// The command has an `ArgKind::Path` that is not its last argument.
     PathNotLast(&'static str),
-    /// A run command would be listed at the hub.
-    RunCommandInHub(&'static str),
 }
 
 /// A text missing from a catalog, found by [`Registry::catalog_issues`].
@@ -484,12 +482,6 @@ impl Registry {
                 }
             }
             check_args(spec, &mut issues);
-            // The same predicate as the listing: a run command must never reach the hub.
-            if spec.context == Context::Run
-                && spec.refusal(Context::Hub, Capabilities::TUI).is_none()
-            {
-                issues.push(Issue::RunCommandInHub(spec.name));
-            }
         }
         issues
     }

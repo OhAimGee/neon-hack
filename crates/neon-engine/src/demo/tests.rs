@@ -450,9 +450,7 @@ fn the_command_table_is_well_formed_and_every_command_has_a_handler_and_a_help_t
     }
     for lang in Lang::ALL {
         let catalog = catalog(lang);
-        for key in COMMANDS.help_keys() {
-            assert!(catalog.get(key).is_some(), "{lang:?}: `{key}` has no text");
-        }
+        assert_eq!(COMMANDS.catalog_issues(&catalog), [], "{lang:?}");
     }
 }
 
@@ -685,6 +683,11 @@ fn entering_the_stall_asks_for_a_checkpoint_and_save_asks_for_a_slot() {
     game.handle(Input::Cancel);
     assert_eq!(game.handle(line("save")).save, Some(SaveRequest::Slot(1)));
     assert_eq!(game.handle(line("save 9")).save, Some(SaveRequest::Slot(9)));
+    // Only the first word is the slot: the rest of the line is ignored, as it always was.
+    assert_eq!(
+        game.handle(line("save 9 extra")).save,
+        Some(SaveRequest::Slot(9))
+    );
     assert_eq!(game.handle(line("SAVE 3")).save, Some(SaveRequest::Slot(3)));
 }
 
