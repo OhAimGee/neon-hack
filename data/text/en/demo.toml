@@ -28,6 +28,7 @@ scan = "Scan the network"
 shop = "Visit the stall"
 quit = "Leave the net"
 save = "Save the game (save 1 to 9)"
+"save.usage" = "Usage: save [slot from 1 to 9]"
 laylow = "Lie low and let the trace cool down"
 
 [demo.status]

@@ -6,7 +6,10 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::command::{Availability, CommandSpec, Lookup, Registry};
+use crate::command::{
+    ArgKind, ArgRef, ArgSpec, Availability, Capabilities, CommandSpec, Context, HandledBy, Lookup,
+    NoLists, Registry,
+};
 use crate::event::{Event, Gauge, Severity};
 use crate::game::{Game, GaugeReading, View};
 use crate::ids::ContactId;
@@ -26,47 +29,75 @@ const LAY_LOW_COOLING: i32 = 25;
 /// The price of the mission item, shown in the objectives.
 const DECK_PRICE: i32 = 120;
 const MAX_CREDITS: i32 = 1_000_000;
+/// `save` reads its slot itself, so that its messages for a bad slot stay the demo's own:
+/// the rest of the line is all it asks of the registry.
+const SAVE_ARGS: &[ArgSpec] = &[ArgSpec::optional(ArgKind::Path)];
 const SPECS: &[CommandSpec] = &[
     CommandSpec {
         name: "help",
         aliases: &["h"],
         help: "demo.help.help",
+        context: Context::Anywhere,
+        handled_by: HandledBy::Engine,
+        args: &[],
     },
     CommandSpec {
         name: "laylow",
         aliases: &[],
         help: "demo.help.laylow",
+        context: Context::Anywhere,
+        handled_by: HandledBy::Engine,
+        args: &[],
     },
     CommandSpec {
         name: "quit",
         aliases: &["exit"],
         help: "demo.help.quit",
+        context: Context::Anywhere,
+        handled_by: HandledBy::Engine,
+        args: &[],
     },
     CommandSpec {
         name: "save",
         aliases: &[],
         help: "demo.help.save",
+        context: Context::Anywhere,
+        handled_by: HandledBy::Engine,
+        args: SAVE_ARGS,
     },
     CommandSpec {
         name: "scan",
         aliases: &[],
         help: "demo.help.scan",
+        context: Context::Anywhere,
+        handled_by: HandledBy::Engine,
+        args: &[],
     },
     CommandSpec {
         name: "shop",
         aliases: &["buy"],
         help: "demo.help.shop",
+        context: Context::Anywhere,
+        handled_by: HandledBy::Engine,
+        args: &[],
     },
     CommandSpec {
         name: "status",
         aliases: &["st"],
         help: "demo.help.status",
+        context: Context::Anywhere,
+        handled_by: HandledBy::Engine,
+        args: &[],
     },
 ];
 /// Every command of the demo: dispatch, help and completion read this one table.
 const COMMANDS: Registry = Registry::new(SPECS);
 
-/// The demo has no locked command: all of them are open all the time.
+/// The demo is all at the hub, and has no command that depends on the frontend.
+const CONTEXT: Context = Context::Hub;
+const FRONTEND: Capabilities = Capabilities::PLAIN;
+
+/// The demo has no locked command: all of them are open all the time, in every context.
 fn open(_: &CommandSpec) -> Availability {
     Availability::Open
 }
@@ -231,11 +262,16 @@ impl DemoGame {
     }
 
     fn run_command(&mut self, line: &str, events: &mut Vec<Event>) -> Option<SaveRequest> {
-        let (spec, args) = match COMMANDS.parse(line, open) {
+        let lookup = COMMANDS.parse(line, CONTEXT, FRONTEND, open, &NoLists);
+        let (spec, args) = match lookup {
             Lookup::Empty => return None,
             Lookup::Found { spec, args } => (spec, args),
-            Lookup::Locked { reason, .. } => {
+            Lookup::Locked { reason, .. } | Lookup::WrongContext { reason, .. } => {
                 events.push(Event::error(reason));
+                return None;
+            }
+            Lookup::BadArg { error, .. } => {
+                events.push(Event::error(error.text()));
                 return None;
             }
             Lookup::Unknown(word) => {
@@ -253,7 +289,12 @@ impl DemoGame {
                 self.status(events);
                 None
             }
-            "save" => save_command(args.first().copied(), events),
+            "save" => save_command(
+                args.first()
+                    .and_then(ArgRef::as_path)
+                    .and_then(|path| path.split_whitespace().next()),
+                events,
+            ),
             "scan" => self.scan(events),
             "laylow" => {
                 self.lay_low(events);
@@ -546,7 +587,9 @@ impl Game for DemoGame {
     fn complete(&self, line: &str) -> Vec<String> {
         let prefix = line.to_ascii_lowercase();
         match self.prompt() {
-            Prompt::Command if !line.contains(char::is_whitespace) => COMMANDS.complete(line, open),
+            Prompt::Command if !line.contains(char::is_whitespace) => {
+                COMMANDS.complete(line, CONTEXT, FRONTEND, open)
+            }
             Prompt::Choice(choice) => choice
                 .options
                 .into_iter()
@@ -657,6 +700,8 @@ fn help_table() -> Event {
             Text::new("demo.help.col_command"),
             Text::new("demo.help.col_effect"),
         ],
+        CONTEXT,
+        FRONTEND,
         open,
     )
 }

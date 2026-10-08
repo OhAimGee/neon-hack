@@ -107,11 +107,11 @@ La complétion (`TAB`) propose les choix des étapes 2 et 3 qui sont **ouverts**
 |---|---|---|
 | `error.unknown_command` | le nom n'existe dans aucun contexte | « Commande inconnue : bogus. Voir `help`. » |
 | `error.locked` | le nom existe mais n'est pas ouvert (raison fournie par l'ouverture) | « Pas encore : {raison}. » |
-| `error.wrong_context` | commande d'un autre contexte | « Seulement pendant une intrusion. » / « Pas pendant une intrusion. » |
-| `error.arg.missing` | argument obligatoire absent | « `breach` demande un nœud et un programme. Exemple : `breach 3 brute`. » (l'usage est une clé `help.<commande>.usage`) |
-| `error.arg.unknown` | numéro ou nom hors liste | « Nœud inconnu : 9. Voir `map`. » |
-| `error.arg.ambiguous` | préfixe qui convient à plusieurs choses | « « s » convient à plusieurs programmes : 2. Spoof, 3. Stealth. » |
-| `error.arg.unavailable` | la chose existe mais est refusée | la raison propre à l'action (cycles insuffisants, nœud non adjacent, crédits manquants…) |
+| `error.wrong_context.run`, `.hub`, `.tui` | commande d'un autre contexte, ou que le frontend ne sait pas faire | « Seulement pendant une intrusion. » / « Pas pendant une intrusion. » / « Seulement en plein écran. » |
+| `error.arg.missing` | argument obligatoire absent | « Argument manquant. Usage : `breach <nœud> <programme>`. Exemple : `breach 3 brute`. » (l'usage est la clé `help.<commande>.usage`) |
+| `error.arg.unknown` | numéro ou nom hors liste | « Inconnu : nœud 9. Voir `map`. » (le genre est le terme du glossaire ; la majuscule initiale attend le marqueur `{nom^}`) |
+| `error.arg.ambiguous` | préfixe qui convient à plusieurs choses | « « s » convient à plusieurs programmes : 2. spoof, 3. stealth. » |
+| `error.arg.unavailable` | la chose existe mais est refusée | « stealth est indisponible : cycles insuffisants. » (la raison est celle de la ligne de la liste, propre à l'action : cycles insuffisants, nœud non adjacent, crédits manquants…) |
 
 Les erreurs sont des événements de rôle `Error`, donc toujours `Essential` (VRB-2). Chaque clé a sa variante `@sr` si elle contient un symbole ambigu.
 
@@ -149,21 +149,38 @@ Le tutoriel (R2) enseigne dans cet ordre `help`, `quests`, `talk`, `net`, `hack`
 
 ## 7. Ce que R2 change dans le code
 
-Le registre de R1.4a n'a ni contexte, ni argument typé, ni usage. R2 ajoute à `CommandSpec`, sans casser l'existant :
+**Fait au lot R2.2a** (`neon_engine::command`, mécanisme et tests ; la table du jeu complet est au lot R2.2b). Le registre de R1.4a n'avait ni contexte, ni argument typé, ni usage. `CommandSpec` porte maintenant :
 
 ```rust
 pub struct CommandSpec {
     pub name: &'static str,
     pub aliases: &'static [&'static str],
-    pub help: &'static str,        // « help.<nom> » : une ligne
+    pub help: &'static str,        // « help.<nom> » : une ligne ; l'usage est « help.<nom>.usage »
     pub context: Context,          // Anywhere | Hub | Run
     pub handled_by: HandledBy,     // Engine | Frontend(Scope), Scope = AnyFrontend | TuiOnly
     pub args: &'static [ArgSpec],  // { kind: ArgKind, optional: bool }
 }
 pub enum ArgKind { Number, Quest, Contact, Message, Document, Site, Node, Program, Item, Slot, Service, Word(&'static [&'static str]), Path }
+pub struct Capabilities { pub tui: bool }   // Capabilities::PLAIN, Capabilities::TUI
 ```
 
-`Registry::parse`, `complete` et `help` reçoivent aussi les `Capabilities` du frontend. `Registry::parse` rend alors `Lookup::Found { spec, args }` avec des `ArgRef` déjà **résolus** (§ 3) par un `Resolver` fourni par le jeu, de sorte que l'ambiguïté et l'inconnu soient traités une seule fois, avant le code de la commande. `Registry::issues` contrôle en plus : chaque `help.<nom>` et `help.<nom>.usage` existe, aucun nom de commande n'est un mot interdit du glossaire, tout `ArgKind` a un résolveur, et la table du hub ne contient pas de commande d'intrusion.
+Le jeu fournit un `Resolver` : `list(kind, command) -> Listing { see, rows }`, où chaque `Row { id, names, available: Result<(), Text> }` est une ligne de la liste affichée (la ligne `n` est le numéro `n` ; une chose indisponible **reste** dans la liste avec sa raison ; `available` peut dépendre de la commande). Le moteur lit seul les nombres, les mots fixes et les chemins. Les mots en trop après les arguments déclarés sont ignorés.
+
+```rust
+registry.parse(line, context, capabilities, availability, &resolver) -> Lookup
+registry.complete(prefix, context, capabilities, availability) -> Vec<String>
+registry.complete_args(line, context, capabilities, availability, &resolver) -> Vec<String>
+registry.help(title, columns, context, capabilities, availability) -> Event
+enum Lookup { Empty, Found { spec, args: Vec<ArgRef> }, Locked { spec, reason },
+              WrongContext { spec, reason }, BadArg { spec, error: ArgError }, Unknown(String) }
+enum ArgRef { Number(u32), Word(&'static str), Path(String), Listed { kind, number, id } }
+enum ArgError { Missing { usage }, Unknown { kind, word, see }, Ambiguous { kind, word, candidates },
+                Unavailable { name, reason } }   // ArgError::text() : les clés error.arg.*
+```
+
+L'ordre des réponses est : nom inconnu, mauvais contexte ou frontend incapable (`error.wrong_context.run|hub|tui`), verrouillée, puis les arguments de gauche à droite. Le frontend qui ne gère pas `panel` et `plain` (`Capabilities::PLAIN`) les voit répondre « Seulement en plein écran. ». `help`, `complete` et `complete_args` ne listent et ne proposent que ce qui est ouvert, du contexte courant et possible pour le frontend (jamais une chose verrouillée, fermée ou inconnue).
+
+`Registry::issues` contrôle : noms et alias bien formés et uniques, mot fixe non vide, argument facultatif jamais avant un obligatoire, chemin en dernier, aucune commande d'intrusion listée au hub. `Registry::catalog_issues(&Catalog)` contrôle séparément que chaque `help.<nom>` existe et que toute commande qui a des arguments a son `help.<nom>.usage`. **Reste pour R2.2b** : aucun nom de commande n'est un mot interdit du glossaire (il faut le glossaire), tout `ArgKind` utilisé a un résolveur, et le frontend transmet ses `Capabilities` au jeu.
 
 ## 8. Tests exigés (I7 et suivants)
 

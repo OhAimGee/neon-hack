@@ -72,3 +72,18 @@ list_damaged = "{save} : abîmée ({reason})"
 
 [ui.settings]
 damaged = "settings.toml est inutilisable ({reason}) : les réglages par défaut s'appliquent. Le fichier n'a pas été modifié."
+
+[error]
+unknown_command = "Commande inconnue : {command}. Voir `help`."
+
+[error.wrong_context]
+run = "Seulement pendant une {run}."
+hub = "Pas pendant une {run}."
+tui = "Seulement en plein écran."
+
+[error.arg]
+missing = "Argument manquant. {usage}"
+unknown = "Inconnu : {kind} {value}. Voir `{see}`."
+ambiguous = "« {value} » convient à plusieurs {kind}s : {candidates}."
+"ambiguous@sr" = "{value} convient à plusieurs {kind}s : {candidates}."
+unavailable = "{name} est indisponible : {reason}."
