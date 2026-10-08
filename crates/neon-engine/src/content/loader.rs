@@ -13,9 +13,10 @@ use toml::Spanned;
 use crate::content::ids::{ContactId, DecisionId, FlagId, ItemId, QuestId, ReadableId, SiteId};
 use crate::content::money::{Credits, Reputation};
 use crate::content::schema::{
-    CatalogFile, CommandDef, ContactDef, DecisionDef, DecisionsFile, EndingDef, EpilogueDef,
-    FlagDef, FlagsFile, ItemDef, QuestDef, QuestsFile, ReadableDef, RewardsFile, Rules, SiteDef,
-    Size, SizeDef, TextsFile, TierDef, TopicDef, TopicsFile,
+    AutoResolveRules, CatalogFile, CommandDef, ContactDef, DecisionDef, DecisionsFile, EndingDef,
+    EpilogueDef, FlagDef, FlagsFile, HintBudgets, ItemDef, QuestDef, QuestsFile, ReadableDef,
+    RewardsFile, Rules, ServiceDef, SiteDef, Size, SizeDef, TextsFile, TierDef, TopicDef,
+    TopicsFile, UnlockDef, UnlocksFile,
 };
 use crate::content::validate;
 
@@ -38,6 +39,8 @@ pub enum File {
     Topics,
     /// `texts.toml`: the declared text keys.
     Texts,
+    /// `unlocks.toml`: when the commands of the game open.
+    Unlocks,
 }
 
 impl File {
@@ -52,6 +55,7 @@ impl File {
             File::Decisions => "data/world/decisions.toml",
             File::Topics => "data/world/topics.toml",
             File::Texts => "data/world/texts.toml",
+            File::Unlocks => "data/world/unlocks.toml",
         }
     }
 }
@@ -73,6 +77,12 @@ pub struct Sources {
     pub topics: String,
     /// `texts.toml`.
     pub texts: String,
+    /// `unlocks.toml`.
+    pub unlocks: String,
+    /// The official names of the commands of the game (its command table), which the rules of
+    /// `unlocks.toml` may name. Empty means "not checked": the tests that load a broken copy of
+    /// the data without a game around it leave it empty.
+    pub game_commands: Vec<String>,
 }
 
 impl Sources {
@@ -87,6 +97,10 @@ impl Sources {
             decisions: WORLD_DECISIONS.to_owned(),
             topics: WORLD_TOPICS.to_owned(),
             texts: WORLD_TEXTS.to_owned(),
+            unlocks: WORLD_UNLOCKS.to_owned(),
+            game_commands: crate::campaign::command_names()
+                .map(str::to_owned)
+                .collect(),
         }
     }
 
@@ -101,6 +115,7 @@ impl Sources {
             File::Decisions => &self.decisions,
             File::Topics => &self.topics,
             File::Texts => &self.texts,
+            File::Unlocks => &self.unlocks,
         }
     }
 }
@@ -166,7 +181,9 @@ positioned!(
     DecisionDef,
     TopicDef,
     EndingDef,
-    EpilogueDef
+    EpilogueDef,
+    ServiceDef,
+    UnlockDef
 );
 
 fn unspan<T: Positioned>(v: Vec<Spanned<T>>) -> Vec<T> {
@@ -226,6 +243,14 @@ pub struct Content {
     pub tiers: Vec<TierDef>,
     /// Trust constants and starting credits.
     pub rules: Rules,
+    /// The services that lower the notoriety, in the order `laylow` lists them.
+    pub services: Vec<ServiceDef>,
+    /// What an automatic intrusion costs in notoriety.
+    pub auto_resolve: AutoResolveRules,
+    /// The hint budget of a quest, by difficulty.
+    pub hints: HintBudgets,
+    /// When the commands of the game open.
+    pub unlocks: Vec<UnlockDef>,
     /// The quests, in file order (the order they are evaluated in).
     pub quests: Vec<QuestDef>,
     /// The decisions.
@@ -289,6 +314,7 @@ impl Content {
         let decisions = parse::<DecisionsFile>(File::Decisions, &src.decisions, &mut diags);
         let topics = parse::<TopicsFile>(File::Topics, &src.topics, &mut diags);
         let texts = parse::<TextsFile>(File::Texts, &src.texts, &mut diags);
+        let unlocks = parse::<UnlocksFile>(File::Unlocks, &src.unlocks, &mut diags);
         let (
             Some(catalog),
             Some(flags),
@@ -297,7 +323,10 @@ impl Content {
             Some(decisions),
             Some(topics),
             Some(texts),
-        ) = (catalog, flags, rewards, quests, decisions, topics, texts)
+            Some(unlocks),
+        ) = (
+            catalog, flags, rewards, quests, decisions, topics, texts, unlocks,
+        )
         else {
             return Err(LoadError(diags));
         };
@@ -327,6 +356,10 @@ impl Content {
             sizes: unspan(rewards.size),
             tiers: unspan(rewards.tier),
             rules: rewards.rules,
+            services: unspan(rewards.service),
+            auto_resolve: rewards.auto_resolve,
+            hints: rewards.hints,
+            unlocks: unspan(unlocks.unlock),
             quests,
             decisions: decisions_defs,
             topics: unspan(topics.topic),

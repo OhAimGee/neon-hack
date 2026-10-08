@@ -164,6 +164,16 @@ fn derive(c: &Content) -> Vec<(String, String)> {
         out.own(format!("command `{}`", cmd.id));
         out.add(format!("command.{}.help", k(cmd.id.as_str())));
     }
+    for service in &c.services {
+        out.own(format!("service `{}`", service.id));
+        let id = k(service.id.as_str());
+        out.add(format!("service.{id}.name"));
+        out.add(format!("service.{id}.desc"));
+    }
+    for unlock in &c.unlocks {
+        out.own(format!("unlock rule of `{}`", unlock.command));
+        out.add(unlock.reason.clone());
+    }
     out.keys
 }
 

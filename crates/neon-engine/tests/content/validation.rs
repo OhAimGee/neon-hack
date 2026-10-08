@@ -262,3 +262,115 @@ fn a_main_quest_cannot_fail_and_a_failable_one_needs_a_reason() {
     let errors = broken(|s| replace_once(&mut s.quests, "failable = true\n", ""));
     assert!(has(&errors, File::Quests, "need `failable = true`"));
 }
+
+// ------------------------------------------------------------------ unlocks and hub rules
+
+#[test]
+fn an_unlock_rule_must_name_a_command_of_the_game_once() {
+    let errors = broken(|s| {
+        replace_once(&mut s.unlocks, "command = \"shop\"", "command = \"shopp\"");
+    });
+    assert!(has(
+        &errors,
+        File::Unlocks,
+        "`shopp` is not a command of the game"
+    ));
+    let errors = broken(|s| {
+        replace_once(&mut s.unlocks, "command = \"buy\"", "command = \"shop\"");
+    });
+    assert!(has(
+        &errors,
+        File::Unlocks,
+        "duplicate unlocked command id `shop`"
+    ));
+    // Without the game's table (a bare copy of the data) the names cannot be checked.
+    let mut src = Sources::embedded();
+    replace_once(
+        &mut src.unlocks,
+        "command = \"shop\"",
+        "command = \"shopp\"",
+    );
+    src.game_commands.clear();
+    assert!(Content::from_sources(&src).is_ok());
+}
+
+#[test]
+fn an_unlock_reason_is_a_derived_text_key_and_its_condition_is_checked() {
+    let errors = broken(|s| {
+        replace_once(
+            &mut s.unlocks,
+            "reason = \"unlock.shop\"",
+            "reason = \"Not yet\"",
+        );
+    });
+    assert!(has(
+        &errors,
+        File::Unlocks,
+        "must be a text key `unlock.<name>`"
+    ));
+    // The reason is a derived key: the declared list must follow it.
+    let errors = broken(|s| {
+        replace_once(
+            &mut s.unlocks,
+            "reason = \"unlock.shop\"",
+            "reason = \"unlock.stall\"",
+        );
+    });
+    assert!(has(&errors, File::Texts, "missing text key `unlock.stall`"));
+    assert!(has(&errors, File::Texts, "orphan text key `unlock.shop`"));
+    let errors = broken(|s| {
+        replace_once(&mut s.unlocks, "id = \"r4z0r\"", "id = \"nobody\"");
+    });
+    assert!(has(&errors, File::Unlocks, "unknown contact `nobody`"));
+    let errors = broken(|s| {
+        replace_once(
+            &mut s.unlocks,
+            "id = \"s06\", is = \"available\"",
+            "id = \"s99\", is = \"available\"",
+        );
+    });
+    assert!(has(&errors, File::Unlocks, "unknown quest `s99`"));
+}
+
+#[test]
+fn the_unlock_file_is_read_with_the_other_files() {
+    let errors = broken(|s| s.unlocks.push_str("\n[[unlock]]\ncommand = \"x\"\n"));
+    let hit = errors.iter().find(|d| d.file == File::Unlocks).unwrap();
+    assert!(
+        hit.to_string().starts_with("data/world/unlocks.toml:"),
+        "{hit}"
+    );
+}
+
+#[test]
+fn the_hub_constants_of_rewards_are_checked() {
+    let heat = "nominal_heat = [4, 8, 12, 16, 20, 24]";
+    let errors = broken(|s| replace_once(&mut s.rewards, heat, "nominal_heat = [4, 8]"));
+    assert!(has(&errors, File::Rewards, "needs 6 values"));
+    let errors = broken(|s| {
+        replace_once(
+            &mut s.rewards,
+            heat,
+            "nominal_heat = [4, 8, 12, 16, 20, 240]",
+        );
+    });
+    assert!(has(&errors, File::Rewards, "needs 6 values"));
+    let errors = broken(|s| replace_once(&mut s.rewards, "story = 6", "story = 0"));
+    assert!(has(
+        &errors,
+        File::Rewards,
+        "must not grow with the difficulty"
+    ));
+    let errors = broken(|s| replace_once(&mut s.rewards, "cooling = 10", "cooling = 0"));
+    assert!(has(&errors, File::Rewards, "cooling must be between"));
+    let errors = broken(|s| replace_once(&mut s.rewards, "price = 25", "price = 0"));
+    assert!(has(&errors, File::Rewards, "positive price"));
+    let errors = broken(|s| {
+        replace_once(&mut s.rewards, "id = \"scrub_traces\"", "id = \"lie_low\"");
+    });
+    assert!(has(
+        &errors,
+        File::Rewards,
+        "duplicate service id `lie_low`"
+    ));
+}

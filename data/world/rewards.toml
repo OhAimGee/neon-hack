@@ -43,3 +43,34 @@ start_credits = 100
 # Trust: +per_talk per conversation, +quest_completed to the giver of a completed quest.
 per_talk = 3
 quest_completed = 10
+
+# ---------------------------------------------------------------------------- the hub
+# Services sold by `laylow`, in the order they are listed: what they cost and how many points
+# of notoriety they remove. Texts: service.<id>.name and service.<id>.desc.
+
+[[service]]
+id = "lie_low"
+price = 25
+cooling = 10
+
+[[service]]
+id = "scrub_traces"
+price = 70
+cooling = 25
+
+[[service]]
+id = "new_identity"
+price = 160
+cooling = 60
+
+# What an automatic intrusion (`hack` until the tactical run exists) costs in notoriety,
+# by the tier of the site: entry n is for a site of tier n + 1.
+[auto_resolve]
+nominal_heat = [4, 8, 12, 16, 20, 24]
+
+# Hints (`hint`) a quest may use, by difficulty.
+[hints]
+story = 6
+normal = 3
+expert = 1
+hardcore = 0
