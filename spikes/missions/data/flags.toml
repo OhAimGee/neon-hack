@@ -1,0 +1,73 @@
+# Typed narrative flags (bible 5.6, keys `narr.*`). A flag has one of four types:
+# bool, enum (declared values, the first is the default), counter (0..max), bitset (named bits).
+# A condition or effect that uses a value the flag does not declare is a load error.
+
+# --- booleans
+[[flag]]
+id = "lull_done"
+kind = "bool"
+[[flag]]
+id = "broker_retainer"
+kind = "bool"
+[[flag]]
+id = "core_location_known"
+kind = "bool"
+[[flag]]
+id = "three_keys"
+kind = "bool"
+[[flag]]
+id = "sabotage_done"
+kind = "bool"
+
+# --- enums
+[[flag]]
+id = "hub"
+kind = "enum"
+values = ["studio", "safehouse"]
+[[flag]]
+id = "angel_state"
+kind = "enum"
+values = ["unknown", "free", "silenced"]
+[[flag]]
+id = "phoenix_state"
+kind = "enum"
+values = ["ally", "compromised", "free", "lost", "turned"]
+
+# Decisions: the flag of a decision is an enum whose values are its choices.
+[[flag]]
+id = "d1"
+kind = "enum"
+values = ["none", "pay", "betray", "steal"]
+[[flag]]
+id = "d2"
+kind = "enum"
+values = ["none", "save", "abandon", "turn"]
+[[flag]]
+id = "d3"
+kind = "enum"
+values = ["none", "liberate", "entrust", "burn", "sign"]
+[[flag]]
+id = "echo_choice"
+kind = "enum"
+values = ["none", "doubt", "wait", "believe"]
+[[flag]]
+id = "ending"
+kind = "enum"
+values = ["none", "e1a", "e1b", "e2", "e3", "e4"]
+
+# --- counters
+[[flag]]
+id = "echo_trust"
+kind = "counter"
+max = 2
+[[flag]]
+id = "chapter"
+kind = "counter"
+max = 6
+default = 1
+
+# --- bitset: the six advantages of the finale (A1-A6)
+[[flag]]
+id = "adv"
+kind = "bitset"
+values = ["aura_redundancy", "maintenance_window", "blind_spot", "vigil", "echo_log", "cutter"]

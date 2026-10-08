@@ -1,0 +1,245 @@
+# Decisions D1-D3 (bible 4.4), the echo_trust micro-decision, the endings and the epilogue
+# montage. A decision belongs to the quest that carries its `choice` objective; the choice
+# is recorded in the enum flag named by `flag`; `requires` says when an option is offered.
+
+# =========================================================================== D1
+# The price of the Broker. Betraying R4Z0R needs the ledger (extracted in M04); stealing
+# needs a file of shadow-exchange; paying needs the payment of M10.
+[[decision]]
+id = "d1"
+flag = "d1"
+quest = "m10"
+[[decision.choice]]
+id = "pay"
+requires = { kind = "any", of = [
+    { kind = "objective", quest = "m10", id = "pay" },
+    { kind = "objective", quest = "m10", id = "pay_retainer" },
+] }
+then = [{ then = [{ kind = "set_flag", flag = "core_location_known", value = true }] }]
+[[decision.choice]]
+id = "betray"
+requires = { kind = "objective", quest = "m10", id = "betray" }
+then = [{ then = [
+    { kind = "set_flag", flag = "core_location_known", value = true },
+    { kind = "set_contact_state", contact = "r4z0r", state = "hostile" },
+] }]
+[[decision.choice]]
+id = "steal"
+requires = { kind = "objective", quest = "m10", id = "steal" }
+then = [{ then = [
+    { kind = "set_flag", flag = "core_location_known", value = true },
+    { kind = "set_contact_state", contact = "broker", state = "hostile" },
+    { kind = "grant", reputation = "S", penalty = true },
+    { kind = "heat_floor", delta = 20, until = "m13" },
+] }]
+
+# =========================================================================== D2
+# The fate of Phoenix. Saving him needs the kill-switch blueprints (F15) to have been read.
+[[decision]]
+id = "d2"
+flag = "d2"
+quest = "m08"
+[[decision.choice]]
+id = "save"
+requires = { kind = "opened", id = "f15" }
+then = [{ then = [
+    { kind = "set_flag", flag = "phoenix_state", value = "free" },
+    { kind = "set_contact_state", contact = "phoenix", state = "available" },
+] }]
+[[decision.choice]]
+id = "abandon"
+then = [{ then = [
+    { kind = "set_flag", flag = "phoenix_state", value = "lost" },
+    { kind = "set_contact_state", contact = "phoenix", state = "dead" },
+    { kind = "trust", contact = "angel", delta = -10 },
+    { kind = "trust", contact = "aura", delta = -10 },
+    { kind = "heat_floor", delta = -20, until = "m10" },
+] }]
+[[decision.choice]]
+id = "turn"
+then = [{ then = [
+    { kind = "set_flag", flag = "phoenix_state", value = "turned" },
+    { kind = "set_contact_state", contact = "phoenix", state = "available" },
+    { kind = "trust", contact = "angel", delta = -10 },
+    { kind = "trust", contact = "aura", delta = -10 },
+    { kind = "heat_floor", delta = -20, until = "m13" },
+] }]
+
+# =========================================================================== D3
+# The Heart. The ending itself is computed by `settle_ending` in M13 from the `[[ending]]`
+# table below; the choice only records `d3`.
+[[decision]]
+id = "d3"
+flag = "d3"
+quest = "m13"
+[[decision.choice]]
+id = "liberate"
+[[decision.choice]]
+id = "entrust"
+[[decision.choice]]
+id = "burn"
+[[decision.choice]]
+id = "sign"
+then = [{ then = [{ kind = "grant", credits = "XL" }] }]
+
+# ============================================================== echo_trust (M11)
+[[decision]]
+id = "echo"
+flag = "echo_choice"
+quest = "m11"
+[[decision.choice]]
+id = "doubt"
+then = [{ then = [{ kind = "set_flag", flag = "echo_trust", value = 0 }] }]
+[[decision.choice]]
+id = "wait"
+then = [{ then = [{ kind = "set_flag", flag = "echo_trust", value = 1 }] }]
+[[decision.choice]]
+id = "believe"
+then = [{ then = [{ kind = "set_flag", flag = "echo_trust", value = 2 }] }]
+
+# ================================================================== endings
+# First match wins, in file order: E1a before E1b. The matrix D1 x D2 x D3 x advantages x
+# echo_trust is tested exhaustively (every combination ends in exactly one ending).
+
+[[ending]]
+id = "e1a"
+paragraphs = 7
+when = { kind = "all", of = [
+    { kind = "flag", name = "d3", is = "liberate" },
+    { kind = "flag", name = "adv", has = "echo_log" },
+    { kind = "flag", name = "echo_trust", at_least = 1 },
+] }
+[[ending]]
+id = "e1b"
+paragraphs = 7
+when = { kind = "flag", name = "d3", is = "liberate" }
+[[ending]]
+id = "e2"
+paragraphs = 6
+when = { kind = "flag", name = "d3", is = "entrust" }
+[[ending]]
+id = "e3"
+paragraphs = 6
+when = { kind = "flag", name = "d3", is = "burn" }
+[[ending]]
+id = "e4"
+paragraphs = 6
+when = { kind = "flag", name = "d3", is = "sign" }
+
+# ============================================================ epilogue montage
+# One line per contact according to its own state: exactly one line of each contact applies.
+
+[[epilogue]]
+id = "echo7_lives"
+contact = "echo7"
+when = { kind = "flag", name = "ending", is = "e1a" }
+[[epilogue]]
+id = "echo7_out"
+contact = "echo7"
+when = { kind = "flag", name = "ending", is = "e1b" }
+[[epilogue]]
+id = "echo7_absent"
+contact = "echo7"
+when = { kind = "any", of = [
+    { kind = "flag", name = "ending", is = "e2" },
+    { kind = "flag", name = "ending", is = "e3" },
+    { kind = "flag", name = "ending", is = "e4" },
+] }
+
+[[epilogue]]
+id = "r4z0r_hostile"
+contact = "r4z0r"
+when = { kind = "contact", id = "r4z0r", is = ["hostile"] }
+[[epilogue]]
+id = "r4z0r_no_market"
+contact = "r4z0r"
+when = { kind = "all", of = [
+    { kind = "contact", id = "r4z0r", is = ["available"] },
+    { kind = "flag", name = "ending", is = "e3" },
+] }
+[[epilogue]]
+id = "r4z0r_allied"
+contact = "r4z0r"
+when = { kind = "all", of = [
+    { kind = "contact", id = "r4z0r", is = ["available"] },
+    { kind = "not", of = { kind = "flag", name = "ending", is = "e3" } },
+] }
+
+[[epilogue]]
+id = "phoenix_free"
+contact = "phoenix"
+when = { kind = "flag", name = "phoenix_state", is = "free" }
+[[epilogue]]
+id = "phoenix_lost"
+contact = "phoenix"
+when = { kind = "flag", name = "phoenix_state", is = "lost" }
+[[epilogue]]
+id = "phoenix_turned"
+contact = "phoenix"
+when = { kind = "flag", name = "phoenix_state", is = "turned" }
+
+[[epilogue]]
+id = "aura_free"
+contact = "aura"
+when = { kind = "any", of = [
+    { kind = "flag", name = "ending", is = "e1a" },
+    { kind = "flag", name = "ending", is = "e1b" },
+] }
+[[epilogue]]
+id = "aura_sovereign"
+contact = "aura"
+when = { kind = "flag", name = "ending", is = "e2" }
+[[epilogue]]
+id = "aura_hosted"
+contact = "aura"
+when = { kind = "all", of = [
+    { kind = "flag", name = "ending", is = "e3" },
+    { kind = "flag", name = "adv", has = "aura_redundancy" },
+] }
+[[epilogue]]
+id = "aura_gone"
+contact = "aura"
+when = { kind = "all", of = [
+    { kind = "flag", name = "ending", is = "e3" },
+    { kind = "not", of = { kind = "flag", name = "adv", has = "aura_redundancy" } },
+] }
+[[epilogue]]
+id = "aura_possessed"
+contact = "aura"
+when = { kind = "flag", name = "ending", is = "e4" }
+
+[[epilogue]]
+id = "broker_hostile"
+contact = "broker"
+when = { kind = "contact", id = "broker", is = ["hostile"] }
+[[epilogue]]
+id = "broker_neutral"
+contact = "broker"
+when = { kind = "not", of = { kind = "contact", id = "broker", is = ["hostile"] } }
+
+[[epilogue]]
+id = "angel_free"
+contact = "angel"
+when = { kind = "flag", name = "angel_state", is = "free" }
+[[epilogue]]
+id = "angel_silenced"
+contact = "angel"
+when = { kind = "flag", name = "angel_state", is = "silenced" }
+
+[[epilogue]]
+id = "insider_safe"
+contact = "insider"
+when = { kind = "not", of = { kind = "contact", id = "insider", is = ["compromised"] } }
+[[epilogue]]
+id = "insider_exposed"
+contact = "insider"
+when = { kind = "contact", id = "insider", is = ["compromised"] }
+
+[[epilogue]]
+id = "ghost_stays"
+contact = "ghost"
+when = { kind = "contact", id = "ghost", is = ["available"] }
+[[epilogue]]
+id = "miner_archives"
+contact = "miner"
+when = { kind = "contact", id = "miner", is = ["available"] }

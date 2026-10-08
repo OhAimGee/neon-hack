@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/neon-engine", "crates/neon-cli", "crates/neon-sim"]
+members = ["crates/neon-engine", "crates/neon-cli", "crates/neon-sim", "spikes/missions"]
 
 [workspace.package]
 version = "0.1.0"

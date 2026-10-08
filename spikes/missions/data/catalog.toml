@@ -1,0 +1,437 @@
+# Catalog of the things quests talk about: sites, files, items, contacts, readables, commands.
+# Ids are stable lowercase text. The names of the original game are kept as `legacy_*` fields
+# for traceability only; player-facing text lives in the per-language catalogs, keyed by id.
+# Source of the gates: narrative bible 4.6 (palier mini of each site) and 5.1 (shop tiers).
+
+# ---------------------------------------------------------------------------- sites
+# `unlock.tier` is the "palier mini" of the bible. `relay` must be compromised first.
+# `first_breach` is a spike assumption: without it, nothing pays enough reputation before M03.
+
+[[site]]
+id = "localhost"
+unlock = { tier = 1 }
+[[site.file]]
+id = "user_data"
+file_name = "user_data.txt"
+
+[[site]]
+id = "corp-server-01"
+unlock = { tier = 2 }
+relay = "localhost"
+first_breach = "S"
+[[site.file]]
+id = "employee_records"
+file_name = "employee_records.db"
+yields = "f02"
+[[site.file]]
+id = "financial_data"
+file_name = "financial_data.xlsx"
+
+[[site]]
+id = "nexus-mainframe"
+unlock = { tier = 3 }
+relay = "corp-server-01"
+first_breach = "S"
+[[site.file]]
+id = "project_ghost"
+file_name = "project_ghost.dat"
+yields = "f07"
+[[site.file]]
+id = "neural_maps"
+file_name = "neural_maps.bin"
+yields = "f08"
+[[site.file]]
+id = "quantum_keys"
+file_name = "quantum_keys.qkey"
+yields = "f09"
+
+[[site]]
+id = "underground-market"
+unlock = { tier = 3 }
+relay = "localhost"
+first_breach = "S"
+[[site.file]]
+id = "black_ledger"
+file_name = "black_ledger.dat"
+yields = "doc_ledger"
+
+[[site]]
+id = "research-lab"
+unlock = { tier = 4 }
+relay = "corp-server-01"
+first_breach = "S"
+[[site.file]]
+id = "prototype_specs"
+file_name = "prototype_specs.cad"
+yields = "f15"
+
+[[site]]
+id = "banking-network"
+unlock = { tier = 4 }
+relay = "underground-market"
+first_breach = "S"
+[[site.file]]
+id = "vault_keys"
+file_name = "vault_keys.enc"
+
+[[site]]
+id = "radio-veille"
+unlock = { tier = 4 }
+relay = "underground-market"
+first_breach = "S"
+[[site.file]]
+id = "listener_map"
+file_name = "listener_map.db"
+yields = "f12"
+
+[[site]]
+id = "station-7"
+unlock = { tier = 4 }
+first_breach = "S"
+[[site.file]]
+id = "shift_roster"
+file_name = "shift_roster.db"
+
+[[site]]
+id = "gov-database"
+unlock = { tier = 5 }
+relay = "nexus-mainframe"
+first_breach = "S"
+[[site.file]]
+id = "citizen_registry"
+file_name = "citizen_registry.db"
+yields = "f24"
+
+[[site]]
+id = "halcyon-clinic-7"
+unlock = { tier = 5 }
+relay = "nexus-mainframe"
+first_breach = "S"
+[[site.file]]
+id = "lull_protocol"
+file_name = "lull_protocol.cfg"
+yields = "f13"
+[[site.file]]
+id = "raid_orders"
+file_name = "raid_orders.txt"
+
+[[site]]
+id = "sentinel-hub"
+unlock = { tier = 5 }
+relay = "nexus-mainframe"
+first_breach = "S"
+[[site.file]]
+id = "trace_orders"
+file_name = "trace_orders.log"
+yields = "f14"
+[[site.file]]
+id = "maintenance_schedule"
+file_name = "maintenance_schedule.ics"
+yields = "f21"
+[[site.file]]
+id = "sentinel_token"
+file_name = "sentinel_token.key"
+
+# The bible has one "relais-aura" site with three nodes; objectives address each freeport.
+[[site]]
+id = "freeport-01"
+unlock = { tier = 5 }
+relay = "localhost"
+first_breach = "S"
+[[site]]
+id = "freeport-02"
+unlock = { tier = 5 }
+relay = "localhost"
+first_breach = "S"
+[[site]]
+id = "freeport-03"
+unlock = { tier = 5 }
+relay = "localhost"
+first_breach = "S"
+
+[[site]]
+id = "shadow-exchange"
+unlock = { tier = 5 }
+relay = "underground-market"
+first_breach = "S"
+[[site.file]]
+id = "broker_contract"
+file_name = "broker_contract.pdf"
+yields = "f18"
+[[site.file]]
+id = "price_oracle"
+file_name = "price_oracle.bin"
+
+[[site]]
+id = "aurora-core"
+unlock = { tier = 6 }
+relay = "sentinel-hub"
+[[site.file]]
+id = "core_manual"
+file_name = "core_manual.pdf"
+yields = "f23"
+[[site.file]]
+id = "phase3_trigger"
+file_name = "phase3_trigger.bin"
+[[site.file]]
+id = "aura_core"
+file_name = "aura_core.img"
+
+# ---------------------------------------------------------------------------- items
+# Prices and tiers of the shop items quests ask for (audit 1.3 / bible 5.1).
+
+[[item]]
+id = "ghost_protocol"
+legacy_name = "Ghost Protocol"
+price = 80
+unlock = { tier = 1 }
+
+[[item]]
+id = "stealth_module"
+legacy_name = "Stealth Module v2.0"
+price = 150
+unlock = { tier = 2 }
+
+[[item]]
+id = "quantum_key"
+legacy_name = "Quantum Encryption Key"
+price = 200
+unlock = { tier = 3 }
+
+[[item]]
+id = "neural_assistant"
+legacy_name = "Neural Assistant v3.1"
+price = 500
+unlock = { tier = 4 }
+
+[[item]]
+id = "quantum_chip"
+legacy_name = "Quantum Processing Chip"
+price = 800
+unlock = { tier = 5 }
+
+# ------------------------------------------------------------------------- contacts
+# Every contact but ECHO-7 starts `offline`: a quest unlocks it (`set_contact_state`).
+
+[[contact]]
+id = "echo7"
+state = "available"
+trust = 60
+
+[[contact]]
+id = "r4z0r"
+state = "offline"
+trust = 30
+
+[[contact]]
+id = "phoenix"
+state = "offline"
+
+[[contact]]
+id = "miner"
+state = "offline"
+
+[[contact]]
+id = "angel"
+state = "offline"
+
+[[contact]]
+id = "ghost"
+state = "offline"
+
+[[contact]]
+id = "aura"
+state = "offline"
+
+[[contact]]
+id = "broker"
+state = "offline"
+trust = 20
+
+[[contact]]
+id = "insider"
+state = "offline"
+
+# ------------------------------------------------------------------------ readables
+# Fragments (F01-F24), mails, scenes and encrypted documents. Each needs a source: `start`,
+# a file or document that yields it, or an effect that unlocks it.
+
+[[readable]]
+id = "f01"
+kind = "fragment"
+[[readable]]
+id = "f02"
+kind = "fragment"
+[[readable]]
+id = "f03"
+kind = "fragment"
+[[readable]]
+id = "f04"
+kind = "fragment"
+[[readable]]
+id = "f05"
+kind = "fragment"
+[[readable]]
+id = "f06"
+kind = "fragment"
+[[readable]]
+id = "f07"
+kind = "fragment"
+[[readable]]
+id = "f08"
+kind = "fragment"
+[[readable]]
+id = "f09"
+kind = "fragment"
+[[readable]]
+id = "f10"
+kind = "fragment"
+[[readable]]
+id = "f11"
+kind = "fragment"
+[[readable]]
+id = "f12"
+kind = "fragment"
+[[readable]]
+id = "f13"
+kind = "fragment"
+[[readable]]
+id = "f14"
+kind = "fragment"
+[[readable]]
+id = "f15"
+kind = "fragment"
+[[readable]]
+id = "f16"
+kind = "fragment"
+[[readable]]
+id = "f18"
+kind = "fragment"
+[[readable]]
+id = "f19"
+kind = "fragment"
+[[readable]]
+id = "f20"
+kind = "fragment"
+[[readable]]
+id = "f21"
+kind = "fragment"
+[[readable]]
+id = "f22"
+kind = "fragment"
+[[readable]]
+id = "f23"
+kind = "fragment"
+[[readable]]
+id = "f24"
+kind = "fragment"
+
+# Encrypted documents. The Caesar-cipher transmission circulates from the start (tier 2).
+[[readable]]
+id = "doc_phase2"
+kind = "document"
+legacy_code = "DOC_PHASE2"
+start = true
+unlock = { tier = 2 }
+yields = "f05"
+
+[[readable]]
+id = "doc_ledger"
+kind = "document"
+legacy_code = "DOC_LEDGER"
+yields = "f04"
+
+[[readable]]
+id = "doc_phoenix"
+kind = "document"
+legacy_code = "DOC_PHOENIX"
+start = true
+unlock = { tier = 4 }
+yields = "f11"
+
+# Quantum document: DECRYPT_QUANTUM of the bible is a plain `open` on a document that
+# needs the chip.
+[[readable]]
+id = "doc_vault"
+kind = "document"
+legacy_code = "DOC_VAULT"
+requires_item = "quantum_chip"
+start = true
+unlock = { tier = 6 }
+
+# Mails
+[[readable]]
+id = "mail-welcome"
+kind = "mail"
+[[readable]]
+id = "mail-phoenix"
+kind = "mail"
+[[readable]]
+id = "mail-miner"
+kind = "mail"
+[[readable]]
+id = "mail-aura"
+kind = "mail"
+[[readable]]
+id = "mail-angel"
+kind = "mail"
+
+# Scenes: cutscenes CS02-CS09 and the two screens of the epilogue.
+[[readable]]
+id = "cs02"
+kind = "scene"
+paragraphs = 4
+[[readable]]
+id = "cs03"
+kind = "scene"
+paragraphs = 6
+[[readable]]
+id = "cs04"
+kind = "scene"
+paragraphs = 6
+[[readable]]
+id = "cs05"
+kind = "scene"
+paragraphs = 8
+[[readable]]
+id = "cs06"
+kind = "scene"
+paragraphs = 6
+[[readable]]
+id = "cs07"
+kind = "scene"
+paragraphs = 5
+[[readable]]
+id = "cs08"
+kind = "scene"
+paragraphs = 8
+[[readable]]
+id = "cs09"
+kind = "scene"
+paragraphs = 8
+[[readable]]
+id = "ending-screen"
+kind = "scene"
+paragraphs = 3
+[[readable]]
+id = "epilogue-montage"
+kind = "scene"
+paragraphs = 1
+
+# --------------------------------------------------------------------------- commands
+# What `use` objectives can ask for. `cover` replaces the six `laylow` methods.
+
+[[command]]
+id = "quests"
+[[command]]
+id = "help"
+[[command]]
+id = "scan"
+[[command]]
+id = "status"
+[[command]]
+id = "laylow"
+group = "cover"
+[[command]]
+id = "blend"
+group = "cover"

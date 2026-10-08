@@ -1,0 +1,49 @@
+# Dialogue topics. They use the same conditions (`when`) and the same effects (`then`) as
+# quests: a topic is a rule "available when ... / does ... once chosen", nothing more.
+# A contact that is offline, busy, hostile or dead offers no topic at all.
+
+[[topic]]
+id = "advice"
+contact = "echo7"
+
+[[topic]]
+id = "how_to_earn"
+contact = "r4z0r"
+
+# Offered once the ledger job is on: choosing it earns a little trust.
+[[topic]]
+id = "ledger_rumor"
+contact = "r4z0r"
+when = { kind = "any", of = [
+    { kind = "quest", id = "m04", is = "active" },
+    { kind = "quest", id = "m04", is = "completed" },
+] }
+then = [{ then = [{ kind = "trust", contact = "r4z0r", delta = 5 }] }]
+
+[[topic]]
+id = "nexus"
+contact = "phoenix"
+when = { kind = "quest", id = "m05", is = "completed" }
+then = [{ then = [{ kind = "unlock", readable = "f10" }] }]
+
+# After the decision: the topic only exists in the branch where he was saved.
+[[topic]]
+id = "thank_you"
+contact = "phoenix"
+when = { kind = "flag", name = "phoenix_state", is = "free" }
+then = [{ then = [{ kind = "trust", contact = "phoenix", delta = 10 }] }]
+
+# Neon Angel when silenced says one thing only, and the topic is the only way to know why.
+[[topic]]
+id = "all_is_well"
+contact = "angel"
+when = { kind = "flag", name = "angel_state", is = "silenced" }
+
+[[topic]]
+id = "brother"
+contact = "aura"
+when = { kind = "all", of = [
+    { kind = "quest", id = "m09", is = "completed" },
+    { kind = "trust", contact = "aura", at_least = 10 },
+] }
+then = [{ then = [{ kind = "trust", contact = "aura", delta = 5 }] }]
