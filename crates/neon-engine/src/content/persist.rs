@@ -52,7 +52,7 @@ use crate::content::money::{Credits, Reputation};
 use crate::content::schema::{
     ContactState, FlagKind, FlagValue, MAX_TIER, QuestStatus, SiteMark, Turn,
 };
-use crate::content::state::{HEAT_MAX, ObjKey, QuestRun, State, TRUST_CAP};
+use crate::content::state::{HEAT_MAX, MAX_LINK_LEVEL, ObjKey, QuestRun, State, TRUST_CAP};
 use crate::content::validate::flag_accepts;
 
 /// The latest heat reading.
@@ -335,8 +335,8 @@ impl State {
             })?;
         }
         for (contact, level) in &self.links {
-            ensure((1..=3).contains(level), || {
-                format!("link level {level} for `{contact}` is outside 1..=3")
+            ensure((1..=MAX_LINK_LEVEL).contains(level), || {
+                format!("link level {level} for `{contact}` is outside 1..={MAX_LINK_LEVEL}")
             })?;
         }
         Ok(())
@@ -354,6 +354,13 @@ impl State {
         {
             ensure(c.contact(contact).is_some(), || {
                 format!("unknown contact `{contact}`")
+            })?;
+        }
+        // A save cannot leave a contact out: a missing one would read as offline, and a
+        // campaign whose first contact is offline cannot be continued.
+        for def in &c.contacts {
+            ensure(self.contacts.contains_key(&def.id), || {
+                format!("contact `{}` is missing", def.id)
             })?;
         }
         for item in &self.owned {
@@ -440,6 +447,18 @@ impl State {
             })?;
             lower_bound = Some(*heat);
         }
+        // `record_heat` always keeps the latest reading as the last entry of the frontier
+        // (and the frontier empty until a first reading): the two cannot disagree.
+        let latest = self
+            .heat_peaks
+            .last_key_value()
+            .map(|(at, heat)| (*at, *heat));
+        ensure(latest.unwrap_or((0, 0)) == self.heat_now, || {
+            format!(
+                "the last heat reading {:?} does not match the frontier {latest:?}",
+                self.heat_now
+            )
+        })?;
         Ok(())
     }
 

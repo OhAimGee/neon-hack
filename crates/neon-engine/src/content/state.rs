@@ -20,6 +20,9 @@ use crate::content::{Content, Outcome};
 /// Highest heat (the campaign gauge goes from 0 to this value).
 pub const HEAT_MAX: u8 = 100;
 
+/// Highest link level with a companion (the `link` objective asks for 1 to this value).
+pub const MAX_LINK_LEVEL: u8 = 3;
+
 /// Largest absolute value of the bonus trust of a contact. Trust is not money, but it is
 /// summed from effects all the same: it saturates here instead of wrapping.
 pub const TRUST_CAP: i32 = 1_000_000;
@@ -412,7 +415,9 @@ impl State {
             Fact::CommandUsed { command } if c.has_command(command.as_str()) => {
                 self.used.insert(command.clone())
             }
-            Fact::LinkChanged { contact, level } if c.contact(contact).is_some() => {
+            Fact::LinkChanged { contact, level }
+                if c.contact(contact).is_some() && (1..=MAX_LINK_LEVEL).contains(level) =>
+            {
                 raise(&mut self.links, contact, *level)
             }
             Fact::Paid { amount, at } => self.payments.insert((*at, *amount)),

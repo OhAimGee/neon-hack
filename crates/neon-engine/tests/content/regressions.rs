@@ -208,3 +208,31 @@ fn ids_that_normalize_to_the_same_text_key_are_refused() {
         "`item.stealth_module.name` is derived from both"
     ));
 }
+
+/// Nine: a link fact outside the levels 1 to 3 does not enter the state, so a state built
+/// through `apply` always passes the save validation.
+#[test]
+fn link_facts_outside_the_levels_are_ignored() {
+    let c = shipped();
+    let mut state = neon_engine::content::new_game(&c).0;
+    let before = state.clone();
+    for level in [0u8, 4, 255] {
+        let changed = state.apply(
+            &c,
+            &Fact::LinkChanged {
+                contact: id("echo7"),
+                level,
+            },
+        );
+        assert!(!changed, "level {level}");
+    }
+    assert_eq!(state, before);
+    assert!(state.validate(&c).is_ok());
+    assert!(state.apply(
+        &c,
+        &Fact::LinkChanged {
+            contact: id("echo7"),
+            level: 3
+        }
+    ));
+}

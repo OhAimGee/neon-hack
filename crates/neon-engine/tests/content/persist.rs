@@ -3,7 +3,7 @@
 use std::sync::OnceLock;
 
 use neon_engine::content::schema::QuestStatus;
-use neon_engine::content::{State, new_game};
+use neon_engine::content::{Fact, State, new_game};
 use neon_engine::save::{self, SaveError, SaveMeta, SaveState};
 use proptest::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -393,4 +393,48 @@ proptest! {
             prop_assert_eq!(state.validate(content()), Ok(()));
         }
     }
+}
+
+#[test]
+fn a_save_that_leaves_a_contact_out_is_refused() {
+    let state = midgame_state();
+    let text = edited(&state, |t| {
+        let contacts = t
+            .get_mut("contacts")
+            .and_then(toml::Value::as_table_mut)
+            .unwrap();
+        let first = contacts.keys().next().unwrap().clone();
+        contacts.remove(&first);
+    });
+    match rejected(&text) {
+        SaveError::Invalid(reason) => assert!(reason.contains("is missing"), "{reason}"),
+        other => panic!("{other:?}"),
+    }
+    let text = edited(&state, |t| {
+        t.remove("contacts");
+    });
+    assert!(read(&text).is_err());
+}
+
+#[test]
+fn the_last_heat_reading_must_match_the_frontier() {
+    let c = content();
+    let mut state = new_game_state();
+    for (at, heat) in [(2, 40), (3, 25)] {
+        state.apply(c, &Fact::HeatChanged { at, heat });
+    }
+    state.refresh(c);
+    assert_eq!(state.heat_now, (3, 25));
+    assert!(read(&write(&state)).is_ok());
+    // A reading the frontier does not end with.
+    let text = edited(&state, |t| set(t, &["heat", "heat"], 30.into()));
+    match rejected(&text) {
+        SaveError::Invalid(reason) => assert!(reason.contains("does not match"), "{reason}"),
+        other => panic!("{other:?}"),
+    }
+    // A frontier removed while a reading remains.
+    let text = edited(&state, |t| {
+        t.remove("heat_peaks");
+    });
+    assert!(read(&text).is_err());
 }

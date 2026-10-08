@@ -209,7 +209,8 @@ pub enum ObjectiveState {
 /// One line of the quest journal.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ObjectiveView {
-    /// Position of the objective in the quest (the `N` of the `quest.<id>.obj.N` text).
+    /// Position of the objective in the quest, counted from zero. Its text is the key
+    /// `quest.<id>.obj.{index + 1}`: the text keys are numbered from one.
     pub index: usize,
     /// Where it stands.
     pub state: ObjectiveState,

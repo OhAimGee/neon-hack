@@ -523,7 +523,7 @@ impl V<'_> {
             ),
             Goal::Link { contact, level } => {
                 self.refer(f, at, ctx, "contact", c.contact(contact).is_some(), contact);
-                if !(1..=3).contains(level) {
+                if !(1..=crate::content::state::MAX_LINK_LEVEL).contains(level) {
                     self.err(f, at, format!("{ctx}: link level must be 1 to 3"));
                 }
             }
