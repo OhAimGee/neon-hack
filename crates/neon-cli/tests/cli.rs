@@ -9,17 +9,34 @@ fn run(args: &[&str]) -> Output {
 }
 
 /// Runs the binary with the given text on its standard input (so, as on a pipe).
-///
-/// A test never touches the real data folder: a demo run without an explicit `--data-dir`
-/// gets `--no-save`.
 fn run_with_input(args: &[&str], input: &str) -> Output {
-    let isolated = args.contains(&"--demo")
-        && !args.contains(&"--data-dir")
-        && !args.contains(&"--no-save")
-        && !args.contains(&"--list-saves");
-    let mut child = Command::new(env!("CARGO_BIN_EXE_neon-hack"))
-        .args(args)
-        .args(isolated.then_some("--no-save"))
+    run_in_env(args, input, &[])
+}
+
+/// Runs the binary with **only** the environment variables given, so that the test does not
+/// depend on the machine's locale, `NO_COLOR` or settings.
+///
+/// A test never touches the real data folder: without an explicit `--data-dir` (or
+/// `NEON_HACK_DATA_DIR`), the run gets a folder of its own, and a demo run is also given
+/// `--no-save`.
+fn run_in_env(args: &[&str], input: &str, vars: &[(&str, &str)]) -> Output {
+    let scratch = tempfile::tempdir().expect("a temporary folder");
+    let mut command = Command::new(env!("CARGO_BIN_EXE_neon-hack"));
+    command.env_clear().envs(vars.iter().copied());
+    #[cfg(windows)]
+    if let Some(root) = std::env::var_os("SystemRoot") {
+        command.env("SystemRoot", root);
+    }
+    command.args(args);
+    let has_folder =
+        args.contains(&"--data-dir") || vars.iter().any(|(name, _)| *name == "NEON_HACK_DATA_DIR");
+    if !has_folder {
+        command.arg("--data-dir").arg(scratch.path());
+        if args.contains(&"--demo") && !args.contains(&"--list-saves") {
+            command.arg("--no-save");
+        }
+    }
+    let mut child = command
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -437,4 +454,155 @@ fn save_texts_follow_the_language_and_stay_ascii_with_ascii() {
         "{}",
         stdout(&resumed)
     );
+}
+
+// ---- Settings ------------------------------------------------------------------------------
+
+fn settings_in(dir: &std::path::Path, content: &str) {
+    std::fs::create_dir_all(dir).unwrap();
+    std::fs::write(dir.join("settings.toml"), content).unwrap();
+}
+
+fn dir_arg(dir: &tempfile::TempDir) -> &str {
+    dir.path().to_str().expect("a UTF-8 temporary path")
+}
+
+#[test]
+fn options_are_grouped_in_the_three_families() {
+    let text = stdout(&run(&["--help"]));
+    for heading in ["Presentation:", "Game:", "Development:"] {
+        assert!(text.contains(heading), "{heading} is missing:\n{text}");
+    }
+}
+
+#[test]
+fn print_settings_shows_each_value_and_where_it_comes_from() {
+    let dir = tempfile::tempdir().unwrap();
+    let args = ["--print-settings", "--data-dir", dir_arg(&dir)];
+    let nothing = stdout(&run_in_env(&args, "", &[]));
+    assert!(nothing.contains("lang = \"en\"  # default"), "{nothing}");
+    assert!(
+        nothing.contains("verbosity = \"normal\"  # default"),
+        "{nothing}"
+    );
+    assert!(nothing.contains("ascii = false  # default"), "{nothing}");
+    assert!(
+        nothing.contains("screen_reader = false  # default"),
+        "{nothing}"
+    );
+    assert!(
+        nothing.contains("# command line"),
+        "the data folder: {nothing}"
+    );
+    assert!(nothing.contains("settings.toml\"  # missing"), "{nothing}");
+
+    let french = stdout(&run_in_env(&args, "", &[("LANG", "fr_FR.UTF-8")]));
+    assert!(french.contains("lang = \"fr\"  # locale"), "{french}");
+}
+
+#[test]
+fn the_most_specific_source_wins_for_each_setting() {
+    let dir = tempfile::tempdir().unwrap();
+    settings_in(dir.path(), "lang = \"en\"\nverbosity = \"full\"\n");
+    let shown = |extra: &[&str], vars: &[(&str, &str)]| {
+        let mut args = vec!["--print-settings", "--data-dir", dir_arg(&dir)];
+        args.extend_from_slice(extra);
+        stdout(&run_in_env(&args, "", vars))
+    };
+    let vars = [("NEON_HACK_LANG", "fr"), ("LANG", "en_US.UTF-8")];
+    assert!(shown(&[], &vars).contains("lang = \"fr\"  # NEON_HACK_LANG"));
+    assert!(shown(&["--lang", "en"], &vars).contains("lang = \"en\"  # command line"));
+    assert!(shown(&[], &[("LANG", "fr")]).contains("lang = \"en\"  # settings.toml"));
+    let verbosity = shown(&["--verbosity", "brief"], &[]);
+    assert!(
+        verbosity.contains("verbosity = \"brief\"  # command line"),
+        "{verbosity}"
+    );
+    assert!(shown(&[], &[]).contains("verbosity = \"full\"  # settings.toml"));
+}
+
+#[test]
+fn the_settings_file_shapes_the_game_and_the_command_line_overrides_it() {
+    let dir = tempfile::tempdir().unwrap();
+    settings_in(dir.path(), "lang = \"fr\"\nverbosity = \"brief\"\n");
+    let script = format!("{PROLOGUE}scan\nquit\no\n");
+    let play = |extra: &[&str]| {
+        let mut args = vec![
+            "--demo",
+            "--no-save",
+            "--data-dir",
+            dir_arg(&dir),
+            "--seed",
+            "3",
+        ];
+        args.extend_from_slice(extra);
+        stdout(&run_in_env(&args, &script, &[]))
+    };
+    let from_file = play(&[]);
+    assert!(
+        from_file.contains("[Gain]"),
+        "French from the file:\n{from_file}"
+    );
+    assert!(
+        !from_file.contains("Neo-Tokyo"),
+        "brief hides the atmosphere:\n{from_file}"
+    );
+    let overridden = play(&["--lang", "en", "--verbosity", "full"]);
+    assert!(overridden.contains("[Reward]"), "{overridden}");
+    assert!(overridden.contains("Neo-Tokyo"), "{overridden}");
+}
+
+#[test]
+fn a_damaged_settings_file_is_reported_used_as_defaults_and_never_rewritten() {
+    let dir = tempfile::tempdir().unwrap();
+    settings_in(dir.path(), "lang = \"klingon\"\n");
+    let output = run_in_env(
+        &["--demo", "--no-save", "--data-dir", dir_arg(&dir)],
+        &format!("{PROLOGUE}quit\ny\n"),
+        &[],
+    );
+    assert!(output.status.success(), "{}", stderr(&output));
+    let text = stdout(&output);
+    assert!(text.contains("settings.toml could not be used"), "{text}");
+    assert!(text.contains("Your handle"), "the defaults apply:\n{text}");
+    assert_eq!(
+        std::fs::read_to_string(dir.path().join("settings.toml")).unwrap(),
+        "lang = \"klingon\"\n"
+    );
+}
+
+#[test]
+fn the_data_folder_can_come_from_the_environment() {
+    let dir = tempfile::tempdir().unwrap();
+    let vars = [("NEON_HACK_DATA_DIR", dir_arg(&dir))];
+    run_in_env(
+        &["--demo", "--seed", "7"],
+        &format!("{PROLOGUE}scan\nquit\ny\n"),
+        &vars,
+    );
+    assert!(dir.path().join("saves/auto.toml").exists());
+    let shown = stdout(&run_in_env(&["--print-settings"], "", &vars));
+    assert!(shown.contains("# NEON_HACK_DATA_DIR"), "{shown}");
+}
+
+#[test]
+fn a_locale_with_another_charset_gives_ascii_output_by_itself() {
+    let script = "\nZoë\no\nscan\nquit\no\n";
+    let latin1 = run_in_env(
+        &["--demo", "--seed", "1"],
+        script,
+        &[("LANG", "fr_FR.ISO-8859-1")],
+    );
+    let text = stdout(&latin1);
+    assert!(text.is_ascii(), "{text}");
+    assert!(
+        text.contains("[Gain]"),
+        "the locale also chose French:\n{text}"
+    );
+    let utf8 = stdout(&run_in_env(
+        &["--demo", "--seed", "1"],
+        script,
+        &[("LANG", "fr_FR.UTF-8")],
+    ));
+    assert!(!utf8.is_ascii(), "UTF-8 keeps the accents:\n{utf8}");
 }

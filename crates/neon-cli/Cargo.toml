@@ -22,6 +22,8 @@ tui = ["dep:ratatui", "dep:unicode-width"]
 neon-engine = { workspace = true }
 clap = { workspace = true }
 directories = { workspace = true }
+serde = { workspace = true }
+toml = { workspace = true }
 thiserror = { workspace = true }
 ratatui = { workspace = true, optional = true }
 unicode-width = { workspace = true, optional = true }
