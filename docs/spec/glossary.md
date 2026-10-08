@@ -68,7 +68,7 @@ Autres choix du glossaire : *run* en anglais, **intrusion** en français (« run
 
 ## 6. Le tutoiement et le vouvoiement (D-09), tel que ce lot le laisse
 
-Les textes de l'interface déjà écrits (R1) s'adressent au joueur au **vous** (« Reprise de votre partie sauvegardée »), alors que le dossier TUI (VOC-4) prévoit le **tu** pour les messages d'erreur et que la bible fixe le tutoiement dans l'underground et le vouvoiement pour AURA, le Courtier et Voss. Proposition (S-2 de `DECISIONS.md` § 5, liée à D-09) : **l'interface est neutre** (formes impersonnelles ou infinitif : « Partie sauvegardée », « Commande inconnue : bogus. Tape `help`. » seulement si le tu s'impose) ; **chaque personnage garde sa voix**. Aucun texte n'est réécrit tant que D-09 n'est pas tranchée ; le jeu jouet de R1 sera remplacé de toute façon en R2.
+Les textes de l'interface déjà écrits (R1) s'adressent au joueur au **vous** (« Reprise de votre partie sauvegardée »), alors que le dossier TUI (VOC-4) prévoit le **tu** pour les messages d'erreur et que la bible fixe le tutoiement dans l'underground et le vouvoiement pour AURA, le Courtier et Voss. Proposition (S-2 de `DECISIONS.md` § 5, liée à D-09) : **l'interface est neutre** (formes impersonnelles ou infinitif : « Partie sauvegardée », « Commande inconnue : bogus. Voir `help`. ») ; **chaque personnage garde sa voix**. Aucun texte n'est réécrit tant que D-09 n'est pas tranchée ; le jeu jouet de R1 sera remplacé de toute façon en R2.
 
 ## 7. Limites
 

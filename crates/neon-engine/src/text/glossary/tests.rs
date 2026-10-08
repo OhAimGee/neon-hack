@@ -197,3 +197,55 @@ fn variants_of_a_term_do_not_count_as_unknown_terms() {
     );
     assert_eq!(glossary.check(&catalogs), []);
 }
+
+#[test]
+fn a_variant_of_a_term_is_searched_for_forbidden_words() {
+    let glossary = glossary(HEAT);
+    let catalogs = both(
+        "[term]\ntrace = \"Trace\"\n\"trace@sr\" = \"Heat\"\n",
+        "[term]\ntrace = \"Trace\"\n",
+    );
+    assert_eq!(
+        glossary.check(&catalogs),
+        [Issue::Forbidden {
+            lang: Lang::En,
+            key: "term.trace@sr".to_owned(),
+            concept: "trace".to_owned(),
+            variant: "heat".to_owned(),
+        }]
+    );
+}
+
+#[test]
+fn a_term_must_be_a_plain_word() {
+    let glossary = glossary(HEAT);
+    for (bad, key) in [
+        ("{name}", "term.trace"),
+        ("{n|trace|traces}", "term.trace"),
+        ("  ", "term.trace"),
+    ] {
+        let catalogs = both(
+            &format!("[term]\ntrace = \"{bad}\"\n"),
+            "[term]\ntrace = \"Trace\"\n",
+        );
+        assert_eq!(
+            glossary.check(&catalogs),
+            [Issue::TermNotPlain {
+                lang: Lang::En,
+                key: key.to_owned(),
+            }],
+            "{bad:?}"
+        );
+    }
+    let variant = both(
+        "[term]\ntrace = \"Trace\"\n\"trace@sr\" = \"{n}\"\n",
+        "[term]\ntrace = \"Trace\"\n",
+    );
+    assert_eq!(
+        glossary.check(&variant),
+        [Issue::TermNotPlain {
+            lang: Lang::En,
+            key: "term.trace@sr".to_owned(),
+        }]
+    );
+}

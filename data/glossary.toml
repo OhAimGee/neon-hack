@@ -206,6 +206,7 @@ note = "Le cyberdeck ET le jeu de programmes équipés pour une intrusion : on d
 
 [[concept]]
 id = "credit"
+strict = true
 note = "Monnaie, symbole ¢. Un seul sens, pas de yens."
 [concept.forbid]
 fr = ["yen", "yens"]
@@ -276,6 +277,7 @@ note = "Un des neuf personnages joignables."
 
 [[concept]]
 id = "handle"
+strict = true
 note = "Le pseudonyme du joueur."
 [concept.forbid]
 fr = ["pseudo", "pseudonyme"]
@@ -310,6 +312,7 @@ note = "Un choix de l'histoire qui change la fin."
 
 [[concept]]
 id = "net"
+strict = true
 note = "Le réseau mondial. Jamais la toile, le web ni Internet."
 [concept.forbid]
 fr = ["la toile", "le web", "internet"]

@@ -141,6 +141,15 @@ pub enum Issue {
         /// The concept whose term it is.
         owner: String,
     },
+    /// A term (or one of its variants) that is not a plain word: it has a placeholder or a
+    /// plural, which [`Arg::Term`](super::Arg::Term) cannot fill, or it is empty.
+    #[error("[{lang:?}] `{key}` must be a plain word, without placeholders")]
+    TermNotPlain {
+        /// The language.
+        lang: Lang,
+        /// The key.
+        key: String,
+    },
     /// A text uses a forbidden variant.
     #[error("[{lang:?}] `{key}` says `{variant}`: use the term `{concept}`")]
     Forbidden {
@@ -240,23 +249,32 @@ impl Glossary {
         let mut by_word: BTreeMap<String, Vec<String>> = BTreeMap::new();
         for concept in &self.concepts {
             match term_text(catalog, &concept.id) {
-                Some(word) => by_word
+                Some(word) if !word.is_empty() => by_word
                     .entry(word.to_lowercase())
                     .or_default()
                     .push(concept.id.clone()),
+                // Present but not a word: reported below with the other malformed terms.
+                Some(_) => {}
                 None => issues.push(Issue::MissingTerm {
                     lang,
                     id: concept.id.clone(),
                 }),
             }
         }
-        for (key, _) in catalog.iter() {
+        for (key, template) in catalog.iter() {
             let Some(rest) = key.strip_prefix(TERM_PREFIX) else {
                 continue;
             };
             let id = rest.split_once('@').map_or(rest, |(base, _)| base);
             if !known.contains(id) {
                 issues.push(Issue::UnknownTerm {
+                    lang,
+                    key: key.to_owned(),
+                });
+            }
+            if !template.placeholders().is_empty() || template.literals().concat().trim().is_empty()
+            {
+                issues.push(Issue::TermNotPlain {
                     lang,
                     key: key.to_owned(),
                 });
@@ -284,7 +302,10 @@ impl Glossary {
     fn check_variants(&self, catalog: &Catalog, issues: &mut Vec<Issue>) {
         let lang = catalog.lang();
         for (key, template) in catalog.iter() {
-            if key.starts_with(TERM_PREFIX) || self.is_exempt(key) {
+            // The canonical word itself is what the variants are measured against; its
+            // `@sr` and `@ascii` variants are texts like any other and are searched.
+            let canonical = key.starts_with(TERM_PREFIX) && !key.contains('@');
+            if canonical || self.is_exempt(key) {
                 continue;
             }
             let narrative = self.is_narrative(key);

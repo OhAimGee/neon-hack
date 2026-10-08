@@ -5,13 +5,13 @@
 ## 1. Règles
 
 1. **Les noms de commandes ne se traduisent pas** (VOC-5) : `hack`, `shop`, `quests` sont les mêmes en français et en anglais ; seule l'aide d'une ligne est traduite. Ils sont en minuscules ASCII (vérifié par `Registry::issues`), stables d'une version à l'autre (un nom publié ne change pas : on ajoute un alias).
-2. **Un contexte, une liste.** Trois contextes : *hub* (la planque et le monde), *intrusion* (un run en cours), *partout*. Une commande d'un autre contexte répond par une raison (« Seulement pendant une intrusion. »), n'est jamais listée par `help` ni complétée : le joueur n'apprend pas ce qui est encore caché, mais n'est jamais laissé devant un « commande inconnue » quand le nom existe.
-3. **Une commande qui n'est pas encore ouverte** se comporte pareil (« Pas encore : parle à R4Z0R. ») sans révéler son effet. L'ouverture est une **donnée** (`data/world/unlocks.toml`, § 6), exprimée dans le langage de conditions des missions : le Rust ne connaît aucune règle d'ouverture.
+2. **Un contexte, une liste.** Trois contextes : *hub* (la planque et le monde), *intrusion* (un run en cours), *partout*. Une commande d'un autre contexte répond par une raison (« Seulement pendant une intrusion. »), n'est jamais listée par `help` ni complétée : le joueur n'apprend pas ce qui est encore caché, mais n'est jamais laissé devant le message « commande inconnue » quand le nom existe.
+3. **Une commande qui n'est pas encore ouverte** se comporte pareil (« Pas encore : parler à R4Z0R. ») sans révéler son effet. L'ouverture est une **donnée** (`data/world/unlocks.toml`, § 6), exprimée dans le langage de conditions des missions : le Rust ne connaît aucune règle d'ouverture.
 4. **Numéro ou nom, jamais une chaîne à recopier** (G10). Chaque argument désigne une chose d'une liste ; on la désigne par son **numéro** dans la liste affichée ou par son **nom** (§ 3). Aucun mot secret, aucun texte à recopier.
 5. **Les numéros ne bougent pas.** Une ligne d'une liste ne change jamais de numéro tant que la liste existe : une chose épuisée, indisponible ou refusée **reste listée** avec sa raison (« 3. Quantum : niveau 4 requis »), comme la vitrine de R4Z0R du jeu d'origine. Ainsi `buy 3` fait toujours ce que l'écran annonçait.
 6. **L'écran n'annonce jamais ce que l'action refuserait.** Une ligne « disponible » est exécutable ; sinon la raison est écrite en mots (`Choice::unavailable` existe déjà).
 7. **Une seule action par ligne**, jamais de chaîne `a; b`. Pas de commande qui attend : le temps ne passe qu'aux commandes (P7 de l'audit).
-8. **Une erreur dit ce qui s'est passé, puis ce qu'on peut faire** (VOC-4) : « Nœud inconnu : 9. Tape `map` pour les voir. » Les clés sont `error.*` (§ 4).
+8. **Une erreur dit ce qui s'est passé, puis ce qu'on peut faire** (VOC-4) : « Nœud inconnu : 9. Voir `map`. » Les clés sont `error.*` (§ 4). Les textes d'interface sont neutres (S-2 : ni tu ni vous).
 9. **Toute commande a une forme sans argument qui liste ou résume** : `quests`, `net`, `deck`, `contacts`, `messages`, `archives`, `shop`, `laylow`. C'est l'exigence de lecteur d'écran « une action = une réponse complète ».
 10. **Les raccourcis clavier de la TUI ont une commande équivalente** (CLA-4) : `F2` ↔ `panel`, `Ctrl+P` ↔ `plain`.
 
@@ -25,12 +25,23 @@
 |---|---|---|---|---|---|
 | `help` | `h`, `?` | `[commande]` | liste exactement les commandes ouvertes **dans le contexte** ; avec un nom, son usage et sa ligne d'aide | départ | `help` |
 | `status` | `st` | — | fiche : handle, niveau, crédits, Notoriété et bande, réputation par faction, difficulté, indices restants ; **en intrusion** : Trace, cycles, programmes et charges, prévision | départ | `status` |
-| `save` | — | `[emplacement 1-9]` | sans argument, point de contrôle manuel dans l'emplacement libre le plus ancien ; avec, dans cet emplacement | départ (hub seulement : jamais en pleine intrusion, voir § 5) | `save` |
 | `options` | — | — | écran des réglages de présentation (langue, verbosité, ASCII, lecteur d'écran, vitesse du texte, couleurs, difficulté hors Hardcore) | départ | (nouveau) |
 | `verbosity` | — | `[brief\|normal\|full]` | affiche ou règle la verbosité ; jamais en dessous de `normal` en mode lecteur d'écran (VRB-3) | départ | (nouveau) |
 | `quit` | `exit` | — | quitte ; sauvegarde à l'invite de commande (R-9), confirmation seulement en intrusion | départ | `quit`, `exit` |
 
-`load` et `plain`/`panel` sont des commandes de **frontend** (charger une partie remplace le jeu en cours, basculer l'affichage ne touche pas au moteur) : le plain les traite avant le moteur, la TUI les offre en menus et raccourcis. Elles figurent dans l'aide, avec les autres, par la même table.
+### 2.1 bis Commandes de frontend
+
+Ces commandes agissent sur l'affichage ou remplacent la partie, pas sur l'état du jeu : le **frontend** les traite avant le moteur (le plain par son interpréteur de lignes, la TUI par ses menus et raccourcis). Elles sont déclarées dans la **même table** (`Context::Anywhere`, drapeau `frontend`) pour apparaître dans `help`, être complétées et vérifiées par `Registry::issues` comme les autres.
+
+| Commande | Alias | Arguments | Effet | Disponible | Raccourci TUI |
+|---|---|---|---|---|---|
+| `load` | — | `[emplacement]` | sans argument, liste les sauvegardes (autosave, points de contrôle, emplacements) ; avec un argument, charge celle-ci après confirmation ; refusé en intrusion (la partie en cours serait perdue : message « Terminer d'abord l'intrusion ») | plain et TUI, hors intrusion | — |
+| `panel` | — | — | ouvre ou ferme le panneau latéral (tiroir au palier compact) | TUI seulement | `F2` |
+| `plain` | — | — | bascule vers l'affichage plain en gardant la partie (voir dossier TUI § 4.4) | TUI seulement | `Ctrl+P` |
+| `export` | — | `[fichier]` | écrit le transcript de la session (EXP-3) | plain et TUI | — |
+
+Dans le plain, `panel` et `plain` répondent « Seulement en plein écran. » (même mécanisme que le contexte, § 1 règle 2).
+
 
 ### 2.2 Hub
 
@@ -54,6 +65,7 @@
 | `upgrade` | — | `<programme>` | améliore un programme du catalogue (niveau 1 → 3) ; prix affiché dans `deck` | idem `shop` | `upgrade_level` (jamais utilisé en C) |
 | `laylow` | — | `[service]` | sans argument, les services qui baissent la Notoriété (nom conservé) ; avec un argument, achète le service | quand la Notoriété dépasse « Discret » pour la première fois | `laylow` |
 | `hint` | — | — | un indice d'ECHO-7 sur l'objectif actif ; décompte selon la difficulté ; jamais de solution complète | départ (nombre selon la difficulté) | (nouveau) |
+| `save` | — | `[emplacement 1-9]` | sans argument, point de contrôle manuel dans l'emplacement libre le plus ancien ; avec, dans cet emplacement ; jamais en pleine intrusion (§ 5) | départ | `save` |
 
 ### 2.3 Intrusion
 
@@ -93,11 +105,11 @@ La complétion (`TAB`) propose les choix des étapes 2 et 3 qui sont **ouverts**
 
 | Clé | Quand | Forme |
 |---|---|---|
-| `error.unknown_command` | le nom n'existe dans aucun contexte | « Commande inconnue : bogus. Tape `help`. » |
+| `error.unknown_command` | le nom n'existe dans aucun contexte | « Commande inconnue : bogus. Voir `help`. » |
 | `error.locked` | le nom existe mais n'est pas ouvert (raison fournie par l'ouverture) | « Pas encore : {raison}. » |
 | `error.wrong_context` | commande d'un autre contexte | « Seulement pendant une intrusion. » / « Pas pendant une intrusion. » |
 | `error.arg.missing` | argument obligatoire absent | « `breach` demande un nœud et un programme. Exemple : `breach 3 brute`. » (l'usage est une clé `help.<commande>.usage`) |
-| `error.arg.unknown` | numéro ou nom hors liste | « Nœud inconnu : 9. Tape `map` pour les voir. » |
+| `error.arg.unknown` | numéro ou nom hors liste | « Nœud inconnu : 9. Voir `map`. » |
 | `error.arg.ambiguous` | préfixe qui convient à plusieurs choses | « « s » convient à plusieurs programmes : 2. Spoof, 3. Stealth. » |
 | `error.arg.unavailable` | la chose existe mais est refusée | la raison propre à l'action (cycles insuffisants, nœud non adjacent, crédits manquants…) |
 
@@ -117,7 +129,7 @@ Les erreurs sont des événements de rôle `Error`, donc toujours `Essential` (V
 [[unlock]]
 command = "shop"
 when = { contact_state = { id = "r4z0r", is = "available" } }
-reason = "unlock.shop"          # « Pas encore : trouve R4Z0R. »
+reason = "unlock.shop"          # « Pas encore : trouver R4Z0R. »
 ```
 
 Ouverture initiale proposée (la fin de chaque ligne est la quête qui l'ouvre ; tout peut se régler dans la donnée sans toucher au code) :
