@@ -209,6 +209,24 @@ pub struct CampaignState {
 }
 
 impl CampaignState {
+    /// The handle of the player (empty until it is asked).
+    #[must_use]
+    pub fn handle(&self) -> &str {
+        &self.handle
+    }
+
+    /// The difficulty preset the campaign was started with.
+    #[must_use]
+    pub fn difficulty(&self) -> Difficulty {
+        self.difficulty
+    }
+
+    /// The mission state of the content language: statuses, flags, ledger.
+    #[must_use]
+    pub fn missions(&self) -> &State {
+        &self.missions
+    }
+
     /// The state of a new campaign, waiting for the handle.
     pub(super) fn new(c: &Content, difficulty: Difficulty, seed: u64) -> Self {
         let (missions, _) = crate::content::new_game(c);

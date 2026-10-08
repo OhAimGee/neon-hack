@@ -135,6 +135,28 @@ fn no_draft_text_remains() {
     }
 }
 
+/// The narrative prefixes of the glossary are the families of derived keys that carry story, so
+/// that narration is exempt from the non-strict forbidden words as intended, and nothing else is.
+#[test]
+fn the_narrative_prefixes_of_the_glossary_are_the_derived_key_families_of_the_story() {
+    let c = shipped();
+    let derived: std::collections::BTreeSet<String> = required_keys(&c)
+        .iter()
+        .filter_map(|key| key.split_once('.').map(|(head, _)| format!("{head}.")))
+        .collect();
+    // These derived families are interface texts (help of a command, a service, why a command
+    // is closed): they stay under the glossary's rules.
+    let interface = ["command.", "service.", "unlock."];
+    let story: std::collections::BTreeSet<String> = derived
+        .into_iter()
+        .filter(|prefix| !interface.contains(&prefix.as_str()))
+        .collect();
+    let glossary = neon_engine::text::glossary::Glossary::embedded().unwrap();
+    let declared: std::collections::BTreeSet<String> =
+        glossary.narrative_prefixes().iter().cloned().collect();
+    assert_eq!(declared, story);
+}
+
 #[test]
 fn shipped_content_is_valid() {
     let c = shipped();
