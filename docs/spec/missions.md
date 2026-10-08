@@ -57,7 +57,7 @@ Seule l'exécution les fait apparaître ; trois sont de vraies impasses. Le spik
 ## 5. Ce qui reste à décider (avant R2)
 
 - **S-6 (propriétaire)** : valider le langage de missions tel quel (14 objectifs, 9 conditions, 9 effets), la règle R-OPEN et les neuf corrections du § 4.
-- **S-7 (propriétaire)** : « Neon Angel redevient libre si le joueur reprend Radio Veille avant M13 » (bible 3.4) n'est pas exprimable : il faudrait un réacteur sur un fait hors quête (`on_fact`). Option A : ajouter ce bloc (une extension). Option B : retirer la règle (Angel reste `silenced` ou `free` selon un seul choix de M08). **Recommandation : B**, qui garde le langage fermé.
+- **S-7 (tranchée par le propriétaire le 8 octobre 2026 : option B, la règle est retirée)** : « Neon Angel redevient libre si le joueur reprend Radio Veille avant M13 » (bible 3.4) n'est pas exprimable : il faudrait un réacteur sur un fait hors quête (`on_fact`). Option A : ajouter ce bloc (une extension). Option B : retirer la règle (Angel reste `silenced` ou `free` selon un seul choix de M08). **Recommandation : B**, qui garde le langage fermé.
 
 ## 6. Ce que R2 fait de ce spike
 

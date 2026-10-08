@@ -12,7 +12,7 @@ RPG textuel cyberpunk pour le terminal. Vous êtes un hacker novice à Neo-Tokyo
 
 | Étape | État |
 |---|---|
-| Cadrage et dossiers de conception (systèmes de jeu, narration, TUI et accessibilité, architecture, CI) | fait : [`docs/design/`](docs/design/README.md) ; les spécifications détaillées (phase P1) et plusieurs décisions de design restent à valider |
+| Cadrage et dossiers de conception (systèmes de jeu, narration, TUI et accessibilité, architecture, CI) | fait : [`docs/design/`](docs/design/README.md) ; les spécifications détaillées sont dans [`docs/spec/`](docs/spec/README.md) et les décisions de design sont validées |
 | Feuille de route de la v1.0 | écrite : [`docs/ROADMAP.md`](docs/ROADMAP.md) |
 | Ancien code C et fichiers parasites | supprimés (voir [Ancienne version](#ancienne-version-en-c)) |
 | Phase R0 : squelette Cargo, CI sur trois systèmes | fait |
@@ -22,7 +22,8 @@ RPG textuel cyberpunk pour le terminal. Vous êtes un hacker novice à Neo-Tokyo
 | Phase R1.4a et R1.4b : registre des commandes, réglages (`settings.toml`, variables d'environnement, trois familles d'options) | fait |
 | Phase R1.4c : couleurs, `NO_COLOR`, palettes (`default`, `high-contrast`, `cvd`, `mono`) | fait |
 | Phase R1.5 : jeu jouet complet de bout en bout (objectif, victoire, défaite, épilogue) | fait |
-| Phase R1 (socle) | **terminée** ; prochaine étape : les spécifications restantes (P1) puis le contenu et la campagne (R2) |
+| Phase R1 (socle) | **terminée** |
+| Phase P1 : spécifications (glossaire, commandes, langage de missions, écran d'intrusion, solveur, banc d'équilibrage) et décisions de design validées | **terminée** ; prochaine étape : le contenu et la campagne (R2) |
 | Moteur de jeu, TUI, campagne | à venir |
 
 ## Jouer en local

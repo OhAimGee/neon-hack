@@ -12,7 +12,7 @@ A cyberpunk text RPG for the terminal. You are a novice hacker in Neo-Tokyo, in 
 
 | Step | State |
 |---|---|
-| Scoping and design documents (game systems, narrative, TUI and accessibility, architecture, CI) | done: [`docs/design/`](docs/design/README.md); the detailed specifications (phase P1) and several design decisions are still to be validated |
+| Scoping and design documents (game systems, narrative, TUI and accessibility, architecture, CI) | done: [`docs/design/`](docs/design/README.md); the detailed specifications are in [`docs/spec/`](docs/spec/README.md) and the design decisions are validated |
 | v1.0 roadmap | written: [`docs/ROADMAP.md`](docs/ROADMAP.md) |
 | Old C code and stray files | removed (see [Previous version](#previous-version-in-c)) |
 | Phase R0: Cargo skeleton, CI on three systems | done |
@@ -22,7 +22,8 @@ A cyberpunk text RPG for the terminal. You are a novice hacker in Neo-Tokyo, in 
 | Phases R1.4a and R1.4b: command registry, settings (`settings.toml`, environment variables, three families of options) | done |
 | Phase R1.4c: colours, `NO_COLOR`, palettes (`default`, `high-contrast`, `cvd`, `mono`) | done |
 | Phase R1.5: complete toy game, end to end (goal, win, loss, epilogue) | done |
-| Phase R1 (foundation) | **finished**; next step: the remaining specifications (P1), then content and campaign (R2) |
+| Phase R1 (foundation) | **finished** |
+| Phase P1: specifications (glossary, commands, mission language, run screen, solver, balancing harness) and validated design decisions | **finished**; next step: content and campaign (R2) |
 | Game engine, TUI, campaign | to come |
 
 ## Play locally
