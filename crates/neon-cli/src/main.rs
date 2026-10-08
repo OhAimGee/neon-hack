@@ -6,6 +6,7 @@
 
 mod config;
 mod input;
+mod palette;
 mod persist;
 mod plain;
 mod render;
@@ -29,6 +30,7 @@ use neon_engine::{Game, Step};
 use crate::config::{
     CliPresentation, Env, FileState, LangChoice, Presentation, Source, VerbosityChoice,
 };
+use crate::palette::{ColorChoice, Palette, PaletteChoice};
 use crate::persist::Persistence;
 use crate::render::Renderer;
 use crate::store::{Store, Target};
@@ -59,6 +61,20 @@ struct Cli {
     /// Screen-reader mode: the plain interface with wording that needs no symbols read aloud.
     #[arg(long, help_heading = "Presentation")]
     screen_reader: bool,
+
+    /// Colour: `auto` (a terminal that can show it), `always`, or `never`. `NO_COLOR` turns it
+    /// off unless this says otherwise; a screen reader never gets any.
+    #[arg(long, value_enum, value_name = "WHEN", help_heading = "Presentation")]
+    color: Option<ColorChoice>,
+
+    /// Same as `--color never`.
+    #[arg(long, conflicts_with = "color", help_heading = "Presentation")]
+    no_color: bool,
+
+    /// Colours of the full-screen interface [default: `NEON_HACK_PALETTE`, `settings.toml`,
+    /// then default]. `mono` is used by itself when there is no colour.
+    #[arg(long, value_enum, help_heading = "Presentation")]
+    palette: Option<PaletteChoice>,
 
     /// Use the plain line-by-line interface even on a terminal.
     #[arg(long, help_heading = "Presentation")]
@@ -117,6 +133,8 @@ impl Cli {
             verbosity: self.verbosity,
             ascii: self.ascii,
             screen_reader: self.screen_reader,
+            color: self.no_color.then_some(ColorChoice::Never).or(self.color),
+            palette: self.palette,
         }
     }
 }
@@ -188,6 +206,12 @@ fn print_settings(cli: &Cli, env: &Env) -> io::Result<()> {
             shown.verbosity.source,
         ),
         line("ascii", shown.ascii.value.to_string(), shown.ascii.source),
+        format!("color = {}  # {}", shown.color.0, shown.color.1.describe()),
+        line(
+            "palette",
+            format!("{:?}", shown.palette.value.name()),
+            shown.palette.source,
+        ),
         line(
             "screen_reader",
             shown.screen_reader.value.to_string(),
@@ -227,6 +251,10 @@ fn run_demo(cli: &Cli, env: &Env) -> io::Result<()> {
             ascii: shown.ascii.value,
         },
         verbosity: shown.verbosity.value.into(),
+        colors: shown
+            .color
+            .0
+            .then(|| Palette::new(shown.palette.value, shown.truecolor)),
     };
     let store = Store::new(setup.data_dir.join("saves"));
     if cli.list_saves {

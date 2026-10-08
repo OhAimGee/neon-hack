@@ -8,6 +8,10 @@ use neon_engine::event::{Event, Gauge, Role, Severity, Table};
 use neon_engine::prompt::{Choice, Prompt};
 use neon_engine::text::{Catalog, RenderMode, Text, render, to_ascii};
 
+#[cfg(feature = "tui")]
+use crate::palette::PaletteChoice;
+use crate::palette::{Palette, SGR_END, sgr_start};
+
 /// How much of the atmosphere the player wants to read.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
 pub(crate) enum Verbosity {
@@ -71,9 +75,31 @@ pub(crate) struct Renderer<'a> {
     pub(crate) catalog: &'a Catalog,
     pub(crate) mode: RenderMode,
     pub(crate) verbosity: Verbosity,
+    /// The colours of the lines, or `None` for no colour at all: the plain frontend then
+    /// writes no escape sequence, and the full-screen one uses attributes only.
+    pub(crate) colors: Option<Palette>,
 }
 
 impl Renderer<'_> {
+    /// The palette to draw with: the chosen one, or `mono` when there is no colour.
+    #[cfg(feature = "tui")]
+    pub(crate) fn palette(&self) -> Palette {
+        self.colors
+            .unwrap_or_else(|| Palette::new(PaletteChoice::Mono, false))
+    }
+
+    /// A line as the plain frontend writes it: its text, in the colour of its kind when
+    /// there is colour. Removing the escape sequences gives back exactly the text.
+    pub(crate) fn paint(&self, line: &Line) -> String {
+        let Some(palette) = self.colors else {
+            return line.text.clone();
+        };
+        match sgr_start(palette.style(line.kind)) {
+            Some(start) => format!("{start}{}{SGR_END}", line.text),
+            None => line.text.clone(),
+        }
+    }
+
     pub(crate) fn text(&self, text: &Text) -> String {
         render(text, self.catalog, self.mode)
     }

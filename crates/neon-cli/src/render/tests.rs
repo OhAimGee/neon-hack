@@ -13,6 +13,7 @@ fn renderer(catalog: &Catalog, mode: RenderMode, verbosity: Verbosity) -> Render
         catalog,
         mode,
         verbosity,
+        colors: None,
     }
 }
 

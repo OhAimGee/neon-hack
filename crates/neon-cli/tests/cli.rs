@@ -623,3 +623,151 @@ fn a_locale_with_another_charset_gives_ascii_output_by_itself() {
     ));
     assert!(!utf8.is_ascii(), "UTF-8 keeps the accents:\n{utf8}");
 }
+
+// ---- Colour --------------------------------------------------------------------------------
+
+/// The text with every `ESC [ ... m` sequence removed.
+fn strip_sgr(text: &str) -> String {
+    let mut out = String::new();
+    let mut chars = text.chars();
+    while let Some(c) = chars.next() {
+        if c == '\u{1b}' {
+            for end in chars.by_ref() {
+                if end == 'm' {
+                    break;
+                }
+            }
+        } else {
+            out.push(c);
+        }
+    }
+    out
+}
+
+fn colour_session(extra: &[&str], vars: &[(&str, &str)]) -> String {
+    let mut args = vec!["--demo", "--seed", "3"];
+    args.extend_from_slice(extra);
+    stdout(&run_in_env(
+        &args,
+        "\nNeon\ny\nscan\nscan\nnope\nquit\ny\n",
+        vars,
+    ))
+}
+
+#[test]
+fn a_pipe_gets_no_colour_unless_asked_and_asking_changes_nothing_but_the_escapes() {
+    let plain = colour_session(&[], &[]);
+    assert!(!plain.contains('\u{1b}'), "a pipe has no colour by itself");
+    let forced = colour_session(&["--color", "always"], &[]);
+    assert!(forced.contains("\u{1b}["), "{forced:?}");
+    assert_eq!(strip_sgr(&forced), plain, "the transcript is the same text");
+    // 8 colours and bold: no exact colour value, no background.
+    assert!(
+        !forced.contains("38;") && !forced.contains("48;"),
+        "{forced:?}"
+    );
+}
+
+#[test]
+fn no_color_wins_over_the_settings_file_and_the_command_line_wins_over_no_color() {
+    let dir = tempfile::tempdir().unwrap();
+    settings_in(dir.path(), "color = \"always\"\n");
+    let play = |vars: &[(&str, &str)], extra: &[&str]| {
+        let mut args = vec![
+            "--demo",
+            "--no-save",
+            "--data-dir",
+            dir_arg(&dir),
+            "--seed",
+            "3",
+        ];
+        args.extend_from_slice(extra);
+        stdout(&run_in_env(&args, "\nNeon\ny\nscan\nquit\ny\n", vars))
+    };
+    assert!(
+        play(&[], &[]).contains("\u{1b}["),
+        "the file asks for colour"
+    );
+    assert!(
+        !play(&[("NO_COLOR", "1")], &[]).contains('\u{1b}'),
+        "NO_COLOR beats the file"
+    );
+    assert!(
+        play(&[("NO_COLOR", "")], &[]).contains("\u{1b}["),
+        "an empty NO_COLOR is ignored"
+    );
+    assert!(
+        play(&[("NO_COLOR", "1")], &["--color", "always"]).contains("\u{1b}["),
+        "--color beats NO_COLOR"
+    );
+    assert!(
+        !play(&[], &["--no-color"]).contains('\u{1b}'),
+        "--no-color beats the file"
+    );
+}
+
+#[test]
+fn a_screen_reader_never_gets_an_escape_sequence() {
+    let out = colour_session(&["--screen-reader", "--color", "always"], &[]);
+    assert!(!out.contains('\u{1b}'), "{out:?}");
+}
+
+#[test]
+fn colour_options_are_checked() {
+    assert_eq!(
+        run(&["--demo", "--color", "sometimes"]).status.code(),
+        Some(2)
+    );
+    assert_eq!(run(&["--demo", "--palette", "neon"]).status.code(), Some(2));
+    assert_eq!(
+        run(&["--demo", "--no-color", "--color", "always"])
+            .status
+            .code(),
+        Some(2),
+        "the two cannot be given together"
+    );
+}
+
+#[test]
+fn print_settings_shows_the_colour_decision_and_the_palette() {
+    let shown = |extra: &[&str], vars: &[(&str, &str)]| {
+        let mut args = vec!["--print-settings"];
+        args.extend_from_slice(extra);
+        stdout(&run_in_env(&args, "", vars))
+    };
+    let piped = shown(&[], &[]);
+    assert!(piped.contains("color = false  # detection"), "{piped}");
+    assert!(piped.contains("palette = \"mono\"  # no colour"), "{piped}");
+
+    let forced = shown(
+        &["--color", "always", "--palette", "cvd"],
+        &[("NO_COLOR", "1")],
+    );
+    assert!(forced.contains("color = true  # command line"), "{forced}");
+    assert!(
+        forced.contains("palette = \"cvd\"  # command line"),
+        "{forced}"
+    );
+
+    let silenced = shown(&[], &[("NO_COLOR", "1"), ("NEON_HACK_PALETTE", "cvd")]);
+    assert!(silenced.contains("color = false  # NO_COLOR"), "{silenced}");
+    assert!(
+        silenced.contains("palette = \"mono\"  # no colour"),
+        "{silenced}"
+    );
+
+    let from_env = shown(
+        &["--color", "always"],
+        &[("NEON_HACK_PALETTE", "high-contrast")],
+    );
+    assert!(
+        from_env.contains("palette = \"high-contrast\"  # NEON_HACK_PALETTE"),
+        "{from_env}"
+    );
+
+    let reader = shown(&["--screen-reader", "--color", "always"], &[]);
+    assert!(
+        reader.contains("color = false  # screen reader"),
+        "{reader}"
+    );
+}

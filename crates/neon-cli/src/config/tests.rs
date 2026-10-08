@@ -1,4 +1,5 @@
 use super::*;
+use crate::palette::{ColorChoice, PaletteChoice};
 
 fn env(vars: &[(&str, &str)]) -> Env {
     let mut env = Env::default();
@@ -259,4 +260,120 @@ fn the_data_folder_comes_from_the_command_line_then_the_environment_then_the_sys
         data_dir(None, &Env::default()).is_err(),
         "no folder anywhere is an error that suggests --data-dir"
     );
+}
+
+fn terminal_env(vars: &[(&str, &str)], tty: bool) -> Env {
+    let mut env = Env {
+        stdout_is_terminal: tty,
+        ..Env::default()
+    };
+    for (name, value) in vars {
+        let value = Some((*value).to_owned());
+        match *name {
+            "TERM" => env.term = value,
+            "COLORTERM" => env.colorterm = value,
+            "NEON_HACK_PALETTE" => env.neon_palette = value,
+            "NO_COLOR" => env.no_color = true,
+            other => panic!("unknown variable {other}"),
+        }
+    }
+    env
+}
+
+#[test]
+fn the_terminal_is_read_from_term_and_colorterm() {
+    let terminal = |vars: &[(&str, &str)]| terminal_env(vars, true).terminal();
+    assert!(!terminal(&[]).dumb && !terminal(&[]).truecolor);
+    assert!(terminal(&[("TERM", "dumb")]).dumb);
+    assert!(!terminal(&[("TERM", "xterm-256color")]).dumb);
+    assert!(terminal(&[("COLORTERM", "truecolor")]).truecolor);
+    assert!(terminal(&[("COLORTERM", "24bit")]).truecolor);
+    assert!(!terminal(&[("COLORTERM", "yes")]).truecolor);
+    assert!(terminal_env(&[], true).terminal().is_tty);
+    assert!(!terminal_env(&[], false).terminal().is_tty);
+}
+
+#[test]
+fn colour_and_palette_follow_the_precedence_and_mono_follows_no_colour() {
+    let present = |cli: CliPresentation, env: &Env, file: FileSettings| resolve(cli, env, file);
+    let none = CliPresentation::default();
+    let on_tty = terminal_env(&[], true);
+
+    // Detected colour, default palette.
+    let detected = present(none, &on_tty, FileSettings::default());
+    assert!(detected.color.0);
+    assert_eq!(
+        detected.palette,
+        sourced(PaletteChoice::Default, Source::Default)
+    );
+    // A pipe has none, so the palette is mono.
+    let piped = present(none, &terminal_env(&[], false), FileSettings::default());
+    assert!(!piped.color.0);
+    assert_eq!(piped.palette, sourced(PaletteChoice::Mono, Source::NoColor));
+
+    // NO_COLOR forces mono, even over the file and a chosen palette; --color overrides it.
+    let no_color = terminal_env(&[("NO_COLOR", "1"), ("NEON_HACK_PALETTE", "cvd")], true);
+    let settings = file("color = \"always\"\npalette = \"high-contrast\"");
+    let silenced = present(none, &no_color, settings);
+    assert!(!silenced.color.0);
+    assert_eq!(silenced.palette.value, PaletteChoice::Mono);
+    let forced = CliPresentation {
+        color: Some(ColorChoice::Always),
+        ..none
+    };
+    let colour_again = present(forced, &no_color, settings);
+    assert!(colour_again.color.0);
+    assert_eq!(
+        colour_again.palette,
+        sourced(PaletteChoice::Cvd, Source::EnvPalette)
+    );
+
+    // Palette: command line > NEON_HACK_PALETTE > settings > default; an unknown name falls through.
+    let chosen = CliPresentation {
+        palette: Some(PaletteChoice::Cvd),
+        ..none
+    };
+    let with_env = terminal_env(&[("NEON_HACK_PALETTE", "high-contrast")], true);
+    assert_eq!(
+        present(chosen, &with_env, settings).palette,
+        sourced(PaletteChoice::Cvd, Source::Cli)
+    );
+    assert_eq!(
+        present(none, &with_env, settings).palette,
+        sourced(PaletteChoice::HighContrast, Source::EnvPalette)
+    );
+    let from_file = file("palette = \"cvd\"");
+    assert_eq!(
+        present(none, &on_tty, from_file).palette,
+        sourced(PaletteChoice::Cvd, Source::File)
+    );
+    let bad_env = terminal_env(&[("NEON_HACK_PALETTE", "neon")], true);
+    assert_eq!(
+        present(none, &bad_env, from_file).palette.source,
+        Source::File
+    );
+
+    // A screen reader has no colour whatever else is asked.
+    let reader = CliPresentation {
+        screen_reader: true,
+        color: Some(ColorChoice::Always),
+        ..none
+    };
+    let silent = present(reader, &on_tty, settings);
+    assert!(!silent.color.0);
+    assert_eq!(silent.palette.value, PaletteChoice::Mono);
+}
+
+#[test]
+fn the_settings_file_accepts_colour_and_palette_and_refuses_unknown_ones() {
+    let settings = file("color = \"never\"\npalette = \"high-contrast\"");
+    assert_eq!(settings.color, Some(ColorChoice::Never));
+    assert_eq!(settings.palette, Some(PaletteChoice::HighContrast));
+    for bad in [
+        "color = \"sometimes\"",
+        "palette = \"neon\"",
+        "color = true",
+    ] {
+        assert!(parse_file(bad).is_err(), "{bad}");
+    }
 }

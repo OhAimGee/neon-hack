@@ -5,15 +5,28 @@ use neon_engine::text::{Catalog, RenderMode};
 use neon_engine::{Game, Input, Prompt, Step, View};
 
 use super::*;
+use crate::palette::{Palette, PaletteChoice};
 use crate::persist::Persistence;
 use crate::render::Verbosity;
 use crate::test_support::{catalog_en, catalog_fr};
 
 fn play(catalog: &Catalog, mode: RenderMode, seed: u64, input: &[u8], echo_input: bool) -> String {
+    play_with_colors(catalog, mode, seed, input, echo_input, None)
+}
+
+fn play_with_colors(
+    catalog: &Catalog,
+    mode: RenderMode,
+    seed: u64,
+    input: &[u8],
+    echo_input: bool,
+    colors: Option<Palette>,
+) -> String {
     let renderer = Renderer {
         catalog,
         mode,
         verbosity: Verbosity::Normal,
+        colors,
     };
     let mut out = Vec::new();
     let mut game = DemoGame::new(seed);
@@ -190,6 +203,7 @@ fn an_engine_that_will_not_end_cannot_trap_the_frontend_in_a_loop() {
         catalog: &catalog,
         mode: RenderMode::FULL,
         verbosity: Verbosity::Normal,
+        colors: None,
     };
     let mut game = Stubborn;
     let first = game.start();
@@ -213,6 +227,7 @@ fn a_frontend_attached_to_a_game_under_way_continues_without_replaying_the_start
         catalog: &catalog,
         mode: RenderMode::FULL,
         verbosity: Verbosity::Full,
+        colors: None,
     };
     // Play the prologue elsewhere (another frontend, or a load), then attach this one.
     let mut game = DemoGame::new(1);
@@ -267,6 +282,7 @@ fn saves_are_written_as_the_game_goes_and_manual_ones_are_acknowledged() {
         catalog: &catalog_en(),
         mode: RenderMode::FULL,
         verbosity: Verbosity::Normal,
+        colors: None,
     };
     let mut persistence = Persistence::new(crate::store::Store::new(saves.clone()));
     let mut game = DemoGame::new(7);
@@ -294,4 +310,106 @@ fn saves_are_written_as_the_game_goes_and_manual_ones_are_acknowledged() {
         DemoGame::from_save(&text).unwrap().prompt(),
         Prompt::Command
     );
+}
+
+/// The text with every `ESC [ ... m` sequence removed.
+fn strip_sgr(text: &str) -> String {
+    let mut out = String::new();
+    let mut chars = text.chars();
+    while let Some(c) = chars.next() {
+        if c == '\u{1b}' {
+            assert_eq!(
+                chars.next(),
+                Some('['),
+                "only SGR sequences are ever written"
+            );
+            for end in chars.by_ref() {
+                if end == 'm' {
+                    break;
+                }
+                assert!(
+                    end.is_ascii_digit() || end == ';',
+                    "a plain SGR sequence: {end:?}"
+                );
+            }
+        } else {
+            out.push(c);
+        }
+    }
+    out
+}
+
+const COLOR_SCRIPT: &[u8] = b"\nNeon\ny\nscan\nscan\nscan\nscan\nscan\nscan\nnope\nquit\ny\n";
+
+#[test]
+fn with_colour_the_transcript_is_the_same_text_with_sequences_around_its_lines() {
+    let catalog = catalog_en();
+    let plain = play(&catalog, RenderMode::FULL, 3, COLOR_SCRIPT, true);
+    assert!(!plain.contains('\u{1b}'), "no colour, no escape byte");
+    for choice in [
+        PaletteChoice::Default,
+        PaletteChoice::HighContrast,
+        PaletteChoice::Cvd,
+    ] {
+        let colors = Palette::new(choice, true);
+        let coloured = play_with_colors(
+            &catalog,
+            RenderMode::FULL,
+            3,
+            COLOR_SCRIPT,
+            true,
+            Some(colors),
+        );
+        assert!(coloured.contains("\u{1b}["), "{choice:?} paints something");
+        assert_eq!(
+            strip_sgr(&coloured),
+            plain,
+            "{choice:?}: the transcript does not change"
+        );
+        // Plain terminals get 8 colours and bold, never an exact colour value.
+        assert!(!coloured.contains("38;2"), "{choice:?}");
+        assert!(!coloured.contains("48;"), "{choice:?}: no background");
+    }
+}
+
+#[test]
+fn the_lines_of_a_kind_share_a_colour_and_each_one_is_closed() {
+    let catalog = catalog_en();
+    let colors = Palette::new(PaletteChoice::Default, false);
+    let out = play_with_colors(
+        &catalog,
+        RenderMode::FULL,
+        3,
+        COLOR_SCRIPT,
+        true,
+        Some(colors),
+    );
+    assert!(
+        out.contains("\u{1b}[32m[Reward]"),
+        "rewards are green:\n{out}"
+    );
+    assert!(out.contains("\u{1b}[31m[Error]"), "errors are red:\n{out}");
+    for line in out.lines().filter(|line| line.contains('\u{1b}')) {
+        assert!(
+            line.ends_with("\u{1b}[0m"),
+            "a coloured line is closed: {line:?}"
+        );
+    }
+}
+
+#[test]
+fn mono_colours_write_nothing_but_bold_and_the_ascii_and_french_variants_stay_clean() {
+    let fr = catalog_fr();
+    let colors = Palette::new(PaletteChoice::Mono, false);
+    let out = play_with_colors(&fr, RenderMode::ASCII, 3, COLOR_SCRIPT, true, Some(colors));
+    assert_eq!(
+        strip_sgr(&out),
+        play(&fr, RenderMode::ASCII, 3, COLOR_SCRIPT, true)
+    );
+    for line in out.lines() {
+        let colour_code = ["\u{1b}[3", "\u{1b}[4"]
+            .iter()
+            .any(|code| line.contains(code));
+        assert!(!colour_code, "mono has no colour code: {line:?}");
+    }
 }
