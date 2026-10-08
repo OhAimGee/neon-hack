@@ -191,6 +191,6 @@ pub enum ArgKind { Number, Quest, Contact, Message, Document, Site, Node, Progra
 | `quests`, `contacts`, `contact`, `messages`, `read` | `quests`, `contacts`, `talk`, `messages`, `read` |
 | `status`, `help`, `save`, `quit`/`exit`, `clear` | idem ; `clear` supprimé (la TUI défile, le plain n'efface pas) |
 
-## 10. Décisions proposées
+## 10. Décisions
 
-Pour validation du propriétaire (S-3 de [`DECISIONS.md`](../design/DECISIONS.md) § 5) : `hack <site>` comme seule porte d'entrée d'une intrusion ; `use <programme>` pour tous les utilitaires ; nœuds désignés par numéro ou nom (pas de lettre) ; `net` pour la carte du monde et `map` pour le graphe (règle du cross-check) ; `talk` officiel et `contact` en alias ; `journal` en alias de `quests` ; `save` réservé au hub ; autosave à la fin de chaque tour d'intrusion.
+Validées par le propriétaire le 8 octobre 2026 (S-3 de [`DECISIONS.md`](../design/DECISIONS.md) § 5) : `hack <site>` comme seule porte d'entrée d'une intrusion ; `use <programme>` pour tous les utilitaires ; nœuds désignés par numéro ou nom (pas de lettre) ; `net` pour la carte du monde et `map` pour le graphe (règle du cross-check) ; `talk` officiel et `contact` en alias ; `journal` en alias de `quests` ; `save` réservé au hub ; autosave à la fin de chaque tour d'intrusion.

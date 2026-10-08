@@ -8,7 +8,7 @@ RPG textuel cyberpunk pour le terminal. Vous êtes un hacker novice à Neo-Tokyo
 
 ## Statut
 
-**Le jeu n'est pas encore jouable** : le dépôt contient le squelette technique en Rust (trois crates, CI, règles de lint) mais pas encore le moteur de jeu. Le cadrage est terminé ; le socle (phase R1) est la prochaine étape.
+**Le jeu n'est pas encore jouable** : le dépôt contient le squelette technique en Rust (trois crates, CI, règles de lint) mais pas encore le moteur de jeu. Le cadrage, le socle (phase R1) et les spécifications (phase P1) sont terminés ; le contenu et la campagne (phase R2) sont la prochaine étape.
 
 | Étape | État |
 |---|---|

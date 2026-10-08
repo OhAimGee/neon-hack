@@ -385,9 +385,9 @@ Budget d'écriture de l'engine d'intrusion lui-même (sans le contenu des sites)
 | RUN-13 | Le transcript de la TUI est identique à celui du plain pour la même suite de commandes (EXP-2), intrusion comprise | U |
 | RUN-14 | Un texte de narration (variante d'ambiance) n'est jamais nécessaire : le jeu se joue au `brief` sans en perdre un chiffre | U |
 
-## 11. Décisions proposées
+## 11. Décisions
 
-Pour validation du propriétaire (S-4 et S-5 de [`DECISIONS.md`](../design/DECISIONS.md) § 5) :
+Validées par le propriétaire le 8 octobre 2026 (S-4 et S-5 de [`DECISIONS.md`](../design/DECISIONS.md) § 5) :
 
 - **S-4** : la prévision est détaillée au début du tour et résumée par la **projection** après les actions qui la changent (pas à chaque action) ; elle n'annonce jamais l'aléa ; elle ne mentionne Cloak que s'il peut être utilisé.
 - **S-5** : `undo` annule **le tour entier en cours** (retour à son début) et non une action isolée : c'est le coût de calcul le plus bas et le comportement le plus lisible à voix haute. Variante possible : annulation d'action, avec la même pile.

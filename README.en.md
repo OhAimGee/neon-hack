@@ -8,7 +8,7 @@ A cyberpunk text RPG for the terminal. You are a novice hacker in Neo-Tokyo, in 
 
 ## Status
 
-**The game is not playable yet**: the repository holds the Rust technical skeleton (three crates, CI, lint rules) but not the game engine yet. The groundwork is done; the foundation (phase R1) is the next step.
+**The game is not playable yet**: the repository holds the Rust technical skeleton (three crates, CI, lint rules) but not the game engine yet. The groundwork, the foundation (phase R1) and the specifications (phase P1) are done; the content and campaign (phase R2) are the next step.
 
 | Step | State |
 |---|---|
