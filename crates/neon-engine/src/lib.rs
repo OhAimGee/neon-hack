@@ -9,6 +9,7 @@
 //! answers a [`Step`] made of [`Event`]s and the next [`Prompt`]. [`demo`] is a small
 //! complete game that exercises it.
 
+pub mod command;
 pub mod demo;
 pub mod event;
 pub mod game;

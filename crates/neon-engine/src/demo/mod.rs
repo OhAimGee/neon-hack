@@ -6,7 +6,8 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::event::{Event, Gauge, Severity, Table};
+use crate::command::{Availability, CommandSpec, Lookup, Registry};
+use crate::event::{Event, Gauge, Severity};
 use crate::game::{Game, GaugeReading, View};
 use crate::ids::ContactId;
 use crate::prompt::{Choice, ChoiceOption, Input, Prompt, Resolution, Step};
@@ -21,7 +22,45 @@ const TRACE_TENSE: i32 = 30;
 const TRACE_CRITICAL: i32 = 70;
 const STARTING_CREDITS: i32 = 50;
 const MAX_CREDITS: i32 = 1_000_000;
-const COMMANDS: [&str; 6] = ["help", "quit", "save", "scan", "shop", "status"];
+const SPECS: &[CommandSpec] = &[
+    CommandSpec {
+        name: "help",
+        aliases: &["h"],
+        help: "demo.help.help",
+    },
+    CommandSpec {
+        name: "quit",
+        aliases: &["exit"],
+        help: "demo.help.quit",
+    },
+    CommandSpec {
+        name: "save",
+        aliases: &[],
+        help: "demo.help.save",
+    },
+    CommandSpec {
+        name: "scan",
+        aliases: &[],
+        help: "demo.help.scan",
+    },
+    CommandSpec {
+        name: "shop",
+        aliases: &["buy"],
+        help: "demo.help.shop",
+    },
+    CommandSpec {
+        name: "status",
+        aliases: &["st"],
+        help: "demo.help.status",
+    },
+];
+/// Every command of the demo: dispatch, help and completion read this one table.
+const COMMANDS: Registry = Registry::new(SPECS);
+
+/// The demo has no locked command: all of them are open all the time.
+fn open(_: &CommandSpec) -> Availability {
+    Availability::Open
+}
 const BANNER: &[&str] = &["== N E O N   H A C K =="];
 
 struct ItemDef {
@@ -182,13 +221,20 @@ impl DemoGame {
     }
 
     fn run_command(&mut self, line: &str, events: &mut Vec<Event>) -> Option<SaveRequest> {
-        let mut words = line.split_whitespace();
-        let word = words.next().unwrap_or_default().to_ascii_lowercase();
-        if !word.is_empty() {
-            self.turn = self.turn.saturating_add(1);
-        }
-        match word.as_str() {
-            "" => None,
+        let (spec, args) = match COMMANDS.parse(line, open) {
+            Lookup::Empty => return None,
+            Lookup::Found { spec, args } => (spec, args),
+            Lookup::Locked { reason, .. } => {
+                events.push(Event::error(reason));
+                return None;
+            }
+            Lookup::Unknown(word) => {
+                events.push(unknown_command(&word));
+                return None;
+            }
+        };
+        self.turn = self.turn.saturating_add(1);
+        match spec.name {
             "help" => {
                 events.push(help_table());
                 None
@@ -197,7 +243,7 @@ impl DemoGame {
                 self.status(events);
                 None
             }
-            "save" => save_command(words.next(), events),
+            "save" => save_command(args.first().copied(), events),
             "scan" => {
                 self.scan(events);
                 Some(SaveRequest::Autosave)
@@ -211,10 +257,9 @@ impl DemoGame {
                 self.flows.push(Flow::ConfirmQuit);
                 None
             }
+            // A command declared in `SPECS` without a handler here: a test runs them all.
             other => {
-                events.push(Event::error(
-                    Text::new("demo.unknown_command").with_str("command", other),
-                ));
+                events.push(unknown_command(other));
                 None
             }
         }
@@ -436,11 +481,7 @@ impl Game for DemoGame {
     fn complete(&self, line: &str) -> Vec<String> {
         let prefix = line.to_ascii_lowercase();
         match self.prompt() {
-            Prompt::Command if !line.contains(char::is_whitespace) => COMMANDS
-                .iter()
-                .filter(|command| command.starts_with(&prefix))
-                .map(|command| (*command).to_owned())
-                .collect(),
+            Prompt::Command if !line.contains(char::is_whitespace) => COMMANDS.complete(line, open),
             Prompt::Choice(choice) => choice
                 .options
                 .into_iter()
@@ -540,22 +581,18 @@ fn trace_changed(from: i32, to: i32) -> Option<Event> {
 }
 
 fn help_table() -> Event {
-    Event::Screen(Table {
-        title: Text::new("demo.help.title"),
-        columns: vec![
+    COMMANDS.help(
+        Text::new("demo.help.title"),
+        &[
             Text::new("demo.help.col_command"),
             Text::new("demo.help.col_effect"),
         ],
-        rows: COMMANDS
-            .iter()
-            .map(|command| {
-                vec![
-                    Text::raw(*command),
-                    Text::dynamic(format!("demo.help.{command}")),
-                ]
-            })
-            .collect(),
-    })
+        open,
+    )
+}
+
+fn unknown_command(word: &str) -> Event {
+    Event::error(Text::new("demo.unknown_command").with_str("command", word))
 }
 
 /// A typed name: control characters removed, trimmed, cut to 20 characters, never empty.

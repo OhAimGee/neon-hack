@@ -64,6 +64,8 @@ disallowed_macros = "deny"
 # Pedantic lints that cost more than they bring here.
 too_many_lines = "allow"
 similar_names = "allow"
+# `assert!(x.is_empty())` reads better than a comparison with an empty array of a named type.
+assert_is_empty = "allow"
 return_self_not_must_use = "allow"
 
 [profile.release]
