@@ -19,6 +19,7 @@ mod dispatch;
 mod hack;
 mod hub;
 mod keys;
+mod link;
 mod play;
 mod prologue;
 mod resolver;

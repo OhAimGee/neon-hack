@@ -12,7 +12,7 @@
 6. **L'écran n'annonce jamais ce que l'action refuserait.** Une ligne « disponible » est exécutable ; sinon la raison est écrite en mots (`Choice::unavailable` existe déjà).
 7. **Une seule action par ligne**, jamais de chaîne `a; b`. Pas de commande qui attend : le temps ne passe qu'aux commandes (P7 de l'audit).
 8. **Une erreur dit ce qui s'est passé, puis ce qu'on peut faire** (VOC-4) : « Nœud inconnu : 9. Voir `map`. » Les clés sont `error.*` (§ 4). Les textes d'interface sont neutres (S-2 : ni tu ni vous).
-9. **Les commandes de liste ont une forme sans argument qui liste** : `quests`, `net`, `deck`, `contacts`, `messages`, `archives`, `shop`, `laylow`, `load`, `map` (C'est l'exigence de lecteur d'écran « une action = une réponse complète »). **Toute autre commande à argument obligatoire** (`talk`, `accept`, `read`, `decrypt`, `hack`, `equip`, `unequip`, `buy`, `upgrade`, `probe`, `move`, `breach`, `use`) répond `error.arg.missing` avec son usage et un exemple, sans rien faire : jamais de deviner, jamais de liste implicite.
+9. **Les commandes de liste ont une forme sans argument qui liste** : `quests`, `net`, `deck`, `contacts`, `messages`, `archives`, `shop`, `laylow`, `load`, `map` (C'est l'exigence de lecteur d'écran « une action = une réponse complète »). **Toute autre commande à argument obligatoire** (`talk`, `accept`, `read`, `decrypt`, `hack`, `link`, `equip`, `unequip`, `buy`, `upgrade`, `probe`, `move`, `breach`, `use`) répond `error.arg.missing` avec son usage et un exemple, sans rien faire : jamais de deviner, jamais de liste implicite.
 10. **Les raccourcis clavier de la TUI ont une commande équivalente** (CLA-4) : `F2` ↔ `panel`, `Ctrl+P` ↔ `plain`.
 
 ## 2. La table
@@ -65,6 +65,7 @@ Dans le plain, `panel` et `plain` répondent « Seulement en plein écran. » (m
 | `upgrade` | — | `<programme>` | améliore un programme du catalogue (niveau 1 → 3) ; prix affiché dans `deck` | idem `shop` | `upgrade_level` (jamais utilisé en C) |
 | `laylow` | — | `[service]` | sans argument, les services qui baissent la Notoriété (nom conservé) ; avec un argument, achète le service | quand la Notoriété dépasse « Discret » pour la première fois | `laylow` |
 | `tutorial` | — | `[skip\|restart]` | sans argument, redit l'étape courante du tutoriel guidé (ou son état) ; `skip` y met fin ; `restart` le relance depuis la première étape | départ | (nouveau, R2.3b) |
+| `link` | — | `<contact>` | renforce d'un niveau (1 à 3) le lien neural avec un compagnon ; seuls les contacts avec qui une quête demande un lien sont proposés (écart de R2.4, voir § 11) | chapitre 4 | `neuralsync` |
 | `hint` | — | — | un indice d'ECHO-7 sur l'objectif actif ; décompte selon la difficulté ; jamais de solution complète | départ (nombre selon la difficulté) | (nouveau) |
 | `save` | — | `[emplacement 1-9]` | sans argument, point de contrôle manuel dans l'emplacement libre le plus ancien ; avec, dans cet emplacement ; jamais en pleine intrusion (§ 5) | départ | `save` |
 
@@ -144,6 +145,7 @@ Ouverture initiale proposée (la fin de chaque ligne est la quête qui l'ouvre ;
 | premier document | `archives`, `decrypt` |
 | première offre de contrat | `accept` |
 | Notoriété au-dessus de « Discret » une fois | `laylow` (écart de R2.2b : voir § 11) |
+| chapitre 4 (M08 ouverte) | `link` (écart de R2.4 : § 11) |
 | difficulté Histoire | `skip` |
 
 Le tutoriel (R2) enseigne dans cet ordre `help`, `quests`, `talk`, `net`, `hack`, `map`, `breach`, `end`, `jackout` (les quatre dernières attendent R4 ; le tutoriel du hub, lot R2.3b, enseigne `help`, `status`, `quests`, `talk`, `net`, `hack`, `laylow`, `shop`, `buy`, `save`, `quit`, voir le § 11) ; il ne dépend d'aucune commande retirée (`bruteforce localhost`, `laylow` comme premier geste de couverture, le niveau 2 par `scan` : contradiction 13).
@@ -202,7 +204,8 @@ L'ordre des réponses est : nom inconnu, mauvais contexte ou frontend incapable 
 | `backdoor`, `uploadvirus` | programmes Backdoor et Virus (`use` / `breach`) |
 | `traceroute`, `analyzedefenses` | `probe`, `map`, `net <site>` |
 | `decrypt` | `decrypt <document>` (choix dans la liste) |
-| `stealth`, `stealthmode`, `aiassist`, `neuralsync` | supprimés ; Cloak, Compagnon, Overclock (`use`) |
+| `stealth`, `stealthmode`, `aiassist` | supprimés ; Cloak, Compagnon, Overclock (`use`) |
+| `neuralsync` | `link <contact>` au hub (R2.4, en attendant l'emplacement Compagnon de R4) |
 | `socialeng` | programme Ingénierie sociale |
 | `shop` | `shop`, `buy`, `upgrade` |
 | `laylow` | `laylow` (services de Notoriété) |
@@ -229,3 +232,5 @@ La table du hub est déclarée dans `neon_engine::campaign` (22 noms). Les comma
 10. **`accept`** s'ouvre à la première offre, S06 (règle de `unlocks.toml`) ; **`messages`/`read`** et **`archives`/`decrypt`** à la fin de M01 (premier message, niveau 2 qui montre le premier document chiffré).
 11. **Textes** : les noms de commandes dans les textes sont des noms propres du jeu ; les marques de substitution des usages (`<quête>`, `<contact>`) sont écrites dans la langue de l'interface, car un usage est un texte sans arguments.
 12. **`tutorial [skip|restart]`** (lot R2.3b) : le nom `skip` de la table de l'intrusion (§ 2.3) reste réservé à R4 ; le tutoriel guidé se coupe donc par `tutorial skip`, ou en refusant l'offre qui le propose après le prologue. Une étape se fait en exécutant sa commande, dans n'importe quel ordre ; l'indication de l'étape courante n'est dite qu'au prompt de commande, une seule fois, et seulement quand la commande de l'étape est ouverte (la boutique attend la fin de M01, par la règle de `unlocks.toml`). Dans le plain, `skip` tapé à un « Entrée pour continuer » saute le reste du prologue (Échap dans la TUI).
+12. **`link <contact>`** (lot R2.4, décision R-17) : le langage de missions demande des niveaux de lien neural (objectifs `link`, S07, M09, S10, M11, S16) et a le fait `LinkChanged`, mais rien ne le produisait avant l'emplacement Compagnon du deck (R4) : le joueur optimiste de bout en bout s'arrêtait à M09. En attendant, `link <contact>` monte le lien d'un niveau par commande (de 0 à 3), gratuitement, pour les seuls contacts avec qui une quête demande un lien (la donnée des quêtes est la seule source : ECHO-7 et AURA aujourd'hui). La commande s'ouvre au chapitre 4 (`unlocks.toml`). Le run tactique donnera les mêmes faits (R4) : les quêtes ne changent pas.
+13. **Un paiement reste proposé quand une autre voie a réglé l'objectif** (lot R2.4) : M10 règle son deuxième objectif par l'une de quatre voies (payer, payer à demi-tarif, trahir avec le registre, voler) et la décision D1 n'offre « payer » qu'à qui a payé. Le registre pris en M04 réglait déjà l'objectif et retirait l'entrée « Payer » du menu du Courtier : payer était impossible par les commandes. Les alternatives d'un `any_of` non accomplies restent maintenant proposées même quand l'objectif est réglé.

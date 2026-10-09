@@ -66,3 +66,11 @@ when = { kind = "any", of = [
     { kind = "quest", id = "s06", is = "completed" },
 ] }
 reason = "unlock.accept"
+
+# The neural link with a companion is asked from the fourth chapter on (S07, M09). `link` is
+# the hand-made stand-in for the companion slot of the tactical run (R4), which raises the
+# same levels by itself (decision R-17).
+[[unlock]]
+command = "link"
+when = { kind = "flag", name = "chapter", at_least = 4 }
+reason = "unlock.link"

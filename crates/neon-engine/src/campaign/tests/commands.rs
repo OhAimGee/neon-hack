@@ -510,6 +510,88 @@ fn paying_a_contact_is_an_entry_of_the_conversation() {
 }
 
 #[test]
+fn a_payment_stays_on_offer_when_another_way_already_settled_the_objective() {
+    // M10 settles its second objective with any of four ways, and the decision D1 offers
+    // "pay" only to a player who paid. The ledger taken in M04 is one of the ways: it must
+    // not take the payment away, or paying the Broker would be impossible.
+    let mut driver = Driver::new();
+    driver.jump_to(&[
+        "m01", "m02", "m03", "m04", "m05", "s06", "m06", "m07", "m08", "m09",
+    ]);
+    driver.game.state.missions.earned = crate::content::Credits::new(5_000);
+    // The end of M09 hands the Broker over.
+    driver
+        .game
+        .state
+        .missions
+        .contacts
+        .insert("broker".parse().unwrap(), ContactState::Available);
+    driver.feed(vec![crate::content::Fact::FileExtracted {
+        site: "underground-market".parse().unwrap(),
+        file: "black_ledger".parse().unwrap(),
+    }]);
+    assert_eq!(driver.status("m10"), QuestStatus::Active);
+    driver.line("talk broker");
+    let menu = driver.prompt_text();
+    assert!(menu.contains("Pay "), "the Broker can still be paid: {menu}");
+    let pay = menu
+        .lines()
+        .find(|line| line.contains("Pay "))
+        .and_then(|line| line.trim().split('.').next())
+        .unwrap()
+        .to_owned();
+    let before = driver.credits();
+    driver.line(&pay);
+    assert!(driver.credits() < before);
+    // Paid once: the entry is gone, and the decision now offers the payment.
+    driver.line("0");
+    driver.line("talk broker");
+    let menu = driver.prompt_text();
+    assert!(!menu.contains("Pay "), "{menu}");
+    assert!(menu.contains("Decide: "), "{menu}");
+}
+
+#[test]
+fn the_neural_link_is_raised_one_level_at_a_time_for_the_companions_only() {
+    let mut driver = Driver::new();
+    // The command opens with the fourth chapter.
+    let said = driver.line("link echo7");
+    assert!(said.contains("Not yet: reach chapter 4."), "{said}");
+    assert!(!driver.game.complete("li").contains(&"link".to_owned()));
+    driver.jump_to_chapter4();
+    driver.game.state.missions.flags.insert(
+        "chapter".parse().unwrap(),
+        crate::content::schema::FlagValue::Int(4),
+    );
+    driver.feed(Vec::new());
+    assert!(driver.game.complete("li").contains(&"link".to_owned()));
+    // Only the contacts a quest asks a link with are offered.
+    assert_eq!(driver.game.complete("link "), ["echo7", "aura"]);
+    let said = driver.line("link phoenix");
+    assert!(
+        driver.errored() && said.contains("no neural link possible"),
+        "{said}"
+    );
+    let echo7 = "echo7".parse().unwrap();
+    for level in 1..=3 {
+        let said = driver.line("link echo7");
+        assert!(
+            said.contains(&format!("Neural link with ECHO-7: level {level}.")),
+            "{said}"
+        );
+        assert_eq!(driver.game.state.missions.links.get(&echo7), Some(&level));
+    }
+    // At the highest level the contact is listed with its reason and nothing happens.
+    let said = driver.line("link echo7");
+    assert!(
+        driver.errored() && said.contains("the link is at its highest level"),
+        "{said}"
+    );
+    assert_eq!(driver.game.complete("link "), ["aura"]);
+    assert_eq!(driver.game.state.missions.links.get(&echo7), Some(&3));
+}
+
+#[test]
 fn a_decision_is_put_to_the_player_by_the_contact_that_owns_it() {
     let mut driver = Driver::new();
     // M08 is Neon Angel's quest and carries D2: it opens with M07 done.

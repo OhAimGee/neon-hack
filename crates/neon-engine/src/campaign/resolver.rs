@@ -29,7 +29,7 @@ impl Resolver for Lists<'_> {
     fn list(&self, kind: ArgKind, command: &CommandSpec) -> Listing {
         let (see, rows) = match kind {
             ArgKind::Quest => ("quests", self.quests(command.name)),
-            ArgKind::Contact => ("contacts", self.contacts()),
+            ArgKind::Contact => ("contacts", self.contacts(command.name)),
             ArgKind::Message => ("messages", self.messages()),
             ArgKind::Document => ("archives", self.documents(command.name)),
             ArgKind::Site => ("net", self.sites()),
@@ -72,17 +72,22 @@ impl Lists<'_> {
             .collect()
     }
 
-    fn contacts(&self) -> Vec<Row> {
+    fn contacts(&self, command: &str) -> Vec<Row> {
         self.s
             .contact_book
             .iter()
             .map(|id| {
                 let names = [id.as_str()];
                 let state = self.s.missions.contact(id);
-                if state.reachable() {
-                    Row::open(id.as_str(), &names)
-                } else {
+                let refusal = (command == "link")
+                    .then(|| self.s.link_refusal(self.c, id))
+                    .flatten();
+                if !state.reachable() {
                     Row::closed(id.as_str(), &names, contact_unreachable(state))
+                } else if let Some(reason) = refusal {
+                    Row::closed(id.as_str(), &names, reason)
+                } else {
+                    Row::open(id.as_str(), &names)
                 }
             })
             .collect()
