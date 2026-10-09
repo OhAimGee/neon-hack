@@ -1,0 +1,299 @@
+# Texts of the campaign game (the hub), English: help, status, listings, prompts, outcomes.
+# Keys are the table path plus the name; `name@sr` and `name@ascii` are variants of `name`.
+# Glossary terms are never typed here: they arrive as arguments (`{quest}`, `{net}`...), and
+# `{term^}` opens a sentence with a capital. The narrative texts (titles, dialogues, messages,
+# fragments...) are not here: their keys are derived from the data (world_*.toml).
+
+[error]
+locked = "Not yet: {reason}."
+
+[unlock]
+hack = "start the first {quest}"
+laylow = "start the first {quest}"
+shop = "find R4Z0R"
+buy = "find R4Z0R"
+messages = "wait for a first {message}"
+read = "wait for a first {message}"
+archives = "obtain a first {document}"
+decrypt = "obtain a first {document}"
+accept = "wait for a {contract} to be offered"
+
+[service.lie_low]
+name = "Lie low"
+desc = "A quiet week in the {safehouse}."
+
+[service.scrub_traces]
+name = "Scrub the traces"
+desc = "A fixer rewrites the logs of your last intrusions."
+
+[service.new_identity]
+name = "New identity"
+desc = "Fresh papers, a fresh face, a fresh start."
+
+[gauge]
+notoriety = "Notoriety"
+
+[campaign]
+dash = "-"
+band = "{band}"
+price = "{price} {price|{credit}|{credit}s}"
+welcome = "Welcome to {net}, {handle}."
+welcome_hint = "Type `help` to list the commands, then `quests` to read the first {quest}."
+resume = "Back on {net}, {handle}: {active} active {active|{quest}|{quest}s}, {unread} unread {unread|{message}|{message}s}."
+
+[campaign.banner]
+alt = "NEON HACK"
+
+[campaign.prompt]
+handle = "{handle^}"
+
+[campaign.unlock]
+frontend = "the interface does not offer it yet"
+
+[campaign.frontend]
+unhandled = "`{command}` belongs to the interface, which does not offer it yet."
+
+[campaign.col]
+id = "id"
+name = "name"
+title = "title"
+status = "status"
+chapter = "{chapter}"
+level = "{level}"
+relation = "relation"
+state = "state"
+offers = "offers"
+subject = "subject"
+price = "price"
+effect = "effect"
+
+[campaign.help]
+title = "Commands"
+col_command = "Command"
+col_effect = "Effect"
+usage = "{usage}"
+help = "List the commands, or explain one"
+status = "Show your situation"
+quit = "Save and leave {net}"
+load = "Load a saved game"
+panel = "Show or hide the side {panel}"
+plain = "Switch to the plain display"
+export = "Write the transcript of the session to a file"
+quests = "Show the {journal}, or the {objective}s of one {quest}"
+accept = "Accept a {contract} that was offered"
+contacts = "List the {contact}s you know"
+talk = "Talk to a {contact}"
+messages = "Show the {inbox}"
+read = "Read a {message}"
+archives = "List the {document}s and {fragment}s you hold, or read one"
+decrypt = "Decrypt a {document}"
+net = "Show the map of {net}, or one {site}"
+hack = "Start a {run} on a known {site}"
+shop = "Show the {shop} of R4Z0R"
+buy = "Buy an {item} at the {shop}"
+laylow = "Lower your {notoriety} with a {service}"
+hint = "Ask ECHO-7 for a {hint}"
+save = "Save the game in a {slot}"
+"help.usage" = "Usage: `help [command]`. Example: `help hack`."
+"load.usage" = "Usage: `load [save]`. Example: `load slot-1`."
+"export.usage" = "Usage: `export [path]`. Example: `export transcript.txt`."
+"quests.usage" = "Usage: `quests [quest]`. Example: `quests m01`."
+"accept.usage" = "Usage: `accept <quest>`. Example: `accept s06`."
+"talk.usage" = "Usage: `talk <contact>`. Example: `talk echo7`."
+"read.usage" = "Usage: `read <message>`. Example: `read 1`."
+"archives.usage" = "Usage: `archives [document]`. Example: `archives 1`."
+"decrypt.usage" = "Usage: `decrypt <document>`. Example: `decrypt 1`."
+"net.usage" = "Usage: `net [site]`. Example: `net localhost`."
+"hack.usage" = "Usage: `hack <site>`. Example: `hack localhost`."
+"buy.usage" = "Usage: `buy <item>`. Example: `buy stealth`."
+"laylow.usage" = "Usage: `laylow [service]`. Example: `laylow lie_low`."
+"save.usage" = "Usage: `save [slot]`. Example: `save 2`."
+
+[campaign.quests]
+title = "== {journal^} =="
+
+[campaign.quest]
+head = "{kind^}: {title} ({status}, {chapter} {number})"
+offered = "Offered by {giver}. Type `accept {id}` to take it."
+secret = "???"
+todo = "[ ] {text}"
+todo_optional = "[ ] {text} (optional)"
+todo_progress = "[ ] {text} ({have}/{need})"
+todo_progress_optional = "[ ] {text} ({have}/{need}, optional)"
+done = "[x] {text}"
+done_optional = "[x] {text} (optional)"
+
+[campaign.quest_status]
+unavailable = "unavailable"
+available = "to accept"
+active = "active"
+completed = "completed"
+failed = "failed"
+
+[campaign.contacts]
+title = "== {contact^}s =="
+offers = "{n} {n|{contract}|{contract}s}"
+
+[campaign.relation]
+unknown = "unknown"
+neutral = "neutral"
+friendly = "friendly"
+trusted = "trusted"
+
+[campaign.contact_state]
+available = "available"
+busy = "busy"
+offline = "offline"
+compromised = "compromised"
+hostile = "hostile"
+silenced = "silenced"
+dead = "gone"
+
+[campaign.messages]
+title = "== {inbox^} =="
+empty = "The {inbox} is empty."
+
+[campaign.message]
+read = "read"
+unread = "unread"
+
+[campaign.archives]
+title = "== {archives^} =="
+empty = "The {archives} are empty."
+yields = "Once decrypted, it gave the {fragment} {title}."
+
+[campaign.archive]
+read = "read"
+unread = "unread"
+encrypted = "encrypted"
+decrypted = "decrypted"
+
+[campaign.decrypt]
+done = "{document^} decrypted: {title}."
+yield = "New {fragment} in the {archives}: {title}."
+
+[campaign.net]
+title = "== {net^} =="
+more = "{n} more {n|{site}|{site}s} still unknown."
+
+[campaign.site_status]
+unknown = "unknown"
+known = "known"
+pierced = "pierced"
+
+[campaign.site]
+head = "{site^} {name}: {status}, {level} {number}."
+relay = "Reached through {relay}."
+loot = "{loot^}: {taken}/{total} {total|file|files} taken."
+
+[campaign.hack]
+confirm = "Start the {run} on the {site} {name}? It is resolved at once."
+cancelled = "{run^} cancelled."
+done = "{run^} on {name}: {n} {n|file|files} taken."
+again = "{run^} on {name}: nothing new to take."
+empty = "{run^} on {name}: no file to take."
+
+[campaign.shop]
+title = "== {shop^} =="
+available = "available"
+
+[campaign.buy]
+confirm = "Buy {name} for {price} {price|{credit}|{credit}s}?"
+done = "Bought: {name}."
+cancelled = "Purchase cancelled."
+
+[campaign.laylow]
+title = "== {service^}s =="
+cooling = "-{cooling}"
+done = "{name}: {notoriety} lowered by {cooling}."
+
+[campaign.talk]
+title = "Conversation with {name}"
+cancel = "End the conversation"
+hidden = "???"
+ask = "{handle}: {question}"
+pay = "Pay {amount} {amount|{credit}|{credit}s} ({title})"
+paid = "Paid {amount} {amount|{credit}|{credit}s} ({title})."
+decide = "Decide: {prompt}"
+silent = "{name} has nothing to say right now."
+end = "The conversation ends."
+done = "There is nothing more to say for now."
+
+[campaign.decision]
+cancel = "Decide later"
+
+[campaign.hint]
+nothing = "There is no {quest} in progress to give a {hint} about."
+none_left = "No {hint} left for this {quest} ({title})."
+left = "{hint^}s left for this {quest}: {left}."
+
+[campaign.save]
+bad_slot = "Choose a {slot} from 1 to {max}."
+
+[campaign.quit]
+confirm = "Leave {net}? The game is saved."
+bye = "Goodbye, {handle}."
+
+[campaign.status]
+handle = "{handle^}: {value}"
+level = "{level^}: {value}"
+credits = "{credit^}s: {value}"
+notoriety = "{notoriety}: {value}/{max} ({band})"
+reputation = "{reputation^}: {value}"
+chapter = "{chapter^}: {value}"
+difficulty = "Difficulty: {difficulty}"
+quests = "{quest^}s in progress: {active}"
+hints = "{hint^}s left for the current {quest}: {left}"
+
+[campaign.situation]
+active = "In progress: {title}"
+
+[campaign.view]
+objective = "- {text}"
+
+[campaign.alert]
+band_up = "{notoriety} up: {band}."
+band_down = "{notoriety} down: {band}."
+
+[campaign.out]
+offered = "{giver} offers a {contract}: {title}. Type `accept {id}` to take it."
+opened_quest = "New {quest}: {title}"
+opened_contract = "{contract^} accepted: {title}"
+completed_quest = "{quest^} completed: {title}"
+completed_contract = "{contract^} completed: {title}"
+failed_quest = "{quest^} failed: {title}"
+failed_contract = "{contract^} failed: {title}"
+withdrawn = "The {contract} {title} is no longer offered."
+restarted = "{quest^} starts over: {title}"
+objective = "{objective^} done: {text}"
+credits = "+{amount} {amount|{credit}|{credit}s}"
+reputation = "+{points} {reputation}"
+reputation_lost = "-{points} {reputation}"
+level = "Reached {level} {level_number}."
+chapter = "{chapter^} {chapter_number}"
+new_contact = "New {contact}: {name}. See `contacts`."
+contact_state = "{name} is now {state}."
+new_message = "New {message}: {subject}. See `messages`."
+new_fragment = "New {fragment} in the {archives}: {title}."
+new_document = "New {document} in the {archives}: {title}. See `decrypt`."
+decision_rejected = "That option is not offered."
+budget = "Internal error: the story did not settle."
+
+[campaign.reason]
+quest_active = "already accepted"
+quest_done = "already completed"
+quest_gone = "no longer offered"
+contact = "cannot be reached now ({state})"
+encrypted = "encrypted: see `decrypt`"
+not_encrypted = "not encrypted"
+decrypted = "already decrypted"
+needs_item = "needs {item}"
+site_unknown = "not known yet"
+owned = "owned"
+level = "{level} {number} needed"
+item_locked = "not available yet"
+market_closed = "the market is closed: too much {notoriety}"
+credits = "{missing} {missing|{credit}|{credit}s} short"
+nothing_to_hide = "nothing to hide"
+discussed = "already discussed"
+topic_not_yet = "nothing to say yet"

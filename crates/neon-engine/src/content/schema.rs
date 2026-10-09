@@ -11,7 +11,7 @@ use toml::Spanned;
 
 use crate::content::ids::{
     ChoiceId, CommandId, ContactId, DecisionId, EndingId, FileId, FlagId, ItemId, LineId, QuestId,
-    ReadableId, SiteId, TopicId,
+    ReadableId, ServiceId, SiteId, TopicId,
 };
 use crate::content::money::{Credits, Reputation};
 
@@ -853,6 +853,60 @@ pub struct Rules {
     pub quest_completed: i32,
 }
 
+/// A service that lowers the notoriety (`laylow`): what it costs and how much it cools.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ServiceDef {
+    /// Id of the service; its texts are `service.<id>.name` and `service.<id>.desc`.
+    pub id: ServiceId,
+    /// Price in credits.
+    pub price: Credits,
+    /// Notoriety points removed.
+    pub cooling: u8,
+    /// Byte offset of the entry in its file, for line numbers.
+    #[serde(skip)]
+    pub at: usize,
+}
+
+/// What an automatic intrusion costs in notoriety, by the tier of the site.
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AutoResolveRules {
+    /// Notoriety added by one intrusion; entry `n - 1` is for a site of tier `n`, so there are
+    /// exactly [`MAX_TIER`] entries.
+    pub nominal_heat: Vec<u8>,
+}
+
+/// How many hints a quest may use, by difficulty.
+#[derive(Debug, Clone, Copy, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct HintBudgets {
+    /// Story difficulty.
+    pub story: u8,
+    /// Normal difficulty.
+    pub normal: u8,
+    /// Expert difficulty.
+    pub expert: u8,
+    /// Hardcore difficulty.
+    pub hardcore: u8,
+}
+
+/// When a command of the game opens (docs/spec/commands.md, section 6). A command without a
+/// rule is open from the start.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct UnlockDef {
+    /// The command, by its official name in the command table of the game.
+    pub command: String,
+    /// The command is open while this holds.
+    pub when: Cond,
+    /// Text key of the reason given while it is closed (`unlock.shop`).
+    pub reason: String,
+    /// Byte offset of the entry in its file, for line numbers.
+    #[serde(skip)]
+    pub at: usize,
+}
+
 // -------------------------------------------------------------------- quests
 
 /// A quest.
@@ -1014,6 +1068,19 @@ pub(crate) struct RewardsFile {
     #[serde(default)]
     pub tier: Vec<Spanned<TierDef>>,
     pub rules: Rules,
+    #[serde(default)]
+    pub service: Vec<Spanned<ServiceDef>>,
+    #[serde(default)]
+    pub auto_resolve: AutoResolveRules,
+    #[serde(default)]
+    pub hints: HintBudgets,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct UnlocksFile {
+    #[serde(default)]
+    pub unlock: Vec<Spanned<UnlockDef>>,
 }
 
 #[derive(Debug, Deserialize)]

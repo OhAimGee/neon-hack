@@ -32,7 +32,8 @@ fn run_in_env(args: &[&str], input: &str, vars: &[(&str, &str)]) -> Output {
         args.contains(&"--data-dir") || vars.iter().any(|(name, _)| *name == "NEON_HACK_DATA_DIR");
     if !has_folder {
         command.arg("--data-dir").arg(scratch.path());
-        if args.contains(&"--demo") && !args.contains(&"--list-saves") {
+        let plays = args.contains(&"--demo") || args.contains(&"--campaign");
+        if plays && !args.contains(&"--list-saves") {
             command.arg("--no-save");
         }
     }
@@ -854,4 +855,218 @@ fn an_ending_keeps_the_last_save_so_the_game_resumes_just_before_it() {
         "the deck is still for sale:\n{text}"
     );
     assert!(!text.contains("Mission complete"), "{text}");
+}
+
+// ---- The campaign ----------------------------------------------------------------------------
+
+/// The text of a campaign session with the placeholder texts of the narrative (`TODO
+/// quest.m01.obj.2`, written in lot R2.3 and later) replaced by `<draft>`, so that what is
+/// compared is the interface and not the story that is not written yet.
+fn undraft(text: &str) -> String {
+    let mut out = String::new();
+    let mut rest = text;
+    while let Some(at) = rest.find("TODO ") {
+        out.push_str(&rest[..at]);
+        let tail = &rest[at + "TODO ".len()..];
+        let key_len = tail
+            .find(|c: char| !(c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_' || c == '.'))
+            .unwrap_or(tail.len());
+        out.push_str("<draft>");
+        rest = &tail[key_len..];
+    }
+    out.push_str(rest);
+    out
+}
+
+fn campaign(extra: &[&str], script: &str) -> String {
+    let mut args = vec!["--campaign"];
+    args.extend_from_slice(extra);
+    let output = run_with_input(&args, script);
+    assert!(output.status.success(), "{}", stderr(&output));
+    assert!(output.stderr.is_empty(), "{}", stderr(&output));
+    undraft(&stdout(&output))
+}
+
+/// A first look at the hub: the commands, the situation, what is not open yet.
+const FIRST_LOOK: &str = "\nhelp\nstatus\nquests\ncontacts\nnet\nshop\nmessages\nbogus\nquit\ny\n";
+
+#[test]
+fn the_campaign_plays_on_a_pipe_from_the_handle_to_the_farewell() {
+    let text = campaign(&["--seed", "1"], FIRST_LOOK);
+    assert!(text.contains("Handle [Neon]: \n"), "{text}");
+    assert!(text.contains("Welcome to the net, Neon."), "{text}");
+    assert!(text.contains("> help\nCommands\n"), "{text}");
+    assert!(text.contains("[Error] Not yet: find R4Z0R."), "{text}");
+    assert!(text.contains("[Error] Unknown command: bogus."), "{text}");
+    assert!(text.ends_with("Goodbye, Neon.\n"), "{text:?}");
+    assert!(!text.contains('\u{1b}'));
+}
+
+#[test]
+fn the_first_look_at_the_hub_reads_the_same_in_english() {
+    insta::assert_snapshot!(campaign(&[], FIRST_LOOK));
+}
+
+#[test]
+fn the_first_look_at_the_hub_reads_the_same_in_french() {
+    let text = campaign(&["--lang", "fr"], FIRST_LOOK);
+    assert!(text.contains("Pas encore : trouver R4Z0R."), "{text}");
+    insta::assert_snapshot!(text);
+}
+
+#[test]
+fn the_first_look_with_the_screen_reader_and_ascii_modes() {
+    let reader = campaign(&["--screen-reader"], FIRST_LOOK);
+    assert!(
+        reader.contains("1. id: m01; title: <draft>; status: active; chapter: 1"),
+        "{reader}"
+    );
+    assert!(!reader.contains("N E O N"), "no decoration");
+    insta::assert_snapshot!(reader);
+    let ascii = campaign(&["--ascii", "--lang", "fr"], FIRST_LOOK);
+    assert!(ascii.is_ascii(), "{ascii}");
+    insta::assert_snapshot!(ascii);
+    let both = campaign(&["--screen-reader", "--ascii", "--lang", "fr"], FIRST_LOOK);
+    assert!(both.is_ascii(), "{both}");
+    insta::assert_snapshot!(both);
+}
+
+#[test]
+fn the_campaign_difficulty_is_chosen_for_a_new_game_only() {
+    let text = campaign(&["--difficulty", "hardcore"], "\nstatus\nhint\nquit\ny\n");
+    assert!(text.contains("Difficulty: Hardcore"), "{text}");
+    assert!(text.contains("[Error] No hint left"), "{text}");
+    let output = run(&["--difficulty", "story"]);
+    assert_eq!(
+        output.status.code(),
+        Some(2),
+        "a difficulty is for the campaign"
+    );
+}
+
+#[test]
+fn the_two_games_are_never_played_together_and_the_game_options_ask_for_one() {
+    assert_eq!(run(&["--demo", "--campaign"]).status.code(), Some(2));
+    for flag in [
+        &["--new"][..],
+        &["--list-saves"],
+        &["--no-save"],
+        &["--load", "auto"],
+    ] {
+        let output = run(flag);
+        assert_eq!(output.status.code(), Some(2), "{flag:?} needs a game");
+    }
+    // They work for either game.
+    for game in ["--demo", "--campaign"] {
+        let output = run(&[game, "--list-saves"]);
+        assert!(output.status.success(), "{game}: {}", stderr(&output));
+        let output = run_with_input(&[game, "--new", "--seed", "3"], "");
+        assert!(output.status.success(), "{game}: {}", stderr(&output));
+    }
+}
+
+/// Runs the campaign with its saves in `dir`.
+fn campaign_in(dir: &std::path::Path, args: &[&str], input: &str) -> Output {
+    let dir = dir.to_str().expect("a UTF-8 temporary path");
+    let mut all = vec!["--campaign", "--data-dir", dir, "--seed", "7"];
+    all.extend_from_slice(args);
+    run_with_input(&all, input)
+}
+
+#[test]
+fn a_campaign_is_resumed_where_it_was_left_without_the_welcome() {
+    let dir = tempfile::tempdir().unwrap();
+    let first = campaign_in(
+        dir.path(),
+        &[],
+        "Zed\nquests\nhelp\nstatus\nhack localhost\ny\nquit\ny\n",
+    );
+    assert!(first.status.success(), "{}", stderr(&first));
+    assert!(dir.path().join("saves-campaign/auto.toml").exists());
+    assert!(
+        !dir.path().join("saves").exists(),
+        "the demo's folder is not touched"
+    );
+
+    let second = campaign_in(dir.path(), &[], "status\nnet\nquit\ny\n");
+    assert!(second.status.success(), "{}", stderr(&second));
+    let text = undraft(&stdout(&second));
+    assert!(text.contains("Resuming your saved game."), "{text}");
+    assert!(
+        text.contains("Back on the net, Zed: 1 active quest, 0 unread messages."),
+        "{text}"
+    );
+    assert!(
+        !text.contains("Welcome"),
+        "the welcome is not replayed:\n{text}"
+    );
+    assert!(!text.contains("Handle ["), "{text}");
+    assert!(text.contains("Handle: Zed"), "{text}");
+    assert!(
+        text.contains("Notoriety: 4/100 (Discreet)"),
+        "the intrusion is remembered:\n{text}"
+    );
+    assert!(text.contains("localhost - pierced - 1"), "{text}");
+}
+
+#[test]
+fn campaign_saves_are_listed_apart_from_the_demos_and_a_checkpoint_comes_back() {
+    let dir = tempfile::tempdir().unwrap();
+    campaign_in(dir.path(), &[], "Zed\nsave 3\nbuy 1\nquit\ny\n");
+    // The demo plays in the same data folder and sees none of it.
+    let demo = play_in(dir.path(), &["--list-saves"], "");
+    assert!(
+        stdout(&demo).ends_with("No saved game.\n"),
+        "{}",
+        stdout(&demo)
+    );
+    let listing = stdout(&campaign_in(dir.path(), &["--list-saves"], ""));
+    assert!(listing.contains("saves-campaign"), "{listing}");
+    assert!(listing.contains("auto: Zed, 0 actions"), "{listing}");
+    assert!(
+        listing.contains("checkpoint-1: Zed, 0 actions"),
+        "{listing}"
+    );
+    assert!(listing.contains("slot-3: Zed, 0 actions"), "{listing}");
+    // Loading a named save works for the campaign too, and a demo save is not a campaign.
+    let output = campaign_in(dir.path(), &["--load", "slot-3"], "status\nquit\ny\n");
+    assert!(output.status.success(), "{}", stderr(&output));
+    assert!(stdout(&output).contains("Handle: Zed"));
+    let output = campaign_in(dir.path(), &["--load", "slot-4"], "");
+    assert!(!output.status.success());
+    assert!(
+        stderr(&output).contains("There is no save called slot-4."),
+        "{}",
+        stderr(&output)
+    );
+    play_in(dir.path(), &[], &format!("{PROLOGUE}save 1\nquit\ny\n"));
+    let output = campaign_in(dir.path(), &["--new"], "Zed\nquit\ny\n");
+    assert!(output.status.success());
+    assert!(dir.path().join("saves-campaign/auto.toml.bak").exists());
+}
+
+#[test]
+fn the_first_three_quests_play_to_the_end_through_the_real_binary() {
+    let script = "Neon\nquests\nhelp\nnet\nstatus\ntalk echo7\n1\nhack localhost\ny\nlaylow\n\
+        hack corp-server-01\ny\ntalk r4z0r\n1\nshop\nbuy stealth\ny\nhack localhost\ny\n\
+        hack corp-server-01\ny\nhack underground-market\ny\narchives\ndecrypt doc_phase2\n\
+        quests\nstatus\nquit\ny\n";
+    let text = campaign(&["--seed", "9"], script);
+    assert_eq!(text.matches("Quest completed: ").count(), 3, "{text}");
+    assert!(text.contains("[Reward] Reached level 3."), "{text}");
+    assert!(text.contains("Credits: 555"), "{text}");
+    assert!(text.contains("Notoriety: 36/100 (Watched)"), "{text}");
+    assert!(text.contains("[ALERT] Notoriety up: Watched."), "{text}");
+    assert!(!text.contains("[Error]"), "{text}");
+    assert!(text.ends_with("Goodbye, Neon.\n"), "{text:?}");
+}
+
+#[test]
+fn closing_the_input_ends_the_campaign_instead_of_looping() {
+    let output = run_with_input(&["--campaign"], "");
+    assert!(output.status.success());
+    assert!(stdout(&output).ends_with("Input closed: ending the session.\n"));
+    let output = run_with_input(&["--campaign"], "Neon\nhack localhost\n");
+    assert!(output.status.success());
+    assert!(stdout(&output).ends_with("Input closed: ending the session.\n"));
 }

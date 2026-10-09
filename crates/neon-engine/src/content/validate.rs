@@ -32,6 +32,7 @@ pub(crate) fn validate(c: &Content, check_texts: bool) -> Vec<Diagnostic> {
     v.catalog();
     v.flags();
     v.rewards();
+    v.unlocks();
     v.quests();
     v.decisions();
     v.topics();
@@ -335,6 +336,103 @@ impl V<'_> {
         }
         if let Some(t) = c.tiers.iter().find(|t| !(1..=MAX_TIER).contains(&t.id)) {
             self.err(File::Rewards, t.at, format!("tier {} out of range", t.id));
+        }
+        self.game_rules();
+    }
+
+    /// The constants of the hub: services, automatic intrusions, hint budgets.
+    fn game_rules(&mut self) {
+        let c = self.c;
+        let f = File::Rewards;
+        self.unique(
+            f,
+            "service",
+            c.services.iter().map(|x| (x.id.as_str(), x.at)),
+        );
+        if c.services.is_empty() {
+            self.err(
+                f,
+                0,
+                "at least one `[[service]]` is needed (what `laylow` sells)",
+            );
+        }
+        for service in &c.services {
+            if service.price == Credits::ZERO {
+                self.err(
+                    f,
+                    service.at,
+                    format!("service `{}` must have a positive price", service.id),
+                );
+            }
+            if !(1..=HEAT_MAX).contains(&service.cooling) {
+                self.err(
+                    f,
+                    service.at,
+                    format!(
+                        "service `{}`: cooling must be between 1 and {HEAT_MAX}",
+                        service.id
+                    ),
+                );
+            }
+        }
+        let heat = &c.auto_resolve.nominal_heat;
+        if heat.len() != usize::from(MAX_TIER) || heat.iter().any(|h| *h > HEAT_MAX) {
+            self.err(
+                f,
+                0,
+                format!(
+                    "`[auto_resolve] nominal_heat` needs {MAX_TIER} values (one per tier), each at most {HEAT_MAX}"
+                ),
+            );
+        }
+        let h = &c.hints;
+        if !(h.story >= h.normal && h.normal >= h.expert && h.expert >= h.hardcore) {
+            self.err(
+                f,
+                0,
+                "`[hints]` must not grow with the difficulty: story >= normal >= expert >= hardcore",
+            );
+        }
+    }
+
+    // ------------------------------------------------------------- unlocks
+
+    /// The rules of `unlocks.toml`: each names a command of the game once, with a condition of
+    /// the mission language and a reason text key.
+    fn unlocks(&mut self) {
+        let c = self.c;
+        let f = File::Unlocks;
+        self.unique(
+            f,
+            "unlocked command",
+            c.unlocks.iter().map(|x| (x.command.as_str(), x.at)),
+        );
+        let known = &c.sources.game_commands;
+        for u in &c.unlocks {
+            let ctx = format!("unlock of `{}`", u.command);
+            if !known.is_empty() && !known.contains(&u.command) {
+                self.err(
+                    f,
+                    u.at,
+                    format!("{ctx}: `{}` is not a command of the game", u.command),
+                );
+            }
+            let well_formed = u.reason.starts_with("unlock.")
+                && u.reason.len() > "unlock.".len()
+                && u.reason.bytes().all(|b| {
+                    b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'_' || b == b'.'
+                });
+            if !well_formed {
+                self.err(
+                    f,
+                    u.at,
+                    format!(
+                        "{ctx}: the reason `{}` must be a text key `unlock.<name>`",
+                        u.reason
+                    ),
+                );
+            }
+            self.cond(f, u.at, &ctx, &u.when, 1);
         }
     }
 

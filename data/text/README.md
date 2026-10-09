@@ -14,6 +14,7 @@ reward = "+{credits} {credits|credit|credits}."
 
 - **Marqueur** : `{nom}` (lettres minuscules, chiffres, `_`) est remplacé par l'argument du même nom. Un nombre s'écrit en décimal, un texte tel quel.
 - **Pluriel** : `{n|singulier|pluriel}` choisit une forme d'après le nombre `n`. Une forme peut contenir des marqueurs, `n` compris : `{n|un nœud|{n} nœuds}`, ou `{n||s}` pour ne rien écrire au singulier. Règle par langue : en français **0 et 1** sont singuliers (« 0 crédit »), en anglais seul **1** l'est.
+- **Majuscule** : `{nom^}` est `{nom}` avec sa première lettre en majuscule (Unicode, quelle que soit la langue) : une phrase qui s'ouvre sur un terme du glossaire, que les catalogues tiennent en minuscules (`{quest^} terminée : {title}`). Le marqueur ne s'applique pas à un pluriel.
 - **Accolades** : réservées aux marqueurs, sans échappement. Ce que le joueur tape (son pseudo) n'est jamais dans un texte : il arrive en argument.
 - **Une clé ne peut pas être à la fois un texte et une table** : `demo.item.proxy.label` et `demo.item.proxy.name`, pas `demo.item.proxy` avec `demo.item.proxy.name`.
 
@@ -36,10 +37,16 @@ Les deux modes se combinent (`--screen-reader --ascii`) : la variante `@sr` pass
 
 Les mots du jeu (Trace, Notoriété, nœud, quête…) ne s'écrivent pas à la main dans une phrase : `terms.toml` en donne le mot canonique (`term.<id>`), le code le cite par `Arg::Term`, et `data/glossary.toml` liste les variantes interdites. Règles et arbitrages : [`docs/spec/glossary.md`](../../docs/spec/glossary.md).
 
+## Les fichiers du jeu de campagne
+
+- `campaign.toml` : les textes d'**interface** du hub (aide, fiches, listes, invites, résultats, raisons d'ouverture `unlock.*`, services `service.*`). Neutres en français (ni tu ni vous), sans terme du glossaire tapé : le jeu donne au gabarit les termes qu'il cite (`{quest}`, `{net^}`).
+- `world_names.toml` : les noms propres des contacts et des objets (clés `contact.<id>.name`, `item.<id>.name`).
+- `world_draft.toml` : un brouillon `TODO <clé>` pour chaque clé de texte **dérivée des données** qu'aucun autre fichier ne définit (titres, objectifs, dialogues, messages, fragments...). **Généré, ne pas éditer** : pour écrire un texte, définir sa clé dans un vrai fichier du dossier, puis régénérer (`NEON_REGEN_WORLD_DRAFTS=1 cargo test -p neon-engine --test content regenerate_the_draft_texts -- --ignored`) ; le brouillon disparaît. Les brouillons sont exemptés des budgets de largeur ; `the_number_of_draft_texts_is_reported` (`--nocapture`) donne le compte par langue, et `no_draft_text_remains` (ignoré) échouera tant qu'il en reste : à dégriser à la fin de R5.
+
 ## Vérifier
 
 ```bash
 cargo test -p neon-engine        # charge les catalogues et applique toutes les règles
 ```
 
-Le test `the_embedded_content_follows_every_rule` liste chaque infraction avec la langue et la clé. Les budgets de largeur d'affichage par famille de texte arriveront avec le schéma de contenu (phase R2).
+Le test `the_embedded_content_follows_every_rule` liste chaque infraction avec la langue et la clé. Les budgets de largeur d'affichage par famille de texte (`content::texts::budget`) sont contrôlés sur les textes écrits.

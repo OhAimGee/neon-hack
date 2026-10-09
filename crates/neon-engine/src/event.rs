@@ -62,6 +62,8 @@ pub enum Importance {
 pub enum Gauge {
     /// How close security is to the player.
     Trace,
+    /// What the world knows of the player: the gauge of the campaign.
+    Notoriety,
 }
 
 impl Gauge {
@@ -70,6 +72,7 @@ impl Gauge {
     pub fn name_key(self) -> &'static str {
         match self {
             Self::Trace => "gauge.trace",
+            Self::Notoriety => "gauge.notoriety",
         }
     }
 }

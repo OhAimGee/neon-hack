@@ -1,0 +1,87 @@
+version = 1
+
+[meta]
+player = "Neon"
+turn = 7
+
+[state]
+game = "campaign"
+seed = "0000000000000007"
+handle = "Neon"
+difficulty = "normal"
+base_notoriety = 12
+quest_log = ["m01", "m02", "m03"]
+contact_book = ["echo7", "r4z0r"]
+inbox = ["mail-welcome"]
+archive = ["doc_phase2", "f01", "f02"]
+
+[state.missions]
+clock = 7
+tier = 3
+reputation = 45
+earned = 405
+claimed = ["breach-corp-server-01", "open-m01", "open-m02", "open-m03", "quest-m01", "quest-m02", "topic-echo7-advice", "topic-r4z0r-how_to_earn"]
+owned = ["stealth_module"]
+granted = ["f01", "mail-welcome"]
+used = ["help", "laylow", "quests", "scan", "status"]
+
+[state.missions.heat]
+at = 4
+heat = 12
+
+[state.missions.flags]
+chapter = 2
+
+[state.missions.contacts]
+angel = "offline"
+aura = "offline"
+broker = "offline"
+echo7 = "available"
+ghost = "offline"
+insider = "offline"
+miner = "offline"
+phoenix = "offline"
+r4z0r = "available"
+
+[state.missions.bonus_trust]
+echo7 = 20
+
+[state.missions.compromised]
+corp-server-01 = 4
+localhost = 3
+
+[state.missions.extracted]
+corp-server-01 = ["employee_records", "financial_data"]
+localhost = ["user_data"]
+
+[state.missions.talks]
+echo7 = [1]
+r4z0r = [5]
+
+[state.missions.heat_peaks]
+4 = 12
+
+[state.missions.topics]
+echo7 = ["advice"]
+r4z0r = ["how_to_earn"]
+
+[state.missions.quests.m01]
+status = "completed"
+opened_at = 0
+done = [[0, 0], [1, 0], [2, 0], [3, 0], [4, 0], [5, 0], [6, 0]]
+
+[state.missions.quests.m02]
+status = "completed"
+opened_at = 3
+done = [[0, 0], [2, 0]]
+
+[state.missions.quests.m03]
+status = "active"
+opened_at = 4
+done = [[0, 0], [1, 0]]
+
+[state.hints]
+"m03.2" = 1
+
+[end]
+ok = true

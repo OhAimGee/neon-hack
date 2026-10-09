@@ -23,7 +23,7 @@
 
 | Commande | Alias | Arguments | Effet | Ouverture | Remplace |
 |---|---|---|---|---|---|
-| `help` | `h`, `?` | `[commande]` | liste exactement les commandes ouvertes **dans le contexte** ; avec un nom, son usage et sa ligne d'aide | départ | `help` |
+| `help` | `h` | `[commande]` | liste exactement les commandes ouvertes **dans le contexte** ; avec un nom, son usage et sa ligne d'aide | départ | `help` |
 | `status` | `st` | — | fiche : handle, niveau, crédits, Notoriété et bande, réputation par faction, difficulté, indices restants ; **en intrusion** : Trace, cycles, programmes et charges, prévision | départ | `status` |
 | `options` | — | — | écran des réglages de présentation (langue, verbosité, ASCII, lecteur d'écran, vitesse du texte, couleurs, difficulté hors Hardcore) | départ | (nouveau) |
 | `verbosity` | — | `[brief\|normal\|full]` | affiche ou règle la verbosité ; jamais en dessous de `normal` en mode lecteur d'écran (VRB-3) | départ | (nouveau) |
@@ -142,7 +142,7 @@ Ouverture initiale proposée (la fin de chaque ligne est la quête qui l'ouvre ;
 | premier message | `messages`, `read` |
 | premier document | `archives`, `decrypt` |
 | première offre de contrat | `accept` |
-| Notoriété au-dessus de « Discret » une fois | `laylow` |
+| Notoriété au-dessus de « Discret » une fois | `laylow` (écart de R2.2b : voir § 11) |
 | difficulté Histoire | `skip` |
 
 Le tutoriel (R2) enseigne dans cet ordre `help`, `quests`, `talk`, `net`, `hack`, `map`, `breach`, `end`, `jackout` ; il ne dépend d'aucune commande retirée (`bruteforce localhost`, `laylow` comme premier geste de couverture, le niveau 2 par `scan` : contradiction 13).
@@ -180,7 +180,7 @@ enum ArgError { Missing { usage }, Unknown { kind, word, see }, Ambiguous { kind
 
 L'ordre des réponses est : nom inconnu, mauvais contexte ou frontend incapable (`error.wrong_context.run|hub|tui`), verrouillée, puis les arguments de gauche à droite. Le frontend qui ne gère pas `panel` et `plain` (`Capabilities::PLAIN`) les voit répondre « Seulement en plein écran. ». `help`, `complete` et `complete_args` ne listent et ne proposent que ce qui est ouvert, du contexte courant et possible pour le frontend (jamais une chose verrouillée, fermée ou inconnue).
 
-`Registry::issues` contrôle : noms et alias bien formés et uniques, mot fixe non vide, argument facultatif jamais avant un obligatoire, chemin en dernier, aucune commande d'intrusion listée au hub. `Registry::catalog_issues(&Catalog)` contrôle séparément que chaque `help.<nom>` existe et que toute commande qui a des arguments a son `help.<nom>.usage`. **Reste pour R2.2b** : aucun nom de commande n'est un mot interdit du glossaire (il faut le glossaire), tout `ArgKind` utilisé a un résolveur, et le frontend transmet ses `Capabilities` au jeu.
+`Registry::issues` contrôle : noms et alias bien formés et uniques, mot fixe non vide, argument facultatif jamais avant un obligatoire, chemin en dernier, aucune commande d'intrusion listée au hub. `Registry::catalog_issues(&Catalog)` contrôle séparément que chaque `help.<nom>` existe et que toute commande qui a des arguments a son `help.<nom>.usage`. **Fait en R2.2b** : aucun nom de commande n'est un mot interdit du glossaire et tout `ArgKind` utilisé a un résolveur (tests de `neon_engine::campaign`). **Reste** : le frontend ne transmet pas encore ses `Capabilities` au jeu (voir § 11).
 
 ## 8. Tests exigés (I7 et suivants)
 
@@ -211,3 +211,19 @@ L'ordre des réponses est : nom inconnu, mauvais contexte ou frontend incapable 
 ## 10. Décisions
 
 Validées par le propriétaire le 8 octobre 2026 (S-3 de [`DECISIONS.md`](../design/DECISIONS.md) § 5) : `hack <site>` comme seule porte d'entrée d'une intrusion ; `use <programme>` pour tous les utilitaires ; nœuds désignés par numéro ou nom (pas de lettre) ; `net` pour la carte du monde et `map` pour le graphe (règle du cross-check) ; `talk` officiel et `contact` en alias ; `journal` en alias de `quests` ; `save` réservé au hub ; autosave à la fin de chaque tour d'intrusion.
+
+## 11. Mise en œuvre du hub (lot R2.2b) : ce qui s'écarte du texte ci-dessus
+
+La table du hub est déclarée dans `neon_engine::campaign` (22 noms). Les commandes de l'intrusion, `deck`, `equip`, `unequip`, `upgrade`, `skip`, `options` et `verbosity` n'y sont pas : les premières attendent le moteur de run (R4), les deux dernières les réglages de présentation, que la TUI traitera (R3). La question d'`equip` (l'audit n'avait aucune commande de ce nom) est **sans objet jusqu'à R4**.
+
+1. **Alias `?`** : la règle 1 (noms et alias en minuscules ASCII, vérifiée par `Registry::issues`) l'interdit. L'alias de `help` est supprimé de la spécification : `help` et `h`.
+2. **Numéros stables** : les listes qui grossissent avec le jeu (`quests`, `contacts`, `messages`, `archives`) sont numérotées **dans l'ordre où le joueur a rencontré les choses** (liste à ajout seul, enregistrée dans la sauvegarde), jamais dans l'ordre des données : une quête qui s'ouvre plus tard ne décale pas les autres. Les listes à contenu fixe (`net`, `shop`, `laylow`, `save`) gardent l'ordre des données et listent tout, le non-disponible avec sa raison ; `net` s'arrête au dernier site connu et compte le reste (« 15 autres sites encore inconnus ») au lieu d'aligner des `???`, les numéros restant ceux de la liste entière.
+3. **`net`** : la colonne « chapitre » de la table est **« niveau »** (le niveau requis du site) : le catalogue ne donne pas de chapitre aux sites. Un site est *inconnu* tant que son niveau ou son relais manque, *connu* ensuite, *percé* quand il a été compromis ; l'état *grillé* attend le moteur de run.
+4. **`laylow` s'ouvre avec M01**, et non quand la Notoriété dépasse « Discret » : le dernier objectif de M01 est « utiliser une commande de couverture » ; ouvrir `laylow` plus tard rendrait M01 impossible à finir. La fenêtre « première fois au-dessus de Discret » n'existe pas dans le langage de conditions (aucune condition ne lit la chaleur hors objectif).
+5. **`shop` et `buy` restent ouverts si R4Z0R devient hostile** (D1, `betray`) : la fermer ferait perdre l'accès aux objets des niveaux suivants (la puce quantique ouvre `doc_vault`). La boutique se ferme en revanche à Notoriété « Chassé » (80), raison écrite dans la liste.
+6. **`save` sans argument** écrit l'emplacement 1 : le moteur ne sait pas quel emplacement est libre ou le plus ancien (c'est le dossier de sauvegardes du frontend qui le sait).
+7. **`hack`** : la confirmation ne vérifie pas de deck (il n'existe pas avant R4) ; l'intrusion est résolue aussitôt (`AutoResolve`, voir R-15). `skip` n'existe pas : tout `hack` est déjà automatique.
+8. **Payer et décider** ne sont pas des commandes : un objectif `pay` se règle dans la conversation du donneur de la quête (`talk`, entrée « Payer N crédits »), une décision D1-D3 s'ouvre depuis la conversation de celui qui la porte (entrée « Décider »), avec un point de contrôle avant le choix.
+9. **Commandes du frontend** (`load`, `panel`, `plain`, `export`) : déclarées dans la table (listées par `Registry`, vérifiées par `Registry::issues`), mais **aucun frontend ne les prend encore en charge** : le jeu les ferme (« Pas encore : l'interface ne le propose pas encore. ») au lieu de les lister ; `panel` et `plain` répondent « Seulement en plein écran. ». Quand R3 les câblera, il suffira de les rouvrir (une ligne de `availability`) et de transmettre les `Capabilities`.
+10. **`accept`** s'ouvre à la première offre, S06 (règle de `unlocks.toml`) ; **`messages`/`read`** et **`archives`/`decrypt`** à la fin de M01 (premier message, niveau 2 qui montre le premier document chiffré).
+11. **Textes** : les noms de commandes dans les textes sont des noms propres du jeu ; les marques de substitution des usages (`<quête>`, `<contact>`) sont écrites dans la langue de l'interface, car un usage est un texte sans arguments.

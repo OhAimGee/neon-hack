@@ -8,7 +8,7 @@ RPG textuel cyberpunk pour le terminal. Vous êtes un hacker novice à Neo-Tokyo
 
 ## Statut
 
-**Le jeu n'est pas encore jouable** : le dépôt contient le squelette technique en Rust (trois crates, CI, règles de lint) mais pas encore le moteur de jeu. Le cadrage, le socle (phase R1) et les spécifications (phase P1) sont terminés ; le contenu et la campagne (phase R2) sont la prochaine étape.
+**Le jeu n'est pas encore jouable** : le dépôt contient le squelette technique en Rust (trois crates, CI, règles de lint), le moteur de contenu de la campagne et, depuis le lot R2.2b, le **cœur de la campagne** (les commandes du hub, avec les intrusions résolues automatiquement), que l'on peut essayer avec `--campaign` ; les textes de l'histoire ne sont pas écrits (des brouillons `TODO` les remplacent) et la campagne n'est pas encore le jeu par défaut. Le cadrage, le socle (phase R1) et les spécifications (phase P1) sont terminés ; l'écriture des textes de départ et le prologue (R2.3) puis la campagne de bout en bout (R2.4) sont la prochaine étape.
 
 | Étape | État |
 |---|---|
@@ -24,7 +24,9 @@ RPG textuel cyberpunk pour le terminal. Vous êtes un hacker novice à Neo-Tokyo
 | Phase R1.5 : jeu jouet complet de bout en bout (objectif, victoire, défaite, épilogue) | fait |
 | Phase R1 (socle) | **terminée** |
 | Phase P1 : spécifications (glossaire, commandes, langage de missions, écran d'intrusion, solveur, banc d'équilibrage) et décisions de design validées | **terminée** ; prochaine étape : le contenu et la campagne (R2) |
-| Moteur de jeu, TUI, campagne | à venir |
+| Phase R2.1 : moteur de contenu et données de la campagne (quêtes, décisions, fins, validation, sauvegarde de l'état) | fait |
+| Phase R2.2 : registre de commandes du jeu complet (R2.2a) et cœur de la campagne, commandes du hub, intrusions automatiques, sauvegarde (R2.2b) | fait ; essayer avec `--campaign` |
+| Textes de l'histoire, prologue et tutoriel (R2.3), campagne de bout en bout (R2.4), intrusion tactique (R4), TUI complète (R3) | à venir |
 
 ## Jouer en local
 
@@ -82,6 +84,8 @@ Dans un vrai terminal, la démonstration s'ouvre en **plein écran** (barre d'é
 | `--ascii` | ASCII 7 bits : symboles, accents et texte tapé translittérés, sans décoration |
 | `--lang fr` / `--lang en` | langue des textes (anglais par défaut) |
 | `--verbosity brief\|normal\|full` | quantité d'ambiance affichée |
+| `--campaign` | joue le début de la campagne (développement : textes de l'histoire à venir ; mêmes options de sauvegarde, dossier `saves-campaign/`) |
+| `--difficulty story\|normal\|expert\|hardcore` | difficulté d'une nouvelle campagne (une campagne reprise garde la sienne) |
 | `--seed 7` | partie reproductible (pour une nouvelle partie) |
 | `--color auto\|always\|never`, `--no-color` | couleur : un terminal qui sait la montrer par défaut ; `NO_COLOR` l'éteint, et ces options l'emportent |
 | `--palette default\|high-contrast\|cvd\|mono` | couleurs de l'interface plein écran |

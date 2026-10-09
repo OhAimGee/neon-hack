@@ -12,11 +12,15 @@ Rien dans `docs/design/` n'est réécrit (R-0) ; les écarts sont listés au § 
 data/world/
   catalog.toml      sites (+ fichiers), objets, contacts, « readables » (fragments, courriers, scènes, documents), commandes
   flags.toml        drapeaux typés (bool, enum, compteur, bitset)
-  rewards.toml      tailles S/M/L/XL, R(P) par palier, constantes de confiance, crédits de départ
+  rewards.toml      tailles S/M/L/XL, R(P) par palier, constantes de confiance, crédits de départ ;
+                    constantes du hub (R2.2b) : services de `laylow`, Notoriété nominale d'une intrusion
+                    automatique par niveau de site, budgets d'indices par difficulté
   quests.toml       [[quest]] M01-M14 + 9 contrats
   decisions.toml    [[decision]] D1-D3 et echo, [[ending]], [[epilogue]]
   topics.toml       [[topic]] (sujets de dialogue)
   texts.toml        clés de texte déclarées (dérivées, voir § 6.8)
+  unlocks.toml      ouverture des commandes du jeu : `command`, `when` (une condition), `reason` (clé `unlock.<nom>`),
+                    validée contre la table de commandes (R2.2b, docs/spec/commands.md § 6)
 crates/neon-engine/src/content/
   ids.rs            ids textuels typés (un type par espace de noms, validés à la création)
   money.rs          Credits et Reputation, saturants (plafonds 10^9 et ±10^6, invariant I11)

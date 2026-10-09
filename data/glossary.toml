@@ -15,9 +15,16 @@
 #     d'événement, pas des mots du jeu.
 
 [settings]
-# Les clés de narration (quêtes, dialogues, documents...) : un auteur y écrit librement, sauf
-# pour les concepts `strict`.
-narrative_prefixes = ["quest.", "dialogue.", "document.", "mail.", "scene.", "ending."]
+# Les clés de narration : un auteur y écrit librement, sauf pour les concepts `strict`. Ce sont
+# les préfixes des clés dérivées du contenu qui portent de l'histoire (quêtes et leurs indices,
+# sujets de dialogue des contacts, fragments, documents, messages, cinématiques, décisions,
+# fins, épilogue, nœuds, fichiers, objets). Les textes d'interface (`campaign.`, `unlock.`,
+# `service.`, `command.`, `ui.`...) restent contrôlés. Un test garde cette liste égale aux
+# familles de clés dérivées.
+narrative_prefixes = [
+    "quest.", "contact.", "frag.", "doc.", "mail.", "cutscene.", "decision.", "ending.",
+    "epilogue.", "node.", "file.", "item.",
+]
 # Clés exemptées de toute variante interdite.
 exempt_prefixes = ["ui.tag."]
 

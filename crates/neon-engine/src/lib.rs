@@ -10,6 +10,7 @@
 //! complete game that exercises it. [`content`] is the language of the campaign: quests,
 //! flags, decisions and endings, loaded from data and evaluated without any I/O.
 
+pub mod campaign;
 pub mod command;
 pub mod content;
 pub mod demo;

@@ -1,0 +1,55 @@
+---
+source: crates/neon-cli/tests/cli.rs
+expression: ascii
+---
+NEON HACK
+Handle [Neon] : 
+Bienvenue sur le reseau, Neon.
+Nouvelle quete : <draft>
+Taper `help` pour lister les commandes, puis `quests` pour lire la premiere quete.
+> help
+Commandes
+[1] help - Lister les commandes, ou en expliquer une
+[2] status - Voir la situation
+[3] quit - Sauvegarder et quitter le reseau
+[4] quests - Voir le journal, ou les objectifs d'une quete
+[5] contacts - Lister les contacts connus
+[6] talk - Parler a un contact
+[7] net - Cartographier le reseau, ou detailler un site
+[8] hack - Lancer une intrusion sur un site connu
+[9] laylow - Baisser la Notoriete avec un service
+[10] hint - Demander un indice a ECHO-7
+[11] save - Sauvegarder la partie dans un emplacement
+Objectif atteint : <draft>
+> status
+Handle : Neon
+Niveau : 1
+Credits : 100
+Notoriete : 0/100 (Discret)
+Reputation : 0
+Chapitre : 1
+Difficulte : Normal
+Quetes en cours : 1
+Indices restants pour la quete en cours : 3
+Objectif atteint : <draft>
+> quests
+== Journal ==
+[1] m01 - <draft> - en cours - 1
+Objectif atteint : <draft>
+> contacts
+== Contacts ==
+[1] echo7 - ECHO-7 - amical - disponible - -
+> net
+== Le reseau ==
+[1] localhost - connu - 1
+15 autres sites encore inconnus.
+Objectif atteint : <draft>
+> shop
+[Erreur] Pas encore : trouver R4Z0R.
+> messages
+[Erreur] Pas encore : attendre un premier message.
+> bogus
+[Erreur] Commande inconnue : bogus. Voir `help`.
+> quit
+Quitter le reseau ? La partie est sauvegardee. [o/N] y
+A bientot, Neon.

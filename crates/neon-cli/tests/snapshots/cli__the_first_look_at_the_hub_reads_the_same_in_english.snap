@@ -1,0 +1,55 @@
+---
+source: crates/neon-cli/tests/cli.rs
+expression: "campaign(&[], FIRST_LOOK)"
+---
+== N E O N   H A C K ==
+Handle [Neon]: 
+Welcome to the net, Neon.
+New quest: <draft>
+Type `help` to list the commands, then `quests` to read the first quest.
+> help
+Commands
+[1] help - List the commands, or explain one
+[2] status - Show your situation
+[3] quit - Save and leave the net
+[4] quests - Show the journal, or the objectives of one quest
+[5] contacts - List the contacts you know
+[6] talk - Talk to a contact
+[7] net - Show the map of the net, or one site
+[8] hack - Start a run on a known site
+[9] laylow - Lower your Notoriety with a service
+[10] hint - Ask ECHO-7 for a hint
+[11] save - Save the game in a slot
+Objective done: <draft>
+> status
+Handle: Neon
+Level: 1
+Credits: 100
+Notoriety: 0/100 (Discreet)
+Reputation: 0
+Chapter: 1
+Difficulty: Normal
+Quests in progress: 1
+Hints left for the current quest: 3
+Objective done: <draft>
+> quests
+== Journal ==
+[1] m01 - <draft> - active - 1
+Objective done: <draft>
+> contacts
+== Contacts ==
+[1] echo7 - ECHO-7 - friendly - available - -
+> net
+== The net ==
+[1] localhost - known - 1
+15 more sites still unknown.
+Objective done: <draft>
+> shop
+[Error] Not yet: find R4Z0R.
+> messages
+[Error] Not yet: wait for a first message.
+> bogus
+[Error] Unknown command: bogus. See `help`.
+> quit
+Leave the net? The game is saved. [y/N] y
+Goodbye, Neon.

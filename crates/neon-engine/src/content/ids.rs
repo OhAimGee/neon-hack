@@ -94,6 +94,8 @@ id_type!(
     EndingId,
     /// A line of the epilogue montage.
     LineId,
+    /// A service that lowers the notoriety (`lie_low`).
+    ServiceId,
 );
 
 /// Whether `id` has the shape the content requires, `[a-z0-9][a-z0-9_-]{0,47}`: the id

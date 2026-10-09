@@ -216,6 +216,12 @@ impl Glossary {
         })
     }
 
+    /// The key prefixes of narration texts, which are only checked for strict concepts.
+    #[must_use]
+    pub fn narrative_prefixes(&self) -> &[String] {
+        &self.narrative_prefixes
+    }
+
     /// The glossary embedded in the program (`data/glossary.toml`).
     ///
     /// # Errors

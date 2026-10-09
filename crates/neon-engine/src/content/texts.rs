@@ -164,6 +164,16 @@ fn derive(c: &Content) -> Vec<(String, String)> {
         out.own(format!("command `{}`", cmd.id));
         out.add(format!("command.{}.help", k(cmd.id.as_str())));
     }
+    for service in &c.services {
+        out.own(format!("service `{}`", service.id));
+        let id = k(service.id.as_str());
+        out.add(format!("service.{id}.name"));
+        out.add(format!("service.{id}.desc"));
+    }
+    for unlock in &c.unlocks {
+        out.own(format!("unlock rule of `{}`", unlock.command));
+        out.add(unlock.reason.clone());
+    }
     out.keys
 }
 
@@ -216,19 +226,39 @@ pub fn check_budgets(
         .collect()
 }
 
+/// What a placeholder text starts with (`TODO quest.m05.title`): the draft files hold one for
+/// every derived key that is still to be written, so that the game runs and nothing shows as
+/// a missing key. A draft is not a text yet, so it is exempt from the width budgets.
+pub const DRAFT_PREFIX: &str = "TODO ";
+
 /// Checks the budgets of the texts a language catalog holds, measured with
-/// [`display_width`]. A key the catalog lacks is not reported here (see [`missing_keys`]).
+/// [`display_width`]. A key the catalog lacks is not reported here (see [`missing_keys`]), and
+/// a placeholder (see [`DRAFT_PREFIX`]) is not measured.
 #[must_use]
 pub fn check_catalog_budgets(c: &Content, catalog: &Catalog) -> Vec<String> {
     check_budgets(
         c,
         |key| {
-            catalog
-                .get(key)
-                .map(|_| render(&Text::dynamic(key.to_owned()), catalog, RenderMode::FULL))
+            catalog.get(key)?;
+            let text = render(&Text::dynamic(key.to_owned()), catalog, RenderMode::FULL);
+            (!text.starts_with(DRAFT_PREFIX)).then_some(text)
         },
         display_width,
     )
+}
+
+/// The derived keys whose text is still a placeholder (see [`DRAFT_PREFIX`]) in a language
+/// catalog: what the writers still owe once the draft files exist.
+#[must_use]
+pub fn draft_keys(c: &Content, catalog: &Catalog) -> Vec<String> {
+    required_keys(c)
+        .into_iter()
+        .filter(|key| {
+            catalog.get(key).is_some()
+                && render(&Text::dynamic(key.clone()), catalog, RenderMode::FULL)
+                    .starts_with(DRAFT_PREFIX)
+        })
+        .collect()
 }
 
 /// The derived keys a language catalog does not define yet: what the writers still owe.
