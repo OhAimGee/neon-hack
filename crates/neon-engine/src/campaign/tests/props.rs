@@ -74,7 +74,9 @@ fn input() -> impl Strategy<Value = Input> {
         4 => (0usize..5).prop_map(Input::Choice),
         3 => Just(Input::Cancel),
         1 => Just(Input::Continue),
-        2 => "\\PC{0,12}".prop_map(Input::Line),
+        // No `<`: the game echoes an unknown command, and a typed `<?` would look like the
+        // renderer's marker for a missing argument.
+        2 => "[^<\\pC]{0,12}".prop_map(Input::Line),
     ]
 }
 
