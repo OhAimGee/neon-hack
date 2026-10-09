@@ -1305,6 +1305,23 @@ fn a_save_of_the_other_game_is_refused_with_a_clear_message_and_left_alone() {
     assert!(fresh.status.success(), "{}", stderr(&fresh));
     assert!(dir.path().join("saves-campaign/auto.toml.bak").exists());
 
+    // A foreign save is refused even when a valid backup of this game sits next to it.
+    let both = tempfile::tempdir().unwrap();
+    std::fs::create_dir_all(both.path().join("saves-campaign")).unwrap();
+    std::fs::write(both.path().join("saves-campaign/auto.toml"), &demo_save).unwrap();
+    std::fs::write(
+        both.path().join("saves-campaign/auto.toml.bak"),
+        &campaign_save,
+    )
+    .unwrap();
+    let hidden = campaign_in(both.path(), &[], "quit\ny\n");
+    assert_eq!(hidden.status.code(), Some(1));
+    assert!(
+        stderr(&hidden).contains("This is a save of the demo, not of the campaign."),
+        "{}",
+        stderr(&hidden)
+    );
+
     // A damaged file is still told as damaged, not as another game's.
     std::fs::write(dir.path().join("saves/auto.toml"), "garbage").unwrap();
     let damaged = play_in(dir.path(), &[], "");

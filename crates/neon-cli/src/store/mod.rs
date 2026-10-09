@@ -164,6 +164,12 @@ impl Store {
         write_atomic(&path, text.as_bytes(), || Ok(())).map_err(|source| io_error(&path, source))
     }
 
+    /// The text of the latest file of a save, without any fallback to its backup: `None` when
+    /// there is no such file or it cannot be read.
+    pub(crate) fn primary_text(&self, target: Target) -> Option<String> {
+        read_limited(&self.path(target)).ok().flatten()
+    }
+
     /// Reads a save. `Ok(None)` means there is none. A damaged file falls back to its
     /// `.bak`; when that fails too the error says so and nothing is touched.
     pub(crate) fn read<T>(

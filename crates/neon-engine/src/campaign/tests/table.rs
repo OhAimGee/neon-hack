@@ -266,3 +266,17 @@ fn the_names_of_the_world_are_defined_for_every_contact_and_item() {
         }
     }
 }
+
+#[test]
+fn the_documented_number_of_commands_is_the_size_of_the_table() {
+    let count = format!("({} noms)", NAMES.len());
+    for (name, doc) in [
+        (
+            "commands.md",
+            include_str!("../../../../../docs/spec/commands.md"),
+        ),
+        ("ROADMAP.md", include_str!("../../../../../docs/ROADMAP.md")),
+    ] {
+        assert!(doc.contains(&count), "{name} must say {count}");
+    }
+}

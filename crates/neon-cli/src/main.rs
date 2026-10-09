@@ -369,11 +369,12 @@ fn load_game(kind: Kind, text: &str) -> Result<Box<dyn Game>, neon_engine::save:
 }
 
 /// The message for a save that cannot be read as `kind`, when it is a save of the other game:
-/// it is not damaged, it is somewhere else, and the player is told so.
+/// it is not damaged, it is somewhere else, and the player is told so. Only the latest file
+/// counts: a valid backup of this game must not hide that the save itself is another game's.
 fn foreign_save(kind: Kind, store: &Store, target: Target) -> Option<Text> {
     let other = kind.other();
-    let readable = store.read(target, |text| load_game(other, text));
-    if !matches!(readable, Ok(Some(_))) {
+    let text = store.primary_text(target)?;
+    if load_game(kind, &text).is_ok() || load_game(other, &text).is_err() {
         return None;
     }
     let (other_name, other_command) = other.name();
@@ -394,6 +395,9 @@ fn open_game(
 ) -> io::Result<(Box<dyn Game>, Step)> {
     if !cli.new {
         let target = cli.load.unwrap_or(Target::Auto);
+        if let Some(message) = foreign_save(kind, store, target) {
+            return Err(io::Error::other(renderer.text(&message)));
+        }
         match store.read(target, |text| load_game(kind, text)) {
             Ok(Some(loaded)) => {
                 let notice = if loaded.from_backup {
@@ -411,9 +415,8 @@ fn open_game(
             }
             Ok(None) => {}
             Err(error) => {
-                let message = foreign_save(kind, store, target).unwrap_or_else(|| {
-                    Text::new("ui.save.unreadable").with_str("details", error.to_string())
-                });
+                let message =
+                    Text::new("ui.save.unreadable").with_str("details", error.to_string());
                 return Err(io::Error::other(renderer.text(&message)));
             }
         }
