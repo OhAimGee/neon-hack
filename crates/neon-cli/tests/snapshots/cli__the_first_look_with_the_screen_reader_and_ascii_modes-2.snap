@@ -5,7 +5,7 @@ expression: ascii
 NEON HACK
 Handle [Neon] : 
 Bienvenue sur le reseau, Neon.
-Nouvelle quete : <draft>
+Nouvelle quete : Premiers Pas dans l'Ombre
 Taper `help` pour lister les commandes, puis `quests` pour lire la premiere quete.
 > help
 Commandes
@@ -20,7 +20,7 @@ Commandes
 [9] laylow - Baisser la Notoriete avec un service
 [10] hint - Demander un indice a ECHO-7
 [11] save - Sauvegarder la partie dans un emplacement
-Objectif atteint : <draft>
+Objectif atteint : Lire l'aide (help)
 > status
 Handle : Neon
 Niveau : 1
@@ -31,11 +31,11 @@ Chapitre : 1
 Difficulte : Normal
 Quetes en cours : 1
 Indices restants pour la quete en cours : 3
-Objectif atteint : <draft>
+Objectif atteint : Consulter la fiche d'etat (status)
 > quests
 == Journal ==
-[1] m01 - <draft> - en cours - 1
-Objectif atteint : <draft>
+[1] m01 - Premiers Pas dans l'Ombre - en cours - 1
+Objectif atteint : Ouvrir le journal (quests)
 > contacts
 == Contacts ==
 [1] echo7 - ECHO-7 - amical - disponible - -
@@ -43,7 +43,7 @@ Objectif atteint : <draft>
 == Le reseau ==
 [1] localhost - connu - 1
 15 autres sites encore inconnus.
-Objectif atteint : <draft>
+Objectif atteint : Explorer le reseau (net)
 > shop
 [Erreur] Pas encore : trouver R4Z0R.
 > messages

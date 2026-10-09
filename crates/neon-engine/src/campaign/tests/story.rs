@@ -115,8 +115,8 @@ fn a_cutscene_plays_when_it_is_unlocked_and_is_marked_seen() {
         .iter()
         .map(|event| render_event(event, &cat))
         .collect();
-    assert!(said.contains("TODO cutscene.cs02.p01"), "{said}");
-    assert!(said.contains("TODO cutscene.cs02.p04"), "{said}");
+    assert!(said.contains("Deep in Neo-Tokyo, the servers"), "{said}");
+    assert!(said.contains("It keeps the line open."), "{said}");
 }
 
 #[test]

@@ -1,0 +1,9 @@
+# Lot L1 (chapitres 1 et 2) : la cinématique CS02, français. Elle se joue à la fin de M03 et
+# reprend la transmission interceptée du jeu d'origine. La narration vouvoie le joueur ; un
+# paragraphe est une image, et le dernier est un détail du monde.
+
+[cutscene.cs02]
+p01 = "Dans les profondeurs de Neo-Tokyo, les serveurs de Nexus Corp bourdonnent d'une activité qui n'a rien de leur rythme habituel. Des flux chiffrés partent vers des adresses que personne n'a jamais nommées."
+p02 = "Votre deck en accroche un fragment au passage et le déroule ligne par ligne, sans qu'on lui demande rien. Le chiffre est grossier, un simple décalage : quelqu'un de pressé l'a posé."
+p03 = "« Phase 2 du Projet Aurora approuvée. Déploiement des implants prévu pour le secteur 7. » Pas de signature, pas de date. Seulement le ton de ceux qui n'attendent pas de réponse."
+p04 = "Dehors, la pluie fait vibrer les enseignes. Sur le mur d'en face, une affiche Halcyon sourit à la rue : « Dormez mieux. Vivez mieux. » Votre deck ne dit rien. Il garde la ligne ouverte."
