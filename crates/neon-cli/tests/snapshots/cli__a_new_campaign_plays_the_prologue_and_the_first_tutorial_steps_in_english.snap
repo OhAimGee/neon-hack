@@ -20,7 +20,7 @@ ECHO-7 » Finally. For the record, I'm not a corp, not a cop and not a trap. I'm
 ECHO-7 » Handle on file: Neon. Until you earn another name, you're a rookie. Don't take it personally.
 ECHO-7 » I have a first job for you. Nothing dangerous: a walk around your own deck. But first, the ropes.
 Start the guided tutorial? ECHO-7 walks through the first commands, and `tutorial skip` ends it at any time. [Y/n] 
-New quest: <draft>
+New quest: First Steps in the Shadows
 ECHO-7 » First thing, rookie: know your tools. Ask the deck what it can do.
 Tutorial, step 1 of 10: Type `help` to list the open commands.
 > help
@@ -37,7 +37,7 @@ Commands
 [10] hint - Ask ECHO-7 for a hint
 [11] save - Save the game in a slot
 [12] tutorial - Show, skip or restart the guided tutorial
-Objective done: <draft>
+Objective done: Read the help (help)
 ECHO-7 » Then know your own file: handle, money, Notoriety. I keep the same three on you.
 Tutorial, step 2 of 10: Type `status` to see the situation.
 > status
@@ -50,19 +50,19 @@ Chapter: 1
 Difficulty: Normal
 Quests in progress: 1
 Hints left for the current quest: 3
-Objective done: <draft>
+Objective done: Check the status sheet (status)
 ECHO-7 » Then the work. Every job ends up in the journal. According to my files, people who skip it forget who pays them.
 Tutorial, step 3 of 10: Type `quests` to open the journal, then `quests m01` to read the objectives of the first quest.
 > quests
 == Journal ==
-[1] m01 - <draft> - active - 1
-Objective done: <draft>
+[1] m01 - First Steps in the Shadows - active - 1
+Objective done: Open the journal (quests)
 ECHO-7 » Now talk to someone who answers. A contact is worth more than a credit, and costs less.
 Tutorial, step 4 of 10: Type `talk echo7`, then pick a topic by its number. `0` leaves the conversation.
 > talk echo7
-Objective done: <draft>
+Objective done: Talk to ECHO-7 (talk echo7)
 Conversation with ECHO-7
-[1] <draft>
+[1] Ask for advice
 [0] End the conversation
 ? 0
 The conversation ends.
@@ -72,7 +72,7 @@ Tutorial, step 5 of 10: Type `net` to see the map of the net, then `net localhos
 == The net ==
 [1] localhost - known - 1
 15 more sites still unknown.
-Objective done: <draft>
+Objective done: Explore the net (net)
 ECHO-7 » First intrusion. In, take what's there, out. Start at home, where nothing bites.
 Tutorial, step 6 of 10: Type `hack localhost`, then answer `y`. The run resolves by itself.
 > quit

@@ -20,6 +20,12 @@ when = { kind = "any", of = [
 ] }
 then = [{ then = [{ kind = "trust", contact = "r4z0r", delta = 5 }] }]
 
+# The Data Miner has no quest-bound conversation before M04: his one topic is his calling card,
+# and without it `talk miner` would be silent while he gives the quest of the chapter.
+[[topic]]
+id = "shelf"
+contact = "miner"
+
 [[topic]]
 id = "nexus"
 contact = "phoenix"

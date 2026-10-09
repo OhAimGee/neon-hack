@@ -19,7 +19,7 @@ ECHO-7: Enfin. Pour memoire, je ne suis ni une corporation, ni un flic, ni un pi
 ECHO-7: Handle en dossier : Neon. Tant que tu n'as pas gagne un autre nom, tu es un rookie. Ne le prends pas mal.
 ECHO-7: J'ai un premier travail pour toi. Rien de dangereux : un tour du proprietaire sur ton propre deck. Mais d'abord, les bases.
 Lancer le tutoriel guide ? ECHO-7 passe en revue les premieres commandes, et `tutorial skip` y met fin a tout moment. [O/n] 
-Nouvelle quete : <draft>
+Nouvelle quete : Premiers Pas dans l'Ombre
 ECHO-7: Premiere chose, rookie : connaitre ses outils. Demande au deck ce qu'il sait faire.
 Tutoriel, etape 1 sur 10 : Taper `help` pour lister les commandes ouvertes.
 > help
@@ -36,7 +36,7 @@ Commandes
 10. Commande : hint; Effet : Demander un indice a ECHO-7
 11. Commande : save; Effet : Sauvegarder la partie dans un emplacement
 12. Commande : tutorial; Effet : Afficher, ignorer ou relancer le tutoriel guide
-Objectif atteint : <draft>
+Objectif atteint : Lire l'aide (help)
 ECHO-7: Ensuite, ton propre dossier : handle, argent, Notoriete. J'ai les memes trois sur toi.
 Tutoriel, etape 2 sur 10 : Taper `status` pour voir la situation.
 > quit

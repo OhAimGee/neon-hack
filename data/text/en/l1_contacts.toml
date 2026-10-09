@@ -1,0 +1,29 @@
+# Lot L1 (chapters 1 and 2): the contacts of the first two chapters, English (the reference).
+# Taglines are the lines of the contact list; a topic is a question (q) and the contact's answer (a).
+# Voices: ECHO-7 keeps an archive's vocabulary and lists of three, and never a verb of the body;
+# R4Z0R speaks like a counter and a ledger; Data Miner like a pedant of the shelves.
+
+[contact.echo7]
+tagline = "Mentor, channel #7"
+
+[contact.echo7.topic.advice]
+q = "Ask for advice"
+a = "Three rules, rookie. One: the corps lie. Two: keep an exit. Three: information outweighs money. According to my files, people who forget number two don't come back."
+
+[contact.r4z0r]
+tagline = "Underground Market, cash only"
+
+[contact.r4z0r.topic.how_to_earn]
+q = "Ask how to earn {credit}s"
+a = "{net^} pays, hacker. Every site you breach pays a premium the first time, and its files add to the pile. Only once, though: I don't buy the same secret twice. Explore, move on, come spend it here. And I don't do credit. I do a price. Don't confuse the two."
+
+[contact.r4z0r.topic.ledger_rumor]
+q = "Ask about the black ledger"
+a = "My ledger? So it circulates now. It's locked, it's mine, and what it says about Nexus doesn't make me laugh. Word is an archivist wants it, and that you run errands for him. I won't ask. I'll name a price: sell it to nobody. Read it, that's all."
+
+[contact.miner]
+tagline = "Archivist. Nothing gets erased."
+
+[contact.miner.topic.shelf]
+q = "Ask what the archives hold"
+a = "Shelf 7-B-12. Dust: thick. Contents: everything people believed erased. Nothing is lost, hacker, only badly filed. Bring me what MegaCorp left lying around and I will tell you where the dust leads. Do you want to open it, or respect it?"

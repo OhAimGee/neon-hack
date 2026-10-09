@@ -1,0 +1,30 @@
+# Lot L1 (chapitres 1 et 2) : les contacts des deux premiers chapitres, français.
+# Les accroches sont les lignes de la liste des contacts ; un sujet est une question (q) et la
+# réponse du contact (a). Voix : ECHO-7 garde un vocabulaire d'archives et des listes de trois,
+# jamais un verbe du corps ; R4Z0R parle comme un comptoir et un grand livre ; Data Miner comme un
+# pédant des rayonnages. Tous tutoient le joueur.
+
+[contact.echo7]
+tagline = "Mentor, canal #7"
+
+[contact.echo7.topic.advice]
+q = "Demander des conseils"
+a = "Trois règles, rookie. Une : les corps mentent. Deux : garde une sortie. Trois : l'information vaut plus que l'argent. D'après mes archives, ceux qui oublient la deuxième ne reviennent pas."
+
+[contact.r4z0r]
+tagline = "Marché souterrain, au comptant"
+
+[contact.r4z0r.topic.how_to_earn]
+q = "Demander comment gagner des {credit}s"
+a = "{net^} paie, hacker. Chaque site que tu perces verse une prime la première fois, et ses fichiers font le reste. Une seule fois, par contre : je n'achète pas deux fois le même secret. Explore, avance, reviens dépenser ça ici. Et je ne fais pas crédit. Je fais un prix. Ne confonds pas."
+
+[contact.r4z0r.topic.ledger_rumor]
+q = "Parler du grand livre noir"
+a = "Mon grand livre ? Il circule, maintenant. Il est chiffré, il est à moi, et ce qu'il dit sur Nexus ne me fait pas rire. On dit qu'un archiviste le veut, et que tu cours pour lui. Je ne pose pas de question. Je donne un prix : ne le vends à personne. Lis-le, c'est tout."
+
+[contact.miner]
+tagline = "Archiviste. Rien ne s'efface."
+
+[contact.miner.topic.shelf]
+q = "Demander ce que gardent les archives"
+a = "Cote 7-B-12. Poussière : épaisse. Contenu : tout ce que l'on a cru effacé. Rien ne se perd, hacker, tout se range mal. Apporte-moi ce que MegaCorp a laissé traîner et je te dirai où mène la poussière. Tu veux l'ouvrir, ou tu veux la respecter ?"

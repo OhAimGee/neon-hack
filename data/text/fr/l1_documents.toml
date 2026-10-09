@@ -1,0 +1,34 @@
+# Lot L1 (chapitres 1 et 2) : les fragments F01 à F06 et les deux documents chiffrés, français.
+# Un fragment s'ouvre sur l'en-tête du document (nature, émetteur, date), puis deux à quatre
+# phrases, et son dernier mot laisse une question ouverte. Le titre d'un document est ce que la
+# liste des archives montre tant qu'il est scellé ; le fragment qu'il livre a son propre titre.
+
+[doc.doc_phase2]
+title = "Transmission sans nom"
+
+[doc.doc_ledger]
+title = "Registre du marché"
+
+[frag.f01]
+title = "Facture 7741"
+body = "FACTURE 7741. Émetteur : Nexus Corp, division neurotechnologique. Destinataire : MegaCorp Industries. Objet : 4 000 000 d'éléments sécurisés, modèle HALCYON, livraison échelonnée jusqu'en 2088. Clause 9 : ni nom ni fonction sur l'emballage. Mention manuscrite en marge : secteur 7 d'abord."
+
+[frag.f02]
+title = "Registre du personnel"
+body = "REGISTRE DU PERSONNEL, MegaCorp Industries, architecture sécurité. Départs, 2085. CHEN, M., dite Razor, architecte sécurité principale : démission acceptée, nom barré en rouge. Dernière signature au dossier : spécification finale de l'élément sécurisé NX-H. Personne n'a jamais demandé à quoi il servait."
+
+[frag.f03]
+title = "Brochure Halcyon"
+body = "HALCYON. Dormez mieux. Vivez mieux. Pose gratuite dans votre clinique Aurora Dawn, réservée aux habitants du secteur 7. Un implant discret, un réglage doux chaque nuit, un matin plus léger. Aucune formalité, aucun suivi, rien à faire de votre côté. Ce soir, nous nous occupons de tout."
+
+[frag.f04]
+title = "Grand livre noir"
+body = "GRAND LIVRE NOIR, Marché souterrain, secteur 7. Ligne 212 : MegaCorp Industries verse chaque mois aux cliniques Aurora Dawn, sous la rubrique SOMMEIL. Les patients ne paient rien. Ligne 213 : même montant, mêmes cliniques, versé par Nexus Corp. En marge, de la main de R4Z0R : personne ne dépense autant pour offrir du sommeil. Alors, que s'achète-t-on ?"
+
+[frag.f05]
+title = "Transmission interceptée"
+body = "TRANSMISSION, réseau interne de Nexus Corp. Chiffre : un simple décalage, posé par quelqu'un de pressé. Texte déchiffré : Phase 2 du Projet Aurora approuvée. Déploiement prévu pour le secteur 7. Date à fixer par la Direction. La phase 2 de quoi, au juste ?"
+
+[frag.f06]
+title = "Dossier orphelin : Aoyama, R."
+body = "DOSSIER ORPHELIN, cote 7-B-12. AOYAMA, Ren, Dr, neurologue en chef, Projet Aurora. Décès : « accident de laboratoire », 2085. Autopsie : aucune au dossier. Rapport signé par : personne. Scellé sur ordre de la Direction. Classé par Data Miner, faute de propriétaire. Quel accident demande un scellé ?"

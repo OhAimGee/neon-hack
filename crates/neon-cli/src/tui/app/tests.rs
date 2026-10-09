@@ -616,7 +616,7 @@ fn the_campaign_shows_the_notoriety_and_the_quest_in_the_status_bar_and_the_pane
     // The panel repeats it with a bar, and lists what is left to do in the quest.
     assert!(has(&rows, "Notoriety 4/100"), "{rows:#?}");
     assert!(has(&rows, "[░░░░░░░░░░] Discreet"), "{rows:#?}");
-    assert!(has(&rows, "TODO quest.m01.title_short"), "{rows:#?}");
+    assert!(has(&rows, "First Steps"), "{rows:#?}");
     // The log carries the line of the gauge that moved.
     assert!(has(&rows, "Notoriety +4"), "{rows:#?}");
     // The compact layout keeps the figure in the status bar.

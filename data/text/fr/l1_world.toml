@@ -1,0 +1,33 @@
+# Lot L1 (chapitres 1 et 2) : les sites, les fichiers et les objets de l'étal des deux premiers
+# chapitres, français. Une ligne de nœud s'affiche avec la fiche d'un site (`net <site>`), une
+# ligne de fichier dans les listes.
+
+[node.localhost]
+desc = "Le deck et le routeur rafistolé du studio."
+
+[node.corp_server_01]
+desc = "MegaCorp Industries : contrats et factures de maintenance."
+
+[node.underground_market]
+desc = "Le réseau du marché noir de R4Z0R, secteur 7."
+
+[file.localhost.user_data]
+desc = "Notes et carnets d'adresses du studio"
+
+[file.corp_server_01.employee_records]
+desc = "Registre du personnel de MegaCorp"
+
+[file.corp_server_01.financial_data]
+desc = "Factures et contrats de MegaCorp"
+
+[file.underground_market.black_ledger]
+desc = "Le grand livre du Marché souterrain"
+
+[item.ghost_protocol]
+desc = "Un script d'effacement qui coupe la piste. R4Z0R : le nom est volé, le code est à moi."
+
+[item.stealth_module]
+desc = "Rend les intrusions plus silencieuses. Équipement de base pour tout ce qui vaut le coup."
+
+[item.quantum_key]
+desc = "Ouvre sans effort les fichiers chiffrés de bas niveau."

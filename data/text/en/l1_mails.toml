@@ -1,0 +1,15 @@
+# Lot L1 (chapters 1 and 2): the messages of the first two chapters, English (the reference).
+# A body is one line: the voice's hook, the fact, the request with the command in backticks, the
+# signature and, when the sender has the habit, one P.S.
+
+[mail.mail_welcome]
+subject = "Welcome to the underground"
+body = "Hey, rookie. I watched your first steps on {net}. You have potential, and for the record, that is rarer than gear. Three pieces of advice: learn quickly, leave nothing behind, and see R4Z0R with `shop` before the next job. A bare deck doesn't last. Stay in the shadows. ECHO-7. P.S.: Watch out for Nexus Corp. They are planning something big..."
+
+[mail.mail_phoenix]
+subject = "I've spotted you"
+body = "Not here. You're making noise on {net}, kid, enough for me to take an interest. Nexus Corp is hiding something in its servers and I can't go in alone. Gear up first, at R4Z0R's and nowhere else. When your deck holds up, switch channels and talk to me: `talk phoenix`. Three hops, not two. Phoenix"
+
+[mail.mail_miner]
+subject = "Shelf 7-B-12, in your name"
+body = "Shelf 7-B-12. Dust: thick. Contents: a message for you. R4Z0R gave me your name, and your name gave me an idea. I collect the files everyone believes erased, and I am missing a few. If you want to know which, `talk miner`. Bring nothing but curiosity. Data Miner"

@@ -19,7 +19,7 @@ ECHO-7: Finally. For the record, I'm not a corp, not a cop and not a trap. I'm E
 ECHO-7: Handle on file: Neon. Until you earn another name, you're a rookie. Don't take it personally.
 ECHO-7: I have a first job for you. Nothing dangerous: a walk around your own deck. But first, the ropes.
 Start the guided tutorial? ECHO-7 walks through the first commands, and `tutorial skip` ends it at any time. [Y/n] 
-New quest: <draft>
+New quest: First Steps in the Shadows
 ECHO-7: First thing, rookie: know your tools. Ask the deck what it can do.
 Tutorial, step 1 of 10: Type `help` to list the open commands.
 > help
@@ -36,7 +36,7 @@ Commands
 10. Command: hint; Effect: Ask ECHO-7 for a hint
 11. Command: save; Effect: Save the game in a slot
 12. Command: tutorial; Effect: Show, skip or restart the guided tutorial
-Objective done: <draft>
+Objective done: Read the help (help)
 ECHO-7: Then know your own file: handle, money, Notoriety. I keep the same three on you.
 Tutorial, step 2 of 10: Type `status` to see the situation.
 > quit

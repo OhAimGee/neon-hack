@@ -21,7 +21,7 @@ ECHO-7 » Handle en dossier : Neon. Tant que tu n'as pas gagné un autre nom, tu
 ECHO-7 » J'ai un premier travail pour toi. Rien de dangereux : un tour du propriétaire sur ton propre deck. Mais d'abord, les bases.
 Lancer le tutoriel guidé ? ECHO-7 passe en revue les premières commandes, et `tutorial skip` y met fin à tout moment. [O/n] n
 Tutoriel ignoré. `tutorial restart` le lance plus tard.
-Nouvelle quête : <draft>
+Nouvelle quête : Premiers Pas dans l'Ombre
 Taper `help` pour lister les commandes, puis `quests` pour lire la première quête.
 > help
 Commandes
@@ -37,7 +37,7 @@ Commandes
 [10] hint - Demander un indice à ECHO-7
 [11] save - Sauvegarder la partie dans un emplacement
 [12] tutorial - Afficher, ignorer ou relancer le tutoriel guidé
-Objectif atteint : <draft>
+Objectif atteint : Lire l'aide (help)
 > status
 Handle : Neon
 Niveau : 1
@@ -48,11 +48,11 @@ Chapitre : 1
 Difficulté : Normal
 Quêtes en cours : 1
 Indices restants pour la quête en cours : 3
-Objectif atteint : <draft>
+Objectif atteint : Consulter la fiche d'état (status)
 > quests
 == Journal ==
-[1] m01 - <draft> - en cours - 1
-Objectif atteint : <draft>
+[1] m01 - Premiers Pas dans l'Ombre - en cours - 1
+Objectif atteint : Ouvrir le journal (quests)
 > contacts
 == Contacts ==
 [1] echo7 - ECHO-7 - amical - disponible - -
@@ -60,7 +60,7 @@ Objectif atteint : <draft>
 == Le réseau ==
 [1] localhost - connu - 1
 15 autres sites encore inconnus.
-Objectif atteint : <draft>
+Objectif atteint : Explorer le réseau (net)
 > shop
 [Erreur] Pas encore : trouver R4Z0R.
 > messages

@@ -923,7 +923,8 @@ fn the_first_look_at_the_hub_reads_the_same_in_french() {
 fn the_first_look_with_the_screen_reader_and_ascii_modes() {
     let reader = campaign(&["--screen-reader"], FIRST_LOOK);
     assert!(
-        reader.contains("1. id: m01; title: <draft>; status: active; chapter: 1"),
+        reader
+            .contains("1. id: m01; title: First Steps in the Shadows; status: active; chapter: 1"),
         "{reader}"
     );
     assert!(!reader.contains("N E O N"), "no decoration");

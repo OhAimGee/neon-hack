@@ -1,0 +1,9 @@
+# Lot L1 (chapters 1 and 2): the cutscene CS02, English. It plays when M03 closes and takes up
+# the intercepted transmission of the original game. The narration speaks to the player in the
+# second person; one paragraph is one image, and the last one is a detail of the world.
+
+[cutscene.cs02]
+p01 = "Deep in Neo-Tokyo, the servers of Nexus Corp hum with an activity that has nothing to do with their usual rhythm. Encrypted streams leave for addresses nobody has ever named."
+p02 = "Your deck catches a fragment on the way past and unrolls it line by line, without being asked. The cipher is crude, a simple shift: someone in a hurry put it there."
+p03 = "\"Phase 2 of Project Aurora approved. Deployment of the implants scheduled for Sector 7.\" No signature, no date. Only the tone of people who do not expect an answer."
+p04 = "Outside, the rain makes the signs vibrate. On the wall across the street, a Halcyon poster smiles at the road: \"Sleep better. Live better.\" Your deck says nothing. It keeps the line open."

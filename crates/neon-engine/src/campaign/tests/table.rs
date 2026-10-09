@@ -190,6 +190,38 @@ fn campaign_texts_that_no_code_uses_are_found() {
 }
 
 #[test]
+fn every_derived_text_asks_only_for_what_the_game_hands_out_and_fits_its_budget_with_it() {
+    // A story text is cited by its key alone: the arguments it can use are the glossary terms
+    // the game adds to every text (`keys::gloss`). A `{handle}` or any other marker would show
+    // as `<?name>` in play, so a writer learns it here and not from a player. And the width
+    // budgets are measured on what is really shown, with the terms in place (the catalog check
+    // of the content sees `<?term>` instead, which is shorter than most terms).
+    let driver = Driver::new();
+    let c = driver.game.content;
+    for lang in Lang::ALL {
+        let catalog: Catalog = catalog(lang);
+        for key in crate::content::texts::required_keys(c) {
+            let mut text = Text::dynamic(key.clone());
+            crate::campaign::keys::gloss(&mut text);
+            let shown = render(&text, &catalog, RenderMode::FULL);
+            assert!(
+                !shown.contains("<?") && !shown.contains("<missing:"),
+                "{lang:?} {key}: {shown}"
+            );
+            if let Some(max) = crate::content::texts::budget(&key)
+                && !shown.starts_with(crate::content::texts::DRAFT_PREFIX)
+            {
+                let width = crate::content::texts::display_width(&shown);
+                assert!(
+                    width <= max,
+                    "{lang:?} {key}: {width} columns for a budget of {max}: {shown}"
+                );
+            }
+        }
+    }
+}
+
+#[test]
 fn the_gauge_of_the_notoriety_is_named_like_the_term() {
     for lang in Lang::ALL {
         let catalog = catalog(lang);
