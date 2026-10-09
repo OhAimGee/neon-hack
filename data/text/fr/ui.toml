@@ -44,7 +44,28 @@ cell = "{column} : {value}"
 
 [ui.tui]
 too_small = "Terminal trop petit ({width}x{height}) : {min_width}x{min_height} au minimum."
+"too_small@sr" = "Terminal trop petit : {width} colonnes sur {height} lignes, {min_width} sur {min_height} au minimum."
 press_key = "Appuyez sur une touche pour quitter."
+log_title = "{terminal^}"
+panel_title = "{panel^}"
+help = "Tab compléter | Haut/Bas historique | PgUp/PgDn défiler | Ctrl+C quitter"
+scrolled = "[Historique : {rows} {rows|ligne|lignes} plus bas. Fin ou Échap pour revenir.]"
+
+[ui.fallback]
+too_small = "Le terminal est trop petit ({width}x{height}, {min_width}x{min_height} au minimum) : affichage ligne par ligne."
+no_terminal = "L'interface plein écran demande un terminal : affichage ligne par ligne."
+dumb = "Ce terminal (TERM=dumb) ne peut pas afficher l'interface plein écran : affichage ligne par ligne."
+no_tui = "Cette version n'a pas d'interface plein écran : affichage ligne par ligne."
+
+[ui.mode]
+title = "Quel mode d'affichage ?"
+full = "[1] Plein écran (recommandé)"
+plain = "[2] Ligne par ligne (texte simple, marche partout)"
+screen_reader = "[3] Lecteur d'écran (texte simple, sans couleur, formulations faites pour être lues à voix haute)"
+prompt = "Choix [1] : "
+invalid = "Répondre 1, 2 ou 3."
+saved = "Choix enregistré dans {file} ; --tui, --plain et --screen-reader le remplacent."
+not_saved = "Choix non enregistré ({reason}) : valable pour cette session seulement."
 
 [gauge]
 trace = "Trace"

@@ -6,6 +6,7 @@
 //! saves and is never mistaken for the campaign.
 
 mod config;
+mod frontend;
 mod input;
 mod palette;
 mod persist;
@@ -17,7 +18,7 @@ mod test_support;
 #[cfg(feature = "tui")]
 mod tui;
 
-use std::io::{self, BufReader, IsTerminal, Write};
+use std::io::{self, BufReader, Write};
 use std::path::PathBuf;
 use std::process::ExitCode;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -30,8 +31,10 @@ use neon_engine::text::{Catalog, RenderMode, Text, to_ascii};
 use neon_engine::{Game, Step};
 
 use crate::config::{
-    CliPresentation, Env, FileState, LangChoice, Presentation, Source, VerbosityChoice,
+    CliPresentation, DisplayChoice, Env, FileState, LangChoice, Presentation, Source,
+    VerbosityChoice,
 };
+use crate::frontend::{Facts, Frontend, ModeAnswer};
 use crate::palette::{ColorChoice, Palette, PaletteChoice};
 use crate::persist::Persistence;
 use crate::render::Renderer;
@@ -86,6 +89,11 @@ struct Cli {
     /// Use the plain line-by-line interface even on a terminal.
     #[arg(long, help_heading = "Presentation")]
     plain: bool,
+
+    /// Use the full-screen interface, and say why when the terminal cannot show it. This is
+    /// what runs by itself on a terminal that is big enough (at least 64x20).
+    #[arg(long, conflicts_with_all = ["plain", "screen_reader"], help_heading = "Presentation")]
+    tui: bool,
 
     /// Start a new game instead of resuming the autosave (the previous autosave is kept
     /// as `auto.toml.bak`).
@@ -192,12 +200,26 @@ impl Kind {
 }
 
 impl Cli {
-    fn presentation(&self) -> CliPresentation {
+    /// The presentation asked for, with the answer to the first question if there was one
+    /// (it holds for this session even when it could not be written down).
+    fn presentation(&self, answer: Option<ModeAnswer>) -> CliPresentation {
+        let display = if self.plain {
+            Some(DisplayChoice::Plain)
+        } else if self.tui {
+            Some(DisplayChoice::Tui)
+        } else {
+            match answer {
+                Some(ModeAnswer::Full) => Some(DisplayChoice::Tui),
+                Some(ModeAnswer::Plain | ModeAnswer::ScreenReader) => Some(DisplayChoice::Plain),
+                None => None,
+            }
+        };
         CliPresentation {
+            display,
             lang: self.lang,
             verbosity: self.verbosity,
             ascii: self.ascii,
-            screen_reader: self.screen_reader,
+            screen_reader: self.screen_reader || answer == Some(ModeAnswer::ScreenReader),
             color: self.no_color.then_some(ColorChoice::Never).or(self.color),
             palette: self.palette,
         }
@@ -233,11 +255,11 @@ struct Setup {
     presentation: Presentation,
 }
 
-fn setup(cli: &Cli, env: &Env) -> io::Result<Setup> {
+fn setup(cli: &Cli, env: &Env, answer: Option<ModeAnswer>) -> io::Result<Setup> {
     let (data_dir, data_dir_source) = config::data_dir(cli.data_dir.as_deref(), env)?;
     let settings_file = data_dir.join("settings.toml");
     let (file, file_state) = config::load_file(&settings_file);
-    let presentation = config::resolve(cli.presentation(), env, file);
+    let presentation = config::resolve(cli.presentation(answer), env, file);
     Ok(Setup {
         data_dir,
         data_dir_source,
@@ -248,7 +270,7 @@ fn setup(cli: &Cli, env: &Env) -> io::Result<Setup> {
 }
 
 fn print_settings(cli: &Cli, env: &Env) -> io::Result<()> {
-    let setup = setup(cli, env)?;
+    let setup = setup(cli, env, None)?;
     let shown = &setup.presentation;
     let line = |name: &str, value: String, source: Source| {
         format!("{name} = {value}  # {}", source.describe())
@@ -282,6 +304,11 @@ fn print_settings(cli: &Cli, env: &Env) -> io::Result<()> {
             shown.screen_reader.source,
         ),
         line(
+            "display",
+            format!("{:?}", shown.display.value.name()),
+            shown.display.source,
+        ),
+        line(
             "data_dir",
             format!("{:?}", setup.data_dir.display().to_string()),
             setup.data_dir_source,
@@ -302,7 +329,27 @@ fn print_settings(cli: &Cli, env: &Env) -> io::Result<()> {
 }
 
 fn run_game(cli: &Cli, env: &Env, kind: Kind) -> io::Result<()> {
-    let setup = setup(cli, env)?;
+    let mut setup = setup(cli, env, None)?;
+    // The first time, on a terminal, the player says how they want to play.
+    if !cli.list_saves {
+        let asked = cli.plain || cli.tui || cli.screen_reader;
+        let due = frontend::question_due(
+            setup.file_state == FileState::Missing,
+            env.stdin_is_terminal && env.stdout_is_terminal,
+            asked,
+            setup.presentation.screen_reader.value,
+            cli.no_save,
+        );
+        if due && let Some(answer) = ask_first_mode(&setup)? {
+            let saved = match frontend::save_choice(&setup.settings_file, answer) {
+                Ok(()) => Text::new("ui.mode.saved")
+                    .with_str("file", setup.settings_file.display().to_string()),
+                Err(error) => Text::new("ui.mode.not_saved").with_str("reason", error.to_string()),
+            };
+            banner::print(&render_ui(&setup, &saved)?);
+            setup = self::setup(cli, env, Some(answer))?;
+        }
+    }
     let shown = setup.presentation;
     // The catalogs are checked by the tests, so this only fails on a broken build.
     let catalog = Catalog::embedded(shown.lang.value.into())
@@ -337,17 +384,34 @@ fn run_game(cli: &Cli, env: &Env, kind: Kind) -> io::Result<()> {
         Persistence::new(store)
     };
 
-    let stdin = io::stdin();
-    let interactive = stdin.is_terminal() && io::stdout().is_terminal();
-    // The TUI needs a real terminal; a screen reader needs the plain interface.
-    let use_tui = cfg!(feature = "tui") && interactive && !cli.plain && !shown.screen_reader.value;
-    if use_tui {
+    // The full-screen interface needs a real terminal of a decent size; a screen reader
+    // needs the plain interface; nothing else is asked of the plain one.
+    let both_terminals = env.stdin_is_terminal && env.stdout_is_terminal;
+    let decision = frontend::choose(&Facts {
+        display: shown.display.value,
+        asked_on_command_line: shown.display.source == Source::Cli,
+        screen_reader: shown.screen_reader.value,
+        stdin_is_terminal: env.stdin_is_terminal,
+        stdout_is_terminal: env.stdout_is_terminal,
+        dumb: env.terminal().dumb,
+        size: if both_terminals {
+            terminal_size()
+        } else {
+            None
+        },
+        tui_built: cfg!(feature = "tui"),
+    });
+    if let Some(notice) = decision.notice {
+        banner::notice(&renderer.text(&frontend::notice_text(notice)));
+    }
+    if decision.frontend == Frontend::Tui {
         #[cfg(feature = "tui")]
-        return tui::run(&mut *game, first, renderer, persistence);
+        return tui::run(&mut *game, first, renderer, persistence, env.test_fault.as_deref());
     }
     // On a pipe the lines read are repeated in the output so that it reads as a transcript;
     // on a terminal the terminal echoes by itself.
-    let echo_input = !stdin.is_terminal();
+    let stdin = io::stdin();
+    let echo_input = !env.stdin_is_terminal;
     let mut persistence = persistence;
     plain::run(
         &mut *game,
@@ -357,6 +421,47 @@ fn run_game(cli: &Cli, env: &Env, kind: Kind) -> io::Result<()> {
         &mut io::stdout().lock(),
         echo_input,
         &mut persistence,
+    )
+}
+
+/// The size of the terminal, when there is a way to ask.
+fn terminal_size() -> Option<(u16, u16)> {
+    #[cfg(feature = "tui")]
+    return tui::terminal_size();
+    #[cfg(not(feature = "tui"))]
+    None
+}
+
+/// A text of the interface in the language and mode of these settings, for what is said
+/// before the game exists.
+fn render_ui(setup: &Setup, text: &Text) -> io::Result<String> {
+    let shown = &setup.presentation;
+    let catalog = Catalog::embedded(shown.lang.value.into())
+        .map_err(|errors| io::Error::other(format!("the texts do not load:\n{errors}")))?;
+    Ok(neon_engine::text::render(
+        text,
+        &catalog,
+        RenderMode {
+            screen_reader: shown.screen_reader.value,
+            ascii: shown.ascii.value,
+        },
+    ))
+}
+
+/// Asks how to play on the terminal, in the language the settings say.
+fn ask_first_mode(setup: &Setup) -> io::Result<Option<ModeAnswer>> {
+    let shown = &setup.presentation;
+    let catalog = Catalog::embedded(shown.lang.value.into())
+        .map_err(|errors| io::Error::other(format!("the texts do not load:\n{errors}")))?;
+    let mode = RenderMode {
+        screen_reader: false,
+        ascii: shown.ascii.value,
+    };
+    frontend::ask_mode(
+        &catalog,
+        mode,
+        &mut io::stdin().lock(),
+        &mut io::stdout().lock(),
     )
 }
 
@@ -473,6 +578,11 @@ mod banner {
 
     pub(super) fn print(text: &str) {
         println!("{text}");
+    }
+
+    /// A word to the player that is not part of the game (why an interface was not used).
+    pub(super) fn notice(text: &str) {
+        eprintln!("neon-hack: {text}");
     }
 
     pub(super) fn fatal(error: &std::io::Error) {

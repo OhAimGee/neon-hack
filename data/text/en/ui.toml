@@ -44,7 +44,28 @@ cell = "{column}: {value}"
 
 [ui.tui]
 too_small = "Terminal too small ({width}x{height}): at least {min_width}x{min_height} needed."
+"too_small@sr" = "Terminal too small: {width} columns by {height} lines, at least {min_width} by {min_height} needed."
 press_key = "Press any key to leave."
+log_title = "{terminal^}"
+panel_title = "{panel^}"
+help = "Tab complete | Up/Down history | PgUp/PgDn scroll | Ctrl+C quit"
+scrolled = "[Scrolled back: {rows} {rows|line|lines} below. End or Esc to return.]"
+
+[ui.fallback]
+too_small = "The terminal is too small ({width}x{height}, at least {min_width}x{min_height} needed): using the line-by-line interface."
+no_terminal = "The full-screen interface needs a terminal: using the line-by-line interface."
+dumb = "This terminal (TERM=dumb) cannot show the full-screen interface: using the line-by-line interface."
+no_tui = "This build has no full-screen interface: using the line-by-line interface."
+
+[ui.mode]
+title = "How do you want to play?"
+full = "[1] Full screen (recommended)"
+plain = "[2] Line by line (plain text, works everywhere)"
+screen_reader = "[3] Screen reader (plain text, no colour, wording made to be read aloud)"
+prompt = "Your choice [1]: "
+invalid = "Answer 1, 2 or 3."
+saved = "Your choice is saved in {file}. --tui, --plain and --screen-reader override it."
+not_saved = "Your choice could not be saved ({reason}): it holds for this session only."
 
 [gauge]
 trace = "Trace"

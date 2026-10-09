@@ -12,6 +12,7 @@
 //! | verbosity | `--verbosity`, `settings.toml`, normal |
 //! | ASCII | `--ascii`, `settings.toml`, a locale that names a non-UTF-8 charset, off |
 //! | screen reader | `--screen-reader`, `settings.toml`, off |
+//! | display | `--plain` / `--tui`, `settings.toml`, auto |
 //!
 //! The environment is read **once** ([`Env::from_process`]) and passed by value, so the rules
 //! are plain functions that tests call with a hand-made [`Env`]; nothing here changes the
@@ -53,8 +54,14 @@ pub(crate) struct Env {
     pub(crate) no_color: bool,
     pub(crate) term: Option<String>,
     pub(crate) colorterm: Option<String>,
+    /// Standard input is a terminal.
+    pub(crate) stdin_is_terminal: bool,
     /// Standard output is a terminal.
     pub(crate) stdout_is_terminal: bool,
+    /// `NEON_HACK_TEST_FAULT`, which makes the full-screen interface fail on purpose so that
+    /// the tests can check the terminal is given back. Read in debug builds only: a release
+    /// build never has it.
+    pub(crate) test_fault: Option<String>,
 }
 
 impl Env {
@@ -77,7 +84,13 @@ impl Env {
             no_color: std::env::var_os("NO_COLOR").is_some_and(|value| !value.is_empty()),
             term: text("TERM"),
             colorterm: text("COLORTERM"),
+            stdin_is_terminal: io::stdin().is_terminal(),
             stdout_is_terminal: io::stdout().is_terminal(),
+            test_fault: if cfg!(debug_assertions) {
+                text("NEON_HACK_TEST_FAULT")
+            } else {
+                None
+            },
         }
     }
 
@@ -172,9 +185,34 @@ impl From<VerbosityChoice> for Verbosity {
     }
 }
 
+/// Which interface the player wants. The wish is not a promise: the full-screen interface
+/// needs a terminal that can show it (see `frontend`), and a screen reader never gets it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub(crate) enum DisplayChoice {
+    /// Full screen when the terminal allows it, line by line otherwise.
+    Auto,
+    /// Full screen, and a word on `stderr` when it cannot be had.
+    Tui,
+    /// Line by line, even on a terminal.
+    Plain,
+}
+
+impl DisplayChoice {
+    pub(crate) fn name(self) -> &'static str {
+        match self {
+            Self::Auto => "auto",
+            Self::Tui => "tui",
+            Self::Plain => "plain",
+        }
+    }
+}
+
 /// The presentation options given on the command line.
 #[derive(Debug, Clone, Copy, Default)]
 pub(crate) struct CliPresentation {
+    /// `--plain` or `--tui`.
+    pub(crate) display: Option<DisplayChoice>,
     pub(crate) lang: Option<LangChoice>,
     pub(crate) verbosity: Option<VerbosityChoice>,
     pub(crate) ascii: bool,
@@ -193,6 +231,7 @@ pub(crate) struct FileSettings {
     screen_reader: Option<bool>,
     color: Option<ColorChoice>,
     palette: Option<PaletteChoice>,
+    display: Option<DisplayChoice>,
 }
 
 /// Where a resolved value came from, for `--print-settings` and for tests.
@@ -242,6 +281,7 @@ pub(crate) struct Presentation {
     pub(crate) verbosity: Sourced<VerbosityChoice>,
     pub(crate) ascii: Sourced<bool>,
     pub(crate) screen_reader: Sourced<bool>,
+    pub(crate) display: Sourced<DisplayChoice>,
     /// Whether there is colour at all, and why.
     pub(crate) color: (bool, ColorSource),
     pub(crate) palette: Sourced<PaletteChoice>,
@@ -286,6 +326,13 @@ pub(crate) fn resolve(cli: CliPresentation, env: &Env, file: FileSettings) -> Pr
     } else {
         sourced(false, Source::Default)
     };
+    let display = if let Some(choice) = cli.display {
+        sourced(choice, Source::Cli)
+    } else if let Some(choice) = file.display {
+        sourced(choice, Source::File)
+    } else {
+        sourced(DisplayChoice::Auto, Source::Default)
+    };
     let color = decide(ColorInputs {
         cli: cli.color,
         no_color: env.no_color,
@@ -314,6 +361,7 @@ pub(crate) fn resolve(cli: CliPresentation, env: &Env, file: FileSettings) -> Pr
         verbosity,
         ascii,
         screen_reader,
+        display,
         color,
         palette,
         truecolor: env.terminal().truecolor,
