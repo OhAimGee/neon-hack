@@ -45,18 +45,18 @@ debrief = "Observer, forcer, disparaître : trois gestes, trois acquis. D'après
 
 [quest.m01.hint.6]
 1 = "Reste à vérifier que ça marche. Ton propre poste est la cible la plus sûre du secteur : personne ne s'en plaindra."
-2 = "Tape `hack localhost`, puis `y` pour confirmer. Elle est résolue aussitôt, et la première brèche d'un site paie."
+2 = "Tape `hack localhost`, puis `y` pour confirmer. L'{run} est résolue aussitôt, et la première brèche d'un site paie."
 
 [quest.m01.hint.7]
 1 = "Tu as laissé une trace. Une commande la laisse refroidir, et la {safehouse} vend du calme à la semaine."
-2 = "Tape `laylow`, choisis un service dans la liste et paie. Le moins cher suffit."
+2 = "Tape `laylow`. La liste des services suffit à la quête, et un service payé fait vraiment descendre la {notoriety}."
 
 # =========================================================================== M02
 [quest.m02]
 title = "Baptême du Feu"
 title_short = "Baptême du Feu"
 desc = "Premier vrai boulot : récupérer un contrat de maintenance chez MegaCorp Industries."
-lore = "ECHO-7 a repéré un contrat de maintenance qui traîne sur un serveur de MegaCorp Industries, rien d'illégal à première vue. Le serveur est gardé quand même, et chaque intrusion alourdit la {notoriety}. Un premier boulot propre, ou un piège rangé sous « routine » ?"
+lore = "ECHO-7 a repéré un contrat de maintenance qui traîne sur un serveur de MegaCorp Industries, rien d'illégal à première vue. Le serveur est gardé quand même, et chaque {run} alourdit la {notoriety}. Un premier boulot propre, ou un piège rangé sous « routine » ?"
 loc = "MegaCorp Industries - corp-server-01"
 debrief = "Entrée propre, sortie propre. La facture est dans tes {archives} : l'en-tête est celui de Nexus Corp, qui fait fabriquer ses implants ici. Garde trois faits : qui commande, qui fabrique, qui paie."
 
@@ -75,7 +75,7 @@ debrief = "Entrée propre, sortie propre. La facture est dans tes {archives} : l
 
 [quest.m02.hint.3]
 1 = "Le contrat n'est pas le seul papier de ce serveur. Ce que tu prends en entrant reste à toi."
-2 = "Une intrusion prend tous les fichiers du site d'un coup. Si le site était déjà ouvert, il n'y a plus rien de neuf à prendre."
+2 = "Une {run} prend tous les fichiers du site d'un coup. Si le site était déjà ouvert, il n'y a plus rien de neuf à prendre."
 
 # =========================================================================== M03
 [quest.m03]

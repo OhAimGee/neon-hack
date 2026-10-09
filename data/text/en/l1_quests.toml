@@ -45,18 +45,18 @@ debrief = "Observe, force, disappear: three gestures, three in the bag. For the 
 
 [quest.m01.hint.6]
 1 = "Time to see if it works. Your own station is the safest target in the sector: nobody will mind."
-2 = "Type `hack localhost`, then `y` to confirm. It is resolved at once, and the first breach of a site pays."
+2 = "Type `hack localhost`, then `y` to confirm. The {run} is resolved at once, and the first breach of a site pays."
 
 [quest.m01.hint.7]
 1 = "You left a trace. One command lets it cool, and the {safehouse} sells quiet by the week."
-2 = "Type `laylow`, pick a service in the list and pay. The cheapest one is enough."
+2 = "Type `laylow`. The list of services is enough for the quest, and a paid one really brings {notoriety} down."
 
 # =========================================================================== M02
 [quest.m02]
 title = "Baptism of Fire"
 title_short = "Baptism of Fire"
 desc = "First real job: pull a maintenance contract out of MegaCorp Industries."
-lore = "ECHO-7 spotted a maintenance contract sitting on a MegaCorp Industries server, nothing illegal on the face of it. The server is guarded all the same, and every intrusion adds to {notoriety}. A clean first job, or a trap filed under routine?"
+lore = "ECHO-7 spotted a maintenance contract sitting on a MegaCorp Industries server, nothing illegal on the face of it. The server is guarded all the same, and every {run} adds to {notoriety}. A clean first job, or a trap filed under routine?"
 loc = "MegaCorp Industries - corp-server-01"
 debrief = "Clean in, clean out. The invoice is in your {archives}, and the letterhead isn't MegaCorp's: Nexus Corp has its implants built here. Keep three facts on file: who orders, who builds, who pays."
 
@@ -75,7 +75,7 @@ debrief = "Clean in, clean out. The invoice is in your {archives}, and the lette
 
 [quest.m02.hint.3]
 1 = "The contract is not the only paper on that server. What you take on the way in stays yours."
-2 = "An intrusion takes every file of the site in one go. If the site was already open, there is nothing new to take."
+2 = "A {run} takes every file of the site in one go. If the site was already open, there is nothing new to take."
 
 # =========================================================================== M03
 [quest.m03]
