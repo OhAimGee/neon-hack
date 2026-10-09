@@ -58,7 +58,10 @@ fn the_frozen_campaign_save_still_loads_with_the_state_it_had() {
     assert_eq!(game.clock(), 7);
     let state = game.state();
     assert_eq!(state.handle(), "Neon");
-    assert_eq!(state.difficulty(), neon_engine::campaign::Difficulty::Normal);
+    assert_eq!(
+        state.difficulty(),
+        neon_engine::campaign::Difficulty::Normal
+    );
     // The resumed game says where it stands, without the welcome.
     let step = game.resume();
     assert_eq!(step.prompt, Prompt::Command);
