@@ -18,6 +18,9 @@ use crate::content::schema::{ContactState, HintBudgets, QuestStatus, ReadableKin
 use crate::content::state::{HEAT_MAX, State};
 use crate::save::{SaveState, hex_u64};
 
+use super::prologue::CONTINUE_PAGES;
+use super::tutorial::{Mode, Tutorial};
+
 /// Longest handle, in characters.
 pub(super) const HANDLE_MAX_CHARS: usize = 20;
 
@@ -156,6 +159,11 @@ pub(super) struct HeatMod {
 pub(super) enum Flow {
     /// The handle is asked.
     AskHandle,
+    /// A page of the prologue is shown and waits for "continue" (pages `1..=CONTINUE_PAGES`;
+    /// the last page is shown with the tutorial offer).
+    Prologue { page: u8 },
+    /// ECHO-7 offers the guided tutorial: the last question of the opening.
+    OfferTutorial,
     /// The menu of an open conversation.
     Talk { contact: ContactId },
     /// The options of a decision, opened from a conversation.
@@ -204,6 +212,10 @@ pub struct CampaignState {
     /// Hints used: `<quest>.<objective number>` to how many times.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub(super) hints: BTreeMap<String, u8>,
+    /// The guided tutorial. Absent from a save that predates it (and from a game that declined
+    /// it), which then reads as "off": an old game never starts a tutorial it never offered.
+    #[serde(default, skip_serializing_if = "Tutorial::is_off")]
+    pub(super) tutorial: Tutorial,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub(super) flows: Vec<Flow>,
 }
@@ -244,6 +256,7 @@ impl CampaignState {
             inbox: Vec::new(),
             archive: Vec::new(),
             hints: BTreeMap::new(),
+            tutorial: Tutorial::default(),
             flows: vec![Flow::AskHandle],
         };
         state.sync_lists(c);
@@ -396,7 +409,8 @@ impl CampaignState {
         self.validate_mods(c)?;
         self.validate_lists(c)?;
         self.validate_hints(c)?;
-        self.validate_flows(c)
+        self.validate_flows(c)?;
+        self.validate_tutorial()
     }
 
     fn validate_mods(&self, c: &Content) -> Result<(), String> {
@@ -458,6 +472,7 @@ impl CampaignState {
     fn validate_flows(&self, c: &Content) -> Result<(), String> {
         let handle_ok = !self.handle.is_empty() && clean_handle(&self.handle) == self.handle;
         match self.flows.as_slice() {
+            // Before the handle exists, nothing else has started.
             [Flow::AskHandle] => {
                 return if self.handle.is_empty() {
                     Ok(())
@@ -467,6 +482,8 @@ impl CampaignState {
             }
             _ if !handle_ok => return Err("the handle is not a clean handle".to_owned()),
             [] | [Flow::ConfirmQuit] => {}
+            [Flow::Prologue { page }] if (1..=CONTINUE_PAGES).contains(page) => {}
+            [Flow::OfferTutorial] => {}
             [Flow::ConfirmHack { site }] if c.site(site).is_some() => {}
             [Flow::ConfirmBuy { item }] if c.item(item).is_some() => {}
             [Flow::Talk { contact }] if c.contact(contact).is_some() => {}
@@ -480,6 +497,23 @@ impl CampaignState {
             }
         }
         Ok(())
+    }
+}
+
+impl CampaignState {
+    /// The tutorial is consistent with the rest of the state: nothing of it exists before the
+    /// opening is over (the offer is the question that starts it), and its steps are known.
+    fn validate_tutorial(&self) -> Result<(), String> {
+        let opening = self.flows.iter().any(|flow| {
+            matches!(
+                flow,
+                Flow::AskHandle | Flow::Prologue { .. } | Flow::OfferTutorial
+            )
+        });
+        if opening && self.tutorial.mode() != Mode::Off {
+            return Err("the tutorial has started before the opening is over".to_owned());
+        }
+        self.tutorial.validate()
     }
 }
 

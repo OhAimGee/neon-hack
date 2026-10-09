@@ -65,21 +65,9 @@ impl CampaignGame {
                 .with_term("net", "net")
                 .with_str("handle", handle),
         ));
-        // The first quest was opened when the game was made: tell it, and keep a checkpoint
-        // of the very beginning.
-        for id in self.state.quest_log.clone() {
-            if self.state.missions.status(&id) == QuestStatus::Active {
-                events.push(Event::system(
-                    Text::new("campaign.out.opened_quest")
-                        .with_term("quest", "quest")
-                        .with_text("title", keys::quest_title(&id)),
-                ));
-            }
-        }
-        self.checkpoint = true;
-        events.push(Event::system(
-            Text::new("campaign.welcome_hint").with_term("quest", "quest"),
-        ));
+        // The opening goes on with the prologue and ends with the offer of the tutorial; the
+        // first quest was opened when the game was made and is told there.
+        self.begin_prologue(events);
     }
 
     // ----------------------------------------------------------------------- help

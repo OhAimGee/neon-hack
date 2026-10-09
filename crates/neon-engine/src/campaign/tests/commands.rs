@@ -28,17 +28,48 @@ fn render_cell(text: &crate::text::Text) -> String {
 // ------------------------------------------------------------------------------- the start
 
 #[test]
-fn a_new_game_asks_the_handle_then_welcomes_and_keeps_a_checkpoint() {
+fn a_new_game_asks_the_handle_then_tells_the_prologue_and_keeps_a_checkpoint() {
     let mut driver = Driver::raw();
     assert!(matches!(driver.last.prompt, Prompt::Text { .. }));
     assert!(driver.saves.is_empty());
     driver.line("  Neo\tn  ");
     let said = driver.text();
     assert!(said.contains("Welcome to the net, Neon."), "{said}");
-    assert!(said.contains("New quest:"), "{said}");
-    assert_eq!(driver.last.prompt, Prompt::Command);
-    assert_eq!(driver.saves, [SaveRequest::Checkpoint]);
+    assert!(said.contains("Neo-Tokyo, 2087."), "{said}");
+    assert!(
+        !said.contains("New quest:"),
+        "the quest is told at the end: {said}"
+    );
+    assert_eq!(driver.last.prompt, Prompt::Continue);
     assert_eq!(driver.game.state.handle, "Neon");
+    driver.send(Input::Continue);
+    assert_eq!(driver.last.prompt, Prompt::Continue);
+    assert!(driver.text().contains("Nexus Corp runs the city"));
+    driver.send(Input::Continue);
+    let said = driver.text();
+    assert!(said.contains("Encrypted channel #7"), "{said}");
+    assert!(said.contains("echo7 > Finally."), "{said}");
+    assert!(said.contains("Handle on file: Neon."), "{said}");
+    assert!(matches!(
+        driver.last.prompt,
+        Prompt::Confirm { default: true, .. }
+    ));
+    // No checkpoint before the opening is over; then one keeps the very beginning.
+    assert!(!driver.saves.contains(&SaveRequest::Checkpoint));
+    driver.send(Input::Confirm(false));
+    let said = driver.text();
+    assert!(said.contains("New quest:"), "{said}");
+    assert!(said.contains("Type `help` to list the commands"), "{said}");
+    assert_eq!(driver.last.prompt, Prompt::Command);
+    assert_eq!(driver.saves.last(), Some(&SaveRequest::Checkpoint));
+    assert_eq!(
+        driver
+            .saves
+            .iter()
+            .filter(|save| **save == SaveRequest::Checkpoint)
+            .count(),
+        1
+    );
 }
 
 #[test]
@@ -85,7 +116,7 @@ fn help_lists_exactly_the_commands_that_are_open_and_each_one_runs() {
         open,
         [
             "help", "status", "quit", "quests", "contacts", "talk", "net", "hack", "laylow",
-            "hint", "save"
+            "hint", "save", "tutorial"
         ]
     );
     for name in &open {
@@ -262,7 +293,7 @@ fn the_difficulty_is_chosen_at_the_start_and_sets_the_hints() {
         (Difficulty::Hardcore, 0),
     ] {
         let mut driver = Driver::raw_with(difficulty);
-        driver.line("Neon");
+        driver.opening(false);
         let mut given = 0;
         for _ in 0..10 {
             driver.line("hint");

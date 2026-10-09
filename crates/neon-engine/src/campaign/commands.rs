@@ -18,7 +18,7 @@ pub(super) const FRONTEND: Capabilities = Capabilities::PLAIN;
 pub(super) const NAMES: &[&str] = &[
     "help", "status", "quit", "load", "panel", "plain", "export", "quests", "accept", "contacts",
     "talk", "messages", "read", "archives", "decrypt", "net", "hack", "shop", "buy", "laylow",
-    "hint", "save",
+    "hint", "save", "tutorial",
 ];
 
 const HELP_ARGS: &[ArgSpec] = &[ArgSpec::optional(ArgKind::Word(NAMES))];
@@ -34,6 +34,9 @@ const ITEM: &[ArgSpec] = &[ArgSpec::required(ArgKind::Item)];
 const SERVICE_OPTIONAL: &[ArgSpec] = &[ArgSpec::optional(ArgKind::Service)];
 const SLOT_OPTIONAL: &[ArgSpec] = &[ArgSpec::optional(ArgKind::Slot)];
 const PATH_OPTIONAL: &[ArgSpec] = &[ArgSpec::optional(ArgKind::Path)];
+/// The two things `tutorial` can be told besides its bare form.
+pub(super) const TUTORIAL_WORDS: &[&str] = &["skip", "restart"];
+const TUTORIAL_ARGS: &[ArgSpec] = &[ArgSpec::optional(ArgKind::Word(TUTORIAL_WORDS))];
 
 const fn engine(
     name: &'static str,
@@ -184,6 +187,13 @@ pub(super) const SPECS: &[CommandSpec] = &[
         "campaign.help.save",
         Context::Hub,
         SLOT_OPTIONAL,
+    ),
+    engine(
+        "tutorial",
+        &[],
+        "tutorial.help",
+        Context::Hub,
+        TUTORIAL_ARGS,
     ),
 ];
 
