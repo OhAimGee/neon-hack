@@ -8,7 +8,7 @@ RPG textuel cyberpunk pour le terminal. Vous êtes un hacker novice à Neo-Tokyo
 
 ## Statut
 
-**Le jeu n'est pas encore jouable** : le dépôt contient le squelette technique en Rust (trois crates, CI, règles de lint), le moteur de contenu de la campagne et, depuis le lot R2.2b, le **cœur de la campagne** (les commandes du hub, avec les intrusions résolues automatiquement), que l'on peut essayer avec `--campaign` ; les textes de l'histoire ne sont pas écrits (des brouillons `TODO` les remplacent) et la campagne n'est pas encore le jeu par défaut. Le cadrage, le socle (phase R1) et les spécifications (phase P1) sont terminés ; l'écriture des textes de départ et le prologue (R2.3) puis la campagne de bout en bout (R2.4) sont la prochaine étape.
+**La campagne se joue de bout en bout, du nouveau jeu à l'épilogue, mais le jeu n'est pas terminé.** C'est le jeu lancé par défaut (`neon-hack`) : prologue, tutoriel guidé, commandes du hub, cinq fins et épilogue, FR et EN, avec les intrusions résolues automatiquement (le moteur tactique est la phase R4). Les textes des chapitres 1 et 2 sont écrits ; ceux des chapitres 3 à 6, des fins et de l'épilogue sont encore des brouillons `TODO <clé>` (502 par langue). La démonstration du moteur reste accessible avec `--demo`. Le cadrage, le socle (phase R1), les spécifications (phase P1) et le contenu et la campagne (phase R2) sont terminés ; l'interface plein écran complète (R3) est la prochaine étape.
 
 | Étape | État |
 |---|---|
@@ -25,12 +25,15 @@ RPG textuel cyberpunk pour le terminal. Vous êtes un hacker novice à Neo-Tokyo
 | Phase R1 (socle) | **terminée** |
 | Phase P1 : spécifications (glossaire, commandes, langage de missions, écran d'intrusion, solveur, banc d'équilibrage) et décisions de design validées | **terminée** ; prochaine étape : le contenu et la campagne (R2) |
 | Phase R2.1 : moteur de contenu et données de la campagne (quêtes, décisions, fins, validation, sauvegarde de l'état) | fait |
-| Phase R2.2 : registre de commandes du jeu complet (R2.2a) et cœur de la campagne, commandes du hub, intrusions automatiques, sauvegarde (R2.2b) | fait ; essayer avec `--campaign` |
-| Textes de l'histoire, prologue et tutoriel (R2.3), campagne de bout en bout (R2.4), intrusion tactique (R4), TUI complète (R3) | à venir |
+| Phase R2.2 : registre de commandes du jeu complet (R2.2a) et cœur de la campagne, commandes du hub, intrusions automatiques, sauvegarde (R2.2b) | fait |
+| Phase R2.3 : textes du lot L1 (chapitres 1 et 2), prologue et tutoriel guidé | fait |
+| Phase R2.4 : campagne de bout en bout (joueur optimiste par les commandes, 216 plans, cinq fins), campagne par défaut | fait |
+| Phase R2 (contenu et campagne) | **terminée** |
+| TUI complète (R3), intrusion tactique (R4), textes des chapitres 3 à 6 (R5), équilibrage (R6) | à venir |
 
 ## Jouer en local
 
-> **Le jeu complet n'existe pas encore.** Ce que l'on peut lancer aujourd'hui est la **démonstration du moteur** : un mini-jeu (prologue, commandes, boutique, jauge d'alerte) qui montre les deux interfaces. Il n'y a pas de binaire précompilé avant la v1.0 : on compile le projet soi-même, ce qui prend de quelques dizaines de secondes à quelques minutes la première fois (téléchargement des dépendances compris).
+> **Le jeu n'est pas fini** : la campagne est jouable de bout en bout, mais ses textes des chapitres 3 à 6 sont des brouillons et les intrusions se résolvent automatiquement. Il n'y a pas de binaire précompilé avant la v1.0 : on compile le projet soi-même, ce qui prend de quelques dizaines de secondes à quelques minutes la première fois (téléchargement des dépendances compris).
 
 ### 1. Installer les outils (une seule fois)
 
@@ -51,31 +54,33 @@ cd neon-hack
 
 Sans Git : sur la page GitHub du projet, *Code → Download ZIP*, décompressez, puis ouvrez un terminal dans le dossier obtenu.
 
-### 3. Lancer la démonstration
+### 3. Lancer le jeu
 
 ```bash
-cargo run --release -p neon-cli -- --demo
+cargo run --release -p neon-cli
 ```
 
 La première fois, Cargo télécharge et compile les dépendances ; les lancements suivants sont immédiats. Pour obtenir une commande `neon-hack` utilisable depuis n'importe où :
 
 ```bash
 cargo install --path crates/neon-cli --locked
-neon-hack --demo
+neon-hack
 ```
 
 `rustup` a déjà placé `~/.cargo/bin` dans le `PATH`. Pour mettre à jour : avec un clone, `git pull` puis relancez la commande ci-dessus (avec `--force` pour `cargo install`) ; avec le ZIP, téléchargez-le de nouveau. Pour désinstaller : `cargo uninstall neon-cli`.
 
+Sans option, `neon-hack` joue la **campagne** : il reprend la dernière partie, ou en commence une. `neon-hack --demo` lance à la place la démonstration du moteur, un mini-jeu qui a ses propres sauvegardes (une sauvegarde de l'un n'est jamais lue par l'autre : le jeu le dit).
+
 ### 4. Comment jouer
 
-Dans un vrai terminal, la démonstration s'ouvre en **plein écran** (barre d'état, journal, panneau latéral). Si l'entrée est redirigée, ou avec `--plain`, elle se joue **ligne par ligne**.
+Dans un vrai terminal, le jeu s'ouvre en **plein écran** (barre d'état, journal, panneau latéral). Si l'entrée est redirigée, ou avec `--plain`, il se joue **ligne par ligne**.
 
-- Au début : *Entrée* pour continuer, un pseudo, puis `o` ou `n` pour confirmer.
-- But : acheter l'**amélioration du deck** (120 crédits) à l'étal de R4Z0R sans que votre **trace** atteigne 100. `scan` rapporte des crédits mais augmente la trace ; `laylow` la fait baisser ; le module de camouflage de l'étal la fait monter deux fois moins vite. Atteindre 100 de trace perd la partie ; acheter le deck la gagne. Dans les deux cas, relancer le jeu reprend juste avant la fin (`--new` pour recommencer).
-- Commandes : `help` liste ce qui est possible ; `status`, `scan`, `laylow`, `shop` (la boutique), `save` et `quit`. Des raccourcis existent (`h`, `st`, `buy`, `exit`) et la casse n'importe pas.
-- Menus : tapez le **numéro** d'une entrée (dans l'étal, `proxy`, `cloak` et `deck` marchent aussi) ; `0` ou une ligne vide revient en arrière (*Échap* en plein écran).
-- Sauvegarde : la partie est **sauvegardée automatiquement** et reprise au lancement suivant (`--new` pour recommencer) ; `save` ou `save 2` l'écrit dans un emplacement (1 à 9) ; entrer dans l'étal crée un **point de contrôle** (les 3 derniers sont gardés). `neon-hack --demo --list-saves` montre le dossier et ce qu'il contient.
+- Au début : un pseudo (*Entrée* garde `Neon`), le prologue (*Entrée* pour continuer, `skip` pour passer), puis l'offre du **tutoriel guidé** (`o` ou `n`).
+- But : suivre les **quêtes** du journal (`quests`), parler aux contacts (`talk`), pirater des sites (`hack`), acheter (`shop`, `buy`), garder sa **Notoriété** basse (`laylow`), et décider. `help` liste ce qui est possible à ce moment-là ; `hint` demande un indice à ECHO-7.
+- Menus : tapez le **numéro** d'une entrée ou son nom ; `0` ou une ligne vide revient en arrière (*Échap* en plein écran).
+- Sauvegarde : la partie est **sauvegardée automatiquement** et reprise au lancement suivant (`--new` pour recommencer) ; `save` ou `save 2` l'écrit dans un emplacement (1 à 9) ; le jeu crée un **point de contrôle** à l'ouverture de chaque quête principale, avant une décision et avant un achat (les 3 derniers sont gardés). `neon-hack --list-saves` montre le dossier et ce qu'il contient.
 - Plein écran : *TAB* complète une commande, *Ctrl+D* ou *Ctrl+C* termine la partie, puis une touche ferme l'interface.
+- La démonstration (`--demo`) : acheter l'**amélioration du deck** (120 crédits) à l'étal de R4Z0R sans que la **trace** atteigne 100 (`scan`, `laylow`, `shop`).
 
 | Option | Effet |
 |---|---|
@@ -84,7 +89,7 @@ Dans un vrai terminal, la démonstration s'ouvre en **plein écran** (barre d'é
 | `--ascii` | ASCII 7 bits : symboles, accents et texte tapé translittérés, sans décoration |
 | `--lang fr` / `--lang en` | langue des textes (anglais par défaut) |
 | `--verbosity brief\|normal\|full` | quantité d'ambiance affichée |
-| `--campaign` | joue le début de la campagne (développement : textes de l'histoire à venir ; mêmes options de sauvegarde, dossier `saves-campaign/`) |
+| `--demo` | joue la démonstration du moteur à la place de la campagne (sauvegardes à part, dossier `saves/`) |
 | `--difficulty story\|normal\|expert\|hardcore` | difficulté d'une nouvelle campagne (une campagne reprise garde la sienne) |
 | `--seed 7` | partie reproductible (pour une nouvelle partie) |
 | `--color auto\|always\|never`, `--no-color` | couleur : un terminal qui sait la montrer par défaut ; `NO_COLOR` l'éteint, et ces options l'emportent |
@@ -98,11 +103,11 @@ Dans un vrai terminal, la démonstration s'ouvre en **plein écran** (barre d'é
 
 L'interface plein écran demande au moins **64×20** caractères, et **100×28** pour afficher le panneau latéral ; en dessous, un message le dit : agrandissez la fenêtre ou utilisez `--plain`.
 
-Les sauvegardes sont dans le dossier de données de l'utilisateur, sous-dossier `saves` : `~/.local/share/neon-hack` sous Linux, `~/Library/Application Support/neon-hack` sous macOS, `%APPDATA%\neon-hack\data` sous Windows. Une sauvegarde abîmée n'est jamais écrasée : le jeu reprend la copie précédente (`.bak`) et le dit, ou explique comment recommencer.
+Les sauvegardes sont dans le dossier de données de l'utilisateur, sous-dossier `saves-campaign` (`saves` pour la démonstration) : `~/.local/share/neon-hack` sous Linux, `~/Library/Application Support/neon-hack` sous macOS, `%APPDATA%\neon-hack\data` sous Windows. Une sauvegarde abîmée n'est jamais écrasée : le jeu reprend la copie précédente (`.bak`) et le dit, ou explique comment recommencer.
 
 ### Réglages
 
-Les options de présentation (`lang`, `verbosity`, `ascii`, `screen_reader`) se fixent une fois pour toutes dans un fichier `settings.toml`, à écrire à la main dans le dossier de données (le dossier parent de celui que montre `--list-saves`, qui est `saves`) :
+Les options de présentation (`lang`, `verbosity`, `ascii`, `screen_reader`) se fixent une fois pour toutes dans un fichier `settings.toml`, à écrire à la main dans le dossier de données (le dossier parent de celui que montre `--list-saves`, qui est `saves-campaign`) :
 
 ```toml
 lang = "fr"

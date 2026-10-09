@@ -8,7 +8,7 @@ A cyberpunk text RPG for the terminal. You are a novice hacker in Neo-Tokyo, in 
 
 ## Status
 
-**The game is not playable yet**: the repository holds the Rust technical skeleton (three crates, CI, lint rules), the campaign content engine and, since lot R2.2b, the **campaign core** (the hub commands, with intrusions resolved automatically), which you can try with `--campaign`; the story texts are not written (`TODO` drafts stand in for them) and the campaign is not the default game yet. The groundwork, the foundation (phase R1) and the specifications (phase P1) are done; writing the opening texts and the prologue (R2.3), then the campaign end to end (R2.4), are the next step.
+**The campaign is playable from a new game to the epilogue, but the game is not finished.** It is the game that runs by default (`neon-hack`): prologue, guided tutorial, hub commands, five endings and an epilogue, in English and French, with intrusions resolved automatically (the tactical engine is phase R4). The texts of chapters 1 and 2 are written; those of chapters 3 to 6, the endings and the epilogue are still `TODO <key>` drafts (502 per language). The engine demo is still available with `--demo`. The groundwork, the foundation (phase R1), the specifications (phase P1) and content and campaign (phase R2) are done; the complete full-screen interface (R3) is the next step.
 
 | Step | State |
 |---|---|
@@ -25,12 +25,15 @@ A cyberpunk text RPG for the terminal. You are a novice hacker in Neo-Tokyo, in 
 | Phase R1 (foundation) | **finished** |
 | Phase P1: specifications (glossary, commands, mission language, run screen, solver, balancing harness) and validated design decisions | **finished**; next step: content and campaign (R2) |
 | Phase R2.1: campaign content engine and data (quests, decisions, endings, validation, state saving) | done |
-| Phase R2.2: command registry of the full game (R2.2a) and campaign core, hub commands, automatic intrusions, saving (R2.2b) | done; try it with `--campaign` |
-| Story texts, prologue and tutorial (R2.3), campaign end to end (R2.4), tactical run (R4), full TUI (R3) | to come |
+| Phase R2.2: command registry of the full game (R2.2a) and campaign core, hub commands, automatic intrusions, saving (R2.2b) | done |
+| Phase R2.3: texts of lot L1 (chapters 1 and 2), prologue and guided tutorial | done |
+| Phase R2.4: campaign end to end (optimistic player through the commands, 216 plans, five endings), campaign as the default game | done |
+| Phase R2 (content and campaign) | **finished** |
+| Full TUI (R3), tactical run (R4), texts of chapters 3 to 6 (R5), balancing (R6) | to come |
 
 ## Play locally
 
-> **The complete game does not exist yet.** What you can run today is the **engine demo**: a mini-game (prologue, commands, a stall, an alert gauge) that shows both interfaces. There is no prebuilt binary before v1.0: you build the project yourself, which takes from a few dozen seconds to a few minutes the first time (downloading the dependencies included).
+> **The game is not finished**: the campaign is playable from start to end, but its texts for chapters 3 to 6 are drafts and intrusions are resolved automatically. There is no prebuilt binary before v1.0: you build the project yourself, which takes from a few tens of seconds to a few minutes the first time (downloading the dependencies included).
 
 ### 1. Install the tools (once)
 
@@ -51,31 +54,33 @@ cd neon-hack
 
 Without Git: on the project's GitHub page, *Code → Download ZIP*, unzip it, then open a terminal in the resulting folder.
 
-### 3. Run the demo
+### 3. Run the game
 
 ```bash
-cargo run --release -p neon-cli -- --demo
+cargo run --release -p neon-cli
 ```
 
 The first time, Cargo downloads and builds the dependencies; later runs are immediate. To get a `neon-hack` command usable from anywhere:
 
 ```bash
 cargo install --path crates/neon-cli --locked
-neon-hack --demo
+neon-hack
 ```
 
 `rustup` has already put `~/.cargo/bin` on your `PATH`. To update: with a clone, `git pull` then run the command above again (with `--force` for `cargo install`); with the ZIP, download it again. To uninstall: `cargo uninstall neon-cli`.
 
+Without an option, `neon-hack` plays the **campaign**: it resumes the last game, or starts one. `neon-hack --demo` runs the engine demo instead, a small game with saves of its own (a save of one is never read by the other: the game says so).
+
 ### 4. How to play
 
-In a real terminal the demo opens **full screen** (status bar, log, side panel). If the input is redirected, or with `--plain`, it is played **line by line**.
+In a real terminal the game opens **full screen** (status bar, log, side panel). If the input is redirected, or with `--plain`, it is played **line by line**.
 
-- At the start: *Enter* to continue, a handle, then `y` or `n` to confirm.
-- Goal: buy the **deck upgrade** (120 credits) at R4Z0R's stall before your **trace** reaches 100. `scan` earns credits but raises the trace; `laylow` brings it down; the cloak module at the stall makes it rise half as fast. Reaching 100 loses the game; buying the deck wins it. Either way, running the game again resumes just before the end (`--new` to start over).
-- Commands: `help` lists what is possible; `status`, `scan`, `laylow`, `shop` (the stall), `save` and `quit`. There are shortcuts (`h`, `st`, `buy`, `exit`) and case does not matter.
-- Menus: type an entry's **number** (in the stall, `proxy`, `cloak` and `deck` work too); `0` or an empty line goes back (*Esc* in full screen).
-- Saving: the game is **saved automatically** and resumed at the next launch (`--new` to start over); `save` or `save 2` writes it to a slot (1 to 9); entering the stall makes a **checkpoint** (the last 3 are kept). `neon-hack --demo --list-saves` shows the folder and what it holds.
+- At the start: a handle (*Enter* keeps `Neon`), the prologue (*Enter* to continue, `skip` to jump ahead), then the offer of the **guided tutorial** (`y` or `n`).
+- Goal: follow the **quests** of the journal (`quests`), talk to the contacts (`talk`), hack sites (`hack`), buy (`shop`, `buy`), keep your **Notoriety** low (`laylow`), and decide. `help` lists what is possible right now; `hint` asks ECHO-7 for a hint.
+- Menus: type an entry's **number** or its name; `0` or an empty line goes back (*Esc* in full screen).
+- Saving: the game is **saved automatically** and resumed at the next launch (`--new` to start over); `save` or `save 2` writes it to a slot (1 to 9); the game makes a **checkpoint** when each main quest opens, before a decision and before a purchase (the last 3 are kept). `neon-hack --list-saves` shows the folder and what it holds.
 - Full screen: *TAB* completes a command, *Ctrl+D* or *Ctrl+C* ends the game, then one more key closes the interface.
+- The demo (`--demo`): buy the **deck upgrade** (120 credits) at R4Z0R's stall before the **trace** reaches 100 (`scan`, `laylow`, `shop`).
 
 | Option | Effect |
 |---|---|
@@ -84,7 +89,7 @@ In a real terminal the demo opens **full screen** (status bar, log, side panel).
 | `--ascii` | 7-bit ASCII: symbols, accents and typed text transliterated, no decoration |
 | `--lang fr` / `--lang en` | language of the texts (English by default) |
 | `--verbosity brief\|normal\|full` | how much atmosphere is shown |
-| `--campaign` | play the start of the campaign (development: story texts to come; same save options, folder `saves-campaign/`) |
+| `--demo` | play the engine demo instead of the campaign (separate saves, folder `saves/`) |
 | `--difficulty story\|normal\|expert\|hardcore` | difficulty of a new campaign (a resumed one keeps its own) |
 | `--seed 7` | reproducible game (for a new game) |
 | `--color auto\|always\|never`, `--no-color` | colour: on by default for a terminal that can show it; `NO_COLOR` turns it off, and these options win over it |
@@ -98,11 +103,11 @@ In a real terminal the demo opens **full screen** (status bar, log, side panel).
 
 The full-screen interface needs at least **64×20** characters, and **100×28** to show the side panel; below that, a message says so: enlarge the window or use `--plain`.
 
-Saves live in the user's data folder, in a `saves` subfolder: `~/.local/share/neon-hack` on Linux, `~/Library/Application Support/neon-hack` on macOS, `%APPDATA%\neon-hack\data` on Windows. A damaged save is never overwritten: the game resumes from the previous copy (`.bak`) and says so, or explains how to start over.
+Saves live in the user's data folder, in a `saves-campaign` subfolder (`saves` for the demo): `~/.local/share/neon-hack` on Linux, `~/Library/Application Support/neon-hack` on macOS, `%APPDATA%\neon-hack\data` on Windows. A damaged save is never overwritten: the game resumes from the previous copy (`.bak`) and says so, or explains how to start over.
 
 ### Settings
 
-The presentation options (`lang`, `verbosity`, `ascii`, `screen_reader`) can be set once and for all in a `settings.toml` file, to be written by hand in the data folder (the parent of the folder `--list-saves` shows, which is `saves`):
+The presentation options (`lang`, `verbosity`, `ascii`, `screen_reader`) can be set once and for all in a `settings.toml` file, to be written by hand in the data folder (the parent of the folder `--list-saves` shows, which is `saves-campaign`):
 
 ```toml
 lang = "fr"
