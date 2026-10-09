@@ -17,6 +17,7 @@ read = "wait for a first {message}"
 archives = "obtain a first {document}"
 decrypt = "obtain a first {document}"
 accept = "wait for a {contract} to be offered"
+link = "reach {chapter} 4"
 
 [service.lie_low]
 name = "Lie low"
@@ -92,6 +93,7 @@ hack = "Start a {run} on a known {site}"
 shop = "Show the {shop} of R4Z0R"
 buy = "Buy an {item} at the {shop}"
 laylow = "Lower your {notoriety} with a {service}"
+link = "Strengthen the neural link with a {contact}"
 hint = "Ask ECHO-7 for a {hint}"
 save = "Save the game in a {slot}"
 "help.usage" = "Usage: `help [command]`. Example: `help hack`."
@@ -107,6 +109,7 @@ save = "Save the game in a {slot}"
 "hack.usage" = "Usage: `hack <site>`. Example: `hack localhost`."
 "buy.usage" = "Usage: `buy <item>`. Example: `buy stealth`."
 "laylow.usage" = "Usage: `laylow [service]`. Example: `laylow lie_low`."
+"link.usage" = "Usage: `link <contact>`. Example: `link echo7`."
 "save.usage" = "Usage: `save [slot]`. Example: `save 2`."
 
 [campaign.quests]
@@ -207,6 +210,9 @@ title = "== {service^}s =="
 cooling = "-{cooling}"
 done = "{name}: {notoriety} lowered by {cooling}."
 
+[campaign.link]
+done = "Neural link with {name}: {level} {number}."
+
 [campaign.talk]
 title = "Conversation with {name}"
 cancel = "End the conversation"
@@ -295,5 +301,7 @@ item_locked = "not available yet"
 market_closed = "the market is closed: too much {notoriety}"
 credits = "{missing} {missing|{credit}|{credit}s} short"
 nothing_to_hide = "nothing to hide"
+no_link = "no neural link possible"
+link_max = "the link is at its highest {level}"
 discussed = "already discussed"
 topic_not_yet = "nothing to say yet"

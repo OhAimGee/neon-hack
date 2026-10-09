@@ -17,7 +17,7 @@ fn run_with_input(args: &[&str], input: &str) -> Output {
 /// depend on the machine's locale, `NO_COLOR` or settings.
 ///
 /// A test never touches the real data folder: without an explicit `--data-dir` (or
-/// `NEON_HACK_DATA_DIR`), the run gets a folder of its own, and a demo run is also given
+/// `NEON_HACK_DATA_DIR`), the run gets a folder of its own, and a run that plays is also given
 /// `--no-save`.
 fn run_in_env(args: &[&str], input: &str, vars: &[(&str, &str)]) -> Output {
     let scratch = tempfile::tempdir().expect("a temporary folder");
@@ -32,8 +32,19 @@ fn run_in_env(args: &[&str], input: &str, vars: &[(&str, &str)]) -> Output {
         args.contains(&"--data-dir") || vars.iter().any(|(name, _)| *name == "NEON_HACK_DATA_DIR");
     if !has_folder {
         command.arg("--data-dir").arg(scratch.path());
-        let plays = args.contains(&"--demo") || args.contains(&"--campaign");
-        if plays && !args.contains(&"--list-saves") {
+        // Any run that plays (the campaign by default, or the demo) writes no save.
+        let informs = [
+            "--help",
+            "-h",
+            "--version",
+            "-V",
+            "--print-settings",
+            "--list-saves",
+        ];
+        if !args
+            .iter()
+            .any(|arg| informs.contains(arg) || *arg == "--no-save")
+        {
             command.arg("--no-save");
         }
     }
@@ -71,6 +82,13 @@ fn help_flag_describes_the_game_and_its_options() {
     assert!(output.status.success());
     let text = stdout(&output);
     assert!(text.contains("cyberpunk text RPG"));
+    // The campaign is what runs by default; the demo is the option that says so.
+    assert!(text.contains("plays the campaign"), "{text}");
+    assert!(
+        text.contains("--demo") && text.contains("toy game"),
+        "{text}"
+    );
+    assert!(text.contains("--difficulty"), "{text}");
     for flag in [
         "--demo",
         "--plain",
@@ -85,10 +103,21 @@ fn help_flag_describes_the_game_and_its_options() {
 }
 
 #[test]
-fn without_the_demo_the_game_says_it_is_not_playable_yet() {
+fn without_a_game_option_the_campaign_is_played() {
+    // The input closes at the handle: the session ends, but it was the campaign's.
     let output = run(&[]);
-    assert!(output.status.success());
-    assert!(stdout(&output).contains("not playable yet"));
+    assert!(output.status.success(), "{}", stderr(&output));
+    let text = stdout(&output);
+    assert!(text.contains("N E O N"), "{text}");
+    assert!(text.contains("Handle [Neon]: "), "{text}");
+    assert!(!text.contains("not playable"), "{text}");
+    assert!(
+        text.ends_with("Input closed: ending the session.\n"),
+        "{text:?}"
+    );
+    // The option that used to ask for it is still understood, and says nothing more.
+    let explicit = run(&["--campaign"]);
+    assert_eq!(stdout(&explicit), text);
 }
 
 #[test]
@@ -428,10 +457,26 @@ fn no_save_writes_nothing_and_a_manual_save_says_it_is_off() {
 }
 
 #[test]
-fn save_options_need_the_demo() {
-    for flag in ["--new", "--list-saves", "--no-save"] {
-        assert_eq!(run(&[flag]).status.code(), Some(2), "{flag}");
+fn save_options_work_for_either_game_without_naming_one() {
+    // They used to need a game option; the campaign is the game when none is named.
+    let listing = run(&["--list-saves"]);
+    assert!(listing.status.success(), "{}", stderr(&listing));
+    assert!(
+        stdout(&listing).contains("saves-campaign"),
+        "{}",
+        stdout(&listing)
+    );
+    for flag in ["--new", "--no-save"] {
+        let output = run_with_input(&[flag], "");
+        assert!(output.status.success(), "{flag}: {}", stderr(&output));
     }
+    let output = run(&["--load", "slot-1"]);
+    assert_eq!(output.status.code(), Some(1), "no such save is an error");
+    assert!(
+        stderr(&output).contains("There is no save called slot-1."),
+        "{}",
+        stderr(&output)
+    );
 }
 
 #[test]
@@ -879,9 +924,7 @@ fn undraft(text: &str) -> String {
 }
 
 fn campaign(extra: &[&str], script: &str) -> String {
-    let mut args = vec!["--campaign"];
-    args.extend_from_slice(extra);
-    let output = run_with_input(&args, script);
+    let output = run_with_input(extra, script);
     assert!(output.status.success(), "{}", stderr(&output));
     assert!(output.stderr.is_empty(), "{}", stderr(&output));
     undraft(&stdout(&output))
@@ -945,7 +988,7 @@ fn the_campaign_difficulty_is_chosen_for_a_new_game_only() {
     );
     assert!(text.contains("Difficulty: Hardcore"), "{text}");
     assert!(text.contains("[Error] No hint left"), "{text}");
-    let output = run(&["--difficulty", "story"]);
+    let output = run(&["--demo", "--difficulty", "story"]);
     assert_eq!(
         output.status.code(),
         Some(2),
@@ -954,30 +997,25 @@ fn the_campaign_difficulty_is_chosen_for_a_new_game_only() {
 }
 
 #[test]
-fn the_two_games_are_never_played_together_and_the_game_options_ask_for_one() {
+fn the_two_games_are_never_played_together_and_the_game_options_work_for_either() {
     assert_eq!(run(&["--demo", "--campaign"]).status.code(), Some(2));
-    for flag in [
-        &["--new"][..],
-        &["--list-saves"],
-        &["--no-save"],
-        &["--load", "auto"],
-    ] {
-        let output = run(flag);
-        assert_eq!(output.status.code(), Some(2), "{flag:?} needs a game");
-    }
-    // They work for either game.
-    for game in ["--demo", "--campaign"] {
-        let output = run(&[game, "--list-saves"]);
-        assert!(output.status.success(), "{game}: {}", stderr(&output));
-        let output = run_with_input(&[game, "--new", "--seed", "3"], "");
-        assert!(output.status.success(), "{game}: {}", stderr(&output));
+    // They work for the campaign (the default), the demo, and the campaign named.
+    for game in [&[][..], &["--demo"], &["--campaign"]] {
+        let mut listing = game.to_vec();
+        listing.push("--list-saves");
+        let output = run(&listing);
+        assert!(output.status.success(), "{game:?}: {}", stderr(&output));
+        let mut fresh = game.to_vec();
+        fresh.extend(["--new", "--seed", "3"]);
+        let output = run_with_input(&fresh, "");
+        assert!(output.status.success(), "{game:?}: {}", stderr(&output));
     }
 }
 
 /// Runs the campaign with its saves in `dir`.
 fn campaign_in(dir: &std::path::Path, args: &[&str], input: &str) -> Output {
     let dir = dir.to_str().expect("a UTF-8 temporary path");
-    let mut all = vec!["--campaign", "--data-dir", dir, "--seed", "7"];
+    let mut all = vec!["--data-dir", dir, "--seed", "7"];
     all.extend_from_slice(args);
     run_with_input(&all, input)
 }
@@ -1072,10 +1110,10 @@ fn the_first_three_quests_play_to_the_end_through_the_real_binary() {
 
 #[test]
 fn closing_the_input_ends_the_campaign_instead_of_looping() {
-    let output = run_with_input(&["--campaign"], "");
+    let output = run_with_input(&[], "");
     assert!(output.status.success());
     assert!(stdout(&output).ends_with("Input closed: ending the session.\n"));
-    let output = run_with_input(&["--campaign"], "Neon\nhack localhost\n");
+    let output = run_with_input(&[], "Neon\nhack localhost\n");
     assert!(output.status.success());
     assert!(stdout(&output).ends_with("Input closed: ending the session.\n"));
 }
@@ -1205,4 +1243,256 @@ fn a_campaign_closed_in_the_middle_of_the_prologue_comes_back_to_the_same_page()
     let text = stdout(&second);
     assert!(text.contains("Nexus Corp runs the city"), "{text}");
     assert!(text.contains("Start the guided tutorial?"), "{text}");
+}
+
+// ---- The two games keep their saves apart ----------------------------------------------------
+
+#[test]
+fn a_save_of_the_other_game_is_refused_with_a_clear_message_and_left_alone() {
+    let made = tempfile::tempdir().unwrap();
+    campaign_in(made.path(), &[], "Zed\n\n\nn\nquit\ny\n");
+    play_in(made.path(), &[], &format!("{PROLOGUE}scan\nquit\ny\n"));
+    let campaign_save =
+        std::fs::read_to_string(made.path().join("saves-campaign/auto.toml")).unwrap();
+    let demo_save = std::fs::read_to_string(made.path().join("saves/auto.toml")).unwrap();
+
+    // Each save is put in the folder of the other game, as a player moving files could.
+    let dir = tempfile::tempdir().unwrap();
+    std::fs::create_dir_all(dir.path().join("saves")).unwrap();
+    std::fs::create_dir_all(dir.path().join("saves-campaign")).unwrap();
+    std::fs::write(dir.path().join("saves/auto.toml"), &campaign_save).unwrap();
+    std::fs::write(dir.path().join("saves-campaign/auto.toml"), &demo_save).unwrap();
+
+    let demo = play_in(dir.path(), &[], "quit\ny\n");
+    assert_eq!(demo.status.code(), Some(1));
+    let message = stderr(&demo);
+    assert!(
+        message.contains(
+            "This is a save of the campaign, not of the demo. To play the campaign, run `neon-hack`"
+        ),
+        "{message}"
+    );
+    assert!(message.contains("--new"), "{message}");
+    assert!(!message.contains("damaged"), "{message}");
+
+    let campaign = campaign_in(dir.path(), &[], "quit\ny\n");
+    assert_eq!(campaign.status.code(), Some(1));
+    let message = stderr(&campaign);
+    assert!(
+        message.contains("This is a save of the demo, not of the campaign. To play the demo, run `neon-hack --demo`"),
+        "{message}"
+    );
+
+    // In French too, for a named save as well.
+    let french = campaign_in(dir.path(), &["--lang", "fr", "--load", "auto"], "");
+    assert_eq!(french.status.code(), Some(1));
+    assert!(
+        stderr(&french).contains("C'est une sauvegarde de la démo, pas de la campagne."),
+        "{}",
+        stderr(&french)
+    );
+
+    // Nothing was touched, and starting over works (the foreign save becomes the backup).
+    assert_eq!(
+        std::fs::read_to_string(dir.path().join("saves/auto.toml")).unwrap(),
+        campaign_save
+    );
+    assert_eq!(
+        std::fs::read_to_string(dir.path().join("saves-campaign/auto.toml")).unwrap(),
+        demo_save
+    );
+    let fresh = campaign_in(dir.path(), &["--new"], "Zed\n\n\nn\nquit\ny\n");
+    assert!(fresh.status.success(), "{}", stderr(&fresh));
+    assert!(dir.path().join("saves-campaign/auto.toml.bak").exists());
+
+    // A foreign save is refused even when a valid backup of this game sits next to it.
+    let both = tempfile::tempdir().unwrap();
+    std::fs::create_dir_all(both.path().join("saves-campaign")).unwrap();
+    std::fs::write(both.path().join("saves-campaign/auto.toml"), &demo_save).unwrap();
+    std::fs::write(
+        both.path().join("saves-campaign/auto.toml.bak"),
+        &campaign_save,
+    )
+    .unwrap();
+    let hidden = campaign_in(both.path(), &[], "quit\ny\n");
+    assert_eq!(hidden.status.code(), Some(1));
+    assert!(
+        stderr(&hidden).contains("This is a save of the demo, not of the campaign."),
+        "{}",
+        stderr(&hidden)
+    );
+
+    // A damaged file is still told as damaged, not as another game's.
+    std::fs::write(dir.path().join("saves/auto.toml"), "garbage").unwrap();
+    let damaged = play_in(dir.path(), &[], "");
+    assert!(stderr(&damaged).contains("damaged"), "{}", stderr(&damaged));
+}
+
+// ---- The whole campaign, to the epilogue ------------------------------------------------------
+
+/// The lines of the optimistic player of the engine (`crates/neon-engine/tests/campaign`)
+/// for three plans, one for each of three endings. A test of the engine checks that they are
+/// what the walk types, so they cannot go stale; they are the opening (the handle, the prologue
+/// skipped, no tutorial) then every command and menu answer up to the farewell.
+const WALK_E1A: &str = include_str!("scripts/walk-e1a.txt");
+const WALK_E3: &str = include_str!("scripts/walk-e3.txt");
+const WALK_E4: &str = include_str!("scripts/walk-e4.txt");
+
+/// What the whole walk is asserted to say, for a plan: its ending, and the epilogue line of
+/// each of the nine contacts.
+struct Finale {
+    ending: &'static str,
+    epilogue: [&'static str; 9],
+}
+
+const FINALE_E1A: Finale = Finale {
+    ending: "e1a",
+    epilogue: [
+        "echo7_lives",
+        "r4z0r_allied",
+        "phoenix_free",
+        "aura_free",
+        "broker_neutral",
+        "angel_free",
+        "insider_",
+        "ghost_stays",
+        "miner_archives",
+    ],
+};
+
+const FINALE_E3: Finale = Finale {
+    ending: "e3",
+    epilogue: [
+        "echo7_absent",
+        "r4z0r_hostile",
+        "phoenix_lost",
+        "aura_hosted",
+        "broker_neutral",
+        "angel_silenced",
+        "insider_",
+        "ghost_stays",
+        "miner_archives",
+    ],
+};
+
+const FINALE_E4: Finale = Finale {
+    ending: "e4",
+    epilogue: [
+        "echo7_absent",
+        "r4z0r_allied",
+        "phoenix_turned",
+        "aura_possessed",
+        "broker_hostile",
+        "angel_free",
+        "insider_",
+        "ghost_stays",
+        "miner_archives",
+    ],
+};
+
+/// Plays a walk through the real binary on a pipe, from a new game, and checks everything
+/// the plan must have said: the campaign is finished, with its ending and the nine epilogue
+/// lines, in the order the contacts are listed, once each, and no error anywhere.
+fn whole_campaign(dir: &std::path::Path, extra: &[&str], script: &str, finale: &Finale) -> String {
+    // The saves are written for real, in a folder of the test's own: the script saves a slot.
+    let mut args = vec!["--data-dir", dir.to_str().expect("a UTF-8 temporary path")];
+    args.extend_from_slice(extra);
+    let output = run_with_input(&args, script);
+    assert!(output.status.success(), "{}", stderr(&output));
+    assert!(output.stderr.is_empty(), "{}", stderr(&output));
+    let text = stdout(&output);
+    for forbidden in ["[Error]", "[Erreur]", "<missing:", "<?", "\u{1b}"] {
+        assert!(!text.contains(forbidden), "`{forbidden}` in the transcript");
+    }
+    // The ending screen and the epilogue are the drafts of chapter 6 for now: what shows
+    // which ending and which lines were reached is their key.
+    let titles: Vec<&str> = text.matches("TODO ending.").collect();
+    assert_eq!(
+        titles.len(),
+        1 + 6 + usize::from(finale.ending == "e1a" || finale.ending == "e1b"),
+        "{text}"
+    );
+    assert_eq!(
+        text.matches(&format!("TODO ending.{}.title", finale.ending))
+            .count(),
+        1
+    );
+    assert_eq!(text.matches("TODO epilogue.").count(), 9, "{text}");
+    // The lines come in the order of the contacts. The Insider's depends on how the walk
+    // played a contract that can fail (a prefix says so), the others on the decisions.
+    let mut at = text.rfind("TODO ending.").unwrap();
+    for line in finale.epilogue {
+        let needle = if line.ends_with('_') {
+            format!("TODO epilogue.{line}")
+        } else {
+            format!("TODO epilogue.{line}\n")
+        };
+        let found = text[at..].find(&needle);
+        assert!(
+            found.is_some(),
+            "epilogue.{line} is missing or out of order:\n{text}"
+        );
+        at += found.unwrap();
+    }
+    text
+}
+
+/// The last screens: from the conversation that puts the last decision to the farewell.
+fn final_screens(text: &str) -> &str {
+    let start = text.rfind("> talk aura\n").unwrap();
+    &text[start..]
+}
+
+#[test]
+fn the_whole_campaign_reaches_the_epilogue_in_english() {
+    let dir = tempfile::tempdir().unwrap();
+    let text = whole_campaign(dir.path(), &[], WALK_E1A, &FINALE_E1A);
+    assert_eq!(text.matches("Quest completed: ").count(), 14, "{text}");
+    assert!(!text.contains("Quest failed"), "{text}");
+    assert!(text.contains("Welcome to the net, Walker."), "{text}");
+    assert!(text.ends_with("Goodbye, Walker.\n"), "{text:?}");
+    insta::assert_snapshot!(final_screens(&text));
+
+    // The finished game is saved like any other: it comes back with nothing left to do, and
+    // the slot the walk saved on the way is there.
+    let saves = campaign_in(dir.path(), &["--list-saves"], "");
+    assert!(
+        stdout(&saves).contains("slot-3: Walker, "),
+        "{}",
+        stdout(&saves)
+    );
+    let again = campaign_in(dir.path(), &[], "status\nquests\nquit\ny\n");
+    let again = stdout(&again);
+    assert!(again.contains("Resuming your saved game."), "{again}");
+    assert!(
+        again.contains("Back on the net, Walker: 0 active quests"),
+        "{again}"
+    );
+    assert!(again.contains("Quests in progress: 0"), "{again}");
+}
+
+#[test]
+fn the_whole_campaign_reaches_the_epilogue_in_french() {
+    let dir = tempfile::tempdir().unwrap();
+    let text = whole_campaign(dir.path(), &["--lang", "fr"], WALK_E3, &FINALE_E3);
+    assert_eq!(text.matches("Quête terminée : ").count(), 14, "{text}");
+    assert!(text.contains("Bienvenue sur le réseau, Walker."), "{text}");
+    assert!(text.ends_with("À bientôt, Walker.\n"), "{text:?}");
+    insta::assert_snapshot!(final_screens(&text));
+}
+
+#[test]
+fn the_whole_campaign_reaches_the_epilogue_with_the_screen_reader_and_ascii_modes() {
+    let dir = tempfile::tempdir().unwrap();
+    let text = whole_campaign(
+        dir.path(),
+        &["--screen-reader", "--ascii", "--lang", "fr"],
+        WALK_E4,
+        &FINALE_E4,
+    );
+    assert!(text.is_ascii(), "{text}");
+    assert_eq!(text.matches("Quete terminee : ").count(), 14, "{text}");
+    assert!(!text.contains("N E O N"), "no decoration");
+    assert!(text.ends_with("A bientot, Walker.\n"), "{text:?}");
+    insta::assert_snapshot!(final_screens(&text));
 }

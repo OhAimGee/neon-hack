@@ -662,6 +662,7 @@ keys = [
     "unlock.decrypt",
     "unlock.hack",
     "unlock.laylow",
+    "unlock.link",
     "unlock.messages",
     "unlock.read",
     "unlock.shop",

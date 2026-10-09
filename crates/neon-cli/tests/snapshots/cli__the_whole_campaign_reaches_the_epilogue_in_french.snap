@@ -1,0 +1,62 @@
+---
+source: crates/neon-cli/tests/cli.rs
+expression: final_screens(&text)
+---
+> talk aura
+Conversation avec AURA
+[1] TODO contact.aura.topic.brother.q (déjà abordé)
+[2] Décider : TODO decision.d3.prompt
+[0] Mettre fin à la conversation
+? decide:d3
+TODO decision.d3.prompt
+[1] TODO decision.d3.choice.liberate.label
+[2] TODO decision.d3.choice.entrust.label
+[3] TODO decision.d3.choice.burn.label
+[4] TODO decision.d3.choice.sign.label
+[0] Décider plus tard
+? burn
+Objectif atteint : TODO quest.m13.obj.3
+Quête terminée : TODO quest.m13.title
+AURA » TODO quest.m13.debrief
+[Gain] +3200 crédits
+Nouveau fragment dans les archives : TODO frag.f23.title.
+
+TODO cutscene.ending_screen.p01
+TODO cutscene.ending_screen.p02
+TODO cutscene.ending_screen.p03
+TODO ending.e3.title
+TODO ending.e3.p01
+TODO ending.e3.p02
+TODO ending.e3.p03
+TODO ending.e3.p04
+TODO ending.e3.p05
+TODO ending.e3.p06
+
+
+TODO cutscene.epilogue_montage.p01
+TODO epilogue.echo7_absent
+TODO epilogue.r4z0r_hostile
+TODO epilogue.phoenix_lost
+TODO epilogue.aura_hosted
+TODO epilogue.broker_neutral
+TODO epilogue.angel_silenced
+TODO epilogue.insider_exposed
+TODO epilogue.ghost_stays
+TODO epilogue.miner_archives
+
+Nouvelle quête : TODO quest.m14.title
+Objectif atteint : TODO quest.m14.obj.1
+Objectif atteint : TODO quest.m14.obj.2
+Il n'y a plus rien à dire pour le moment.
+> talk echo7
+Quête terminée : TODO quest.m14.title
+ECHO-7 » TODO quest.m14.debrief
+[Gain] +800 crédits
+Conversation avec ECHO-7
+[1] Demander des conseils (déjà abordé)
+[0] Mettre fin à la conversation
+? 0
+La conversation prend fin.
+> quit
+Quitter le réseau ? La partie est sauvegardée. [o/N] y
+À bientôt, Walker.

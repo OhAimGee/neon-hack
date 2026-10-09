@@ -18,7 +18,7 @@ pub(super) const FRONTEND: Capabilities = Capabilities::PLAIN;
 pub(super) const NAMES: &[&str] = &[
     "help", "status", "quit", "load", "panel", "plain", "export", "quests", "accept", "contacts",
     "talk", "messages", "read", "archives", "decrypt", "net", "hack", "shop", "buy", "laylow",
-    "hint", "save", "tutorial",
+    "link", "hint", "save", "tutorial",
 ];
 
 const HELP_ARGS: &[ArgSpec] = &[ArgSpec::optional(ArgKind::Word(NAMES))];
@@ -180,6 +180,7 @@ pub(super) const SPECS: &[CommandSpec] = &[
         Context::Hub,
         SERVICE_OPTIONAL,
     ),
+    engine("link", &[], "campaign.help.link", Context::Hub, CONTACT),
     engine("hint", &[], "campaign.help.hint", Context::Hub, &[]),
     engine(
         "save",

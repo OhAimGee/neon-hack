@@ -114,14 +114,19 @@ impl CampaignGame {
         let run = missions.quests.get(&quest.id)?;
         for (i, objective) in quest.objective.iter().enumerate() {
             let i = u8::try_from(i).ok()?;
-            if run.done.contains(&(i, 0)) || !applicable(c, missions, objective) {
+            if !applicable(c, missions, objective) {
                 continue;
             }
             let price = |goal: &Goal| match goal {
                 Goal::Pay { amount } => Some(c.resolve(*amount, quest.tier).0),
                 _ => None,
             };
-            if let Some(found) = price(&objective.goal) {
+            // An objective that is done is not paid again, but the alternatives of an
+            // `any_of` that is done stay on offer: a decision may need one of them (paying
+            // the Broker when the ledger already settled the objective).
+            if !run.done.contains(&(i, 0))
+                && let Some(found) = price(&objective.goal)
+            {
                 return Some(found);
             }
             for (j, alternative) in objective.children().iter().enumerate() {

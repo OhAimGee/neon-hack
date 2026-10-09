@@ -66,9 +66,14 @@ slot_done = "Partie sauvegardée dans l'emplacement {slot}."
 disabled = "La sauvegarde est désactivée (--no-save)."
 missing = "Il n'y a pas de sauvegarde nommée {save}."
 unreadable = "La sauvegarde est abîmée et aucune copie précédente ne fonctionne ({details}). Rien n'a été modifié : lancez une nouvelle partie avec --new."
+other_game = "C'est une sauvegarde de {other}, pas de {this}. Pour jouer à {other}, lancez `{command}` ; pour recommencer {this}, utilisez --new (cette sauvegarde est conservée)."
 none = "Aucune partie sauvegardée."
 list_entry = "{save} : {player}, {turn} {turn|action|actions}"
 list_damaged = "{save} : abîmée ({reason})"
+
+[ui.game]
+campaign = "la campagne"
+demo = "la démo"
 
 [ui.settings]
 damaged = "settings.toml est inutilisable ({reason}) : les réglages par défaut s'appliquent. Le fichier n'a pas été modifié."

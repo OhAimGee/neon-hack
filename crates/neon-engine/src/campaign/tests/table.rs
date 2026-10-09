@@ -114,6 +114,7 @@ fn every_campaign_key_the_code_points_at_is_in_both_catalogs() {
         include_str!("../dispatch.rs"),
         include_str!("../hack.rs"),
         include_str!("../hub.rs"),
+        include_str!("../link.rs"),
         include_str!("../mod.rs"),
         include_str!("../play.rs"),
         include_str!("../prologue.rs"),
@@ -158,6 +159,7 @@ fn campaign_texts_that_no_code_uses_are_found() {
         include_str!("../dispatch.rs"),
         include_str!("../hack.rs"),
         include_str!("../hub.rs"),
+        include_str!("../link.rs"),
         include_str!("../mod.rs"),
         include_str!("../play.rs"),
         include_str!("../prologue.rs"),
@@ -262,5 +264,19 @@ fn the_names_of_the_world_are_defined_for_every_contact_and_item() {
                 item.id
             );
         }
+    }
+}
+
+#[test]
+fn the_documented_number_of_commands_is_the_size_of_the_table() {
+    let count = format!("({} noms)", NAMES.len());
+    for (name, doc) in [
+        (
+            "commands.md",
+            include_str!("../../../../../docs/spec/commands.md"),
+        ),
+        ("ROADMAP.md", include_str!("../../../../../docs/ROADMAP.md")),
+    ] {
+        assert!(doc.contains(&count), "{name} must say {count}");
     }
 }

@@ -219,6 +219,7 @@ impl CampaignGame {
             "shop" => self.cmd_shop(events),
             "buy" => self.cmd_buy(args),
             "laylow" => self.cmd_laylow(args, events),
+            "link" => self.cmd_link(args, events),
             "hint" => self.cmd_hint(events),
             "tutorial" => self.cmd_tutorial(args, events),
             "save" => {
