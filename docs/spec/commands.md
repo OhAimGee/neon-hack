@@ -64,6 +64,7 @@ Dans le plain, `panel` et `plain` répondent « Seulement en plein écran. » (m
 | `buy` | — | `<objet>` | achète ; refuse avec la raison ; un achat irréversible crée un point de contrôle (R-9) | idem `shop` | `shop` (menu) |
 | `upgrade` | — | `<programme>` | améliore un programme du catalogue (niveau 1 → 3) ; prix affiché dans `deck` | idem `shop` | `upgrade_level` (jamais utilisé en C) |
 | `laylow` | — | `[service]` | sans argument, les services qui baissent la Notoriété (nom conservé) ; avec un argument, achète le service | quand la Notoriété dépasse « Discret » pour la première fois | `laylow` |
+| `tutorial` | — | `[skip\|restart]` | sans argument, redit l'étape courante du tutoriel guidé (ou son état) ; `skip` y met fin ; `restart` le relance depuis la première étape | départ | (nouveau, R2.3b) |
 | `hint` | — | — | un indice d'ECHO-7 sur l'objectif actif ; décompte selon la difficulté ; jamais de solution complète | départ (nombre selon la difficulté) | (nouveau) |
 | `save` | — | `[emplacement 1-9]` | sans argument, point de contrôle manuel dans l'emplacement libre le plus ancien ; avec, dans cet emplacement ; jamais en pleine intrusion (§ 5) | départ | `save` |
 
@@ -145,7 +146,7 @@ Ouverture initiale proposée (la fin de chaque ligne est la quête qui l'ouvre ;
 | Notoriété au-dessus de « Discret » une fois | `laylow` (écart de R2.2b : voir § 11) |
 | difficulté Histoire | `skip` |
 
-Le tutoriel (R2) enseigne dans cet ordre `help`, `quests`, `talk`, `net`, `hack`, `map`, `breach`, `end`, `jackout` ; il ne dépend d'aucune commande retirée (`bruteforce localhost`, `laylow` comme premier geste de couverture, le niveau 2 par `scan` : contradiction 13).
+Le tutoriel (R2) enseigne dans cet ordre `help`, `quests`, `talk`, `net`, `hack`, `map`, `breach`, `end`, `jackout` (les quatre dernières attendent R4 ; le tutoriel du hub, lot R2.3b, enseigne `help`, `status`, `quests`, `talk`, `net`, `hack`, `laylow`, `shop`, `buy`, `save`, `quit`, voir le § 11) ; il ne dépend d'aucune commande retirée (`bruteforce localhost`, `laylow` comme premier geste de couverture, le niveau 2 par `scan` : contradiction 13).
 
 ## 7. Ce que R2 change dans le code
 
@@ -227,3 +228,4 @@ La table du hub est déclarée dans `neon_engine::campaign` (22 noms). Les comma
 9. **Commandes du frontend** (`load`, `panel`, `plain`, `export`) : déclarées dans la table (listées par `Registry`, vérifiées par `Registry::issues`), mais **aucun frontend ne les prend encore en charge** : le jeu les ferme (« Pas encore : l'interface ne le propose pas encore. ») au lieu de les lister ; `panel` et `plain` répondent « Seulement en plein écran. ». Quand R3 les câblera, il suffira de les rouvrir (une ligne de `availability`) et de transmettre les `Capabilities`.
 10. **`accept`** s'ouvre à la première offre, S06 (règle de `unlocks.toml`) ; **`messages`/`read`** et **`archives`/`decrypt`** à la fin de M01 (premier message, niveau 2 qui montre le premier document chiffré).
 11. **Textes** : les noms de commandes dans les textes sont des noms propres du jeu ; les marques de substitution des usages (`<quête>`, `<contact>`) sont écrites dans la langue de l'interface, car un usage est un texte sans arguments.
+12. **`tutorial [skip|restart]`** (lot R2.3b) : le nom `skip` de la table de l'intrusion (§ 2.3) reste réservé à R4 ; le tutoriel guidé se coupe donc par `tutorial skip`, ou en refusant l'offre qui le propose après le prologue. Une étape se fait en exécutant sa commande, dans n'importe quel ordre ; l'indication de l'étape courante n'est dite qu'au prompt de commande, une seule fois, et seulement quand la commande de l'étape est ouverte (la boutique attend la fin de M01, par la règle de `unlocks.toml`). Dans le plain, `skip` tapé à un « Entrée pour continuer » saute le reste du prologue (Échap dans la TUI).

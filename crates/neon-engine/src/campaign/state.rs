@@ -481,9 +481,8 @@ impl CampaignState {
                 };
             }
             _ if !handle_ok => return Err("the handle is not a clean handle".to_owned()),
-            [] | [Flow::ConfirmQuit] => {}
+            [] | [Flow::ConfirmQuit | Flow::OfferTutorial] => {}
             [Flow::Prologue { page }] if (1..=CONTINUE_PAGES).contains(page) => {}
-            [Flow::OfferTutorial] => {}
             [Flow::ConfirmHack { site }] if c.site(site).is_some() => {}
             [Flow::ConfirmBuy { item }] if c.item(item).is_some() => {}
             [Flow::Talk { contact }] if c.contact(contact).is_some() => {}

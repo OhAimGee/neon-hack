@@ -214,12 +214,11 @@ impl CampaignGame {
     /// `tutorial [skip|restart]`.
     pub(super) fn cmd_tutorial(&mut self, args: &[ArgRef], events: &mut Vec<Event>) {
         match args.first().and_then(ArgRef::as_word) {
-            None => self.tutorial_state(events),
             Some("skip") if self.state.tutorial.mode() == Mode::Active => {
                 self.state.tutorial.stop();
                 events.push(Event::system(Text::new("tutorial.skipped")));
             }
-            Some("skip") => self.tutorial_state(events),
+            None | Some("skip") => self.tutorial_state(events),
             Some("restart") => {
                 self.state.tutorial.begin();
                 events.push(Event::system(Text::new("tutorial.restarted")));

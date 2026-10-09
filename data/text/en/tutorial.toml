@@ -76,7 +76,7 @@ help = "Read the {journal}, or the {objective}s of one {quest}"
 help = "Map {net}, or read the file of one {site}"
 
 [command.status]
-help = "See the handle, the credits and the {notoriety}"
+help = "See the handle, the {credit}s and the {notoriety}"
 
 [command.laylow]
 help = "Lower the {notoriety} with a {service}"

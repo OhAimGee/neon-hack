@@ -887,8 +887,13 @@ fn campaign(extra: &[&str], script: &str) -> String {
     undraft(&stdout(&output))
 }
 
+/// The opening of a new campaign on a pipe: the handle (the default), the two pages of the
+/// prologue, and the guided tutorial declined.
+const OPENING: &str = "\n\n\nn\n";
+
 /// A first look at the hub: the commands, the situation, what is not open yet.
-const FIRST_LOOK: &str = "\nhelp\nstatus\nquests\ncontacts\nnet\nshop\nmessages\nbogus\nquit\ny\n";
+const FIRST_LOOK: &str =
+    "\n\n\nn\nhelp\nstatus\nquests\ncontacts\nnet\nshop\nmessages\nbogus\nquit\ny\n";
 
 #[test]
 fn the_campaign_plays_on_a_pipe_from_the_handle_to_the_farewell() {
@@ -933,7 +938,10 @@ fn the_first_look_with_the_screen_reader_and_ascii_modes() {
 
 #[test]
 fn the_campaign_difficulty_is_chosen_for_a_new_game_only() {
-    let text = campaign(&["--difficulty", "hardcore"], "\nstatus\nhint\nquit\ny\n");
+    let text = campaign(
+        &["--difficulty", "hardcore"],
+        &format!("{OPENING}status\nhint\nquit\ny\n"),
+    );
     assert!(text.contains("Difficulty: Hardcore"), "{text}");
     assert!(text.contains("[Error] No hint left"), "{text}");
     let output = run(&["--difficulty", "story"]);
@@ -979,7 +987,7 @@ fn a_campaign_is_resumed_where_it_was_left_without_the_welcome() {
     let first = campaign_in(
         dir.path(),
         &[],
-        "Zed\nquests\nhelp\nstatus\nhack localhost\ny\nquit\ny\n",
+        "Zed\n\n\nn\nquests\nhelp\nstatus\nhack localhost\ny\nquit\ny\n",
     );
     assert!(first.status.success(), "{}", stderr(&first));
     assert!(dir.path().join("saves-campaign/auto.toml").exists());
@@ -1012,7 +1020,7 @@ fn a_campaign_is_resumed_where_it_was_left_without_the_welcome() {
 #[test]
 fn campaign_saves_are_listed_apart_from_the_demos_and_a_checkpoint_comes_back() {
     let dir = tempfile::tempdir().unwrap();
-    campaign_in(dir.path(), &[], "Zed\nsave 3\nbuy 1\nquit\ny\n");
+    campaign_in(dir.path(), &[], "Zed\n\n\nn\nsave 3\nbuy 1\nquit\ny\n");
     // The demo plays in the same data folder and sees none of it.
     let demo = play_in(dir.path(), &["--list-saves"], "");
     assert!(
@@ -1040,14 +1048,14 @@ fn campaign_saves_are_listed_apart_from_the_demos_and_a_checkpoint_comes_back() 
         stderr(&output)
     );
     play_in(dir.path(), &[], &format!("{PROLOGUE}save 1\nquit\ny\n"));
-    let output = campaign_in(dir.path(), &["--new"], "Zed\nquit\ny\n");
+    let output = campaign_in(dir.path(), &["--new"], "Zed\n\n\nn\nquit\ny\n");
     assert!(output.status.success());
     assert!(dir.path().join("saves-campaign/auto.toml.bak").exists());
 }
 
 #[test]
 fn the_first_three_quests_play_to_the_end_through_the_real_binary() {
-    let script = "Neon\nquests\nhelp\nnet\nstatus\ntalk echo7\n1\nhack localhost\ny\nlaylow\n\
+    let script = "Neon\n\n\nn\nquests\nhelp\nnet\nstatus\ntalk echo7\n1\nhack localhost\ny\nlaylow\n\
         hack corp-server-01\ny\ntalk r4z0r\n1\nshop\nbuy stealth\ny\nhack localhost\ny\n\
         hack corp-server-01\ny\nhack underground-market\ny\narchives\ndecrypt doc_phase2\n\
         quests\nstatus\nquit\ny\n";
@@ -1069,4 +1077,131 @@ fn closing_the_input_ends_the_campaign_instead_of_looping() {
     let output = run_with_input(&["--campaign"], "Neon\nhack localhost\n");
     assert!(output.status.success());
     assert!(stdout(&output).ends_with("Input closed: ending the session.\n"));
+}
+
+// ---- The prologue and the guided tutorial ----------------------------------------------------
+
+/// A new campaign through the prologue (the default handle, two pages, the tutorial accepted by
+/// the default answer) and the first steps of the tutorial, in the order it teaches them.
+const GUIDED_START: &str = "\n\n\n\nhelp\nstatus\nquests\ntalk echo7\n0\nnet\nquit\ny\n";
+
+#[test]
+fn a_new_campaign_plays_the_prologue_and_the_first_tutorial_steps_in_english() {
+    let text = campaign(&[], GUIDED_START);
+    assert!(text.contains("Neo-Tokyo, 2087."), "{text}");
+    assert!(
+        text.contains("Press Enter to continue, or type `skip`"),
+        "{text}"
+    );
+    assert!(
+        text.contains("Encrypted channel #7: incoming connection."),
+        "{text}"
+    );
+    assert!(text.contains("Start the guided tutorial?"), "{text}");
+    // Each hint is said once, right after the command that earns it, and never inside the
+    // conversation menu.
+    for step in [
+        "Tutorial, step 1 of 10: Type `help`",
+        "Tutorial, step 2 of 10: Type `status`",
+        "Tutorial, step 3 of 10: Type `quests`",
+        "Tutorial, step 4 of 10: Type `talk echo7`",
+        "Tutorial, step 5 of 10: Type `net`",
+        "Tutorial, step 6 of 10: Type `hack localhost`",
+    ] {
+        assert_eq!(text.matches(step).count(), 1, "{step}:\n{text}");
+    }
+    assert!(!text.contains("[Error]"), "{text}");
+    insta::assert_snapshot!(text);
+}
+
+#[test]
+fn a_new_campaign_plays_the_prologue_and_the_first_tutorial_steps_in_french() {
+    let text = campaign(&["--lang", "fr"], GUIDED_START);
+    assert!(text.contains("Neo-Tokyo, 2087."), "{text}");
+    assert!(text.contains("Lancer le tutoriel guidé ?"), "{text}");
+    assert!(
+        text.contains("Tutoriel, étape 2 sur 10 : Taper `status`"),
+        "{text}"
+    );
+    assert!(!text.contains("[Erreur]"), "{text}");
+    insta::assert_snapshot!(text);
+}
+
+#[test]
+fn the_prologue_reads_the_same_with_the_screen_reader_and_ascii_modes() {
+    let script = "\n\n\n\nhelp\nquit\ny\n";
+    let reader = campaign(&["--screen-reader"], script);
+    assert!(
+        reader.contains("Encrypted channel number 7: incoming connection."),
+        "{reader}"
+    );
+    assert!(!reader.contains("N E O N"), "no decoration");
+    insta::assert_snapshot!(reader);
+    let ascii = campaign(&["--ascii", "--lang", "fr"], script);
+    assert!(ascii.is_ascii(), "{ascii}");
+    assert!(
+        ascii.contains("Canal chiffre #7 : connexion entrante."),
+        "{ascii}"
+    );
+    insta::assert_snapshot!(ascii);
+    let both = campaign(&["--screen-reader", "--ascii", "--lang", "fr"], script);
+    assert!(both.is_ascii(), "{both}");
+    assert!(
+        both.contains("Canal chiffre numero 7 : connexion entrante."),
+        "{both}"
+    );
+    insta::assert_snapshot!(both);
+}
+
+#[test]
+fn the_prologue_and_the_tutorial_can_be_skipped() {
+    // `skip` at the first page goes to the contact with ECHO-7; declining ends the offer.
+    let text = campaign(&[], "\nskip\nn\nstatus\ntutorial\nquit\ny\n");
+    assert!(!text.contains("Nexus Corp runs the city"), "{text}");
+    assert!(text.contains("ECHO-7 » Finally."), "{text}");
+    assert!(
+        text.contains("Tutorial skipped. `tutorial restart` starts it later."),
+        "{text}"
+    );
+    assert!(text.contains("The tutorial is off."), "{text}");
+    assert!(!text.contains("Tutorial, step"), "{text}");
+    // Skipped later, from the command line.
+    let text = campaign(&[], "\n\n\n\nhelp\ntutorial skip\nstatus\nquit\ny\n");
+    assert_eq!(text.matches("Tutorial, step").count(), 2, "{text}");
+    assert!(text.contains("Tutorial skipped."), "{text}");
+}
+
+#[test]
+fn a_tutorial_in_progress_is_resumed_with_its_step_and_not_replayed() {
+    let dir = tempfile::tempdir().unwrap();
+    let first = campaign_in(dir.path(), &[], "Zed\n\n\n\nhelp\nstatus\nquit\ny\n");
+    assert!(first.status.success(), "{}", stderr(&first));
+    let second = campaign_in(dir.path(), &[], "net\nquests\nquit\ny\n");
+    let text = undraft(&stdout(&second));
+    assert!(text.contains("Resuming your saved game."), "{text}");
+    // The instruction of the step it was on, once; ECHO-7's line is not said again.
+    assert_eq!(
+        text.matches("Tutorial, step 3 of 10: Type `quests`")
+            .count(),
+        1,
+        "{text}"
+    );
+    assert!(!text.contains("Neo-Tokyo, 2087."), "{text}");
+    assert!(!text.contains("ECHO-7 » Then the work."), "{text}");
+    // The command that is not the current step says nothing; the current one moves on.
+    assert!(
+        text.contains("Tutorial, step 4 of 10: Type `talk echo7`"),
+        "{text}"
+    );
+}
+
+#[test]
+fn a_campaign_closed_in_the_middle_of_the_prologue_comes_back_to_the_same_page() {
+    let dir = tempfile::tempdir().unwrap();
+    // The input closes at the second page: the session ends and the autosave holds the page.
+    campaign_in(dir.path(), &[], "Zed\n\n");
+    let second = campaign_in(dir.path(), &[], "\n\nquit\ny\n");
+    let text = stdout(&second);
+    assert!(text.contains("Nexus Corp runs the city"), "{text}");
+    assert!(text.contains("Start the guided tutorial?"), "{text}");
 }

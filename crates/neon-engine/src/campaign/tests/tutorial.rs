@@ -282,7 +282,7 @@ fn a_command_that_was_not_accepted_does_not_count() {
         driver.line(line);
         assert!(driver.errored(), "`{line}`");
     }
-    assert!(driver.game.state.tutorial.mode() == Mode::Active);
+    assert_eq!(driver.game.state.tutorial.mode(), Mode::Active);
     assert_eq!(driver.line("help").matches("Tutorial, step 2").count(), 1);
     // An intrusion that is declined is not an intrusion.
     driver.lines(&["status", "quests", "talk echo7", "0", "net"]);
@@ -902,7 +902,7 @@ fn the_interface_lines_are_neutral_and_only_the_characters_say_tu_or_you() {
             &english[..]
         };
         for (key, _) in catalog.iter() {
-            let in_character = key.ends_with(".say")
+            let in_character = key.rsplit('.').next() == Some("say")
                 || (key.starts_with("prologue.p3.") && !key.starts_with("prologue.p3.channel"));
             if in_character || !(key.starts_with("prologue.") || key.starts_with("tutorial.")) {
                 continue;
