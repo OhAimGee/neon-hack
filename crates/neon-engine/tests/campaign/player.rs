@@ -19,6 +19,8 @@ use crate::brain::{Brain, Move, Plan};
 const MAX_STEPS: usize = 2_500;
 /// Prompts one command may cause (a conversation with a few topics, a decision).
 const MAX_PROMPTS: usize = 24;
+/// The same move this many times in a row means the walk is going round in circles.
+const MAX_REPEATS: usize = 12;
 /// The handle of the walker.
 const HANDLE: &str = "Walker";
 
@@ -140,6 +142,8 @@ impl Player {
         let start = self.game.start();
         self.observe("(start)", &start);
         self.opening();
+        let mut last: Option<Move> = None;
+        let mut repeats = 0;
         loop {
             if self.steps > MAX_STEPS {
                 self.fail(&format!("more than {MAX_STEPS} steps"));
@@ -155,7 +159,22 @@ impl Player {
             }
             let next = Brain::new(&self.game, &self.plan).next_move();
             match next {
-                Some(mv) => self.perform(&mv),
+                Some(mv) => {
+                    // The same move again and again is a move that does not do what it
+                    // should (three conversations at most are ever asked for in a row).
+                    repeats = if last.as_ref() == Some(&mv) {
+                        repeats + 1
+                    } else {
+                        0
+                    };
+                    if repeats >= MAX_REPEATS {
+                        self.fail(&format!(
+                            "{mv:?} done {MAX_REPEATS} times in a row to no avail"
+                        ));
+                    }
+                    self.perform(&mv);
+                    last = Some(mv);
+                }
                 None => break,
             }
         }
@@ -314,6 +333,16 @@ impl Player {
         if step.prompt != self.game.prompt() {
             self.fail(&format!("`{what}`: the step's prompt is not the game's"));
         }
+        // Every prompt has a way forward: a menu has an entry that can be taken, or a way out.
+        if let Prompt::Choice(choice) = &step.prompt
+            && choice.cancel.is_none()
+            && choice
+                .options
+                .iter()
+                .all(|option| option.available.is_err())
+        {
+            self.fail(&format!("`{what}`: a menu with no way forward"));
+        }
         self.last_said.clear();
         self.render_all(what, step);
         self.check_drafts(what, step);
@@ -341,6 +370,15 @@ impl Player {
                     said.push_str(&render_event(event, catalog, *mode));
                 }
                 said.push_str(&render_prompt(&step.prompt, catalog, *mode));
+                // The side panel reads the view: the objectives and the gauge's band.
+                let view = self.game.view();
+                for text in view
+                    .objectives
+                    .iter()
+                    .chain(view.gauges.iter().map(|gauge| &gauge.band))
+                {
+                    said.push_str(&render(text, catalog, *mode));
+                }
                 if said.contains("<missing:") || said.contains("<?") {
                     self.fail(&format!(
                         "`{what}` in {lang:?} {mode:?} has a missing key or argument:\n{said}"
