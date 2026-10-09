@@ -34,7 +34,11 @@ pub(crate) fn wrap(text: &str, width: usize) -> Vec<String> {
     let width = width.max(1);
     let text = sanitize(text);
     let body = text.trim_start_matches(' ');
-    let widest = body.graphemes(true).map(UnicodeWidthStr::width).max().unwrap_or(0);
+    let widest = body
+        .graphemes(true)
+        .map(UnicodeWidthStr::width)
+        .max()
+        .unwrap_or(0);
     let mut indent_columns = (text.len() - body.len()).min(width / 2);
     if width - indent_columns < widest {
         // No room for the indent and the widest character: the text comes first.
@@ -144,7 +148,11 @@ mod tests {
         assert_eq!(wrap("abcdefghij", 4), ["abcd", "efgh", "ij"]);
         assert_eq!(wrap("", 10), [""]);
         assert_eq!(wrap("short", 100), ["short"]);
-        assert_eq!(wrap("ab cd", 0), ["a", "b", "c", "d"], "a zero width is one");
+        assert_eq!(
+            wrap("ab cd", 0),
+            ["a", "b", "c", "d"],
+            "a zero width is one"
+        );
     }
 
     #[test]
@@ -159,7 +167,10 @@ mod tests {
     fn a_grapheme_is_never_split() {
         let accented = "e\u{301}";
         let text = accented.repeat(5);
-        assert_eq!(wrap(&text, 2), [accented.repeat(2), accented.repeat(2), accented.to_owned()]);
+        assert_eq!(
+            wrap(&text, 2),
+            [accented.repeat(2), accented.repeat(2), accented.to_owned()]
+        );
         // A flag is two regional indicators, a family is a sequence joined by ZWJ.
         let flag = "\u{1F1EB}\u{1F1F7}";
         assert_eq!(wrap(&flag.repeat(3), 4), [flag.repeat(2), flag.to_owned()]);

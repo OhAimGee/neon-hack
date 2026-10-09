@@ -7,6 +7,7 @@
 //! caller's choice, so that menu answers and typed secrets are never recorded.
 
 use unicode_segmentation::UnicodeSegmentation;
+#[cfg(test)]
 use unicode_width::UnicodeWidthStr;
 
 /// Longest line kept in the editor, in characters, whatever a paste or a game asks.
@@ -55,7 +56,9 @@ impl LineEditor {
     /// Display columns between the start of the line and the cursor.
     #[cfg(test)]
     pub(crate) fn cursor_column(&self) -> usize {
-        self.text.get(..self.cursor).map_or(0, UnicodeWidthStr::width)
+        self.text
+            .get(..self.cursor)
+            .map_or(0, UnicodeWidthStr::width)
     }
 
     /// Byte offset of the cursor (always at a grapheme boundary).

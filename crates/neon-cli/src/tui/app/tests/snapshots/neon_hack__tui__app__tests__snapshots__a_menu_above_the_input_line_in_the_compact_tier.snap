@@ -1,0 +1,25 @@
+---
+source: crates/neon-cli/src/tui/app/tests/snapshots.rs
+expression: "picture(&app, 64, 20)"
+---
+64x20
+ Neon │ Notoriety 0/100 (Discreet)
+not a trap. I'm ECHO-7, and yours is the only deck in sector 7
+that still answers.
+ECHO-7 » Handle on file: Neon. Until you earn another name,
+you're a rookie. Don't take it personally.
+ECHO-7 » I have a first job for you. Nothing dangerous: a walk
+around your own deck. But first, the ropes.
+Start the guided tutorial? ECHO-7 walks through the first
+commands, and `tutorial skip` ends it at any time. [Y/n] n
+Tutorial skipped. `tutorial restart` starts it later.
+New quest: First Steps in the Shadows
+Type `help` to list the commands, then `quests` to read the
+first quest.
+> talk echo7
+Objective done: Talk to ECHO-7 (talk echo7)
+Conversation with ECHO-7
+[1] Ask for advice
+[0] End the conversation
+?
+Tab complete | Up/Down history | PgUp/PgDn scroll | Ctrl+C quit

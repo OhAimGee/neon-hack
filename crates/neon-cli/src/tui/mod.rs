@@ -84,7 +84,9 @@ fn event_loop(
             match fault.take() {
                 Some(Fault::Panic) => panic!("forced panic (NEON_HACK_TEST_FAULT=panic)"),
                 Some(Fault::Error) => {
-                    return Err(io::Error::other("forced error (NEON_HACK_TEST_FAULT=error)"));
+                    return Err(io::Error::other(
+                        "forced error (NEON_HACK_TEST_FAULT=error)",
+                    ));
                 }
                 None => {}
             }

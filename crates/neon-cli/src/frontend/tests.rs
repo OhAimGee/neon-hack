@@ -120,7 +120,10 @@ fn a_saved_wish_for_the_full_screen_is_not_nagged_about_on_a_pipe() {
         f.display = DisplayChoice::Tui;
         f.stdin_is_terminal = false;
     });
-    assert_eq!((decision.frontend, decision.notice), (Frontend::Plain, None));
+    assert_eq!(
+        (decision.frontend, decision.notice),
+        (Frontend::Plain, None)
+    );
 }
 
 #[test]
@@ -175,11 +178,26 @@ fn answers_are_numbers_or_words_in_either_language_and_empty_is_the_first() {
 #[test]
 fn the_question_is_asked_only_the_first_time_on_a_terminal_when_nothing_else_decides() {
     assert!(question_due(true, true, false, false, false));
-    assert!(!question_due(false, true, false, false, false), "a file exists");
-    assert!(!question_due(true, false, false, false, false), "not a terminal");
-    assert!(!question_due(true, true, true, false, false), "a flag decides");
-    assert!(!question_due(true, true, false, true, false), "screen reader");
-    assert!(!question_due(true, true, false, false, true), "--no-save writes nothing");
+    assert!(
+        !question_due(false, true, false, false, false),
+        "a file exists"
+    );
+    assert!(
+        !question_due(true, false, false, false, false),
+        "not a terminal"
+    );
+    assert!(
+        !question_due(true, true, true, false, false),
+        "a flag decides"
+    );
+    assert!(
+        !question_due(true, true, false, true, false),
+        "screen reader"
+    );
+    assert!(
+        !question_due(true, true, false, false, true),
+        "--no-save writes nothing"
+    );
 }
 
 fn ask(input: &str, lang: Lang) -> (Option<ModeAnswer>, String) {
@@ -230,7 +248,10 @@ fn the_answer_creates_the_settings_file_and_never_replaces_one() {
     let path = folder.path().join("data").join("settings.toml");
     save_choice(&path, ModeAnswer::ScreenReader).unwrap();
     let text = std::fs::read_to_string(&path).unwrap();
-    assert!(text.contains("display = \"plain\"\nscreen_reader = true\n"), "{text}");
+    assert!(
+        text.contains("display = \"plain\"\nscreen_reader = true\n"),
+        "{text}"
+    );
     // The file reads back as settings.
     let (settings, state) = crate::config::load_file(&path);
     assert_eq!(state, crate::config::FileState::Loaded);

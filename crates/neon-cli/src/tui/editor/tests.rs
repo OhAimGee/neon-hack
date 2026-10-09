@@ -128,7 +128,11 @@ fn a_paste_is_one_line_and_never_submits() {
     assert_eq!(editor.text(), "one two[31m");
     editor.clear();
     editor.paste("\n\n");
-    assert_eq!(editor.text(), " ", "a paste of line breaks is still harmless");
+    assert_eq!(
+        editor.text(),
+        " ",
+        "a paste of line breaks is still harmless"
+    );
 }
 
 #[test]

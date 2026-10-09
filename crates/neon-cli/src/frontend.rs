@@ -42,6 +42,10 @@ pub(crate) enum Notice {
 }
 
 /// What decides the interface.
+#[allow(
+    clippy::struct_excessive_bools,
+    reason = "independent facts about the terminal, not a state machine"
+)]
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Facts {
     /// The wish: `--plain`, `--tui`, `settings.toml`, or nothing.
@@ -161,6 +165,10 @@ pub(crate) fn parse_answer(line: &str) -> Option<ModeAnswer> {
 
 /// Whether the question is due: the first launch on a terminal, when nothing else already
 /// says how to play and nothing forbids writing the answer.
+#[allow(
+    clippy::fn_params_excessive_bools,
+    reason = "five independent facts, named at the call site and in the tests"
+)]
 pub(crate) fn question_due(
     settings_missing: bool,
     interactive: bool,
@@ -207,7 +215,9 @@ pub(crate) fn save_choice(path: &Path, answer: ModeAnswer) -> io::Result<()> {
     }
     let mut file = OpenOptions::new().write(true).create_new(true).open(path)?;
     file.write_all(b"# Written by the first question of neon-hack; edit freely.\n")?;
-    file.write_all(b"# `neon-hack --print-settings` shows every setting and where it comes from.\n")?;
+    file.write_all(
+        b"# `neon-hack --print-settings` shows every setting and where it comes from.\n",
+    )?;
     file.write_all(answer.settings().as_bytes())?;
     file.flush()
 }

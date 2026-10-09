@@ -5,9 +5,9 @@
 //! length of the log), which only the drawing can know.
 
 use neon_engine::Prompt;
+use neon_engine::View;
 use neon_engine::game::GaugeReading;
 use neon_engine::text::Text;
-use neon_engine::View;
 use ratatui::Frame;
 use ratatui::layout::{Alignment, Constraint, Layout, Position, Rect};
 use ratatui::style::{Color, Modifier, Style};
@@ -20,7 +20,7 @@ use super::{
 };
 use crate::palette::{Ansi, Hue, Palette, Style as PaletteStyle};
 use crate::render::LineKind;
-use crate::tui::text::{head, wrap, window};
+use crate::tui::text::{head, window, wrap};
 
 /// Width of the bar in the panel, without its brackets.
 const BAR_WIDTH: usize = 10;
@@ -80,17 +80,16 @@ impl App<'_> {
             .with_int("min_width", i64::from(COMPACT_SIZE.0))
             .with_int("min_height", i64::from(COMPACT_SIZE.1));
         let rows = wrap(&self.renderer.text(&message), usize::from(area.width));
-        let shown = u16::try_from(rows.len()).unwrap_or(u16::MAX).min(area.height);
+        let shown = u16::try_from(rows.len())
+            .unwrap_or(u16::MAX)
+            .min(area.height);
         let lines: Vec<TuiLine<'static>> = rows.into_iter().map(TuiLine::from).collect();
         let centred = Rect {
             y: area.y + (area.height - shown) / 2,
             height: shown,
             ..area
         };
-        frame.render_widget(
-            Paragraph::new(lines).alignment(Alignment::Center),
-            centred,
-        );
+        frame.render_widget(Paragraph::new(lines).alignment(Alignment::Center), centred);
     }
 
     fn draw_main(&self, frame: &mut Frame<'_>, area: Rect, with_panel: bool) {
@@ -115,7 +114,8 @@ impl App<'_> {
             let [log_area, panel_area] =
                 Layout::horizontal([Constraint::Min(20), Constraint::Length(PANEL_WIDTH)])
                     .areas(body_area);
-            let block = self.frame_block(&Text::new("ui.tui.log_title").with_term("terminal", "terminal"));
+            let block =
+                self.frame_block(&Text::new("ui.tui.log_title").with_term("terminal", "terminal"));
             let inner = block.inner(log_area);
             frame.render_widget(block, log_area);
             self.draw_log(frame, inner);
@@ -151,13 +151,14 @@ impl App<'_> {
 
     fn status_line(&self, view: &View) -> String {
         let separator = if self.renderer.mode.ascii { "|" } else { "│" };
-        let mut parts = vec![format!(" {}", self.renderer.verbatim(&view.player))];
-        parts.extend(
-            view.gauges
-                .iter()
-                .map(|reading| self.gauge_summary(reading)),
-        );
-        parts.join(&format!(" {separator} "))
+        // Before the player has a handle there is nothing to name.
+        let name = (!view.player.is_empty()).then(|| self.renderer.verbatim(&view.player));
+        let gauges = view
+            .gauges
+            .iter()
+            .map(|reading| self.gauge_summary(reading));
+        let parts: Vec<String> = name.into_iter().chain(gauges).collect();
+        format!(" {}", parts.join(&format!(" {separator} ")))
     }
 
     /// `Trace 14/100 (calm)`: the number and the level in words, never colour alone.
@@ -362,9 +363,9 @@ impl App<'_> {
 
         // The marker and the text are made ASCII together, at the single point; the cursor
         // is measured on the same final text.
-        let before = self
-            .renderer
-            .verbatim(&format!("{}{}", view.marker, self.editor.before_cursor()));
+        let before =
+            self.renderer
+                .verbatim(&format!("{}{}", view.marker, self.editor.before_cursor()));
         let typed = self
             .renderer
             .verbatim(&format!("{}{}", view.marker, self.editor.text()));

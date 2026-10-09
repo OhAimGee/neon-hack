@@ -1,0 +1,33 @@
+---
+source: crates/neon-cli/src/tui/app/tests/snapshots.rs
+expression: "picture(&app, 100, 28)"
+---
+100x28
+ Neon │ Notoriety 4/100 (Discreet)
+╭Terminal────────────────────────────────────────────────────────────╮╭Panel───────────────────────╮
+│[Enter] to continue                                                 ││Notoriety 4/100             │
+│                                                                    ││[█░░░░░░░░░] Discreet       │
+│Encrypted channel #7: incoming connection.                          ││                            │
+│ECHO-7 » Finally. For the record, I'm not a corp, not a cop and not ││First Steps                 │
+│a trap. I'm ECHO-7, and yours is the only deck in sector 7 that     ││- Open the journal (quests) │
+│still answers.                                                      ││- Read the help (help)      │
+│ECHO-7 » Handle on file: Neon. Until you earn another name, you're a││- Explore the net (net)     │
+│rookie. Don't take it personally.                                   ││- Check the status sheet    │
+│ECHO-7 » I have a first job for you. Nothing dangerous: a walk      ││(status)                    │
+│around your own deck. But first, the ropes.                         ││- Talk to ECHO-7 (talk      │
+│Start the guided tutorial? ECHO-7 walks through the first commands, ││echo7)                      │
+│and `tutorial skip` ends it at any time. [Y/n] n                    ││- Cover your tracks (laylow)│
+│Tutorial skipped. `tutorial restart` starts it later.               ││                            │
+│New quest: First Steps in the Shadows                               ││                            │
+│Type `help` to list the commands, then `quests` to read the first   ││                            │
+│quest.                                                              ││                            │
+│> nonsense                                                          ││                            │
+│[Error] Unknown command: nonsense. See `help`.                      ││                            │
+│> hack localhost                                                    ││                            │
+│Start the run on the site localhost? It is resolved at once. [Y/n] y││                            │
+│Run on localhost: 1 file taken.                                     ││                            │
+│Notoriety +4 (0 → 4, Discreet).                                     ││                            │
+│Objective done: Breach the local station (hack localhost)           ││                            │
+╰────────────────────────────────────────────────────────────────────╯╰────────────────────────────╯
+>
+Tab complete | Up/Down history | PgUp/PgDn scroll | Ctrl+C quit

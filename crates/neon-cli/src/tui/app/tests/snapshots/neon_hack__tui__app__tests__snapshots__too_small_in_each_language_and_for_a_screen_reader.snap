@@ -1,0 +1,47 @@
+---
+source: crates/neon-cli/src/tui/app/tests/snapshots.rs
+expression: text
+---
+50x15
+
+
+
+
+
+
+
+Terminal too small (50x15): at least 64x20 needed.
+
+
+
+
+
+
+
+
+50x15
+
+
+
+
+
+
+
+  Terminal trop petit (50x15) : 64x20 au minimum.
+
+
+
+
+
+
+
+
+50x15
+
+
+
+
+
+
+  Terminal too small: 50 columns by 15 lines, at
+              least 64 by 20 needed.

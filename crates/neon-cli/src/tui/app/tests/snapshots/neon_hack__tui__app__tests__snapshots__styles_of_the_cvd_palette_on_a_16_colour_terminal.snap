@@ -1,0 +1,36 @@
+---
+source: crates/neon-cli/src/tui/app/tests/snapshots.rs
+expression: "styled(PaletteChoice::Cvd, false)"
+---
+64x20
+ 0   0-63  fg=White bg=Black REVERSED
+ 1   0-41  fg=Cyan bg=Black NONE
+ 1  42-63  fg=White bg=Black NONE
+ 2   0-61  fg=Cyan bg=Black NONE
+ 2  62-63  fg=White bg=Black NONE
+ 3   0-42  fg=Cyan bg=Black NONE
+ 3  43-63  fg=White bg=Black NONE
+ 4   0-56  fg=White bg=Black DIM
+ 4  57-63  fg=White bg=Black NONE
+ 5   0-57  fg=White bg=Black DIM
+ 5  58-63  fg=White bg=Black NONE
+ 6   0-63  fg=White bg=Black NONE
+ 7   0-63  fg=White bg=Black NONE
+ 8   0-63  fg=White bg=Black NONE
+ 9   0-63  fg=White bg=Black NONE
+10   0-9   fg=White bg=Black DIM
+10  10-63  fg=White bg=Black NONE
+11   0-45  fg=Red bg=Black UNDERLINED
+11  46-63  fg=White bg=Black NONE
+12   0-15  fg=White bg=Black DIM
+12  16-63  fg=White bg=Black NONE
+13   0-59  fg=White bg=Black DIM
+13  60-63  fg=White bg=Black NONE
+14   0-6   fg=White bg=Black DIM
+14   7-63  fg=White bg=Black NONE
+15   0-63  fg=White bg=Black NONE
+16   0-30  fg=Yellow bg=Black NONE
+16  31-63  fg=White bg=Black NONE
+17   0-63  fg=White bg=Black NONE
+18   0-63  fg=White bg=Black NONE
+19   0-63  fg=White bg=Black DIM

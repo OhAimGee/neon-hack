@@ -1,0 +1,18 @@
+---
+source: crates/neon-cli/src/tui/app/tests/snapshots.rs
+expression: "styled(PaletteChoice::Default, true)"
+---
+64x20
+ 0   0-63  fg=Reset bg=Reset REVERSED
+ 1   0-41  fg=Cyan bg=Reset NONE
+ 2   0-61  fg=Cyan bg=Reset NONE
+ 3   0-42  fg=Cyan bg=Reset NONE
+ 4   0-56  fg=Reset bg=Reset DIM
+ 5   0-57  fg=Reset bg=Reset DIM
+10   0-9   fg=Reset bg=Reset DIM
+11   0-45  fg=Red bg=Reset UNDERLINED
+12   0-15  fg=Reset bg=Reset DIM
+13   0-59  fg=Reset bg=Reset DIM
+14   0-6   fg=Reset bg=Reset DIM
+16   0-30  fg=Yellow bg=Reset NONE
+19   0-63  fg=Reset bg=Reset DIM

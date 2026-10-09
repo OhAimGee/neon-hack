@@ -1,0 +1,18 @@
+---
+source: crates/neon-cli/src/tui/app/tests/snapshots.rs
+expression: "style_runs(&app, 64, 20)"
+---
+64x20
+ 0   0-63  fg=Reset bg=Reset REVERSED
+ 1   0-41  fg=Reset bg=Reset BOLD
+ 2   0-61  fg=Reset bg=Reset BOLD
+ 3   0-42  fg=Reset bg=Reset BOLD
+ 4   0-56  fg=Reset bg=Reset DIM
+ 5   0-57  fg=Reset bg=Reset DIM
+10   0-9   fg=Reset bg=Reset DIM
+11   0-45  fg=Reset bg=Reset UNDERLINED
+12   0-15  fg=Reset bg=Reset DIM
+13   0-59  fg=Reset bg=Reset DIM
+14   0-6   fg=Reset bg=Reset DIM
+16   0-30  fg=Reset bg=Reset BOLD
+19   0-63  fg=Reset bg=Reset DIM

@@ -171,7 +171,6 @@ impl<'a> App<'a> {
         match key.code {
             KeyCode::Char(c) if types_text => self.editor.insert(c),
             KeyCode::Char(c) if control_only => self.control(c.to_ascii_lowercase()),
-            KeyCode::Char(_) => {}
             KeyCode::Enter => self.enter(),
             KeyCode::Esc => self.escape(),
             KeyCode::Backspace => self.editor.backspace(),
@@ -220,6 +219,9 @@ impl<'a> App<'a> {
     /// it closes the input, like Ctrl-D, which ends the game from any depth.
     fn interrupt(&mut self) {
         if self.prompt == Prompt::Command {
+            // What was being typed is dropped, as a shell does on Ctrl-C: it would otherwise
+            // be the start of the answer to the question.
+            self.editor.clear();
             self.run_line("quit");
         } else {
             self.submit(Input::Eof);

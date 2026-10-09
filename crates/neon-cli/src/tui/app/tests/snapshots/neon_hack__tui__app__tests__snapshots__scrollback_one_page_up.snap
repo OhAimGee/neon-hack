@@ -1,0 +1,33 @@
+---
+source: crates/neon-cli/src/tui/app/tests/snapshots.rs
+expression: "picture(&app, 100, 28)"
+---
+100x28
+ Neon │ Notoriety 0/100 (Discreet)
+╭Terminal────────────────────────────────────────────────────────────╮╭Panel───────────────────────╮
+│Objective done: Read the help (help)                                ││Notoriety 0/100             │
+│> help                                                              ││[░░░░░░░░░░] Discreet       │
+│Commands                                                            ││                            │
+│[1] help - List the commands, or explain one                        ││First Steps                 │
+│[2] status - Show your situation                                    ││- Open the journal (quests) │
+│[3] quit - Save and leave the net                                   ││- Explore the net (net)     │
+│[4] quests - Show the journal, or the objectives of one quest       ││- Check the status sheet    │
+│[5] contacts - List the contacts you know                           ││(status)                    │
+│[6] talk - Talk to a contact                                        ││- Talk to ECHO-7 (talk      │
+│[7] net - Show the map of the net, or one site                      ││echo7)                      │
+│[8] hack - Start a run on a known site                              ││- Breach the local station  │
+│[9] laylow - Lower your Notoriety with a service                    ││(hack localhost)            │
+│[10] hint - Ask ECHO-7 for a hint                                   ││- Cover your tracks (laylow)│
+│[11] save - Save the game in a slot                                 ││                            │
+│[12] tutorial - Show, skip or restart the guided tutorial           ││                            │
+│> help                                                              ││                            │
+│Commands                                                            ││                            │
+│[1] help - List the commands, or explain one                        ││                            │
+│[2] status - Show your situation                                    ││                            │
+│[3] quit - Save and leave the net                                   ││                            │
+│[4] quests - Show the journal, or the objectives of one quest       ││                            │
+│[5] contacts - List the contacts you know                           ││                            │
+│[Scrolled back: 21 lines below. End or Esc to return.]              ││                            │
+╰────────────────────────────────────────────────────────────────────╯╰────────────────────────────╯
+>
+Tab complete | Up/Down history | PgUp/PgDn scroll | Ctrl+C quit

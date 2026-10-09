@@ -8,11 +8,11 @@ use ratatui::style::{Color, Modifier};
 
 use unicode_width::UnicodeWidthStr;
 
+use super::draw::to_style;
 use super::*;
 use crate::palette::{Palette, PaletteChoice};
 use crate::persist::Persistence;
 use crate::render::{LineKind, Verbosity};
-use super::draw::to_style;
 use crate::test_support::{catalog_en, catalog_fr};
 
 mod snapshots;
@@ -135,7 +135,11 @@ fn the_full_layout_has_a_status_bar_a_log_a_panel_and_an_input_line() {
     assert!(has(&rows, "Trace ") && has(&rows, "/100"));
     assert!(has(&rows, "[█") || has(&rows, "[░"), "a bar is drawn");
     assert!(has(&rows, "Keep your trace under 100."));
-    assert_eq!(input_row(&rows), ">", "the input line is above the help bar");
+    assert_eq!(
+        input_row(&rows),
+        ">",
+        "the input line is above the help bar"
+    );
     assert!(
         rows[27].contains("Tab complete") && rows[27].contains("Ctrl+C quit"),
         "the help bar is the last row: {:?}",
@@ -201,7 +205,11 @@ fn a_menu_is_listed_above_the_input_with_its_way_out() {
         "[2] Cloak module (60 credits) (10 credits short.)"
     ));
     assert!(has(&rows, "[0] Leave the stall"));
-    assert_eq!(input_row(&rows), "?", "the menu marker is on the input line");
+    assert_eq!(
+        input_row(&rows),
+        "?",
+        "the menu marker is on the input line"
+    );
 }
 
 #[test]
@@ -255,7 +263,11 @@ fn escape_clears_a_typed_line_then_backs_out_of_a_menu() {
     assert_eq!(input_line(&app), "? x");
     press(&mut app, KeyCode::Esc);
     let rows = screen(&app, 100, 28);
-    assert_eq!(input_row(&rows), "?", "the first Escape only clears the line");
+    assert_eq!(
+        input_row(&rows),
+        "?",
+        "the first Escape only clears the line"
+    );
     assert!(has(&rows, "[0] Leave the stall"), "the menu is still open");
     press(&mut app, KeyCode::Esc);
     assert_eq!(input_line(&app), ">", "the second one leaves the menu");
@@ -311,10 +323,7 @@ fn control_c_in_a_menu_or_a_question_closes_the_input() {
     reach_command_line(&mut app);
     ctrl(&mut app, 'c');
     ctrl(&mut app, 'c');
-    assert!(has(
-        &screen(&app, 100, 28),
-        "Press any key to leave."
-    ));
+    assert!(has(&screen(&app, 100, 28), "Press any key to leave."));
 }
 
 #[test]
@@ -423,7 +432,11 @@ fn ascii_mode_shows_what_is_typed_as_ascii_and_keeps_every_cell_ascii() {
     for c in "Zoë".chars() {
         press(&mut app, KeyCode::Char(c));
     }
-    assert_eq!(input_line(&app), "Votre handle [Case] : Zoe", "while typing");
+    assert_eq!(
+        input_line(&app),
+        "Votre handle [Case] : Zoe",
+        "while typing"
+    );
     press(&mut app, KeyCode::Enter);
     type_line(&mut app, "o");
     let rows = screen(&app, 100, 28);
@@ -812,8 +825,14 @@ fn long_lines_wrap_inside_the_log_and_never_spill_outside_it() {
         for row in &rows {
             assert!(row.width() <= usize::from(width), "{row:?}");
         }
-        let full = rows.iter().filter(|row| row.contains(&"x".repeat(30))).count();
-        assert!(full >= 3, "{width}x{height}: the echo wraps over several rows: {rows:#?}");
+        let full = rows
+            .iter()
+            .filter(|row| row.contains(&"x".repeat(30)))
+            .count();
+        assert!(
+            full >= 3,
+            "{width}x{height}: the echo wraps over several rows: {rows:#?}"
+        );
     }
 }
 
@@ -849,11 +868,21 @@ fn a_line_longer_than_the_screen_scrolls_sideways_and_keeps_the_cursor_in_sight(
     let cursor = terminal.get_cursor_position().unwrap();
     assert!(cursor.x < 64, "{cursor:?}");
     let rows = screen(&app, 64, 20);
-    assert!(input_row(&rows).ends_with("ghij"), "the end of the line is shown");
-    assert!(!input_row(&rows).starts_with('>'), "the start has scrolled away");
+    assert!(
+        input_row(&rows).ends_with("ghij"),
+        "the end of the line is shown"
+    );
+    assert!(
+        !input_row(&rows).starts_with('>'),
+        "the start has scrolled away"
+    );
     press(&mut app, KeyCode::Home);
     let rows = screen(&app, 64, 20);
-    assert!(input_row(&rows).starts_with("> abcdef"), "{:?}", input_row(&rows));
+    assert!(
+        input_row(&rows).starts_with("> abcdef"),
+        "{:?}",
+        input_row(&rows)
+    );
     terminal.draw(|frame| app.draw(frame)).unwrap();
     assert_eq!(terminal.get_cursor_position().unwrap().x, 2);
 }
@@ -921,7 +950,11 @@ fn history_recalls_commands_with_up_and_down_and_skips_menus() {
     press(&mut app, KeyCode::Up);
     assert_eq!(input_line(&app), "> help");
     press(&mut app, KeyCode::Up);
-    assert_eq!(input_line(&app), "> help", "the repeat was not stored twice");
+    assert_eq!(
+        input_line(&app),
+        "> help",
+        "the repeat was not stored twice"
+    );
     press(&mut app, KeyCode::Down);
     press(&mut app, KeyCode::Down);
     assert_eq!(input_line(&app), "> ne", "the unfinished line comes back");
@@ -935,7 +968,11 @@ fn history_recalls_commands_with_up_and_down_and_skips_menus() {
         press(&mut app, KeyCode::Esc);
     }
     press(&mut app, KeyCode::Up);
-    assert_eq!(input_line(&app), "> shop", "the menu answers are not in the history");
+    assert_eq!(
+        input_line(&app),
+        "> shop",
+        "the menu answers are not in the history"
+    );
 }
 
 #[test]
@@ -965,13 +1002,17 @@ fn the_text_of_a_prompt_is_limited_to_what_it_asks_for() {
     let mut app = app_with(&mut game, &catalog, RenderMode::FULL);
     press(&mut app, KeyCode::Enter);
     type_text(&mut app, &"n".repeat(200));
-    assert!(input_line(&app).chars().count() < 80, "{}", input_line(&app));
+    assert!(
+        input_line(&app).chars().count() < 80,
+        "{}",
+        input_line(&app)
+    );
     // After the handle is given, the command line takes long lines again.
     press(&mut app, KeyCode::Esc);
     type_line(&mut app, "Neon");
     type_line(&mut app, "y");
     type_text(&mut app, &"n".repeat(200));
-    assert!(app.editor.text().chars().count() == 200);
+    assert_eq!(app.editor.text().chars().count(), 200);
 }
 
 // ---- Completion ----------------------------------------------------------------------------------
@@ -1010,7 +1051,11 @@ fn tab_completes_the_arguments_of_a_command_from_the_game() {
     let mut app = opened_campaign(&mut game, &catalog, RenderMode::FULL);
     type_text(&mut app, "talk ec");
     press(&mut app, KeyCode::Tab);
-    assert_eq!(input_line(&app), "> talk echo7", "the word is completed, not the line");
+    assert_eq!(
+        input_line(&app),
+        "> talk echo7",
+        "the word is completed, not the line"
+    );
     press(&mut app, KeyCode::Char('x'));
     assert_eq!(input_line(&app), "> talk echo7 x", "and spaced");
     // The word before the cursor is the one completed, and what follows it stays.
@@ -1038,7 +1083,10 @@ fn tab_lists_what_it_cannot_decide() {
     );
     assert!(!app.candidates.is_empty());
     press(&mut app, KeyCode::Char('t'));
-    assert!(app.candidates.is_empty(), "the list is gone at the next key");
+    assert!(
+        app.candidates.is_empty(),
+        "the list is gone at the next key"
+    );
 }
 
 // ---- Size ------------------------------------------------------------------------------------------
@@ -1054,7 +1102,10 @@ fn a_terminal_too_small_shows_one_centred_sentence_and_ignores_the_keys() {
     let small = screen(&app, 56, 16);
     let lines: Vec<&String> = small.iter().filter(|row| !row.is_empty()).collect();
     assert!(!lines.is_empty() && lines.len() <= 3, "{small:#?}");
-    assert!(lines[0].contains("Terminal too small (56x16)"), "{small:#?}");
+    assert!(
+        lines[0].contains("Terminal too small (56x16)"),
+        "{small:#?}"
+    );
     let first = small.iter().position(|row| !row.is_empty()).unwrap();
     assert!(
         (6..=9).contains(&first),
@@ -1088,7 +1139,11 @@ fn the_too_small_sentence_follows_the_language_and_the_screen_reader_wording() {
     let (catalog, mut game) = (catalog_en(), DemoGame::new(1));
     let app = app_with(&mut game, &catalog, reader);
     let rows = screen(&app, 40, 10);
-    let said = rows.join(" ").split_whitespace().collect::<Vec<_>>().join(" ");
+    let said = rows
+        .join(" ")
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ");
     assert!(
         said.contains("40 columns by 10 lines") && !said.contains("40x10"),
         "{rows:#?}"
@@ -1116,7 +1171,11 @@ fn the_panel_is_empty_of_nothing_but_the_gauges_and_objectives_at_the_full_tier(
     reach_command_line(&mut app);
     let rows = screen(&app, 100, 28);
     // The panel is 30 columns wide, boxed, and titled.
-    assert!(rows[1].ends_with("╮") && rows[1].contains("Panel"), "{:?}", rows[1]);
+    assert!(
+        rows[1].ends_with("╮") && rows[1].contains("Panel"),
+        "{:?}",
+        rows[1]
+    );
     let panel_start = rows[1].find("╭Panel").unwrap();
     assert_eq!(rows[1][..panel_start].width(), 70, "{:?}", rows[1]);
 }
@@ -1130,7 +1189,8 @@ fn key_releases_focus_and_the_mouse_do_nothing() {
     let (catalog, mut game) = (catalog_en(), DemoGame::new(1));
     let mut app = app_with(&mut game, &catalog, RenderMode::FULL);
     reach_command_line(&mut app);
-    let press_event = KeyEvent::new_with_kind(KeyCode::Char('a'), KeyModifiers::NONE, KeyEventKind::Press);
+    let press_event =
+        KeyEvent::new_with_kind(KeyCode::Char('a'), KeyModifiers::NONE, KeyEventKind::Press);
     let release = KeyEvent {
         kind: KeyEventKind::Release,
         ..press_event
@@ -1139,7 +1199,10 @@ fn key_releases_focus_and_the_mouse_do_nothing() {
         kind: KeyEventKind::Repeat,
         ..press_event
     };
-    assert!(super::super::handle(&mut app, TerminalEvent::Key(press_event)));
+    assert!(super::super::handle(
+        &mut app,
+        TerminalEvent::Key(press_event)
+    ));
     assert!(!super::super::handle(&mut app, TerminalEvent::Key(release)));
     assert!(super::super::handle(&mut app, TerminalEvent::Key(repeat)));
     assert_eq!(input_line(&app), "> aa", "a release is not a second key");
@@ -1152,8 +1215,14 @@ fn key_releases_focus_and_the_mouse_do_nothing() {
         modifiers: KeyModifiers::NONE,
     };
     assert!(!super::super::handle(&mut app, TerminalEvent::Mouse(wheel)));
-    assert!(super::super::handle(&mut app, TerminalEvent::Resize(80, 24)));
-    assert!(super::super::handle(&mut app, TerminalEvent::Paste("b".to_owned())));
+    assert!(super::super::handle(
+        &mut app,
+        TerminalEvent::Resize(80, 24)
+    ));
+    assert!(super::super::handle(
+        &mut app,
+        TerminalEvent::Paste("b".to_owned())
+    ));
     assert_eq!(input_line(&app), "> aab");
 }
 

@@ -406,7 +406,13 @@ fn run_game(cli: &Cli, env: &Env, kind: Kind) -> io::Result<()> {
     }
     if decision.frontend == Frontend::Tui {
         #[cfg(feature = "tui")]
-        return tui::run(&mut *game, first, renderer, persistence, env.test_fault.as_deref());
+        return tui::run(
+            &mut *game,
+            first,
+            renderer,
+            persistence,
+            env.test_fault.as_deref(),
+        );
     }
     // On a pipe the lines read are repeated in the output so that it reads as a transcript;
     // on a terminal the terminal echoes by itself.
