@@ -19,10 +19,10 @@ Canal chiffré #7 : connexion entrante.
 ECHO-7 » Enfin. Pour mémoire, je ne suis ni une corporation, ni un flic, ni un piège. Je suis ECHO-7, et le tien est le seul deck du secteur 7 qui répond encore.
 ECHO-7 » Handle en dossier : Neon. Tant que tu n'as pas gagné un autre nom, tu es un rookie. Ne le prends pas mal.
 ECHO-7 » J'ai un premier travail pour toi. Rien de dangereux : un tour du propriétaire sur ton propre deck. Mais d'abord, les bases.
-Lancer le tutoriel guidé ? ECHO-7 passe en revue les premières commandes, et `tutorial skip` y met fin à tout moment. [O/n] n
-Tutoriel ignoré. `tutorial restart` le lance plus tard.
+Lancer le tutoriel guidé ? ECHO-7 passe en revue les premières commandes, et `tutorial skip` y met fin à tout moment. [O/n] 
 Nouvelle quête : Premiers Pas dans l'Ombre
-Taper `help` pour lister les commandes, puis `quests` pour lire la première quête.
+ECHO-7 » Première chose, rookie : connaître ses outils. Demande au deck ce qu'il sait faire.
+Tutoriel, étape 1 sur 10 : Taper `help` pour lister les commandes ouvertes.
 > help
 Commandes
 [1] help - Lister les commandes, ou en expliquer une
@@ -38,6 +38,8 @@ Commandes
 [11] save - Sauvegarder la partie dans un emplacement
 [12] tutorial - Afficher, ignorer ou relancer le tutoriel guidé
 Objectif atteint : Lire l'aide (help)
+ECHO-7 » Ensuite, ton propre dossier : handle, argent, Notoriété. J'ai les mêmes trois sur toi.
+Tutoriel, étape 2 sur 10 : Taper `status` pour voir la situation.
 > status
 Handle : Neon
 Niveau : 1
@@ -49,24 +51,30 @@ Difficulté : Normal
 Quêtes en cours : 1
 Indices restants pour la quête en cours : 3
 Objectif atteint : Consulter la fiche d'état (status)
+ECHO-7 » Ensuite, le travail. Chaque boulot finit dans le journal. D'après mes archives, ceux qui le négligent oublient qui les paie.
+Tutoriel, étape 3 sur 10 : Taper `quests` pour ouvrir le journal, puis `quests m01` pour lire les objectifs de la première quête.
 > quests
 == Journal ==
 [1] m01 - Premiers Pas dans l'Ombre - en cours - 1
 Objectif atteint : Ouvrir le journal (quests)
-> contacts
-== Contacts ==
-[1] echo7 - ECHO-7 - amical - disponible - -
+ECHO-7 » Maintenant, parle à quelqu'un qui répond. Un contact vaut plus qu'un crédit, et coûte moins.
+Tutoriel, étape 4 sur 10 : Taper `talk echo7`, puis choisir un sujet par son numéro. `0` met fin à la conversation.
+> talk echo7
+Objectif atteint : Parler à ECHO-7 (talk echo7)
+Conversation avec ECHO-7
+[1] Demander des conseils
+[0] Mettre fin à la conversation
+? 0
+La conversation prend fin.
+ECHO-7 » La carte, ensuite. Chaque site connu y figure. Pour l'instant il n'y en a qu'un, et c'est le tien : localhost.
+Tutoriel, étape 5 sur 10 : Taper `net` pour cartographier le réseau, puis `net localhost` pour détailler un site.
 > net
 == Le réseau ==
 [1] localhost - connu - 1
 15 autres sites encore inconnus.
 Objectif atteint : Explorer le réseau (net)
-> shop
-[Erreur] Pas encore : trouver R4Z0R.
-> messages
-[Erreur] Pas encore : attendre un premier message.
-> bogus
-[Erreur] Commande inconnue : bogus. Voir `help`.
+ECHO-7 » Première intrusion. Entrer, prendre ce qu'il y a, sortir. On commence à la maison, là où rien ne mord.
+Tutoriel, étape 6 sur 10 : Taper `hack localhost`, puis répondre `o`. L'intrusion se règle toute seule.
 > quit
 Quitter le réseau ? La partie est sauvegardée. [o/N] y
 À bientôt, Neon.

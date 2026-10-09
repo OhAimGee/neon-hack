@@ -3,12 +3,6 @@
 # file of this folder; then regenerate this one and the placeholder goes away.
 # Regenerate: NEON_REGEN_WORLD_DRAFTS=1 cargo test -p neon-engine --test content regenerate_the_draft_texts -- --ignored
 
-"command.blend.help" = "TODO command.blend.help"
-"command.help.help" = "TODO command.help.help"
-"command.laylow.help" = "TODO command.laylow.help"
-"command.quests.help" = "TODO command.quests.help"
-"command.scan.help" = "TODO command.scan.help"
-"command.status.help" = "TODO command.status.help"
 "contact.angel.tagline" = "TODO contact.angel.tagline"
 "contact.angel.topic.all_is_well.a" = "TODO contact.angel.topic.all_is_well.a"
 "contact.angel.topic.all_is_well.q" = "TODO contact.angel.topic.all_is_well.q"

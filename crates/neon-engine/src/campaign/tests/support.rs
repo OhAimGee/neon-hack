@@ -51,11 +51,31 @@ impl Driver {
         }
     }
 
-    /// A new campaign past the handle prompt (the handle is `Neon`), at the command prompt.
+    /// A new campaign past the handle prompt (the handle is `Neon`) and the whole opening,
+    /// the tutorial declined, at the command prompt.
     pub(super) fn new() -> Self {
         let mut driver = Self::raw();
-        driver.line("Neon");
+        driver.opening(false);
         driver
+    }
+
+    /// A new campaign at the command prompt with the guided tutorial accepted: the first
+    /// hint has been said.
+    pub(super) fn guided() -> Self {
+        let mut driver = Self::raw();
+        driver.opening(true);
+        driver
+    }
+
+    /// From the handle prompt through the prologue to the offer of the tutorial, which is
+    /// answered with `guided`.
+    pub(super) fn opening(&mut self, guided: bool) {
+        self.line("Neon");
+        self.send(Input::Continue);
+        self.send(Input::Continue);
+        assert!(matches!(self.last.prompt, Prompt::Confirm { .. }));
+        self.send(Input::Confirm(guided));
+        assert_eq!(self.last.prompt, Prompt::Command);
     }
 
     /// Sends an input.
@@ -71,6 +91,7 @@ impl Driver {
     pub(super) fn line(&mut self, line: &str) -> String {
         let input = match &self.game.prompt() {
             Prompt::Confirm { .. } => Input::Confirm(matches!(line, "y" | "yes" | "o" | "oui")),
+            Prompt::Continue => Input::Continue,
             _ => Input::Line(line.to_owned()),
         };
         self.send(input);

@@ -1,0 +1,85 @@
+# The guided tutorial, English (the reference language). `tutorial.step.<id>.say` is ECHO-7 in
+# character; `tutorial.step.<id>.do` is the instruction, in neutral interface words. The steps
+# are listed in crates/neon-engine/src/campaign/tutorial.rs, in the order the hub offers the
+# commands. Glossary terms arrive as arguments ({journal}, {quest}...), never typed.
+
+[tutorial]
+help = "Show, skip or restart the guided tutorial"
+"help.usage" = "Usage: `tutorial [skip|restart]`. Example: `tutorial skip`."
+offer = "Start the guided tutorial? ECHO-7 walks through the first commands, and `tutorial skip` ends it at any time."
+skipped = "Tutorial skipped. `tutorial restart` starts it later."
+restarted = "Tutorial restarted."
+
+[tutorial.state]
+off = "The tutorial is off. Type `tutorial restart` to start it."
+finished = "The tutorial is finished. Type `tutorial restart` to play it again."
+waiting = "Tutorial: the next step is not open yet."
+
+[tutorial.step]
+line = "Tutorial, step {number} of {total}: {text}"
+end = "Tutorial finished. {text}"
+
+[tutorial.step.help]
+say = "First thing, rookie: know your tools. Ask the deck what it can do."
+do = "Type `help` to list the open commands."
+
+[tutorial.step.status]
+say = "Then know your own file: handle, money, {notoriety}. I keep the same three on you."
+do = "Type `status` to see the situation."
+
+[tutorial.step.quests]
+say = "Then the work. Every job ends up in the {journal}. According to my files, people who skip it forget who pays them."
+do = "Type `quests` to open the {journal}, then `quests m01` to read the {objective}s of the first {quest}."
+
+[tutorial.step.talk]
+say = "Now talk to someone who answers. A {contact} is worth more than a {credit}, and costs less."
+do = "Type `talk echo7`, then pick a topic by its number. `0` leaves the conversation."
+
+[tutorial.step.net]
+say = "Next, the map. Every {site} you know is on it. Right now there is one, and it's yours: localhost."
+do = "Type `net` to see the map of {net}, then `net localhost` for the file of one {site}."
+
+[tutorial.step.hack]
+say = "First intrusion. In, take what's there, out. Start at home, where nothing bites."
+do = "Type `hack localhost`, then answer `y`. The {run} resolves by itself."
+
+[tutorial.step.laylow]
+say = "Every intrusion leaves a trail. Three ways to shrink it: time, money, a quiet week. Look at what's on offer."
+do = "Type `laylow` to list the {service}s that lower {notoriety}."
+
+[tutorial.step.shop]
+say = "R4Z0R is open for business. He doesn't do credit, he does prices. Take a look at the {shop}."
+do = "Type `shop` to see the wares of R4Z0R."
+
+[tutorial.step.buy]
+say = "Nothing that leaves that {shop} comes back, so buying asks first."
+do = "Type `buy 1` (or any other number of the list), then answer `y` to buy or `n` to decline."
+
+[tutorial.step.save]
+say = "Keep a copy of yourself somewhere safe. Archives are my whole job; make them yours."
+do = "Type `save` to keep the game in a {slot}. The game also saves by itself after every change."
+
+[tutorial.step.quit]
+say = "That's the whole kit, rookie. Three things to remember: leave clean, keep an exit, ask me when you're stuck."
+do = "`quit` saves and leaves {net}, `hint` asks ECHO-7 for a {hint}, `tutorial restart` plays this tutorial again."
+
+# The one-line help of the commands a `use` objective can ask for (data/world/catalog.toml).
+# Derived keys: they receive the glossary terms from the game, never the player's handle.
+
+[command.help]
+help = "List the commands that are open"
+
+[command.quests]
+help = "Read the {journal}, or the {objective}s of one {quest}"
+
+[command.scan]
+help = "Map {net}, or read the file of one {site}"
+
+[command.status]
+help = "See the handle, the {credit}s and the {notoriety}"
+
+[command.laylow]
+help = "Lower the {notoriety} with a {service}"
+
+[command.blend]
+help = "Cover the tracks by passing for one of the locals"

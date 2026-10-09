@@ -1,0 +1,22 @@
+# Le prologue d'une nouvelle campagne, français : trois pages courtes entre le handle et la
+# première commande. La narration décrit sans jamais s'adresser au joueur ; ECHO-7 parle en
+# personnage (docs/design/narrative-bible.md, 2.5). Les lignes d'interface restent neutres.
+# Les pages 1 et 2 attendent « continuer » ; la page 3 est suivie de l'offre du tutoriel.
+
+[prologue]
+skip_hint = "Appuyer sur Entrée pour continuer, ou taper `skip` pour aller directement à la fin de l'introduction."
+
+[prologue.p1]
+1 = "Neo-Tokyo, 2087. Dans le secteur 7, la pluie acide fait vibrer les néons et une brume toxique s'accroche aux rues, entre les cliniques gratuites et les marchés souterrains."
+2 = "Dans un studio de dix mètres carrés, un vieux cyberdeck se rallume tout seul. Le ventilateur s'emballe. L'écran peint les murs de la couleur d'un hématome."
+
+[prologue.p2]
+1 = "Nexus Corp dirige la ville depuis sa tour du secteur 1. Ici, ses cliniques Aurora Dawn posent gratuitement un implant, le Halcyon, et les voisins jurent n'avoir jamais aussi bien dormi."
+2 = "Les corporations tiennent le ciel, l'underground tient l'ombre, et {net} tient le reste. Un deck, une connexion et l'habitude de veiller tard : il n'en faut pas plus pour devenir hacker."
+
+[prologue.p3]
+channel = "Canal chiffré #7 : connexion entrante."
+"channel@sr" = "Canal chiffré numéro 7 : connexion entrante."
+1 = "Enfin. Pour mémoire, je ne suis ni une corporation, ni un flic, ni un piège. Je suis ECHO-7, et le tien est le seul deck du secteur 7 qui répond encore."
+2 = "Handle en dossier : {name}. Tant que tu n'as pas gagné un autre nom, tu es un rookie. Ne le prends pas mal."
+3 = "J'ai un premier travail pour toi. Rien de dangereux : un tour du propriétaire sur ton propre deck. Mais d'abord, les bases."

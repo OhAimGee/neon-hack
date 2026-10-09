@@ -14,6 +14,7 @@ use super::CampaignGame;
 use super::commands::{COMMANDS, CONTEXT, FRONTEND};
 use super::resolver::Lists;
 use super::state::{CampaignState, DEFAULT_HANDLE, Flow, HANDLE_MAX_CHARS};
+use super::tutorial::Completion;
 
 /// Whether a command is open, or why not: the rules of `unlocks.toml`, and the commands that
 /// only the frontend can run (which no frontend hands over yet).
@@ -54,6 +55,14 @@ impl CampaignGame {
                 self.ask_handle(input, events);
                 None
             }
+            Some(Flow::Prologue { page }) => {
+                self.prologue_step(page, input, events);
+                None
+            }
+            Some(Flow::OfferTutorial) => {
+                self.offer_step(input, events);
+                None
+            }
             Some(Flow::Talk { contact }) => {
                 self.talk_menu(&contact, input, events);
                 None
@@ -82,6 +91,11 @@ impl CampaignGame {
                 label: Text::new("campaign.prompt.handle").with_term("handle", "handle"),
                 max_chars: HANDLE_MAX_CHARS,
                 default: Some(DEFAULT_HANDLE.to_owned()),
+            },
+            Some(Flow::Prologue { .. }) => Prompt::Continue,
+            Some(Flow::OfferTutorial) => Prompt::Confirm {
+                question: Text::new("tutorial.offer"),
+                default: true,
             },
             Some(Flow::Talk { contact }) => Prompt::Choice(self.talk_choice(contact)),
             Some(Flow::Decision { decision }) => Prompt::Choice(self.decision_choice(decision)),
@@ -206,12 +220,20 @@ impl CampaignGame {
             "buy" => self.cmd_buy(args),
             "laylow" => self.cmd_laylow(args, events),
             "hint" => self.cmd_hint(events),
-            "save" => return Self::cmd_save(args, events),
+            "tutorial" => self.cmd_tutorial(args, events),
+            "save" => {
+                let request = Self::cmd_save(args, events);
+                if request.is_some() {
+                    self.state.tutorial.observe("save", Completion::Command);
+                }
+                return request;
+            }
             // A command declared for the frontend that its frontend did not handle.
             other => events.push(Event::error(
                 Text::new("campaign.frontend.unhandled").with_str("command", other),
             )),
         }
+        self.state.tutorial.observe(spec.name, Completion::Command);
         None
     }
 

@@ -603,6 +603,10 @@ fn the_campaign_shows_the_notoriety_and_the_quest_in_the_status_bar_and_the_pane
         Persistence::disabled(),
     );
     type_line(&mut app, "Neon");
+    // The prologue: two pages to continue, then the offer of the tutorial, declined.
+    press(&mut app, KeyCode::Enter);
+    press(&mut app, KeyCode::Enter);
+    type_line(&mut app, "n");
     type_line(&mut app, "hack localhost");
     type_line(&mut app, "y");
     let rows = screen(&app, 100, 28);

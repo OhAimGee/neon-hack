@@ -1,0 +1,86 @@
+# Le tutoriel guidé, français. `tutorial.step.<id>.say` est ECHO-7 en personnage (il tutoie) ;
+# `tutorial.step.<id>.do` est la consigne, dans une interface neutre (ni tu ni vous : infinitif
+# et tournures impersonnelles). Les étapes sont listées dans
+# crates/neon-engine/src/campaign/tutorial.rs, dans l'ordre où le hub offre les commandes. Les
+# termes du glossaire arrivent en arguments ({journal}, {quest}...), jamais écrits à la main.
+
+[tutorial]
+help = "Afficher, ignorer ou relancer le tutoriel guidé"
+"help.usage" = "Usage : `tutorial [skip|restart]`. Exemple : `tutorial skip`."
+offer = "Lancer le tutoriel guidé ? ECHO-7 passe en revue les premières commandes, et `tutorial skip` y met fin à tout moment."
+skipped = "Tutoriel ignoré. `tutorial restart` le lance plus tard."
+restarted = "Tutoriel relancé."
+
+[tutorial.state]
+off = "Le tutoriel est désactivé. Taper `tutorial restart` pour le lancer."
+finished = "Le tutoriel est terminé. Taper `tutorial restart` pour le rejouer."
+waiting = "Tutoriel : la prochaine étape n'est pas encore ouverte."
+
+[tutorial.step]
+line = "Tutoriel, étape {number} sur {total} : {text}"
+end = "Tutoriel terminé. {text}"
+
+[tutorial.step.help]
+say = "Première chose, rookie : connaître ses outils. Demande au deck ce qu'il sait faire."
+do = "Taper `help` pour lister les commandes ouvertes."
+
+[tutorial.step.status]
+say = "Ensuite, ton propre dossier : handle, argent, {notoriety}. J'ai les mêmes trois sur toi."
+do = "Taper `status` pour voir la situation."
+
+[tutorial.step.quests]
+say = "Ensuite, le travail. Chaque boulot finit dans le {journal}. D'après mes archives, ceux qui le négligent oublient qui les paie."
+do = "Taper `quests` pour ouvrir le {journal}, puis `quests m01` pour lire les {objective}s de la première {quest}."
+
+[tutorial.step.talk]
+say = "Maintenant, parle à quelqu'un qui répond. Un {contact} vaut plus qu'un {credit}, et coûte moins."
+do = "Taper `talk echo7`, puis choisir un sujet par son numéro. `0` met fin à la conversation."
+
+[tutorial.step.net]
+say = "La carte, ensuite. Chaque {site} connu y figure. Pour l'instant il n'y en a qu'un, et c'est le tien : localhost."
+do = "Taper `net` pour cartographier {net}, puis `net localhost` pour détailler un {site}."
+
+[tutorial.step.hack]
+say = "Première intrusion. Entrer, prendre ce qu'il y a, sortir. On commence à la maison, là où rien ne mord."
+do = "Taper `hack localhost`, puis répondre `o`. L'{run} se règle toute seule."
+
+[tutorial.step.laylow]
+say = "Chaque intrusion laisse une trace. Trois façons de l'effacer : le temps, l'argent, une semaine tranquille. Regarde ce qui est proposé."
+do = "Taper `laylow` pour lister les {service}s qui font baisser la {notoriety}."
+
+[tutorial.step.shop]
+say = "R4Z0R est ouvert. Il ne fait pas crédit, il fait un prix. Va voir l'{shop}."
+do = "Taper `shop` pour voir les marchandises de R4Z0R."
+
+[tutorial.step.buy]
+say = "Rien de ce qui quitte cet {shop} ne revient, alors l'achat demande d'abord confirmation."
+do = "Taper `buy 1` (ou un autre numéro de la liste), puis répondre `o` pour acheter ou `n` pour refuser."
+
+[tutorial.step.save]
+say = "Garde une copie de toi quelque part. Les archives, c'est tout mon métier ; fais-en le tien."
+do = "Taper `save` pour garder la partie dans un {slot}. Elle se sauvegarde aussi seule après chaque changement."
+
+[tutorial.step.quit]
+say = "Voilà tout l'équipement, rookie. Trois choses à retenir : partir proprement, garder une sortie, me demander quand tu bloques."
+do = "`quit` sauvegarde et quitte {net}, `hint` demande un {hint} à ECHO-7, `tutorial restart` rejoue ce tutoriel."
+
+# L'aide en une ligne des commandes qu'un objectif `use` peut demander (data/world/catalog.toml).
+# Clés dérivées : elles reçoivent les termes du glossaire du jeu, jamais le handle du joueur.
+
+[command.help]
+help = "Lister les commandes ouvertes"
+
+[command.quests]
+help = "Lire le {journal}, ou les {objective}s d'une {quest}"
+
+[command.scan]
+help = "Cartographier {net}, ou lire la fiche d'un {site}"
+
+[command.status]
+help = "Voir le handle, les {credit}s et la {notoriety}"
+
+[command.laylow]
+help = "Faire baisser la {notoriety} avec un {service}"
+
+[command.blend]
+help = "Brouiller les pistes en se faisant passer pour un habitant du quartier"

@@ -20,10 +20,12 @@ mod hack;
 mod hub;
 mod keys;
 mod play;
+mod prologue;
 mod resolver;
 mod state;
 mod talk;
 mod trade;
+mod tutorial;
 
 pub use commands::command_names;
 pub use state::{Band, CampaignState, Difficulty, SiteStatus};
@@ -172,6 +174,7 @@ impl Game for CampaignGame {
         let before = self.state.clone();
         let mut events = Vec::new();
         let asked = self.advance(&input, &mut events);
+        self.teach(&mut events);
         // A checkpoint outranks an autosave: the frontend keeps the newest of each kind apart,
         // and the next change autosaves again.
         let save = if self.checkpoint {
@@ -255,6 +258,10 @@ impl CampaignGame {
         if self.state.handle.is_empty() {
             return Vec::new();
         }
+        // In the middle of the opening: the page it was on, nothing else yet.
+        if let Some(page) = self.prologue_resume() {
+            return page;
+        }
         let missions = &self.state.missions;
         let active = self
             .state
@@ -287,6 +294,7 @@ impl CampaignGame {
                     )
                 }),
         );
+        events.extend(self.tutorial_resume());
         events
     }
 }

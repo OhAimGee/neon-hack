@@ -10,3 +10,4 @@ mod saves;
 mod story;
 mod support;
 mod table;
+mod tutorial;

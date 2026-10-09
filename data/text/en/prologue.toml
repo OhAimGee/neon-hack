@@ -1,0 +1,22 @@
+# The prologue of a new campaign, English (the reference language): three short pages between
+# the handle and the first command. Narration describes and never addresses the player; ECHO-7
+# speaks in character (docs/design/narrative-bible.md, 2.5). The interface lines stay neutral.
+# Page 1 and 2 wait for "continue"; page 3 is followed by the offer of the tutorial.
+
+[prologue]
+skip_hint = "Press Enter to continue, or type `skip` to go straight to the end of the introduction."
+
+[prologue.p1]
+1 = "Neo-Tokyo, 2087. In sector 7, acid rain makes the neon signs hum, and a toxic mist clings to the streets between the free clinics and the underground markets."
+2 = "In a ten-square-meter studio, an old cyberdeck boots up on its own. The fan spins up. The screen paints the walls the color of a bruise."
+
+[prologue.p2]
+1 = "Nexus Corp runs the city from its tower in sector 1. Down here, its Aurora Dawn clinics fit a free implant, the Halcyon, and the neighbors swear they have never rested so well."
+2 = "The corporations keep the sky, the underground keeps the shadows, and {net} keeps the rest. A deck, a connection and the habit of staying awake: that is all it takes to be called a hacker."
+
+[prologue.p3]
+channel = "Encrypted channel #7: incoming connection."
+"channel@sr" = "Encrypted channel number 7: incoming connection."
+1 = "Finally. For the record, I'm not a corp, not a cop and not a trap. I'm ECHO-7, and yours is the only deck in sector 7 that still answers."
+2 = "Handle on file: {name}. Until you earn another name, you're a rookie. Don't take it personally."
+3 = "I have a first job for you. Nothing dangerous: a walk around your own deck. But first, the ropes."

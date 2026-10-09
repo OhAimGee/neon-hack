@@ -20,6 +20,7 @@ use crate::text::Text;
 
 use super::dispatch::{arg_id, invalid};
 use super::state::{Flow, SiteStatus};
+use super::tutorial::Completion;
 use super::{CampaignGame, count};
 
 impl CampaignGame {
@@ -98,6 +99,7 @@ impl CampaignGame {
                 .with_int("n", count(taken)),
         ));
         self.apply(facts, at, events);
+        self.state.tutorial.observe("hack", Completion::Outcome);
     }
 
     /// The marks the quests in progress still ask for on a site.

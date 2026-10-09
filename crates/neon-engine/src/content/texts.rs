@@ -197,6 +197,22 @@ pub fn budget(key: &str) -> Option<usize> {
         ["frag", _, "body"] => Some(520),
         ["epilogue", _] | ["ending", _, _] => Some(300),
         ["node", _, "desc"] => Some(60),
+        _ => intro_budget(&parts),
+    }
+}
+
+/// The budgets of the opening and of the tutorial. They are not derived from the data, but
+/// they follow the same rule: a page of the prologue is a paragraph of narration, a line of
+/// the contact a line of dialogue, an instruction one line of interface.
+fn intro_budget(parts: &[&str]) -> Option<usize> {
+    match parts {
+        ["prologue", "skip_hint"] => Some(110),
+        ["prologue", "p3", "channel"] => Some(60),
+        ["prologue", "p3", _] => Some(200),
+        ["prologue", _, _] => Some(280),
+        ["tutorial", "step", _, "say"] => Some(160),
+        ["tutorial", "step", _, "do"] => Some(120),
+        ["tutorial", ..] => Some(130),
         _ => None,
     }
 }

@@ -18,6 +18,8 @@ pub(crate) fn to_input(prompt: &Prompt, line: &str) -> Result<Input, InputError>
         Prompt::Confirm { default, .. } => parse_confirm(line, *default)
             .map(Input::Confirm)
             .ok_or(InputError::NotYesOrNo),
+        // Any line goes on; `skip` backs out of what is being told (a cutscene, a prologue).
+        Prompt::Continue if line.trim().eq_ignore_ascii_case("skip") => Ok(Input::Cancel),
         Prompt::Continue => Ok(Input::Continue),
         Prompt::Command | Prompt::Choice(_) | Prompt::Text { .. } | Prompt::End => {
             Ok(Input::Line(line.to_owned()))
@@ -94,5 +96,6 @@ mod tests {
             );
         }
         assert_eq!(to_input(&Prompt::Continue, "whatever"), Ok(Input::Continue));
+        assert_eq!(to_input(&Prompt::Continue, " Skip "), Ok(Input::Cancel));
     }
 }

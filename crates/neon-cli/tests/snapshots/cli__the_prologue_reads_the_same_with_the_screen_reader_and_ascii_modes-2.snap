@@ -19,10 +19,10 @@ Canal chiffre #7 : connexion entrante.
 ECHO-7: Enfin. Pour memoire, je ne suis ni une corporation, ni un flic, ni un piege. Je suis ECHO-7, et le tien est le seul deck du secteur 7 qui repond encore.
 ECHO-7: Handle en dossier : Neon. Tant que tu n'as pas gagne un autre nom, tu es un rookie. Ne le prends pas mal.
 ECHO-7: J'ai un premier travail pour toi. Rien de dangereux : un tour du proprietaire sur ton propre deck. Mais d'abord, les bases.
-Lancer le tutoriel guide ? ECHO-7 passe en revue les premieres commandes, et `tutorial skip` y met fin a tout moment. [O/n] n
-Tutoriel ignore. `tutorial restart` le lance plus tard.
+Lancer le tutoriel guide ? ECHO-7 passe en revue les premieres commandes, et `tutorial skip` y met fin a tout moment. [O/n] 
 Nouvelle quete : Premiers Pas dans l'Ombre
-Taper `help` pour lister les commandes, puis `quests` pour lire la premiere quete.
+ECHO-7: Premiere chose, rookie : connaitre ses outils. Demande au deck ce qu'il sait faire.
+Tutoriel, etape 1 sur 10 : Taper `help` pour lister les commandes ouvertes.
 > help
 Commandes
 [1] help - Lister les commandes, ou en expliquer une
@@ -38,35 +38,8 @@ Commandes
 [11] save - Sauvegarder la partie dans un emplacement
 [12] tutorial - Afficher, ignorer ou relancer le tutoriel guide
 Objectif atteint : Lire l'aide (help)
-> status
-Handle : Neon
-Niveau : 1
-Credits : 100
-Notoriete : 0/100 (Discret)
-Reputation : 0
-Chapitre : 1
-Difficulte : Normal
-Quetes en cours : 1
-Indices restants pour la quete en cours : 3
-Objectif atteint : Consulter la fiche d'etat (status)
-> quests
-== Journal ==
-[1] m01 - Premiers Pas dans l'Ombre - en cours - 1
-Objectif atteint : Ouvrir le journal (quests)
-> contacts
-== Contacts ==
-[1] echo7 - ECHO-7 - amical - disponible - -
-> net
-== Le reseau ==
-[1] localhost - connu - 1
-15 autres sites encore inconnus.
-Objectif atteint : Explorer le reseau (net)
-> shop
-[Erreur] Pas encore : trouver R4Z0R.
-> messages
-[Erreur] Pas encore : attendre un premier message.
-> bogus
-[Erreur] Commande inconnue : bogus. Voir `help`.
+ECHO-7: Ensuite, ton propre dossier : handle, argent, Notoriete. J'ai les memes trois sur toi.
+Tutoriel, etape 2 sur 10 : Taper `status` pour voir la situation.
 > quit
 Quitter le reseau ? La partie est sauvegardee. [o/N] y
 A bientot, Neon.

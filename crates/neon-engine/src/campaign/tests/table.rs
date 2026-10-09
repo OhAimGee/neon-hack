@@ -116,9 +116,11 @@ fn every_campaign_key_the_code_points_at_is_in_both_catalogs() {
         include_str!("../hub.rs"),
         include_str!("../mod.rs"),
         include_str!("../play.rs"),
+        include_str!("../prologue.rs"),
         include_str!("../resolver.rs"),
         include_str!("../talk.rs"),
         include_str!("../trade.rs"),
+        include_str!("../tutorial.rs"),
     ];
     let mut keys = BTreeSet::new();
     for source in sources {
@@ -158,9 +160,11 @@ fn campaign_texts_that_no_code_uses_are_found() {
         include_str!("../hub.rs"),
         include_str!("../mod.rs"),
         include_str!("../play.rs"),
+        include_str!("../prologue.rs"),
         include_str!("../resolver.rs"),
         include_str!("../talk.rs"),
         include_str!("../trade.rs"),
+        include_str!("../tutorial.rs"),
     ]
     .concat();
     let catalog = catalog(Lang::En);
