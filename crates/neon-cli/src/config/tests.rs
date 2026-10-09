@@ -377,3 +377,34 @@ fn the_settings_file_accepts_colour_and_palette_and_refuses_unknown_ones() {
         assert!(parse_file(bad).is_err(), "{bad}");
     }
 }
+
+#[test]
+fn the_display_wish_goes_command_line_then_file_then_auto() {
+    let display = |cli: Option<DisplayChoice>, text: &str| {
+        let cli = CliPresentation {
+            display: cli,
+            ..CliPresentation::default()
+        };
+        let resolved = resolve(cli, &Env::default(), file(text)).display;
+        (resolved.value, resolved.source)
+    };
+    assert_eq!(display(None, ""), (DisplayChoice::Auto, Source::Default));
+    assert_eq!(
+        display(None, "display = \"plain\""),
+        (DisplayChoice::Plain, Source::File)
+    );
+    assert_eq!(
+        display(None, "display = \"tui\""),
+        (DisplayChoice::Tui, Source::File)
+    );
+    assert_eq!(
+        display(Some(DisplayChoice::Tui), "display = \"plain\""),
+        (DisplayChoice::Tui, Source::Cli)
+    );
+    assert_eq!(
+        display(Some(DisplayChoice::Plain), "display = \"tui\""),
+        (DisplayChoice::Plain, Source::Cli)
+    );
+    // A value the game does not know makes the file unusable, as for every other setting.
+    assert!(parse_file("display = \"holographic\"").is_err());
+}

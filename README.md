@@ -8,7 +8,7 @@ RPG textuel cyberpunk pour le terminal. Vous êtes un hacker novice à Neo-Tokyo
 
 ## Statut
 
-**La campagne se joue de bout en bout, du nouveau jeu à l'épilogue, mais le jeu n'est pas terminé.** C'est le jeu lancé par défaut (`neon-hack`) : prologue, tutoriel guidé, commandes du hub, cinq fins et épilogue, FR et EN, avec les intrusions résolues automatiquement (le moteur tactique est la phase R4). Les textes des chapitres 1 et 2 sont écrits ; ceux des chapitres 3 à 6, des fins et de l'épilogue sont encore des brouillons `TODO <clé>` (502 par langue). La démonstration du moteur reste accessible avec `--demo`. Le cadrage, le socle (phase R1), les spécifications (phase P1) et le contenu et la campagne (phase R2) sont terminés ; l'interface plein écran complète (R3) est la prochaine étape.
+**La campagne se joue de bout en bout, du nouveau jeu à l'épilogue, mais le jeu n'est pas terminé.** C'est le jeu lancé par défaut (`neon-hack`) : prologue, tutoriel guidé, commandes du hub, cinq fins et épilogue, FR et EN, avec les intrusions résolues automatiquement (le moteur tactique est la phase R4). Les textes des chapitres 1 et 2 sont écrits ; ceux des chapitres 3 à 6, des fins et de l'épilogue sont encore des brouillons `TODO <clé>` (502 par langue). La démonstration du moteur reste accessible avec `--demo`. Le cadrage, le socle (phase R1), les spécifications (phase P1) et le contenu et la campagne (phase R2) sont terminés ; l'interface plein écran (R3) a son cœur (R3.1 : saisie, défilement, paliers de taille, terminal toujours rendu) ; son panneau latéral complet, ses écrans et ses réglages sont les lots R3.2 et R3.3.
 
 | Étape | État |
 |---|---|
@@ -29,7 +29,8 @@ RPG textuel cyberpunk pour le terminal. Vous êtes un hacker novice à Neo-Tokyo
 | Phase R2.3 : textes du lot L1 (chapitres 1 et 2), prologue et tutoriel guidé | fait |
 | Phase R2.4 : campagne de bout en bout (joueur optimiste par les commandes, 216 plans, cinq fins), campagne par défaut | fait |
 | Phase R2 (contenu et campagne) | **terminée** |
-| TUI complète (R3), intrusion tactique (R4), textes des chapitres 3 à 6 (R5), équilibrage (R6) | à venir |
+| Phase R3.1 : cœur de la TUI (choix du frontal et question du premier lancement, saisie avec historique et TAB, journal défilant, paliers 64×20 et 100×28, terminal rendu par toutes les sorties, tests dans un pseudo-terminal) | fait |
+| Panneau latéral, écrans, commandes du frontal (R3.2 et R3.3), intrusion tactique (R4), textes des chapitres 3 à 6 (R5), équilibrage (R6) | à venir |
 
 ## Jouer en local
 
@@ -73,18 +74,19 @@ Sans option, `neon-hack` joue la **campagne** : il reprend la dernière partie, 
 
 ### 4. Comment jouer
 
-Dans un vrai terminal, le jeu s'ouvre en **plein écran** (barre d'état, journal, panneau latéral). Si l'entrée est redirigée, ou avec `--plain`, il se joue **ligne par ligne**.
+Dans un vrai terminal assez grand, le jeu s'ouvre en **plein écran** (barre d'état, journal, panneau latéral). Si l'entrée ou la sortie est redirigée, si le terminal est trop petit, ou avec `--plain`, il se joue **ligne par ligne**. Au tout premier lancement sur un terminal, une question demande le mode d'affichage (plein écran, ligne par ligne, lecteur d'écran) et l'enregistre dans `settings.toml`.
 
 - Au début : un pseudo (*Entrée* garde `Neon`), le prologue (*Entrée* pour continuer, `skip` pour passer), puis l'offre du **tutoriel guidé** (`o` ou `n`).
 - But : suivre les **quêtes** du journal (`quests`), parler aux contacts (`talk`), pirater des sites (`hack`), acheter (`shop`, `buy`), garder sa **Notoriété** basse (`laylow`), et décider. `help` liste ce qui est possible à ce moment-là ; `hint` demande un indice à ECHO-7.
 - Menus : tapez le **numéro** d'une entrée ou son nom ; `0` ou une ligne vide revient en arrière (*Échap* en plein écran).
 - Sauvegarde : la partie est **sauvegardée automatiquement** et reprise au lancement suivant (`--new` pour recommencer) ; `save` ou `save 2` l'écrit dans un emplacement (1 à 9) ; le jeu crée un **point de contrôle** à l'ouverture de chaque quête principale, avant une décision et avant un achat (les 3 derniers sont gardés). `neon-hack --list-saves` montre le dossier et ce qu'il contient.
-- Plein écran : *TAB* complète une commande, *Ctrl+D* ou *Ctrl+C* termine la partie, puis une touche ferme l'interface.
+- Plein écran : *TAB* complète la commande ou l'argument sous le curseur (et liste ce qui reste ambigu), *↑*/*↓* rappellent les commandes déjà tapées, *Ctrl+A/E/U/K/W* et les flèches éditent la ligne, *PgUp*/*PgDn* (et *Début*/*Fin* quand la ligne est vide) font défiler le journal, *Échap* revient en bas. *Ctrl+C* demande à quitter, comme la commande `quit` ; *Ctrl+D* sur une ligne vide ferme l'entrée ; une touche ferme ensuite l'interface. Un collage de plusieurs lignes devient une seule ligne, qui n'est jamais exécutée sans *Entrée*. La souris n'est pas capturée (la sélection et la copie du terminal marchent).
 - La démonstration (`--demo`) : acheter l'**amélioration du deck** (120 crédits) à l'étal de R4Z0R sans que la **trace** atteigne 100 (`scan`, `laylow`, `shop`).
 
 | Option | Effet |
 |---|---|
-| `--plain` | interface ligne par ligne |
+| `--plain` | interface ligne par ligne, même sur un terminal |
+| `--tui` | interface plein écran, et un mot sur `stderr` si le terminal ne peut pas la montrer |
 | `--screen-reader` | mode lecteur d'écran : interface ligne par ligne, sans symboles à épeler |
 | `--ascii` | ASCII 7 bits : symboles, accents et texte tapé translittérés, sans décoration |
 | `--lang fr` / `--lang en` | langue des textes (anglais par défaut) |
@@ -101,19 +103,20 @@ Dans un vrai terminal, le jeu s'ouvre en **plein écran** (barre d'état, journa
 | `--no-save` | joue sans rien écrire |
 | `--data-dir DIR` | dossier des sauvegardes, à la place de celui du système |
 
-L'interface plein écran demande au moins **64×20** caractères, et **100×28** pour afficher le panneau latéral ; en dessous, un message le dit : agrandissez la fenêtre ou utilisez `--plain`.
+L'interface plein écran demande au moins **64×20** caractères, et **100×28** pour afficher le panneau latéral permanent. Au lancement, un terminal plus petit donne l'affichage ligne par ligne avec une ligne d'explication sur `stderr` ; en cours de partie, le terminal rétréci affiche seulement « Terminal trop petit » et la partie reste intacte jusqu'à son agrandissement. Un terminal `TERM=dumb` ou un mode lecteur d'écran n'ouvre jamais le plein écran.
 
 Les sauvegardes sont dans le dossier de données de l'utilisateur, sous-dossier `saves-campaign` (`saves` pour la démonstration) : `~/.local/share/neon-hack` sous Linux, `~/Library/Application Support/neon-hack` sous macOS, `%APPDATA%\neon-hack\data` sous Windows. Une sauvegarde abîmée n'est jamais écrasée : le jeu reprend la copie précédente (`.bak`) et le dit, ou explique comment recommencer.
 
 ### Réglages
 
-Les options de présentation (`lang`, `verbosity`, `ascii`, `screen_reader`) se fixent une fois pour toutes dans un fichier `settings.toml`, à écrire à la main dans le dossier de données (le dossier parent de celui que montre `--list-saves`, qui est `saves-campaign`) :
+Les options de présentation (`lang`, `verbosity`, `ascii`, `screen_reader`, `display`) se fixent une fois pour toutes dans un fichier `settings.toml`, dans le dossier de données (le dossier parent de celui que montre `--list-saves`, qui est `saves-campaign`). Le jeu ne crée ce fichier que pour la question du premier lancement (clé `display`, et `screen_reader` pour le mode lecteur d'écran) et ne modifie jamais un fichier qui existe ; le reste s'écrit à la main :
 
 ```toml
 lang = "fr"
 verbosity = "brief"
 ascii = false
 screen_reader = false
+display = "auto"   # auto, tui ou plain
 ```
 
 Pour chaque réglage, la source la plus précise gagne : la ligne de commande, puis la variable d'environnement (`NEON_HACK_LANG` pour la langue), puis `settings.toml`, puis la configuration du système (`LANG` pour la langue ; une locale qui nomme un autre jeu de caractères que l'UTF-8, comme `fr_FR.ISO-8859-1`, active `--ascii`), puis la valeur par défaut. `NEON_HACK_DATA_DIR` change le dossier de données. Côté couleurs : `color` (`auto`, `always`, `never`) et `palette` se règlent aussi dans `settings.toml` (`NEON_HACK_PALETTE` pour la palette) ; la variable standard `NO_COLOR` éteint la couleur (la palette `mono` n'emploie que gras, soulignement et vidéo inverse), mais pas si `--color` est donné ; le mode lecteur d'écran n'envoie jamais de séquence d'échappement. `high-contrast` (blanc sur noir) et `cvd` (couleurs adaptées aux daltonismes) peignent leur fond ; leurs couleurs exactes demandent un terminal 24 bits (`COLORTERM=truecolor`), sinon le terminal en donne l'approximation. Un fichier abîmé est signalé, n'est jamais modifié, et les valeurs par défaut s'appliquent. `neon-hack --print-settings` montre le résultat.

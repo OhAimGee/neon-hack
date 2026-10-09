@@ -1496,3 +1496,71 @@ fn the_whole_campaign_reaches_the_epilogue_with_the_screen_reader_and_ascii_mode
     assert!(text.ends_with("A bientot, Walker.\n"), "{text:?}");
     insta::assert_snapshot!(final_screens(&text));
 }
+
+// ---- Which interface runs ---------------------------------------------------------------------
+
+#[test]
+fn print_settings_shows_the_display_wish_and_where_it_comes_from() {
+    let dir = tempfile::tempdir().unwrap();
+    let shown = |extra: &[&str]| {
+        let mut args = vec!["--print-settings", "--data-dir", dir_arg(&dir)];
+        args.extend_from_slice(extra);
+        stdout(&run_in_env(&args, "", &[]))
+    };
+    assert!(shown(&[]).contains("display = \"auto\"  # default"));
+    assert!(shown(&["--plain"]).contains("display = \"plain\"  # command line"));
+    assert!(shown(&["--tui"]).contains("display = \"tui\"  # command line"));
+    settings_in(dir.path(), "display = \"plain\"\n");
+    assert!(shown(&[]).contains("display = \"plain\"  # settings.toml"));
+    assert!(
+        shown(&["--tui"]).contains("display = \"tui\"  # command line"),
+        "the command line wins"
+    );
+}
+
+#[test]
+fn the_plain_and_full_screen_flags_exclude_each_other_and_the_screen_reader() {
+    for args in [&["--plain", "--tui"][..], &["--tui", "--screen-reader"][..]] {
+        let output = run(args);
+        assert_eq!(output.status.code(), Some(2), "{args:?}");
+        assert!(stderr(&output).contains("cannot be used with"), "{args:?}");
+    }
+}
+
+#[test]
+fn on_a_pipe_the_full_screen_flag_is_answered_and_the_game_is_played_plain() {
+    let output = run_with_input(&["--tui"], &format!("{OPENING}quit\ny\n"));
+    assert!(output.status.success());
+    let said = stderr(&output);
+    let expected = if cfg!(feature = "tui") {
+        "neon-hack: The full-screen interface needs a terminal"
+    } else {
+        "neon-hack: This build has no full-screen interface"
+    };
+    assert!(said.contains(expected), "{said}");
+    // The game itself is the plain one, line by line.
+    assert!(stdout(&output).contains("> quit"), "{}", stdout(&output));
+    // Without the flag, a pipe is routine: not a word on standard error.
+    let quiet = run_with_input(&[], &format!("{OPENING}quit\ny\n"));
+    assert_eq!(stderr(&quiet), "");
+}
+
+#[test]
+fn a_saved_wish_for_the_full_screen_does_not_nag_scripts() {
+    let dir = tempfile::tempdir().unwrap();
+    settings_in(dir.path(), "display = \"tui\"\n");
+    let args = ["--data-dir", dir_arg(&dir), "--no-save"];
+    let output = run_with_input(&args, &format!("{OPENING}quit\ny\n"));
+    assert!(output.status.success());
+    assert_eq!(stderr(&output), "");
+}
+
+#[test]
+fn no_question_is_asked_on_a_pipe_and_no_settings_file_is_created() {
+    let dir = tempfile::tempdir().unwrap();
+    let args = ["--data-dir", dir_arg(&dir)];
+    let output = run_with_input(&args, &format!("{OPENING}quit\ny\n"));
+    assert!(output.status.success());
+    assert!(!stdout(&output).contains("How do you want to play?"));
+    assert!(!dir.path().join("settings.toml").exists());
+}

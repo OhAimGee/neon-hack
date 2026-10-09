@@ -351,9 +351,7 @@ fn run_game(cli: &Cli, env: &Env, kind: Kind) -> io::Result<()> {
         }
     }
     let shown = setup.presentation;
-    // The catalogs are checked by the tests, so this only fails on a broken build.
-    let catalog = Catalog::embedded(shown.lang.value.into())
-        .map_err(|errors| io::Error::other(format!("the texts do not load:\n{errors}")))?;
+    let catalog = embedded_catalog(&shown)?;
     // The two are independent and can be combined.
     let renderer = Renderer {
         catalog: &catalog,
@@ -438,33 +436,37 @@ fn terminal_size() -> Option<(u16, u16)> {
     None
 }
 
+/// The texts in the language of these settings. They are checked by the tests, so this only
+/// fails on a broken build.
+fn embedded_catalog(shown: &Presentation) -> io::Result<Catalog> {
+    Catalog::embedded(shown.lang.value.into())
+        .map_err(|errors| io::Error::other(format!("the texts do not load:\n{errors}")))
+}
+
 /// A text of the interface in the language and mode of these settings, for what is said
 /// before the game exists.
 fn render_ui(setup: &Setup, text: &Text) -> io::Result<String> {
     let shown = &setup.presentation;
-    let catalog = Catalog::embedded(shown.lang.value.into())
-        .map_err(|errors| io::Error::other(format!("the texts do not load:\n{errors}")))?;
+    let mode = RenderMode {
+        screen_reader: shown.screen_reader.value,
+        ascii: shown.ascii.value,
+    };
     Ok(neon_engine::text::render(
         text,
-        &catalog,
-        RenderMode {
-            screen_reader: shown.screen_reader.value,
-            ascii: shown.ascii.value,
-        },
+        &embedded_catalog(shown)?,
+        mode,
     ))
 }
 
 /// Asks how to play on the terminal, in the language the settings say.
 fn ask_first_mode(setup: &Setup) -> io::Result<Option<ModeAnswer>> {
     let shown = &setup.presentation;
-    let catalog = Catalog::embedded(shown.lang.value.into())
-        .map_err(|errors| io::Error::other(format!("the texts do not load:\n{errors}")))?;
     let mode = RenderMode {
         screen_reader: false,
         ascii: shown.ascii.value,
     };
     frontend::ask_mode(
-        &catalog,
+        &embedded_catalog(shown)?,
         mode,
         &mut io::stdin().lock(),
         &mut io::stdout().lock(),

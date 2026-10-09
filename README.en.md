@@ -8,7 +8,7 @@ A cyberpunk text RPG for the terminal. You are a novice hacker in Neo-Tokyo, in 
 
 ## Status
 
-**The campaign is playable from a new game to the epilogue, but the game is not finished.** It is the game that runs by default (`neon-hack`): prologue, guided tutorial, hub commands, five endings and an epilogue, in English and French, with intrusions resolved automatically (the tactical engine is phase R4). The texts of chapters 1 and 2 are written; those of chapters 3 to 6, the endings and the epilogue are still `TODO <key>` drafts (502 per language). The engine demo is still available with `--demo`. The groundwork, the foundation (phase R1), the specifications (phase P1) and content and campaign (phase R2) are done; the complete full-screen interface (R3) is the next step.
+**The campaign is playable from a new game to the epilogue, but the game is not finished.** It is the game that runs by default (`neon-hack`): prologue, guided tutorial, hub commands, five endings and an epilogue, in English and French, with intrusions resolved automatically (the tactical engine is phase R4). The texts of chapters 1 and 2 are written; those of chapters 3 to 6, the endings and the epilogue are still `TODO <key>` drafts (502 per language). The engine demo is still available with `--demo`. The groundwork, the foundation (phase R1), the specifications (phase P1) and content and campaign (phase R2) are done; the full-screen interface (R3) has its core (R3.1: input line, scrolling, size tiers, terminal always given back); its complete side panel, screens and settings are lots R3.2 and R3.3.
 
 | Step | State |
 |---|---|
@@ -29,7 +29,8 @@ A cyberpunk text RPG for the terminal. You are a novice hacker in Neo-Tokyo, in 
 | Phase R2.3: texts of lot L1 (chapters 1 and 2), prologue and guided tutorial | done |
 | Phase R2.4: campaign end to end (optimistic player through the commands, 216 plans, five endings), campaign as the default game | done |
 | Phase R2 (content and campaign) | **finished** |
-| Full TUI (R3), tactical run (R4), texts of chapters 3 to 6 (R5), balancing (R6) | to come |
+| Phase R3.1: TUI core (choice of interface and first-launch question, input line with history and TAB, scrolling log, 64×20 and 100×28 tiers, terminal given back by every way out, tests in a pseudo-terminal) | done |
+| Side panel, screens, frontend commands (R3.2 and R3.3), tactical run (R4), texts of chapters 3 to 6 (R5), balancing (R6) | to come |
 
 ## Play locally
 
@@ -73,18 +74,19 @@ Without an option, `neon-hack` plays the **campaign**: it resumes the last game,
 
 ### 4. How to play
 
-In a real terminal the game opens **full screen** (status bar, log, side panel). If the input is redirected, or with `--plain`, it is played **line by line**.
+In a real terminal that is big enough, the game opens **full screen** (status bar, log, side panel). If the input or the output is redirected, if the terminal is too small, or with `--plain`, it is played **line by line**. The very first time on a terminal, a question asks for the display mode (full screen, line by line, screen reader) and saves it in `settings.toml`.
 
 - At the start: a handle (*Enter* keeps `Neon`), the prologue (*Enter* to continue, `skip` to jump ahead), then the offer of the **guided tutorial** (`y` or `n`).
 - Goal: follow the **quests** of the journal (`quests`), talk to the contacts (`talk`), hack sites (`hack`), buy (`shop`, `buy`), keep your **Notoriety** low (`laylow`), and decide. `help` lists what is possible right now; `hint` asks ECHO-7 for a hint.
 - Menus: type an entry's **number** or its name; `0` or an empty line goes back (*Esc* in full screen).
 - Saving: the game is **saved automatically** and resumed at the next launch (`--new` to start over); `save` or `save 2` writes it to a slot (1 to 9); the game makes a **checkpoint** when each main quest opens, before a decision and before a purchase (the last 3 are kept). `neon-hack --list-saves` shows the folder and what it holds.
-- Full screen: *TAB* completes a command, *Ctrl+D* or *Ctrl+C* ends the game, then one more key closes the interface.
+- Full screen: *TAB* completes the command or argument under the cursor (and lists what is still ambiguous), *Up*/*Down* recall the commands already typed, *Ctrl+A/E/U/K/W* and the arrows edit the line, *PgUp*/*PgDn* (and *Home*/*End* when the line is empty) scroll the log, *Esc* comes back down. *Ctrl+C* asks to quit, like the `quit` command; *Ctrl+D* on an empty line closes the input; one more key then closes the interface. A multi-line paste becomes a single line, which is never run without *Enter*. The mouse is not captured (the terminal's selection and copy keep working).
 - The demo (`--demo`): buy the **deck upgrade** (120 credits) at R4Z0R's stall before the **trace** reaches 100 (`scan`, `laylow`, `shop`).
 
 | Option | Effect |
 |---|---|
-| `--plain` | line-by-line interface |
+| `--plain` | line-by-line interface, even on a terminal |
+| `--tui` | full-screen interface, with a word on `stderr` if the terminal cannot show it |
 | `--screen-reader` | screen-reader mode: line-by-line interface, no symbols to spell out |
 | `--ascii` | 7-bit ASCII: symbols, accents and typed text transliterated, no decoration |
 | `--lang fr` / `--lang en` | language of the texts (English by default) |
@@ -101,19 +103,20 @@ In a real terminal the game opens **full screen** (status bar, log, side panel).
 | `--no-save` | play without writing anything |
 | `--data-dir DIR` | folder for the saves, instead of the system's |
 
-The full-screen interface needs at least **64×20** characters, and **100×28** to show the side panel; below that, a message says so: enlarge the window or use `--plain`.
+The full-screen interface needs at least **64×20** characters, and **100×28** to show the permanent side panel. At launch, a smaller terminal gets the line-by-line display with one explanatory line on `stderr`; during a game, a terminal that shrinks only shows "Terminal too small" and the game stays intact until it is enlarged. A `TERM=dumb` terminal or screen-reader mode never opens the full screen.
 
 Saves live in the user's data folder, in a `saves-campaign` subfolder (`saves` for the demo): `~/.local/share/neon-hack` on Linux, `~/Library/Application Support/neon-hack` on macOS, `%APPDATA%\neon-hack\data` on Windows. A damaged save is never overwritten: the game resumes from the previous copy (`.bak`) and says so, or explains how to start over.
 
 ### Settings
 
-The presentation options (`lang`, `verbosity`, `ascii`, `screen_reader`) can be set once and for all in a `settings.toml` file, to be written by hand in the data folder (the parent of the folder `--list-saves` shows, which is `saves-campaign`):
+The presentation options (`lang`, `verbosity`, `ascii`, `screen_reader`, `display`) can be set once and for all in a `settings.toml` file in the data folder (the parent of the folder `--list-saves` shows, which is `saves-campaign`). The game only creates this file for the first-launch question (key `display`, plus `screen_reader` for screen-reader mode) and never modifies a file that exists; the rest is written by hand:
 
 ```toml
 lang = "fr"
 verbosity = "brief"
 ascii = false
 screen_reader = false
+display = "auto"   # auto, tui or plain
 ```
 
 For each setting the most specific source wins: the command line, then the environment variable (`NEON_HACK_LANG` for the language), then `settings.toml`, then the system's configuration (`LANG` for the language; a locale that names a charset other than UTF-8, such as `fr_FR.ISO-8859-1`, turns `--ascii` on), then the default. `NEON_HACK_DATA_DIR` changes the data folder. For colours: `color` (`auto`, `always`, `never`) and `palette` can also be set in `settings.toml` (`NEON_HACK_PALETTE` for the palette); the standard `NO_COLOR` variable turns colour off (the `mono` palette only uses bold, underline and reverse video), unless `--color` is given; screen-reader mode never sends an escape sequence. `high-contrast` (white on black) and `cvd` (colours chosen for colour-vision deficiencies) paint their own background; their exact colours need a 24-bit terminal (`COLORTERM=truecolor`), otherwise the terminal approximates them. A damaged file is reported, never modified, and the defaults apply. `neon-hack --print-settings` shows the result.

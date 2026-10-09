@@ -12,6 +12,8 @@ use unicode_width::UnicodeWidthStr;
 
 /// Longest line kept in the editor, in characters, whatever a paste or a game asks.
 pub(crate) const MAX_CHARS: usize = 1024;
+/// Most characters of a paste that are looked at.
+const PASTE_MAX: usize = 8 * MAX_CHARS;
 /// How many lines of history are kept.
 pub(crate) const HISTORY_MAX: usize = 100;
 
@@ -104,6 +106,8 @@ impl LineEditor {
     /// one is dropped) and other control characters are dropped, so a pasted block of
     /// commands is one line the player must still confirm.
     pub(crate) fn paste(&mut self, pasted: &str) {
+        // A paste is read as far as the line could use it, however long the terminal sends.
+        let pasted: String = pasted.chars().take(PASTE_MAX).collect();
         let normalized = pasted.replace("\r\n", "\n").replace('\r', "\n");
         let mut lines: Vec<&str> = normalized.split('\n').collect();
         if lines.len() > 1 && lines.last() == Some(&"") {

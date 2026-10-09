@@ -1301,3 +1301,16 @@ proptest! {
         }
     }
 }
+
+#[test]
+fn control_c_drops_what_was_being_typed_so_it_cannot_answer_the_question() {
+    let (catalog, mut game) = (catalog_en(), DemoGame::new(1));
+    let mut app = app_with(&mut game, &catalog, RenderMode::FULL);
+    reach_command_line(&mut app);
+    type_text(&mut app, "sta");
+    ctrl(&mut app, 'c');
+    assert!(has(&screen(&app, 100, 28), "> quit"));
+    assert_eq!(app.editor.text(), "", "the half-typed command is gone");
+    type_line(&mut app, "y");
+    assert!(has(&screen(&app, 100, 28), "Press any key to leave."));
+}
