@@ -185,8 +185,10 @@ fn no_terminal_size_can_make_the_interface_panic() {
     let mut app = app_with(&mut game, &catalog, RenderMode::FULL);
     reach_command_line(&mut app);
     type_line(&mut app, "shop");
-    for width in [1, 2, 3, 10, 30, 63, 64, 65, 99, 100, 150] {
-        for height in [1, 2, 3, 8, 19, 20, 21, 27, 28, 40] {
+    // From nothing at all to a very large terminal, in a menu with a long line typed.
+    type_text(&mut app, &"é日 ".repeat(40));
+    for width in [0, 1, 2, 3, 10, 30, 63, 64, 65, 99, 100, 150, 300] {
+        for height in [0, 1, 2, 3, 8, 19, 20, 21, 27, 28, 40, 100] {
             let _ = screen(&app, width, height);
         }
     }

@@ -560,9 +560,10 @@ fn a_paste_lands_in_the_line_as_one_line_and_runs_nothing() {
 #[test]
 fn an_idle_interface_writes_nothing() {
     let mut session = at_command_line(28, 100);
-    session.settle(Duration::from_millis(150));
+    // Quiet for a while first, so that a slow machine has delivered everything it will.
+    session.settle(Duration::from_millis(300));
     let before = session.received;
-    session.pump(Duration::from_millis(400));
+    session.pump(Duration::from_millis(500));
     assert_eq!(
         session.received, before,
         "no timer, no animation, no polling"
