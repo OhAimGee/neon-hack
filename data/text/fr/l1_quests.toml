@@ -1,0 +1,145 @@
+# Lot L1 (chapitres 1 et 2) : les quêtes M01 à M04, français (langue source de la voix).
+# Titres, descriptions, contexte et objectifs sont neutres (ni tu ni vous visant le joueur) :
+# ECHO-7 et les autres donneurs parlent dans les indices et les débriefs, chacun avec son tic
+# (ils tutoient). Les termes du glossaire viennent du jeu en arguments ({journal}, {net}...).
+# Les tables numérotées sont les objectifs (obj) et les indices de chaque objectif (hint.N.1 une
+# piste, hint.N.2 la solution, quêtes principales seulement).
+
+# =========================================================================== M01
+[quest.m01]
+title = "Premiers Pas dans l'Ombre"
+title_short = "Premiers Pas"
+desc = "ECHO-7 enseigne les bases : observer, forcer, disparaître."
+lore = "Neo-Tokyo, 2087. Dans un studio de dix mètres carrés du secteur 7, un vieux deck se rallume tout seul et une voix s'invite sur le canal #7. Elle propose trois gestes et ne demande rien. Personne n'enseigne gratuitement, et la leçon commence quand même."
+loc = "Studio, secteur 7"
+debrief = "Observer, forcer, disparaître : trois gestes, trois acquis. D'après mes archives, tu es toujours en ligne. Lis ta {inbox}, puis passe voir R4Z0R. Un deck nu ne dure pas."
+
+[quest.m01.obj]
+1 = "Ouvrir le {journal} (quests)"
+2 = "Lire l'aide (help)"
+3 = "Explorer {net} (net)"
+4 = "Consulter la fiche d'état (status)"
+5 = "Parler à ECHO-7 (talk echo7)"
+6 = "Percer le poste local (hack localhost)"
+7 = "Effacer ses traces (laylow)"
+
+[quest.m01.hint.1]
+1 = "Commence par faire l'inventaire, rookie. Le {journal} sait ce qu'on attend de toi, et une seule commande l'ouvre."
+2 = "Tape `quests`. Il liste chaque {quest} en cours et ce que chacune demande."
+
+[quest.m01.hint.2]
+1 = "Ensuite, apprends ce que le deck sait faire. Une commande n'existe que pour lister les autres."
+2 = "Tape `help`. Seules les commandes que tu as gagnées y figurent : la liste s'allongera."
+
+[quest.m01.hint.3]
+1 = "Un hacker observe avant d'agir. Une commande montre ce qui est à portée sur {net}."
+2 = "Tape `net`. Elle dessine la carte des sites connus. Puis `net localhost` pour la fiche d'un seul."
+
+[quest.m01.hint.4]
+1 = "Tout ce que tu fais laisse une marque. Un écran donne ton {level}, tes {credit}s et ce que le monde a remarqué de toi."
+2 = "Tape `status`. Surveille la ligne {notoriety} : elle monte à chaque intrusion. Sous cinquante, personne ne vient te chercher."
+
+[quest.m01.hint.5]
+1 = "Parle à quelqu'un qui te connaît. Il existe une commande pour parler, suivie du nom du contact."
+2 = "Tape `talk echo7`, puis choisis un numéro dans le menu. N'importe quel sujet compte. Les conseils, c'est un bon début."
+
+[quest.m01.hint.6]
+1 = "Reste à vérifier que ça marche. Ton propre poste est la cible la plus sûre du secteur : personne ne s'en plaindra."
+2 = "Tape `hack localhost`, puis `y` pour confirmer. Elle est résolue aussitôt, et la première brèche d'un site paie."
+
+[quest.m01.hint.7]
+1 = "Tu as laissé une trace. Une commande la laisse refroidir, et la {safehouse} vend du calme à la semaine."
+2 = "Tape `laylow`, choisis un service dans la liste et paie. Le moins cher suffit."
+
+# =========================================================================== M02
+[quest.m02]
+title = "Baptême du Feu"
+title_short = "Baptême du Feu"
+desc = "Premier vrai boulot : récupérer un contrat de maintenance chez MegaCorp Industries."
+lore = "ECHO-7 a repéré un contrat de maintenance qui traîne sur un serveur de MegaCorp Industries, rien d'illégal à première vue. Le serveur est gardé quand même, et chaque intrusion alourdit la {notoriety}. Un premier boulot propre, ou un piège rangé sous « routine » ?"
+loc = "MegaCorp Industries - corp-server-01"
+debrief = "Entrée propre, sortie propre. La facture est dans tes {archives} : l'en-tête est celui de Nexus Corp, qui fait fabriquer ses implants ici. Garde trois faits : qui commande, qui fabrique, qui paie."
+
+[quest.m02.obj]
+1 = "Percer corp-server-01 (hack corp-server-01)"
+2 = "Finir avec une {notoriety} sous 50 (status)"
+3 = "Prendre les fichiers du serveur (hack corp-server-01)"
+
+[quest.m02.hint.1]
+1 = "MegaCorp Industries est une corpo de second rang avec des serrures de premier rang. Vérifie que le site figure sur ta carte."
+2 = "Tape `hack corp-server-01`, puis `y`. Le site s'ouvre au {level} 2, et tu l'as gagné."
+
+[quest.m02.hint.2]
+1 = "Une brèche coûte toujours quelque chose. La ligne {notoriety} de `status` dit combien. La quête la veut basse au moment de se conclure."
+2 = "Si la {notoriety} est à cinquante ou plus, tape `laylow` et paie un service pour la faire descendre avant que la {quest} puisse se conclure."
+
+[quest.m02.hint.3]
+1 = "Le contrat n'est pas le seul papier de ce serveur. Ce que tu prends en entrant reste à toi."
+2 = "Une intrusion prend tous les fichiers du site d'un coup. Si le site était déjà ouvert, il n'y a plus rien de neuf à prendre."
+
+# =========================================================================== M03
+[quest.m03]
+title = "Réseaux d'Information"
+title_short = "Réseaux d'Info"
+desc = "R4Z0R ouvre son {shop} : équipement, rumeurs et une transmission chiffrée à lire."
+lore = "Les données de MegaCorp portent le sceau de Nexus Corp, la plus puissante mégacorporation de Neo-Tokyo. Pour comprendre, il faut de l'équipement, des appuis et des oreilles dans l'underground. R4Z0R tient le Marché souterrain du secteur 7 et dit qu'une transmission chiffrée y circule. À qui profite son secret ?"
+loc = "Marché souterrain - plusieurs sites"
+debrief = "Pas mal, hacker. Tu paies à temps et tu lis ce que tu achètes, c'est rare. Ce que dit la transmission, je ne le chiffre pas, mais je ne le répéterais pas gratis. Jette un œil à ta {inbox}."
+
+[quest.m03.obj]
+1 = "Parler à R4Z0R (talk r4z0r)"
+2 = "Acheter le Stealth Module v2.0 (buy stealth)"
+3 = "Percer 3 sites différents (hack)"
+4 = "Atteindre 50 points de {reputation} (status)"
+5 = "Déchiffrer la transmission interceptée (decrypt)"
+
+[quest.m03.hint.1]
+1 = "R4Z0R vend à ceux qu'elle a rencontrés. Les présentations sont gratuites, ce qui est rare dans son métier."
+2 = "Tape `talk r4z0r` et choisis un sujet dans le menu."
+
+[quest.m03.hint.2]
+1 = "L'équipement d'abord. L'{shop} de R4Z0R liste ce que tu peux payer et ce dont tu auras bientôt besoin."
+2 = "Tape `shop` pour voir la liste, puis `buy stealth` et confirme. Il coûte 150 {credit}s."
+
+[quest.m03.hint.3]
+1 = "Trois sites différents, pas trois fois le même. Seules comptent les brèches faites depuis l'ouverture de cette {quest}."
+2 = "Lance `hack` sur localhost, corp-server-01 et underground-market. Un site déjà ouvert ne paie plus rien, mais il compte."
+
+[quest.m03.hint.4]
+1 = "La {reputation} se gagne, elle ne s'achète pas. Les brèches et les quêtes terminées la nourrissent."
+2 = "Tape `status` pour lire ta {reputation}. La première brèche de chaque site et chaque {quest} terminée en ajoutent. Cinquante est à portée."
+
+[quest.m03.hint.5]
+1 = "R4Z0R a parlé d'un document que personne n'a encore lu. Il dort dans tes {archives}, toujours scellé."
+2 = "Tape `archives` pour trouver le document scellé, puis `decrypt` suivi de son numéro. Le chiffre est un simple décalage : le deck fait le travail."
+
+# =========================================================================== M04
+[quest.m04]
+title = "Suivre l'Argent"
+title_short = "Suivre l'Argent"
+desc = "Data Miner remonte l'argent de MegaCorp jusqu'aux cliniques d'Aurora Dawn."
+lore = "Data Miner garde ce que tout le monde croit effacé, et quelque chose dans les comptes de MegaCorp sent la poussière. Les comptes de l'entreprise et le grand livre du Marché souterrain se recoupent sur une ligne de budget absurde : « sommeil ». Qui paie pour offrir du sommeil, et que reçoit-il en échange ?"
+loc = "MegaCorp Industries, Marché souterrain"
+debrief = "Cote 7-B-12, nouvelle entrée : MegaCorp, Aurora Dawn, « sommeil ». La poussière a bougé et ne retombera pas. J'ai classé un dossier orphelin à ton nom. Lis-le, puis décide de ce que tu veux savoir."
+
+[quest.m04.obj]
+1 = "Prendre tous les fichiers du serveur (hack corp-server-01)"
+2 = "Prendre le grand livre noir (hack underground-market)"
+3 = "Déchiffrer le grand livre noir (decrypt)"
+4 = "Finir avec une {notoriety} sous 50 (status)"
+
+[quest.m04.hint.1]
+1 = "Data Miner veut tout ce que MegaCorp a classé, pas seulement le meilleur. Les fichiers déjà pris comptent."
+2 = "`hack corp-server-01` prend tout le site d'un coup. Si tu as déjà tout pris, cette étape est faite."
+
+[quest.m04.hint.2]
+1 = "Le grand livre dort dans le réseau de R4Z0R, et tu sais où est le marché."
+2 = "Tape `hack underground-market` et confirme. Le grand livre vient avec les autres fichiers."
+
+[quest.m04.hint.3]
+1 = "Le grand livre est verrouillé. Les {archives} listent ce que tu détiens et ce qui reste scellé."
+2 = "Tape `archives` pour trouver le grand livre scellé, puis `decrypt` suivi de son numéro."
+
+[quest.m04.hint.4]
+1 = "Sors sans bruit. Vérifie la {notoriety} dans `status` avant de refermer le dossier."
+2 = "Si la {notoriety} est à cinquante ou plus, `laylow` et un service payé la ramènent plus bas."

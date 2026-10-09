@@ -433,19 +433,30 @@ fn nobody_unreachable_can_be_talked_to_and_a_contact_with_nothing_to_say_is_told
         said.contains("is unavailable: cannot be reached now (hostile)"),
         "{said}"
     );
-    // The Data Miner has no topic at all: a conversation that goes nowhere.
+    // A contact with no topic at all (whoever the writers have not given one yet): a
+    // conversation that goes nowhere.
+    let content = driver.game.content;
+    let mute = content
+        .contacts
+        .iter()
+        .find(|contact| {
+            content
+                .topics
+                .iter()
+                .all(|topic| topic.contact != contact.id)
+        })
+        .expect("some contact has no topic yet")
+        .id
+        .clone();
     driver
         .game
         .state
         .missions
         .contacts
-        .insert("miner".parse().unwrap(), ContactState::Available);
+        .insert(mute.clone(), ContactState::Available);
     driver.game.state.sync_lists(driver.game.content);
-    let said = driver.line("talk miner");
-    assert!(
-        said.contains("Data Miner has nothing to say right now."),
-        "{said}"
-    );
+    let said = driver.line(&format!("talk {mute}"));
+    assert!(said.contains(" has nothing to say right now."), "{said}");
     assert_eq!(driver.last.prompt, Prompt::Command);
 }
 
@@ -525,7 +536,8 @@ fn messages_arrive_unread_and_are_read_once() {
     );
     let clock = driver.game.clock();
     let said = driver.line("read 1");
-    assert!(said.contains("TODO mail.mail_welcome.subject"), "{said}");
+    assert!(said.contains("Welcome to the underground"), "{said}");
+    assert!(said.contains("Hey, rookie."), "{said}");
     assert!(driver.game.clock() > clock, "reading changes the world");
     assert!(driver.line("messages").contains("read"), "read now");
     let clock = driver.game.clock();
@@ -568,7 +580,7 @@ fn a_document_is_decrypted_from_the_list_and_gives_a_fragment() {
     assert!(
         driver
             .line("archives")
-            .contains("[2] f05 - TODO frag.f05.title - read")
+            .contains("[2] f05 - Intercepted Transmission - read")
     );
     assert!(driver.line("decrypt 1").contains("already decrypted"));
     assert!(driver.line("decrypt 2").contains("not encrypted"));
@@ -790,11 +802,14 @@ fn laylow_sells_cover_that_lowers_the_notoriety_for_credits() {
 fn a_hint_comes_from_echo7_in_two_levels_and_is_counted() {
     let mut driver = Driver::new();
     let said = driver.line("hint");
-    assert!(said.contains("echo7 > TODO quest.m01.hint.1.1"), "{said}");
+    assert!(
+        said.contains("echo7 > Start by taking stock, rookie."),
+        "{said}"
+    );
     assert!(said.contains("Hints left for this quest: 2."), "{said}");
     let said = driver.line("hint");
     assert!(
-        said.contains("TODO quest.m01.hint.1.2"),
+        said.contains("Type `quests`."),
         "the solution comes second: {said}"
     );
     driver.line("hint");

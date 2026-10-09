@@ -4,7 +4,7 @@ expression: reader
 ---
 Handle [Neon]: 
 Welcome to the net, Neon.
-New quest: <draft>
+New quest: First Steps in the Shadows
 Type `help` to list the commands, then `quests` to read the first quest.
 > help
 Commands
@@ -19,7 +19,7 @@ Commands
 9. Command: laylow; Effect: Lower your Notoriety with a service
 10. Command: hint; Effect: Ask ECHO-7 for a hint
 11. Command: save; Effect: Save the game in a slot
-Objective done: <draft>
+Objective done: Read the help (help)
 > status
 Handle: Neon
 Level: 1
@@ -30,11 +30,11 @@ Chapter: 1
 Difficulty: Normal
 Quests in progress: 1
 Hints left for the current quest: 3
-Objective done: <draft>
+Objective done: Check the status sheet (status)
 > quests
 == Journal ==
-1. id: m01; title: <draft>; status: active; chapter: 1
-Objective done: <draft>
+1. id: m01; title: First Steps in the Shadows; status: active; chapter: 1
+Objective done: Open the journal (quests)
 > contacts
 == Contacts ==
 1. id: echo7; name: ECHO-7; relation: friendly; state: available; offers: -
@@ -42,7 +42,7 @@ Objective done: <draft>
 == The net ==
 1. name: localhost; status: known; level: 1
 15 more sites still unknown.
-Objective done: <draft>
+Objective done: Explore the net (net)
 > shop
 [Error] Not yet: find R4Z0R.
 > messages

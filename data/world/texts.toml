@@ -28,6 +28,8 @@ keys = [
     "contact.insider.tagline",
     "contact.miner.name",
     "contact.miner.tagline",
+    "contact.miner.topic.shelf.a",
+    "contact.miner.topic.shelf.q",
     "contact.phoenix.name",
     "contact.phoenix.tagline",
     "contact.phoenix.topic.nexus.a",

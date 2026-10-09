@@ -1,0 +1,145 @@
+# Lot L1 (chapters 1 and 2): the quests M01 to M04, English (the reference language).
+# Titles, descriptions, lore and objectives are neutral (no "you" aimed at the player): ECHO-7
+# and the other givers speak in the hints and the debriefs, each with their own tic.
+# Glossary terms come from the game as arguments ({journal}, {net}, {notoriety}...).
+# The numbered tables are the objectives (obj) and the hints of each objective (hint.N.1 a lead,
+# hint.N.2 the solution, main quests only).
+
+# =========================================================================== M01
+[quest.m01]
+title = "First Steps in the Shadows"
+title_short = "First Steps"
+desc = "ECHO-7 teaches the basics: observe, force, disappear."
+lore = "Neo-Tokyo, 2087. In a ten-square-meter studio in Sector 7, an old deck boots on its own and a voice slips onto channel #7. It offers three gestures and asks for nothing. Nobody teaches for free, and the lesson starts anyway."
+loc = "Studio, Sector 7"
+debrief = "Observe, force, disappear: three gestures, three in the bag. For the record, you are still online. Read your {inbox}, then see R4Z0R. A bare deck doesn't last."
+
+[quest.m01.obj]
+1 = "Open the {journal} (quests)"
+2 = "Read the help (help)"
+3 = "Explore {net} (net)"
+4 = "Check the status sheet (status)"
+5 = "Talk to ECHO-7 (talk echo7)"
+6 = "Breach the local station (hack localhost)"
+7 = "Cover your tracks (laylow)"
+
+[quest.m01.hint.1]
+1 = "Start by taking stock, rookie. The {journal} knows what is expected of you, and one command opens it."
+2 = "Type `quests`. It lists every {quest} you hold and what each one asks for."
+
+[quest.m01.hint.2]
+1 = "Next, learn what the deck can do. One command exists only to list the others."
+2 = "Type `help`. Only the commands you have earned are listed, so the list will grow."
+
+[quest.m01.hint.3]
+1 = "A hacker observes before acting. One command shows what lies within reach on {net}."
+2 = "Type `net`. It draws the map of the sites you know. Then `net localhost` for the file of one."
+
+[quest.m01.hint.4]
+1 = "Everything you do leaves a mark. One screen shows your {level}, your {credit}s and how much the world has noticed you."
+2 = "Type `status`. Watch the {notoriety} line: it rises with every intrusion. Under fifty, nobody comes looking."
+
+[quest.m01.hint.5]
+1 = "Talk to someone who knows you. There is a command for talking, and the contact's name follows it."
+2 = "Type `talk echo7`, then pick a number in the menu. Any topic counts. Advice is a good start."
+
+[quest.m01.hint.6]
+1 = "Time to see if it works. Your own station is the safest target in the sector: nobody will mind."
+2 = "Type `hack localhost`, then `y` to confirm. It is resolved at once, and the first breach of a site pays."
+
+[quest.m01.hint.7]
+1 = "You left a trace. One command lets it cool, and the {safehouse} sells quiet by the week."
+2 = "Type `laylow`, pick a service in the list and pay. The cheapest one is enough."
+
+# =========================================================================== M02
+[quest.m02]
+title = "Baptism of Fire"
+title_short = "Baptism of Fire"
+desc = "First real job: pull a maintenance contract out of MegaCorp Industries."
+lore = "ECHO-7 spotted a maintenance contract sitting on a MegaCorp Industries server, nothing illegal on the face of it. The server is guarded all the same, and every intrusion adds to {notoriety}. A clean first job, or a trap filed under routine?"
+loc = "MegaCorp Industries - corp-server-01"
+debrief = "Clean in, clean out. The invoice is in your {archives}, and the letterhead isn't MegaCorp's: Nexus Corp has its implants built here. Keep three facts on file: who orders, who builds, who pays."
+
+[quest.m02.obj]
+1 = "Breach corp-server-01 (hack corp-server-01)"
+2 = "End with {notoriety} under 50 (status)"
+3 = "Take the files of the server (hack corp-server-01)"
+
+[quest.m02.hint.1]
+1 = "MegaCorp Industries is a second-rate corp with first-rate locks. Check that the site is on your map."
+2 = "Type `hack corp-server-01`, then `y`. The site opens at {level} 2, and you have earned it."
+
+[quest.m02.hint.2]
+1 = "A breach always costs something. The {notoriety} line of `status` tells you how much. The quest wants it low when it closes."
+2 = "If {notoriety} is at fifty or more, type `laylow` and pay for a service to bring it down before the {quest} can close."
+
+[quest.m02.hint.3]
+1 = "The contract is not the only paper on that server. What you take on the way in stays yours."
+2 = "An intrusion takes every file of the site in one go. If the site was already open, there is nothing new to take."
+
+# =========================================================================== M03
+[quest.m03]
+title = "Information Networks"
+title_short = "Info Networks"
+desc = "R4Z0R opens her {shop}: gear, rumors and an encrypted transmission to read."
+lore = "The MegaCorp data bears the seal of Nexus Corp, the most powerful megacorporation in Neo-Tokyo. To understand it, it takes gear, allies and ears in the underground. R4Z0R runs the Underground Market of Sector 7 and says an encrypted transmission is circulating there. Who profits from its secret?"
+loc = "Underground Market - several sites"
+debrief = "Not bad, hacker. You pay on time and you read what you buy, which is rare. What the transmission says isn't mine to price, but I wouldn't repeat it for free. Check your {inbox}."
+
+[quest.m03.obj]
+1 = "Talk to R4Z0R (talk r4z0r)"
+2 = "Buy the Stealth Module v2.0 (buy stealth)"
+3 = "Breach 3 different sites (hack)"
+4 = "Reach 50 points of {reputation} (status)"
+5 = "Decrypt the intercepted transmission (decrypt)"
+
+[quest.m03.hint.1]
+1 = "R4Z0R sells to people she has met. Introductions are free, which is rare in her trade."
+2 = "Type `talk r4z0r` and pick a topic in the menu."
+
+[quest.m03.hint.2]
+1 = "Gear comes first. R4Z0R's {shop} lists what you can afford and what you will want soon."
+2 = "Type `shop` to see the list, then `buy stealth` and confirm. It costs 150 {credit}s."
+
+[quest.m03.hint.3]
+1 = "Three different sites, not the same one three times. Only breaches made since this {quest} opened count."
+2 = "Use `hack` on localhost, corp-server-01 and underground-market. A site already open pays nothing more, but it counts."
+
+[quest.m03.hint.4]
+1 = "{reputation^} is earned, never bought. Breaches and finished quests feed it."
+2 = "Type `status` to read your {reputation}. The first breach of each site and each finished {quest} add some. Fifty is within reach."
+
+[quest.m03.hint.5]
+1 = "R4Z0R mentioned a document nobody has read yet. It sits in your {archives}, still sealed."
+2 = "Type `archives` to find the sealed document, then `decrypt` followed by its number. The cipher is a simple shift: the deck does the work."
+
+# =========================================================================== M04
+[quest.m04]
+title = "Follow the Money"
+title_short = "Follow the Money"
+desc = "Data Miner traces MegaCorp's money to the clinics of Aurora Dawn."
+lore = "Data Miner keeps what everyone believes erased, and something in MegaCorp's books smells of dust. The company's accounts and the Underground Market's ledger cross on a budget line that makes no sense: \"sleep\". Who pays to give sleep away, and what do they get back?"
+loc = "MegaCorp Industries, Underground Market"
+debrief = "Shelf 7-B-12, new entry: MegaCorp, Aurora Dawn, \"sleep\". The dust has shifted and it will not settle. I filed an orphan folder under your name. Read it, then decide how much you want to know."
+
+[quest.m04.obj]
+1 = "Take every file of the server (hack corp-server-01)"
+2 = "Take the black ledger (hack underground-market)"
+3 = "Decrypt the black ledger (decrypt)"
+4 = "End with {notoriety} under 50 (status)"
+
+[quest.m04.hint.1]
+1 = "Data Miner wants everything MegaCorp has filed, not only the good parts. Files you already took count."
+2 = "`hack corp-server-01` takes the whole site in one go. If you took it all earlier, this step is already done."
+
+[quest.m04.hint.2]
+1 = "The ledger sits in R4Z0R's network, and you know where the market is."
+2 = "Type `hack underground-market` and confirm. The ledger comes with the other files."
+
+[quest.m04.hint.3]
+1 = "The ledger is locked. The {archives} list what you hold and what is still sealed."
+2 = "Type `archives` to find the sealed ledger, then `decrypt` followed by its number."
+
+[quest.m04.hint.4]
+1 = "Leave the room quietly. Check {notoriety} in `status` before closing the file."
+2 = "If {notoriety} is at fifty or more, `laylow` and a paid service bring it back down."

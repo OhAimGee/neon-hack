@@ -1,0 +1,15 @@
+# Lot L1 (chapitres 1 et 2) : les messages des deux premiers chapitres, français.
+# Un corps tient en une ligne : l'accroche dans la voix, le fait, la demande avec la commande entre
+# apostrophes inversées, la signature et, si l'expéditeur en a l'habitude, un seul P.S.
+
+[mail.mail_welcome]
+subject = "Bienvenue dans l'underground"
+body = "Salut, rookie. J'ai vu tes premiers pas sur {net}. Tu as du potentiel, et d'après mes archives, c'est plus rare que l'équipement. Trois conseils : apprends vite, ne laisse rien derrière toi, et passe voir R4Z0R avec `shop` avant le prochain boulot. Un deck nu ne dure pas. Reste dans l'ombre. ECHO-7. P.S. : Méfie-toi de Nexus Corp. Ils préparent quelque chose de gros..."
+
+[mail.mail_phoenix]
+subject = "Je t'ai repéré"
+body = "Pas ici. Tu fais du bruit sur {net}, petit, assez pour que je m'intéresse à toi. Nexus Corp cache quelque chose dans ses serveurs et je ne peux pas y aller seul. Équipe-toi d'abord, chez R4Z0R et nulle part ailleurs. Quand ton deck tient la route, change de canal et parle-moi : `talk phoenix`. Trois sauts, pas deux. Phoenix"
+
+[mail.mail_miner]
+subject = "Cote 7-B-12, à ton nom"
+body = "Cote 7-B-12. Poussière : épaisse. Contenu : un message pour toi. R4Z0R m'a donné ton nom, et ton nom m'a donné une idée. Je collectionne les fichiers que tout le monde croit effacés, et il m'en manque quelques-uns. Pour savoir lesquels, `talk miner`. N'apporte que ta curiosité. Data Miner"
