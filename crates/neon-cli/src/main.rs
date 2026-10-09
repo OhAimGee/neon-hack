@@ -1,9 +1,9 @@
 //! `neon-hack`: the command-line entry point.
 //!
-//! The engine contract and saving are exercised by a small demo game (`--demo`) through
-//! two frontends, plain and TUI. The campaign (`--campaign`) is the real game being built in
-//! phase R2 (see `docs/ROADMAP.md`); it becomes the default in lot R2.4, and until then the
-//! binary without either flag still says it is not playable yet.
+//! The binary plays the campaign, the real game, through two frontends, plain and TUI; a
+//! campaign is started or resumed by running it without any game option. The engine contract
+//! and saving are also exercised by a small toy game, the demo (`--demo`), which keeps its own
+//! saves and is never mistaken for the campaign.
 
 mod config;
 mod input;
@@ -39,11 +39,14 @@ use crate::store::{Store, Target};
 
 /// Neon Hack: a cyberpunk text RPG for the terminal.
 ///
+/// Without a game option it plays the campaign: a new one, or the one saved last. `--demo`
+/// plays the small demo game instead, with saves of its own.
+///
 /// Presentation options can also be set in `settings.toml` in the data folder; the command
 /// line wins over the file, which wins over the environment's defaults.
 #[derive(Debug, Parser)]
 #[command(name = "neon-hack", version)]
-// The two games exclude each other, and what a game needs (saves, a new game) asks for one.
+// The two games exclude each other; the campaign is the one played when none is named.
 #[command(group(clap::ArgGroup::new("game").args(["demo", "campaign"]).multiple(false)))]
 #[allow(
     clippy::struct_excessive_bools,
@@ -86,19 +89,13 @@ struct Cli {
 
     /// Start a new game instead of resuming the autosave (the previous autosave is kept
     /// as `auto.toml.bak`).
-    #[arg(
-        long,
-        requires = "game",
-        conflicts_with = "load",
-        help_heading = "Game"
-    )]
+    #[arg(long, conflicts_with = "load", help_heading = "Game")]
     new: bool,
 
     /// Resume this save instead of the autosave: auto, checkpoint-1 to checkpoint-3, or
     /// slot-1 to slot-9.
     #[arg(
         long,
-        requires = "game",
         value_name = "SAVE",
         value_parser = Target::parse,
         help_heading = "Game"
@@ -106,19 +103,20 @@ struct Cli {
     load: Option<Target>,
 
     /// List the saves and exit.
-    #[arg(long, requires = "game", help_heading = "Game")]
+    #[arg(long, help_heading = "Game")]
     list_saves: bool,
 
     /// Difficulty of a new campaign [default: normal]. A campaign that is resumed keeps its own.
-    #[arg(long, value_enum, requires = "campaign", help_heading = "Game")]
+    #[arg(long, value_enum, conflicts_with = "demo", help_heading = "Game")]
     difficulty: Option<DifficultyChoice>,
 
-    /// Play the campaign: the hub commands of the real game, with intrusions resolved
-    /// automatically (work in progress, see docs/ROADMAP.md).
-    #[arg(long, help_heading = "Development")]
+    /// Play the campaign. This is what runs when no game is named: the option is kept for
+    /// scripts that asked for it before it became the default.
+    #[arg(long, hide = true)]
     campaign: bool,
 
-    /// Play the engine demo: a tiny game that exercises both frontends.
+    /// Play the engine demo instead of the campaign: a tiny toy game that exercises both
+    /// frontends. It has its own saves.
     #[arg(long, help_heading = "Development")]
     demo: bool,
 
@@ -127,7 +125,7 @@ struct Cli {
     seed: Option<u64>,
 
     /// Play without writing any save.
-    #[arg(long, requires = "game", help_heading = "Development")]
+    #[arg(long, help_heading = "Development")]
     no_save: bool,
 
     /// Data folder (saves, settings), instead of `NEON_HACK_DATA_DIR` or the system's.
@@ -175,6 +173,22 @@ impl Kind {
             Self::Campaign => "saves-campaign",
         }
     }
+
+    /// The other game.
+    fn other(self) -> Self {
+        match self {
+            Self::Demo => Self::Campaign,
+            Self::Campaign => Self::Demo,
+        }
+    }
+
+    /// How the game is named in a sentence, and the command that plays it.
+    fn name(self) -> (&'static str, &'static str) {
+        match self {
+            Self::Demo => ("ui.game.demo", "neon-hack --demo"),
+            Self::Campaign => ("ui.game.campaign", "neon-hack"),
+        }
+    }
 }
 
 impl Cli {
@@ -198,11 +212,8 @@ fn main() -> ExitCode {
         print_settings(&cli, &env)
     } else if cli.demo {
         run_game(&cli, &env, Kind::Demo)
-    } else if cli.campaign {
-        run_game(&cli, &env, Kind::Campaign)
     } else {
-        banner::not_playable_yet();
-        Ok(())
+        run_game(&cli, &env, Kind::Campaign)
     };
     match outcome {
         Ok(()) => ExitCode::SUCCESS,
@@ -349,6 +360,31 @@ fn run_game(cli: &Cli, env: &Env, kind: Kind) -> io::Result<()> {
     )
 }
 
+/// Loads a save text as a game of the given kind.
+fn load_game(kind: Kind, text: &str) -> Result<Box<dyn Game>, neon_engine::save::SaveError> {
+    match kind {
+        Kind::Demo => DemoGame::from_save(text).map(|game| Box::new(game) as Box<dyn Game>),
+        Kind::Campaign => CampaignGame::from_save(text).map(|game| Box::new(game) as Box<dyn Game>),
+    }
+}
+
+/// The message for a save that cannot be read as `kind`, when it is a save of the other game:
+/// it is not damaged, it is somewhere else, and the player is told so.
+fn foreign_save(kind: Kind, store: &Store, target: Target) -> Option<Text> {
+    let other = kind.other();
+    let readable = store.read(target, |text| load_game(other, text));
+    if !matches!(readable, Ok(Some(_))) {
+        return None;
+    }
+    let (other_name, other_command) = other.name();
+    Some(
+        Text::new("ui.save.other_game")
+            .with_text("other", Text::new(other_name))
+            .with_text("this", Text::new(kind.name().0))
+            .with_str("command", other_command),
+    )
+}
+
 /// A game to play: the save asked for (the autosave by default), or a new one.
 fn open_game(
     cli: &Cli,
@@ -358,15 +394,7 @@ fn open_game(
 ) -> io::Result<(Box<dyn Game>, Step)> {
     if !cli.new {
         let target = cli.load.unwrap_or(Target::Auto);
-        let load = |text: &str| -> Result<Box<dyn Game>, neon_engine::save::SaveError> {
-            match kind {
-                Kind::Demo => DemoGame::from_save(text).map(|game| Box::new(game) as Box<dyn Game>),
-                Kind::Campaign => {
-                    CampaignGame::from_save(text).map(|game| Box::new(game) as Box<dyn Game>)
-                }
-            }
-        };
-        match store.read(target, load) {
+        match store.read(target, |text| load_game(kind, text)) {
             Ok(Some(loaded)) => {
                 let notice = if loaded.from_backup {
                     "ui.save.resumed_backup"
@@ -383,9 +411,10 @@ fn open_game(
             }
             Ok(None) => {}
             Err(error) => {
-                let unreadable =
-                    Text::new("ui.save.unreadable").with_str("details", error.to_string());
-                return Err(io::Error::other(renderer.text(&unreadable)));
+                let message = foreign_save(kind, store, target).unwrap_or_else(|| {
+                    Text::new("ui.save.unreadable").with_str("details", error.to_string())
+                });
+                return Err(io::Error::other(renderer.text(&message)));
             }
         }
     }
@@ -438,13 +467,6 @@ fn clock_seed() -> u64 {
 /// Console messages that do not come from a frontend.
 mod banner {
     #![allow(clippy::print_stdout, clippy::print_stderr)]
-
-    pub(super) fn not_playable_yet() {
-        println!(
-            "Neon Hack {}: not playable yet, the Rust rewrite is in progress (see docs/ROADMAP.md).",
-            env!("CARGO_PKG_VERSION")
-        );
-    }
 
     pub(super) fn print(text: &str) {
         println!("{text}");

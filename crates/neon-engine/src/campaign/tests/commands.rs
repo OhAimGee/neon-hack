@@ -533,7 +533,10 @@ fn a_payment_stays_on_offer_when_another_way_already_settled_the_objective() {
     assert_eq!(driver.status("m10"), QuestStatus::Active);
     driver.line("talk broker");
     let menu = driver.prompt_text();
-    assert!(menu.contains("Pay "), "the Broker can still be paid: {menu}");
+    assert!(
+        menu.contains("Pay "),
+        "the Broker can still be paid: {menu}"
+    );
     let pay = menu
         .lines()
         .find(|line| line.contains("Pay "))

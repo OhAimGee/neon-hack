@@ -69,6 +69,9 @@ pub(crate) struct Walked {
     pub(crate) rewarded: i64,
     /// Every command line typed.
     pub(crate) typed: Vec<String>,
+    /// Every line a plain frontend would read to send the same inputs (`y` for a yes, an
+    /// empty line for "continue", `skip` for backing out): the script of the walk.
+    pub(crate) script: Vec<String>,
     pub(crate) game: CampaignGame,
 }
 
@@ -86,6 +89,7 @@ pub(crate) struct Player {
     completed: BTreeMap<String, u32>,
     rewarded: i64,
     typed: Vec<String>,
+    script: Vec<String>,
     recent: VecDeque<String>,
     last_said: String,
     saved_slot: bool,
@@ -121,6 +125,7 @@ impl Player {
             completed: BTreeMap::new(),
             rewarded: 0,
             typed: Vec::new(),
+            script: Vec::new(),
             recent: VecDeque::new(),
             last_said: String::new(),
             saved_slot: false,
@@ -161,7 +166,8 @@ impl Player {
     fn opening(&mut self) {
         self.send("(handle)", Input::Line(HANDLE.to_owned()));
         assert!(matches!(self.game.prompt(), Prompt::Continue));
-        self.send("(skip)", Input::Line("skip".to_owned()));
+        // A plain frontend turns the word `skip` at a page into backing out.
+        self.send("(skip)", Input::Cancel);
         assert!(matches!(self.game.prompt(), Prompt::Confirm { .. }));
         self.send("(no tutorial)", Input::Confirm(false));
         assert_eq!(self.game.prompt(), Prompt::Command);
@@ -191,6 +197,7 @@ impl Player {
             completed: self.completed,
             rewarded: self.rewarded,
             typed: self.typed,
+            script: self.script,
             game: self.game,
         }
     }
@@ -288,6 +295,14 @@ impl Player {
         if self.recent.len() > 30 {
             self.recent.pop_front();
         }
+        self.script.push(match &input {
+            Input::Line(line) => line.clone(),
+            Input::Confirm(true) => "y".to_owned(),
+            Input::Confirm(false) => "n".to_owned(),
+            Input::Continue => String::new(),
+            Input::Cancel => "skip".to_owned(),
+            Input::Choice(_) | Input::Eof => unreachable!("the walk never sends {input:?}"),
+        });
         let step = self.game.handle(input);
         self.steps += 1;
         self.observe(what, &step);

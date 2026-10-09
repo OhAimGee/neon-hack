@@ -1,0 +1,172 @@
+Walker
+skip
+n
+talk echo7
+topic:advice
+quests
+help
+net
+status
+hack localhost
+y
+laylow
+read mail-welcome
+talk r4z0r
+topic:how_to_earn
+hack corp-server-01
+y
+archives f01
+archives f02
+talk r4z0r
+0
+buy stealth_module
+y
+hack localhost
+y
+hack corp-server-01
+y
+hack nexus-mainframe
+y
+archives f07
+archives f08
+archives f09
+decrypt doc_phase2
+archives f03
+archives f05
+read mail-phoenix
+read mail-miner
+talk r4z0r
+topic:ledger_rumor
+talk miner
+topic:shelf
+save 3
+hack underground-market
+y
+decrypt doc_ledger
+archives f04
+archives f06
+buy quantum_key
+y
+hack nexus-mainframe
+y
+accept s06
+archives f10
+read mail-aura
+read mail-angel
+talk phoenix
+topic:nexus
+talk phoenix
+0
+talk phoenix
+0
+decrypt doc_phoenix
+archives f11
+hack nexus-mainframe
+y
+talk angel
+0
+talk angel
+0
+hack banking-network
+y
+hack research-lab
+y
+archives f15
+laylow new_identity
+hack halcyon-clinic-7
+y
+archives f13
+talk angel
+decide:d2
+turn
+hack radio-veille
+y
+archives f12
+laylow new_identity
+accept s08
+accept s12
+accept s13
+hack halcyon-clinic-7
+y
+talk r4z0r
+pay:s08
+hack sentinel-hub
+y
+archives f14
+archives f21
+talk angel
+0
+talk angel
+0
+talk angel
+0
+talk angel
+pay:s13
+hack freeport-01
+y
+hack freeport-02
+y
+hack freeport-03
+y
+link aura
+laylow new_identity
+accept s10
+accept s11
+archives f16
+hack freeport-01
+y
+hack freeport-02
+y
+hack freeport-03
+y
+link aura
+talk aura
+topic:brother
+talk broker
+pay:s11
+0
+archives f18
+hack shadow-exchange
+y
+talk broker
+decide:d1
+steal
+archives f19
+talk echo7
+0
+talk echo7
+0
+link echo7
+link echo7
+link echo7
+talk echo7
+decide:echo
+wait
+accept s14
+laylow scrub_traces
+buy quantum_chip
+y
+decrypt doc_vault
+accept s16
+archives f22
+talk echo7
+0
+talk echo7
+0
+hack gov-database
+y
+archives f24
+hack sentinel-hub
+y
+laylow scrub_traces
+archives f20
+hack aurora-core
+y
+archives f23
+talk aura
+decide:d3
+sign
+talk echo7
+0
+quit
+y

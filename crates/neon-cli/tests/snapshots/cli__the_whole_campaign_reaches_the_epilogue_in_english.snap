@@ -1,0 +1,63 @@
+---
+source: crates/neon-cli/tests/cli.rs
+expression: final_screens(&text)
+---
+> talk aura
+Conversation with AURA
+[1] TODO contact.aura.topic.brother.q (already discussed)
+[2] Decide: TODO decision.d3.prompt
+[0] End the conversation
+? decide:d3
+TODO decision.d3.prompt
+[1] TODO decision.d3.choice.liberate.label
+[2] TODO decision.d3.choice.entrust.label
+[3] TODO decision.d3.choice.burn.label
+[4] TODO decision.d3.choice.sign.label
+[0] Decide later
+? liberate
+Objective done: TODO quest.m13.obj.3
+Quest completed: TODO quest.m13.title
+AURA » TODO quest.m13.debrief
+[Reward] +3200 credits
+New fragment in the archives: TODO frag.f23.title.
+
+TODO cutscene.ending_screen.p01
+TODO cutscene.ending_screen.p02
+TODO cutscene.ending_screen.p03
+TODO ending.e1a.title
+TODO ending.e1a.p01
+TODO ending.e1a.p02
+TODO ending.e1a.p03
+TODO ending.e1a.p04
+TODO ending.e1a.p05
+TODO ending.e1a.p06
+TODO ending.e1a.p07
+
+
+TODO cutscene.epilogue_montage.p01
+TODO epilogue.echo7_lives
+TODO epilogue.r4z0r_allied
+TODO epilogue.phoenix_free
+TODO epilogue.aura_free
+TODO epilogue.broker_neutral
+TODO epilogue.angel_free
+TODO epilogue.insider_exposed
+TODO epilogue.ghost_stays
+TODO epilogue.miner_archives
+
+New quest: TODO quest.m14.title
+Objective done: TODO quest.m14.obj.1
+Objective done: TODO quest.m14.obj.2
+There is nothing more to say for now.
+> talk echo7
+Quest completed: TODO quest.m14.title
+ECHO-7 » TODO quest.m14.debrief
+[Reward] +800 credits
+Conversation with ECHO-7
+[1] Ask for advice (already discussed)
+[0] End the conversation
+? 0
+The conversation ends.
+> quit
+Leave the net? The game is saved. [y/N] y
+Goodbye, Walker.

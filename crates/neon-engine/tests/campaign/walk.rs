@@ -280,3 +280,105 @@ fn all_216_plans_reach_the_epilogue() {
     }
     assert_eq!(endings.len(), 5);
 }
+
+// ---- The scripts of the end-to-end tests of the binary ---------------------------------------
+
+/// The plans whose lines the tests of `neon-cli` feed to the real binary on a pipe, with the
+/// file that holds them: three endings, played to the epilogue in English, in French and with
+/// the screen-reader and ASCII modes.
+type ScriptPlan = (
+    &'static str,
+    &'static str,
+    &'static [(&'static str, &'static str)],
+    bool,
+);
+
+const SCRIPTS: &[ScriptPlan] = &[
+    (
+        "walk-e1a.txt",
+        include_str!("../../../neon-cli/tests/scripts/walk-e1a.txt"),
+        &[
+            ("d1", "pay"),
+            ("d2", "save"),
+            ("d3", "liberate"),
+            ("echo", "believe"),
+        ],
+        true,
+    ),
+    (
+        "walk-e3.txt",
+        include_str!("../../../neon-cli/tests/scripts/walk-e3.txt"),
+        &[
+            ("d1", "betray"),
+            ("d2", "abandon"),
+            ("d3", "burn"),
+            ("echo", "doubt"),
+        ],
+        false,
+    ),
+    (
+        "walk-e4.txt",
+        include_str!("../../../neon-cli/tests/scripts/walk-e4.txt"),
+        &[
+            ("d1", "steal"),
+            ("d2", "turn"),
+            ("d3", "sign"),
+            ("echo", "wait"),
+        ],
+        true,
+    ),
+];
+
+fn script_of(c: &Content, choices: &[(&str, &str)], optional: bool) -> String {
+    let plan = all_plans(c)
+        .into_iter()
+        .find(|plan| {
+            plan.optional == optional
+                && choices.iter().all(|(d, ch)| {
+                    plan.choices
+                        .iter()
+                        .any(|(k, v)| k.as_str() == *d && v.as_str() == *ch)
+                })
+        })
+        .unwrap();
+    let walked = walk(&plan, Reload::Never, false);
+    check(c, &plan, &walked);
+    let mut script = walked.script.join("\n");
+    script.push('\n');
+    script
+}
+
+#[test]
+fn the_scripts_of_the_binary_tests_are_what_the_walk_types() {
+    let c = content();
+    for (name, stored, choices, optional) in SCRIPTS {
+        assert_eq!(
+            *stored,
+            script_of(&c, choices, *optional),
+            "{name} is out of date: regenerate it with `NEON_REGEN_WALK_SCRIPTS=1 cargo test -p neon-engine --test campaign regenerate_the_walk_scripts -- --ignored`"
+        );
+    }
+}
+
+/// Writes `crates/neon-cli/tests/scripts/*.txt`.
+/// `NEON_REGEN_WALK_SCRIPTS=1 cargo test -p neon-engine --test campaign regenerate_the_walk_scripts -- --ignored`
+#[test]
+#[ignore = "writes the scripts of the binary's end-to-end tests"]
+#[allow(
+    clippy::disallowed_methods,
+    reason = "the regeneration tool reads its switch from the environment and writes the script files"
+)]
+fn regenerate_the_walk_scripts() {
+    assert!(
+        std::env::var("NEON_REGEN_WALK_SCRIPTS").is_ok(),
+        "set NEON_REGEN_WALK_SCRIPTS=1"
+    );
+    let c = content();
+    for (name, _, choices, optional) in SCRIPTS {
+        let path = format!(
+            "{}/../neon-cli/tests/scripts/{name}",
+            env!("CARGO_MANIFEST_DIR")
+        );
+        std::fs::write(path, script_of(&c, choices, *optional)).unwrap();
+    }
+}
