@@ -1,13 +1,13 @@
 //! The campaign game: the hub of the real game, playable through both frontends.
 //!
 //! [`CampaignGame`] owns the content ([`Content`]) and a [`CampaignState`] (the mission state
-//! of the content language plus what the hub adds), and implements [`Game`] and [`SaveState`]
-//! like the demo does. Every command is declared in one table ([`commands`]), opened by data
-//! (`data/world/unlocks.toml`), and works on lists with stable numbers ([`resolver`]). What a
+//! of the content language plus what the hub adds), and implements [`Game`] and [`SaveState`](crate::save::SaveState)
+//! like the demo does. Every command is declared in one table (`commands`), opened by data
+//! (`data/world/unlocks.toml`), and works on lists with stable numbers (`resolver`). What a
 //! command changes is a [`Fact`] given to the content language, which answers with
-//! [`Outcome`](crate::content::Outcome)s that [`play`] turns into events with derived text keys.
+//! [`Outcome`](crate::content::Outcome)s that `play` turns into events with derived text keys.
 //!
-//! Intrusions are resolved by rule, instantly ([`hack`]): the tactical run replaces them in lot
+//! Intrusions are resolved by rule, instantly (`hack`): the tactical run replaces them in lot
 //! R4 without changing the campaign.
 //!
 //! The game clock is the clock of the mission state: it advances by one turn at every command
