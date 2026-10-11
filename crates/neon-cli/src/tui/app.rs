@@ -8,6 +8,7 @@
 
 mod draw;
 mod fx;
+mod modal;
 mod panel;
 
 use std::cell::Cell;
@@ -20,6 +21,7 @@ use neon_engine::{Game, Input, Prompt, Step};
 use ratatui::crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use ratatui::layout::Rect;
 
+use self::modal::Modal;
 use self::panel::PanelState;
 use super::editor::{LineEditor, MAX_CHARS};
 use super::motion::Staging;
@@ -63,6 +65,16 @@ pub(crate) fn tier(area: Rect) -> Tier {
     }
 }
 
+/// How the interface ends, when it ends.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Exit {
+    /// The game is over or the player left it: the program ends.
+    Quit,
+    /// The player asked for the line-by-line display (`Ctrl+P`, `plain`): the game goes on,
+    /// in the plain frontend, with nothing lost.
+    Plain,
+}
+
 /// What the log keeps. Events are kept as events, so that changing the language or the mode
 /// re-renders the whole history; echoes of typed lines are the text as it was typed.
 enum LogEntry {
@@ -88,7 +100,8 @@ pub(crate) struct App<'a> {
     /// What the last TAB could not decide between, listed under the log until the next key.
     candidates: Vec<String>,
     finished: bool,
-    quit: bool,
+    /// Set when the interface is done, and how.
+    exit: Option<Exit>,
     /// Whether scenes may be staged (`--reduce-motion` and the screen reader say no).
     motion: bool,
     /// The scene being staged over the log, if any. It ends by itself, or at the first key.
@@ -99,8 +112,12 @@ pub(crate) struct App<'a> {
     held: usize,
     /// The presentation commands (`options`, `verbosity`), when the game has them.
     options: Option<Host<'a>>,
+    /// The game lists `panel` and `plain`, which this interface runs.
+    frontend_commands: bool,
     /// Whether the side panel is shown, in each layout.
     panel: PanelState,
+    /// The list kept open beside the log, if any (see `modal`).
+    modal: Option<Modal>,
 }
 
 impl<'a> App<'a> {
@@ -124,12 +141,14 @@ impl<'a> App<'a> {
             editor: LineEditor::new(),
             candidates: Vec::new(),
             finished: false,
-            quit: false,
+            exit: None,
             motion: false,
             staging: None,
             held: 0,
             options: None,
+            frontend_commands: false,
             panel: PanelState::default(),
+            modal: None,
         };
         app.apply(first);
         app
@@ -149,10 +168,10 @@ impl<'a> App<'a> {
         self
     }
 
-    /// Lets the player show and hide the side panel by typing `panel`, when the game has the
-    /// command. F2 does it in any case.
-    pub(crate) fn with_panel_command(mut self) -> Self {
-        self.panel.command = true;
+    /// Lets the player type the commands that belong to this interface (`panel`, `plain`),
+    /// when the game lists them. F2 and Ctrl+P do the same in any case.
+    pub(crate) fn with_frontend_commands(mut self) -> Self {
+        self.frontend_commands = true;
         self
     }
 
@@ -179,8 +198,22 @@ impl<'a> App<'a> {
         self.held = 0;
     }
 
-    pub(crate) fn should_quit(&self) -> bool {
-        self.quit
+    /// Whether the interface is done, and how.
+    pub(crate) fn exit(&self) -> Option<Exit> {
+        self.exit
+    }
+
+    /// What is left to the next frontend when this one gives up the game: the game itself,
+    /// the renderer as the player's `options` left it, those commands, and the saves.
+    pub(crate) fn into_parts(
+        self,
+    ) -> (
+        &'a mut dyn Game,
+        Renderer<'a>,
+        Option<Host<'a>>,
+        Persistence,
+    ) {
+        (self.game, self.renderer, self.options, self.persistence)
     }
 
     fn push(&mut self, entry: LogEntry) {
@@ -192,6 +225,7 @@ impl<'a> App<'a> {
 
     fn apply(&mut self, step: Step) {
         let staging = staging_of(&step.events).filter(|_| self.motion);
+        self.follow_screens(&step.events);
         let pushed = step.events.len();
         for event in step.events {
             self.push(LogEntry::Event(event));
@@ -229,15 +263,18 @@ impl<'a> App<'a> {
         // Any key ends a staged scene, and is then handled as usual: nothing typed is lost.
         self.end_staging();
         if self.finished {
-            self.quit = true;
+            self.exit = Some(Exit::Quit);
             return;
         }
         let modifiers = key.modifiers;
         let control_only = modifiers.difference(KeyModifiers::SHIFT) == KeyModifiers::CONTROL;
         if self.shown_tier.get() == Tier::TooSmall {
-            // Nothing can be seen, so nothing is typed into the game: only a way out.
+            // Nothing can be seen, so nothing is typed into the game: only a way out, which
+            // is to close the input or to play on in the line-by-line display.
             if control_only && matches!(key.code, KeyCode::Char('c' | 'd')) {
                 self.submit(Input::Eof);
+            } else if control_only && matches!(key.code, KeyCode::Char('p' | 'P')) {
+                self.exit = Some(Exit::Plain);
             }
             return;
         }
@@ -266,6 +303,9 @@ impl<'a> App<'a> {
             KeyCode::End if word || self.editor.is_empty() => self.scroll.set(0),
             KeyCode::Home => self.editor.home(),
             KeyCode::End => self.editor.end(),
+            // A screen that is cut turns its own pages; otherwise the keys are the log's.
+            KeyCode::PageUp if self.scroll_modal(false) => {}
+            KeyCode::PageDown if self.scroll_modal(true) => {}
             KeyCode::PageUp => self.scroll_back(),
             KeyCode::PageDown => self.scroll_forward(),
             KeyCode::Tab => self.complete(),
@@ -289,6 +329,8 @@ impl<'a> App<'a> {
             'd' if self.editor.is_empty() => self.submit(Input::Eof),
             'd' => self.editor.delete(),
             'c' => self.interrupt(),
+            // The line-by-line display, with the game exactly as it is.
+            'p' => self.exit = Some(Exit::Plain),
             _ => {}
         }
     }
@@ -307,9 +349,12 @@ impl<'a> App<'a> {
         }
     }
 
-    /// Escape closes the drawer, comes back down the log, clears the line, then backs out of
-    /// a menu: the most recent thing opened goes first.
+    /// Escape closes the screen, then the drawer, comes back down the log, clears the line,
+    /// then backs out of a menu: the most recent thing opened goes first.
     fn escape(&mut self) {
+        if self.close_modal() {
+            return;
+        }
         if self.shown_tier.get() == Tier::Compact && self.panel.drawer {
             self.panel.drawer = false;
         } else if self.scroll.get() > 0 {
@@ -336,7 +381,7 @@ impl<'a> App<'a> {
         self.candidates.clear();
         self.end_staging();
         if self.finished {
-            self.quit = true;
+            self.exit = Some(Exit::Quit);
         } else if self.shown_tier.get() != Tier::TooSmall {
             self.editor.paste(pasted);
         }
@@ -353,7 +398,8 @@ impl<'a> App<'a> {
         }
         self.editor.clear();
         self.echo(&line);
-        if self.prompt == Prompt::Command && (self.run_panel(&line) || self.run_presentation(&line))
+        if self.prompt == Prompt::Command
+            && (self.run_frontend_command(&line) || self.run_presentation(&line))
         {
             return;
         }
@@ -367,12 +413,26 @@ impl<'a> App<'a> {
         }
     }
 
-    /// Runs `panel`, if that is the line: it shows or hides the side panel, and says which in
-    /// the log, so that the effect is also read and not only seen.
-    fn run_panel(&mut self, line: &str) -> bool {
-        if !self.panel.command || !line.trim().eq_ignore_ascii_case("panel") {
+    /// Runs `plain` or `panel`, if that is the line.
+    fn run_frontend_command(&mut self, line: &str) -> bool {
+        if !self.frontend_commands {
             return false;
         }
+        let word = line.trim();
+        if word.eq_ignore_ascii_case("plain") {
+            self.exit = Some(Exit::Plain);
+            true
+        } else if word.eq_ignore_ascii_case("panel") {
+            self.run_panel();
+            true
+        } else {
+            false
+        }
+    }
+
+    /// `panel` shows or hides the side panel, and says which in the log, so that the effect
+    /// is also read and not only seen.
+    fn run_panel(&mut self) {
         self.toggle_panel();
         let key = if self.panel_shown() {
             "ui.tui.panel_shown"
@@ -383,7 +443,6 @@ impl<'a> App<'a> {
         self.push(LogEntry::Event(Event::system(
             Text::new(key).with_term("panel", "panel"),
         )));
-        true
     }
 
     /// Runs a line that is one of the presentation commands, if it is: the interface's own,

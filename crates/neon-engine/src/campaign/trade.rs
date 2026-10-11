@@ -3,7 +3,7 @@
 use crate::command::ArgRef;
 use crate::content::Fact;
 use crate::content::ids::{ItemId, ServiceId};
-use crate::event::{Effect, Event};
+use crate::event::{Effect, Event, ScreenKind, Table};
 use crate::prompt::Input;
 use crate::text::Text;
 
@@ -19,6 +19,10 @@ fn price_text(price: u32) -> Text {
 impl CampaignGame {
     /// The vitrine: every item, with its price and whether it can be bought now, in words.
     pub(super) fn cmd_shop(&mut self, events: &mut Vec<Event>) {
+        events.push(Event::Screen(self.shop_table()));
+    }
+
+    pub(super) fn shop_table(&self) -> Table {
         let rows = self
             .content
             .items
@@ -34,9 +38,9 @@ impl CampaignGame {
                 ]
             })
             .collect();
-        events.push(Event::Screen(crate::event::Table {
-            title: Text::new("campaign.shop.title"),
-            columns: [
+        Table::new(
+            Text::new("campaign.shop.title"),
+            [
                 "campaign.col.id",
                 "campaign.col.name",
                 "campaign.col.price",
@@ -46,7 +50,8 @@ impl CampaignGame {
             .map(|key| Text::new(key))
             .collect(),
             rows,
-        }));
+        )
+        .pinned(ScreenKind::Shop)
     }
 
     /// `buy`: every purchase is permanent, so the game asks, and keeps a checkpoint of the
@@ -101,41 +106,47 @@ impl CampaignGame {
     pub(super) fn cmd_laylow(&mut self, args: &[ArgRef], events: &mut Vec<Event>) {
         match arg_id::<ServiceId>(args, 0) {
             None => {
-                let rows = self
-                    .content
-                    .services
-                    .iter()
-                    .map(|service| {
-                        vec![
-                            Text::raw(service.id.as_str()),
-                            keys::service_name(&service.id),
-                            price_text(service.price.get()),
-                            Text::new("campaign.laylow.cooling")
-                                .with_int("cooling", i64::from(service.cooling)),
-                            self.state
-                                .service_refusal(self.content, &service.id)
-                                .unwrap_or_else(|| Text::new("campaign.shop.available")),
-                        ]
-                    })
-                    .collect();
-                events.push(Event::Screen(crate::event::Table {
-                    title: Text::new("campaign.laylow.title"),
-                    columns: [
-                        "campaign.col.id",
-                        "campaign.col.name",
-                        "campaign.col.price",
-                        "campaign.col.effect",
-                        "campaign.col.status",
-                    ]
-                    .iter()
-                    .map(|key| Text::new(key))
-                    .collect(),
-                    rows,
-                }));
+                events.push(Event::Screen(self.services_table()));
                 self.used("laylow", events);
             }
             Some(id) => self.buy_service(&id, events),
         }
+    }
+
+    /// The cover services, with their price, what they remove and whether they can be bought.
+    pub(super) fn services_table(&self) -> Table {
+        let rows = self
+            .content
+            .services
+            .iter()
+            .map(|service| {
+                vec![
+                    Text::raw(service.id.as_str()),
+                    keys::service_name(&service.id),
+                    price_text(service.price.get()),
+                    Text::new("campaign.laylow.cooling")
+                        .with_int("cooling", i64::from(service.cooling)),
+                    self.state
+                        .service_refusal(self.content, &service.id)
+                        .unwrap_or_else(|| Text::new("campaign.shop.available")),
+                ]
+            })
+            .collect();
+        Table::new(
+            Text::new("campaign.laylow.title"),
+            [
+                "campaign.col.id",
+                "campaign.col.name",
+                "campaign.col.price",
+                "campaign.col.effect",
+                "campaign.col.status",
+            ]
+            .iter()
+            .map(|key| Text::new(key))
+            .collect(),
+            rows,
+        )
+        .pinned(ScreenKind::Services)
     }
 
     fn buy_service(&mut self, id: &ServiceId, events: &mut Vec<Event>) {

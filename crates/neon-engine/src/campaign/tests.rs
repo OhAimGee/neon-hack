@@ -8,6 +8,7 @@ mod commands;
 mod panel;
 mod props;
 mod saves;
+mod screens;
 mod story;
 mod support;
 mod table;

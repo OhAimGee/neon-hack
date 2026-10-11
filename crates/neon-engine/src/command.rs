@@ -455,11 +455,7 @@ impl Registry {
             .filter(|spec| Self::is_listed(spec, context, capabilities, &availability))
             .map(|spec| vec![Text::raw(spec.name), Text::dynamic(spec.help.to_owned())])
             .collect();
-        Event::Screen(Table {
-            title,
-            columns: columns.to_vec(),
-            rows,
-        })
+        Event::Screen(Table::new(title, columns.to_vec(), rows))
     }
 
     /// Problems in the table: bad or repeated names, arguments in the wrong order, a word

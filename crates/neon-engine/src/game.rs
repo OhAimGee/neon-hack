@@ -6,7 +6,7 @@
 //! came from a typed line, a menu click or a shortcut.
 
 use crate::command::Capabilities;
-use crate::event::Gauge;
+use crate::event::{Gauge, ScreenKind, Table};
 use crate::prompt::{Input, Prompt, Step};
 use crate::save::SaveError;
 use crate::text::Text;
@@ -119,6 +119,14 @@ pub trait Game {
     /// frontend can run (`panel`) are open, listed and completed. Called once, before the
     /// first prompt is shown. A game that has no such command ignores it.
     fn set_capabilities(&mut self, _capabilities: Capabilities) {}
+
+    /// A screen the game can draw again at any time, as the command that opened it would
+    /// show it now. A frontend that keeps a screen open beside the log asks for it after each
+    /// step; it changes nothing in the game. `None` when the game has no such screen, or it
+    /// cannot be shown now.
+    fn screen(&self, _kind: ScreenKind) -> Option<Table> {
+        None
+    }
 
     /// Completions of the text before the cursor, without spoilers: only what the player
     /// could already use.

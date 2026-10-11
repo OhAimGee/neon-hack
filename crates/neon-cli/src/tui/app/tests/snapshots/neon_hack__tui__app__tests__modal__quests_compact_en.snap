@@ -1,0 +1,25 @@
+---
+source: crates/neon-cli/src/tui/app/tests/modal.rs
+expression: "picture(&app, 64, 20)"
+---
+64x20
+ Neon │ Notoriety 0/100 (Discreet)
+ECHO-7 » Finally. For the record, I'm not a corp, not a cop and
+not a trap. I'm ECHO-7, and yours is the only deck in sector 7
+that still answers.
+ECHO-7 » Handle on file: Neon. Until you earn another name,
+you're a rookie. Don't take it personally.
+ECHO-7 » I have a first job for you. Nothing dangerous: a walk
+a╭Journal────────────────────────────────────────────────────╮
+S│ #  id   title                       status  chapter       │
+c│ 1  m01  First Steps in the Shadows  active  1             │
+T╰ Esc closes ───────────────────────────────────────────────╯
+New quest: First Steps in the Shadows
+Type `help` to list the commands, then `quests` to read the
+first quest.
+> quests
+== Journal ==
+[1] m01 - First Steps in the Shadows - active - 1
+Objective done: Open the journal (quests)
+>
+F2 panel | Tab complete | Ctrl+C quit | Up/Down history

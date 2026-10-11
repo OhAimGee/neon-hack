@@ -448,6 +448,10 @@ fn the_start_of_the_campaign_plays_through_typed_keys_tab_and_history() {
     // Page keys scroll the log and say so; Escape comes back down.
     session.send(b"\x1b[5~");
     session.wait_text("Scrolled back");
+    // The list of quests is still open beside the log: Escape closes it first.
+    session.send(ESCAPE);
+    session.wait_for("the list closed", |s| !s.contains("Esc closes"));
+    assert!(session.contains("Scrolled back"));
     session.send(ESCAPE);
     session.wait_for("the bottom of the log", |s| !s.contains("Scrolled back"));
 
@@ -474,8 +478,8 @@ fn the_compact_tier_at_64x20_has_no_panel() {
     assert!(rows[19].starts_with("F2 panel"), "{:?}", rows[19]);
     assert_eq!(session.input_row(), ">");
     session.send(b"help\r");
-    // The table of commands now fills the log: its title is what shows the command ran.
-    session.wait_text("Commands");
+    // The table of commands now fills the log: its last row shows the command ran.
+    session.wait_text("Switch to the plain display");
     let status = quit_with_control_c(&mut session);
     assert!(status.success());
     assert_restored(&session);
@@ -508,6 +512,83 @@ fn f2_and_the_panel_command_show_and_hide_the_panel_at_both_tiers() {
     let status = quit_with_control_c(&mut session);
     assert!(status.success());
     assert_restored(&session);
+}
+
+#[test]
+fn a_list_stays_open_beside_the_log_until_escape_closes_it() {
+    let mut session = at_command_line(28, 100);
+    session.type_line("quests");
+    session.wait_text("Esc closes");
+    assert!(session.contains("╭Journal"), "{:#?}", session.rows());
+    // The input is live under it: a word typed is in the line, and the list stays.
+    session.send(b"sta");
+    session.wait_input("> sta");
+    assert!(session.contains("Esc closes"));
+    // Escape closes the list first, and keeps what was typed.
+    session.send(ESCAPE);
+    session.wait_for("the list closed", |s| !s.contains("Esc closes"));
+    assert_eq!(session.input_row(), "> sta");
+    let status = {
+        session.send(b"\x15");
+        quit_with_control_c(&mut session)
+    };
+    assert!(status.success());
+    assert_restored(&session);
+}
+
+#[test]
+fn control_p_hands_the_game_to_the_line_by_line_interface_with_nothing_lost() {
+    // Control-P as a terminal sends it.
+    const CTRL_P: &[u8] = b"\x10";
+    let mut session = at_command_line(28, 100);
+    session.type_line("quests");
+    session.wait_text("Esc closes");
+    session.send(CTRL_P);
+    session.wait_for("the terminal given back", |s| {
+        !s.screen().alternate_screen() && s.contains("Line-by-line display.")
+    });
+    assert_restored(&session);
+    // The game is where it was: the same handle, the same quest, no replay of the opening.
+    session.wait_text("Back on the net, Neon: 1 active quest");
+    session.wait_text("In progress: First Steps in the Shadows");
+    assert!(!session.contains("Handle ["), "{:#?}", session.rows());
+    session.type_line("status");
+    session.wait_text("Handle: Neon");
+    // `panel` is the full-screen interface's, and the plain one says so.
+    session.type_line("panel");
+    session.wait_text("Only in full screen.");
+    session.send(CTRL_D);
+    session.wait_text("Input closed");
+    assert!(session.finish().success());
+}
+
+#[test]
+fn the_plain_command_does_the_same_at_the_compact_tier() {
+    let mut session = at_command_line(20, 64);
+    session.type_line("plain");
+    session.wait_for("the line-by-line interface", |s| {
+        !s.screen().alternate_screen() && s.contains("Back on the net, Neon")
+    });
+    assert_restored(&session);
+    session.type_line("status");
+    session.wait_text("Handle: Neon");
+    session.send(CTRL_D);
+    assert!(session.finish().success());
+}
+
+#[test]
+fn control_p_is_a_way_out_of_a_terminal_that_became_too_small() {
+    let mut session = at_command_line(28, 100);
+    session.resize(15, 50);
+    session.wait_text("too small");
+    session.send(b"\x10");
+    session.wait_for("the line-by-line interface", |s| {
+        !s.screen().alternate_screen() && s.contains("Back on the net, Neon")
+    });
+    session.type_line("status");
+    session.wait_text("Handle: Neon");
+    session.send(CTRL_D);
+    assert!(session.finish().success());
 }
 
 #[test]

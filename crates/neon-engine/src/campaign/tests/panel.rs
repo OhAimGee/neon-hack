@@ -148,10 +148,11 @@ fn panel_is_offered_to_the_full_screen_interface_only() {
     let mut driver = Driver::new();
     assert!(driver.game.complete("pan").is_empty());
     assert!(driver.line("panel").contains("Only in full screen."));
+    assert!(driver.line("plain").contains("Only in full screen."));
     driver.game.set_capabilities(Capabilities::TUI);
     assert_eq!(driver.game.complete("pan"), ["panel"]);
-    // `plain` is the TUI's too, but nothing wires it yet.
-    assert!(driver.game.complete("pl").is_empty());
+    // `plain` is the full-screen interface's too: it hands the game to the line-by-line one.
+    assert_eq!(driver.game.complete("pl"), ["plain"]);
     // Help lists it, and says what it is for.
     let said = driver.line("help panel");
     assert!(said.contains("Show or hide the side panel"), "{said}");
