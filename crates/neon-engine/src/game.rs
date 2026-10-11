@@ -5,6 +5,7 @@
 //! [`Step`]s and [`View`]s. The same action is always the same [`Input`], whether it
 //! came from a typed line, a menu click or a shortcut.
 
+use crate::command::Capabilities;
 use crate::event::Gauge;
 use crate::prompt::{Input, Prompt, Step};
 use crate::save::SaveError;
@@ -23,6 +24,48 @@ pub struct GaugeReading {
     pub band: Text,
 }
 
+/// How a row of the side panel stands out. Never the only way to tell: the text of a row says
+/// what its tone suggests.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Tone {
+    /// Ordinary information.
+    Plain,
+    /// A name that heads a few rows (a quest above its objectives).
+    Strong,
+    /// Something went well (a site pierced).
+    Good,
+    /// Something waits for the player (a message to read).
+    Warning,
+    /// An empty list, or an aside.
+    Muted,
+}
+
+/// One row of a section of the side panel: one short text, which the frontend wraps.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PanelRow {
+    /// What the row says.
+    pub text: Text,
+    /// How it stands out.
+    pub tone: Tone,
+}
+
+impl PanelRow {
+    /// A row.
+    #[must_use]
+    pub fn new(text: Text, tone: Tone) -> Self {
+        Self { text, tone }
+    }
+}
+
+/// A titled list of the side panel: the quests, the net, the inventory.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PanelSection {
+    /// The heading of the section.
+    pub title: Text,
+    /// Its rows, in order.
+    pub rows: Vec<PanelRow>,
+}
+
 /// A read-only snapshot for the status bar and the side panel.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct View {
@@ -30,8 +73,9 @@ pub struct View {
     pub player: String,
     /// The gauges to display.
     pub gauges: Vec<GaugeReading>,
-    /// Active objectives, one short text each.
-    pub objectives: Vec<Text>,
+    /// What the side panel lists below the gauges, in order. Each row is also said by a
+    /// command (`quests`, `net`, `shop`, `messages`), so the panel only repeats.
+    pub sections: Vec<PanelSection>,
 }
 
 /// A game, as seen by a frontend.
@@ -70,6 +114,11 @@ pub trait Game {
 
     /// A read-only snapshot for the interface.
     fn view(&self) -> View;
+
+    /// Tells the game what the frontend that runs it can do, so that the commands only that
+    /// frontend can run (`panel`) are open, listed and completed. Called once, before the
+    /// first prompt is shown. A game that has no such command ignores it.
+    fn set_capabilities(&mut self, _capabilities: Capabilities) {}
 
     /// Completions of the text before the cursor, without spoilers: only what the player
     /// could already use.

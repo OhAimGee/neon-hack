@@ -8,7 +8,7 @@ RPG textuel cyberpunk pour le terminal. Vous êtes un hacker novice à Neo-Tokyo
 
 ## Statut
 
-**La campagne se joue de bout en bout, du nouveau jeu à l'épilogue, mais le jeu n'est pas terminé.** C'est le jeu lancé par défaut (`neon-hack`) : prologue, tutoriel guidé, commandes du hub, cinq fins et épilogue, FR et EN, avec les intrusions résolues automatiquement (le moteur tactique est la phase R4). Les textes des chapitres 1 et 2 sont écrits ; ceux des chapitres 3 à 6, des fins et de l'épilogue sont encore des brouillons `TODO <clé>` (502 par langue). La démonstration du moteur reste accessible avec `--demo`. Le cadrage, le socle (phase R1), les spécifications (phase P1) et le contenu et la campagne (phase R2) sont terminés ; l'interface plein écran (R3) a son cœur (R3.1 : saisie, défilement, paliers de taille, terminal toujours rendu) ; son panneau latéral complet, ses écrans et ses réglages sont les lots R3.2 et R3.3.
+**La campagne se joue de bout en bout, du nouveau jeu à l'épilogue, mais le jeu n'est pas terminé.** C'est le jeu lancé par défaut (`neon-hack`) : prologue, tutoriel guidé, commandes du hub, cinq fins et épilogue, FR et EN, avec les intrusions résolues automatiquement (le moteur tactique est la phase R4). Les textes des chapitres 1 et 2 sont écrits ; ceux des chapitres 3 à 6, des fins et de l'épilogue sont encore des brouillons `TODO <clé>` (502 par langue). La démonstration du moteur reste accessible avec `--demo`. Le cadrage, le socle (phase R1), les spécifications (phase P1) et le contenu et la campagne (phase R2) sont terminés ; l'interface plein écran (R3) a son cœur (R3.1 : saisie, défilement, paliers de taille, terminal toujours rendu) ; son panneau latéral complet est fait (R3.2a) ; ses écrans modaux et ses derniers réglages sont les lots R3.2b et R3.3.
 
 | Étape | État |
 |---|---|
@@ -30,7 +30,8 @@ RPG textuel cyberpunk pour le terminal. Vous êtes un hacker novice à Neo-Tokyo
 | Phase R2.4 : campagne de bout en bout (joueur optimiste par les commandes, 216 plans, cinq fins), campagne par défaut | fait |
 | Phase R2 (contenu et campagne) | **terminée** |
 | Phase R3.1 : cœur de la TUI (choix du frontal et question du premier lancement, saisie avec historique et TAB, journal défilant, paliers 64×20 et 100×28, terminal rendu par toutes les sorties, tests dans un pseudo-terminal) | fait |
-| Panneau latéral, écrans, commandes du frontal (R3.2 et R3.3), intrusion tactique (R4), textes des chapitres 3 à 6 (R5), équilibrage (R6) | à venir |
+| Phase R3.2a : panneau latéral complet (quêtes, réseau, inventaire, à lire), tiroir `F2` et commande `panel` | fait |
+| Écrans modaux (R3.2b), commandes du frontal restantes (R3.3), intrusion tactique (R4), textes des chapitres 3 à 6 (R5), équilibrage (R6) | à venir |
 
 ## Jouer en local
 
@@ -80,7 +81,7 @@ Dans un vrai terminal assez grand, le jeu s'ouvre en **plein écran** (barre d'�
 - But : suivre les **quêtes** du journal (`quests`), parler aux contacts (`talk`), pirater des sites (`hack`), acheter (`shop`, `buy`), garder sa **Notoriété** basse (`laylow`), et décider. `help` liste ce qui est possible à ce moment-là ; `hint` demande un indice à ECHO-7.
 - Menus : tapez le **numéro** d'une entrée ou son nom ; `0` ou une ligne vide revient en arrière (*Échap* en plein écran).
 - Sauvegarde : la partie est **sauvegardée automatiquement** et reprise au lancement suivant (`--new` pour recommencer) ; `save` ou `save 2` l'écrit dans un emplacement (1 à 9) ; le jeu crée un **point de contrôle** à l'ouverture de chaque quête principale, avant une décision et avant un achat (les 3 derniers sont gardés). `neon-hack --list-saves` montre le dossier et ce qu'il contient.
-- Plein écran : *TAB* complète la commande ou l'argument sous le curseur (et liste ce qui reste ambigu), *↑*/*↓* rappellent les commandes déjà tapées, *Ctrl+A/E/U/K/W* et les flèches éditent la ligne, *PgUp*/*PgDn* (et *Début*/*Fin* quand la ligne est vide) font défiler le journal, *Échap* revient en bas. *Ctrl+C* demande à quitter, comme la commande `quit` ; *Ctrl+D* sur une ligne vide ferme l'entrée ; une touche ferme ensuite l'interface. Un collage de plusieurs lignes devient une seule ligne, qui n'est jamais exécutée sans *Entrée*. La souris n'est pas capturée (la sélection et la copie du terminal marchent).
+- Plein écran : *TAB* complète la commande ou l'argument sous le curseur (et liste ce qui reste ambigu), *↑*/*↓* rappellent les commandes déjà tapées, *Ctrl+A/E/U/K/W* et les flèches éditent la ligne, *PgUp*/*PgDn* (et *Début*/*Fin* quand la ligne est vide) font défiler le journal, *Échap* ferme le tiroir du panneau, puis revient en bas. *F2* (ou la commande `panel`) affiche ou masque le panneau latéral — quêtes, réseau, inventaire, courrier à lire — qui est permanent dans un terminal d'au moins 100×28 et un tiroir au-dessus du journal en dessous. *Ctrl+C* demande à quitter, comme la commande `quit` ; *Ctrl+D* sur une ligne vide ferme l'entrée ; une touche ferme ensuite l'interface. Un collage de plusieurs lignes devient une seule ligne, qui n'est jamais exécutée sans *Entrée*. La souris n'est pas capturée (la sélection et la copie du terminal marchent).
 - La démonstration (`--demo`) : acheter l'**amélioration du deck** (120 crédits) à l'étal de R4Z0R sans que la **trace** atteigne 100 (`scan`, `laylow`, `shop`).
 
 | Option | Effet |

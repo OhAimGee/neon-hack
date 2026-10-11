@@ -8,6 +8,7 @@
 
 mod draw;
 mod fx;
+mod panel;
 
 use std::cell::Cell;
 use std::collections::VecDeque;
@@ -19,6 +20,7 @@ use neon_engine::{Game, Input, Prompt, Step};
 use ratatui::crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use ratatui::layout::Rect;
 
+use self::panel::PanelState;
 use super::editor::{LineEditor, MAX_CHARS};
 use super::motion::Staging;
 use crate::input::{InputError, to_input};
@@ -97,6 +99,8 @@ pub(crate) struct App<'a> {
     held: usize,
     /// The presentation commands (`options`, `verbosity`), when the game has them.
     options: Option<Host<'a>>,
+    /// Whether the side panel is shown, in each layout.
+    panel: PanelState,
 }
 
 impl<'a> App<'a> {
@@ -125,6 +129,7 @@ impl<'a> App<'a> {
             staging: None,
             held: 0,
             options: None,
+            panel: PanelState::default(),
         };
         app.apply(first);
         app
@@ -141,6 +146,13 @@ impl<'a> App<'a> {
     /// `verbosity`). Without it these lines go to the game, which does not take them.
     pub(crate) fn with_options(mut self, options: Host<'a>) -> Self {
         self.options = Some(options);
+        self
+    }
+
+    /// Lets the player show and hide the side panel by typing `panel`, when the game has the
+    /// command. F2 does it in any case.
+    pub(crate) fn with_panel_command(mut self) -> Self {
+        self.panel.command = true;
         self
     }
 
@@ -235,6 +247,7 @@ impl<'a> App<'a> {
             || modifiers == (KeyModifiers::CONTROL | KeyModifiers::ALT);
         let word = modifiers.contains(KeyModifiers::CONTROL);
         match key.code {
+            KeyCode::F(2) => self.toggle_panel(),
             KeyCode::Char(c) if types_text => self.editor.insert(c),
             KeyCode::Char(c) if control_only => self.control(c.to_ascii_lowercase()),
             KeyCode::Enter => self.enter(),
@@ -294,9 +307,12 @@ impl<'a> App<'a> {
         }
     }
 
-    /// Escape comes back down the log, then clears the line, then backs out of a menu.
+    /// Escape closes the drawer, comes back down the log, clears the line, then backs out of
+    /// a menu: the most recent thing opened goes first.
     fn escape(&mut self) {
-        if self.scroll.get() > 0 {
+        if self.shown_tier.get() == Tier::Compact && self.panel.drawer {
+            self.panel.drawer = false;
+        } else if self.scroll.get() > 0 {
             self.scroll.set(0);
         } else if !self.editor.is_empty() {
             self.editor.clear();
@@ -337,7 +353,8 @@ impl<'a> App<'a> {
         }
         self.editor.clear();
         self.echo(&line);
-        if self.prompt == Prompt::Command && self.run_presentation(&line) {
+        if self.prompt == Prompt::Command && (self.run_panel(&line) || self.run_presentation(&line))
+        {
             return;
         }
         match input {
@@ -348,6 +365,25 @@ impl<'a> App<'a> {
                 ))));
             }
         }
+    }
+
+    /// Runs `panel`, if that is the line: it shows or hides the side panel, and says which in
+    /// the log, so that the effect is also read and not only seen.
+    fn run_panel(&mut self, line: &str) -> bool {
+        if !self.panel.command || !line.trim().eq_ignore_ascii_case("panel") {
+            return false;
+        }
+        self.toggle_panel();
+        let key = if self.panel_shown() {
+            "ui.tui.panel_shown"
+        } else {
+            "ui.tui.panel_hidden"
+        };
+        self.scroll.set(0);
+        self.push(LogEntry::Event(Event::system(
+            Text::new(key).with_term("panel", "panel"),
+        )));
+        true
     }
 
     /// Runs a line that is one of the presentation commands, if it is: the interface's own,

@@ -1,0 +1,33 @@
+---
+source: crates/neon-cli/src/tui/app/tests/panel.rs
+expression: "picture(&app, 100, 28)"
+---
+100x28
+ Neon | Notoriete 0/100 (Discret)
++Terminal------------------------------------------------------------++Panneau---------------------+
+|                                                                    ||Notoriete 0/100             |
+|Nexus Corp dirige la ville depuis sa tour du secteur 1. Ici, ses    ||[..........] Discret        |
+|cliniques Aurora Dawn posent gratuitement un implant, le Halcyon, et||                            |
+|les voisins jurent n'avoir jamais aussi bien dormi.                 ||> Quetes                    |
+|Les corporations tiennent le ciel, l'underground tient l'ombre, et  ||Premiers Pas                |
+|le reseau tient le reste. Un deck, une connexion et l'habitude de   ||- Ouvrir le journal (quests)|
+|veiller tard : il n'en faut pas plus pour devenir hacker.           ||- Lire l'aide (help)        |
+|[Entree] pour continuer                                             ||- Explorer le reseau (net)  |
+|                                                                    ||- Consulter la fiche d'etat |
+|Canal chiffre #7 : connexion entrante.                              ||(status)                    |
+|ECHO-7: Enfin. Pour memoire, je ne suis ni une corporation, ni un   ||- Parler a ECHO-7 (talk     |
+|flic, ni un piege. Je suis ECHO-7, et le tien est le seul deck du   ||echo7)                      |
+|secteur 7 qui repond encore.                                        ||- Percer le poste local     |
+|ECHO-7: Handle en dossier : Neon. Tant que tu n'as pas gagne un     ||(hack localhost)            |
+|autre nom, tu es un rookie. Ne le prends pas mal.                   ||- Effacer ses traces        |
+|ECHO-7: J'ai un premier travail pour toi. Rien de dangereux : un    ||(laylow)                    |
+|tour du proprietaire sur ton propre deck. Mais d'abord, les bases.  ||                            |
+|Lancer le tutoriel guide ? ECHO-7 passe en revue les premieres      ||> Le reseau                 |
+|commandes, et `tutorial skip` y met fin a tout moment. [O/n] n      ||localhost : connu           |
+|Tutoriel ignore. `tutorial restart` le lance plus tard.             ||                            |
+|Nouvelle quete : Premiers Pas dans l'Ombre                          ||> Inventaire                |
+|Taper `help` pour lister les commandes, puis `quests` pour lire la  ||Credits : 100               |
+|premiere quete.                                                     ||Aucun objet pour l'instant. |
++--------------------------------------------------------------------++----------------------------+
+>
+F2 panneau | Tab completer | Ctrl+C quitter | Haut/Bas historique | PgUp/PgDn defiler

@@ -190,7 +190,7 @@ impl Game for Stubborn {
         View {
             player: String::new(),
             gauges: Vec::new(),
-            objectives: Vec::new(),
+            sections: Vec::new(),
         }
     }
     fn complete(&self, _line: &str) -> Vec<String> {

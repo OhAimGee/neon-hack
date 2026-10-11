@@ -9,7 +9,7 @@ use neon_engine::campaign::{CampaignGame, Difficulty};
 use super::*;
 
 /// The campaign, past the opening (handle, prologue, tutorial declined), under `colors`.
-fn campaign_app<'a>(
+pub(super) fn campaign_app<'a>(
     game: &'a mut CampaignGame,
     catalog: &'a Catalog,
     mode: RenderMode,
@@ -35,12 +35,12 @@ fn campaign_app<'a>(
     app
 }
 
-fn campaign() -> CampaignGame {
+pub(super) fn campaign() -> CampaignGame {
     CampaignGame::new(Difficulty::Normal, 1).unwrap()
 }
 
 /// The screen, one row per line, under a header that says the size.
-fn picture(app: &App<'_>, width: u16, height: u16) -> String {
+pub(super) fn picture(app: &App<'_>, width: u16, height: u16) -> String {
     let mut text = format!("{width}x{height}\n");
     text.push_str(&screen(app, width, height).join("\n"));
     text

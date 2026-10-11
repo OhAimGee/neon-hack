@@ -3,15 +3,10 @@
 //! One table, read by dispatch, help, completion and the content validator. The commands of
 //! the tactical run (`deck`, `map`, `breach`...) belong to lot R4 and are not declared yet.
 
-use crate::command::{
-    ArgKind, ArgSpec, Capabilities, CommandSpec, Context, HandledBy, Registry, Scope,
-};
+use crate::command::{ArgKind, ArgSpec, CommandSpec, Context, HandledBy, Registry, Scope};
 
 /// The game is at the hub: there is no run to be in until lot R4.
 pub(super) const CONTEXT: Context = Context::Hub;
-
-/// The campaign does not know which frontend runs it: it answers as a plain one would.
-pub(super) const FRONTEND: Capabilities = Capabilities::PLAIN;
 
 /// The names `help <command>` accepts: every command of the table, in table order (a test
 /// keeps it equal to [`SPECS`]).
@@ -99,8 +94,9 @@ const fn frontend(
 }
 
 /// The commands the frontend runs that frontends do take in charge today. The others (`load`,
-/// `panel`, `plain`, `export`) stay closed until a frontend wires them.
-pub(super) const WIRED: &[&str] = &["options", "verbosity"];
+/// `plain`, `export`) stay closed until a frontend wires them. `panel` is wired for the
+/// full-screen frontend, the only one it exists for (see [`Scope::TuiOnly`]).
+pub(super) const WIRED: &[&str] = &["options", "verbosity", "panel"];
 
 /// Every command of the campaign. Commands that only the frontend can run (`options`,
 /// `verbosity`, `load`, `panel`, `plain`, `export`) are declared here too, so that they are

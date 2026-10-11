@@ -11,7 +11,7 @@ use crate::command::{
     NoLists, Registry,
 };
 use crate::event::{Event, Gauge, Severity};
-use crate::game::{Game, GaugeReading, View};
+use crate::game::{Game, GaugeReading, PanelRow, PanelSection, Tone, View};
 use crate::ids::ContactId;
 use crate::prompt::{Choice, ChoiceOption, Input, Prompt, Resolution, Step};
 use crate::rng::Pcg32;
@@ -577,10 +577,19 @@ impl Game for DemoGame {
                 max: TRACE_MAX,
                 band: band(self.trace),
             }],
-            objectives: vec![
-                Text::new("demo.objective.deck").with_int("price", i64::from(DECK_PRICE)),
-                Text::new("demo.objective.trace").with_int("limit", i64::from(TRACE_MAX)),
-            ],
+            sections: vec![PanelSection {
+                title: Text::new("demo.panel.objectives"),
+                rows: vec![
+                    PanelRow::new(
+                        Text::new("demo.objective.deck").with_int("price", i64::from(DECK_PRICE)),
+                        Tone::Plain,
+                    ),
+                    PanelRow::new(
+                        Text::new("demo.objective.trace").with_int("limit", i64::from(TRACE_MAX)),
+                        Tone::Plain,
+                    ),
+                ],
+            }],
         }
     }
 
