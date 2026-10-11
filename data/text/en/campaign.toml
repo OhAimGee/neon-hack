@@ -87,8 +87,8 @@ accept = "Accept a {contract} that was offered"
 contacts = "List the {contact}s you know"
 talk = "Talk to a {contact}"
 messages = "Show the {inbox}"
-read = "Read a {message}"
-archives = "List the {document}s and {fragment}s you hold, or read one"
+read = "Read a {message} (the {archives}: `archives`)"
+archives = "List the {document}s and {fragment}s you hold, or read one (`archives 1`)"
 decrypt = "Decrypt a {document}"
 net = "Show the map of {net}, or one {site}"
 hack = "Start a {run} on a known {site}"
@@ -106,7 +106,7 @@ save = "Save the game in a {slot}"
 "quests.usage" = "Usage: `quests [quest]`. Example: `quests m01`."
 "accept.usage" = "Usage: `accept <quest>`. Example: `accept s06`."
 "talk.usage" = "Usage: `talk <contact>`. Example: `talk echo7`."
-"read.usage" = "Usage: `read <message>`. Example: `read 1`."
+"read.usage" = "Usage: `read <message>`. Example: `read 1`. For the archives: `archives <document>`."
 "archives.usage" = "Usage: `archives [document]`. Example: `archives 1`."
 "decrypt.usage" = "Usage: `decrypt <document>`. Example: `decrypt 1`."
 "net.usage" = "Usage: `net [site]`. Example: `net localhost`."
@@ -159,6 +159,7 @@ dead = "gone"
 [campaign.messages]
 title = "== {inbox^} =="
 empty = "The {inbox} is empty."
+hint = "Read: `read <number or name>`. The {archives} are read with `archives`."
 
 [campaign.message]
 read = "read"
@@ -167,6 +168,8 @@ unread = "unread"
 [campaign.archives]
 title = "== {archives^} =="
 empty = "The {archives} are empty."
+hint = "Read: `archives <number or name>`."
+hint_encrypted = "An encrypted {document} is decrypted first: `decrypt <number or name>`."
 yields = "Once decrypted, it gave the {fragment} {title}."
 
 [campaign.archive]
@@ -177,7 +180,11 @@ decrypted = "decrypted"
 
 [campaign.decrypt]
 done = "{document^} decrypted: {title}."
-yield = "New {fragment} in the {archives}: {title}."
+yield = "New {fragment} in the {archives}: {title}. See `archives`."
+
+[campaign.read]
+in_archives = "{name} is not a {message}: it is in the {archives}. See `archives {name}`."
+archives_hint = "The {archives} are read with `archives <number or name>`."
 
 [campaign.net]
 title = "== {net^} =="
@@ -284,7 +291,7 @@ chapter = "{chapter^} {chapter_number}"
 new_contact = "New {contact}: {name}. See `contacts`."
 contact_state = "{name} is now {state}."
 new_message = "New {message}: {subject}. See `messages`."
-new_fragment = "New {fragment} in the {archives}: {title}."
+new_fragment = "New {fragment} in the {archives}: {title}. See `archives`."
 new_document = "New {document} in the {archives}: {title}. See `decrypt`."
 decision_rejected = "That option is not offered."
 budget = "Internal error: the story did not settle."

@@ -88,8 +88,8 @@ accept = "Accepter un {contract} proposé"
 contacts = "Lister les {contact}s connus"
 talk = "Parler à un {contact}"
 messages = "Voir la {inbox}"
-read = "Lire un {message}"
-archives = "Lister les {document}s et les {fragment}s détenus, ou en lire un"
+read = "Lire un {message} (les {archives} : `archives`)"
+archives = "Lister les {document}s et les {fragment}s détenus, ou en lire un (`archives 1`)"
 decrypt = "Déchiffrer un {document}"
 net = "Cartographier {net}, ou détailler un {site}"
 hack = "Lancer une {run} sur un {site} connu"
@@ -107,7 +107,7 @@ save = "Sauvegarder la partie dans un {slot}"
 "quests.usage" = "Usage : `quests [quête]`. Exemple : `quests m01`."
 "accept.usage" = "Usage : `accept <quête>`. Exemple : `accept s06`."
 "talk.usage" = "Usage : `talk <contact>`. Exemple : `talk echo7`."
-"read.usage" = "Usage : `read <message>`. Exemple : `read 1`."
+"read.usage" = "Usage : `read <message>`. Exemple : `read 1`. Pour les archives : `archives <document>`."
 "archives.usage" = "Usage : `archives [document]`. Exemple : `archives 1`."
 "decrypt.usage" = "Usage : `decrypt <document>`. Exemple : `decrypt 1`."
 "net.usage" = "Usage : `net [site]`. Exemple : `net localhost`."
@@ -160,6 +160,7 @@ dead = "disparu"
 [campaign.messages]
 title = "== {inbox^} =="
 empty = "La {inbox} est vide."
+hint = "Lire : `read <numéro ou nom>`. Les {archives} se lisent avec `archives`."
 
 [campaign.message]
 read = "lu"
@@ -168,6 +169,8 @@ unread = "non lu"
 [campaign.archives]
 title = "== {archives^} =="
 empty = "Les {archives} sont vides."
+hint = "Lire : `archives <numéro ou nom>`."
+hint_encrypted = "Un {document} chiffré se déchiffre d'abord : `decrypt <numéro ou nom>`."
 yields = "Une fois déchiffré, il a livré le {fragment} {title}."
 
 [campaign.archive]
@@ -178,7 +181,11 @@ decrypted = "déchiffré"
 
 [campaign.decrypt]
 done = "{document^} déchiffré : {title}."
-yield = "Nouveau {fragment} dans les {archives} : {title}."
+yield = "Nouveau {fragment} dans les {archives} : {title}. Voir `archives`."
+
+[campaign.read]
+in_archives = "{name} n'est pas un {message} : c'est dans les {archives}. Voir `archives {name}`."
+archives_hint = "Les {archives} se lisent avec `archives <numéro ou nom>`."
 
 [campaign.net]
 title = "== {net^} =="
@@ -285,7 +292,7 @@ chapter = "{chapter^} {chapter_number}"
 new_contact = "Nouveau {contact} : {name}. Voir `contacts`."
 contact_state = "{name} : {state}."
 new_message = "Nouveau {message} : {subject}. Voir `messages`."
-new_fragment = "Nouveau {fragment} dans les {archives} : {title}."
+new_fragment = "Nouveau {fragment} dans les {archives} : {title}. Voir `archives`."
 new_document = "Nouveau {document} dans les {archives} : {title}. Voir `decrypt`."
 decision_rejected = "Cette option n'est pas proposée."
 budget = "Erreur interne : l'histoire ne s'est pas stabilisée."

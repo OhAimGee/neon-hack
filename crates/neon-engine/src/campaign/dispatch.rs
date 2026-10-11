@@ -2,7 +2,7 @@
 
 use std::str::FromStr;
 
-use crate::command::{ArgRef, Availability, CommandSpec, HandledBy, Lookup};
+use crate::command::{ArgError, ArgRef, Availability, CommandSpec, HandledBy, Lookup, fold};
 use crate::content::{Content, Fact};
 use crate::event::Event;
 use crate::game::Game;
@@ -191,11 +191,35 @@ impl CampaignGame {
                 events.push(Event::error(reason));
                 None
             }
-            Lookup::BadArg { error, .. } => {
-                events.push(Event::error(error.text()));
+            Lookup::BadArg { spec, error } => {
+                self.bad_arg(spec, &error, events);
                 None
             }
             Lookup::Found { spec, args } => self.execute(spec, &args, events),
+        }
+    }
+
+    /// Says what is wrong with an argument. `read` is for messages, and a player who has
+    /// archives is easily led to try it on one: the answer then says where to look.
+    fn bad_arg(&self, spec: &CommandSpec, error: &ArgError, events: &mut Vec<Event>) {
+        let in_archives = |word: &str| {
+            self.state
+                .archive
+                .iter()
+                .any(|id| fold(id.as_str()) == fold(word))
+        };
+        if spec.name == "read"
+            && let ArgError::Unknown { word, .. } = error
+            && in_archives(word)
+        {
+            events.push(Event::error(
+                Text::new("campaign.read.in_archives").with_str("name", word.as_str()),
+            ));
+            return;
+        }
+        events.push(Event::error(error.text()));
+        if spec.name == "read" && !self.state.archive.is_empty() {
+            events.push(Event::system(Text::new("campaign.read.archives_hint")));
         }
     }
 

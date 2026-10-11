@@ -346,6 +346,8 @@ impl CampaignGame {
             ],
             rows,
         ));
+        // `read` is for these; the archives have their own command, which this line names.
+        events.push(Event::system(Text::new("campaign.messages.hint")));
     }
 
     pub(super) fn cmd_read(&mut self, args: &[ArgRef], events: &mut Vec<Event>) {
@@ -418,6 +420,17 @@ impl CampaignGame {
             ],
             rows,
         ));
+        // How to read what is listed, and what to do first with what is still encrypted.
+        events.push(Event::system(Text::new("campaign.archives.hint")));
+        let encrypted = self.state.archive.iter().any(|id| {
+            self.content
+                .readable(id)
+                .is_some_and(|def| def.kind == ReadableKind::Document)
+                && !self.state.missions.opened.contains(id)
+        });
+        if encrypted {
+            events.push(Event::system(Text::new("campaign.archives.hint_encrypted")));
+        }
     }
 
     fn read_archive(&mut self, id: &ReadableId, events: &mut Vec<Event>) {
