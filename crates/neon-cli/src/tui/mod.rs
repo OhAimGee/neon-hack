@@ -20,6 +20,7 @@ mod text;
 use std::io;
 use std::time::{Duration, Instant};
 
+use neon_engine::command::Capabilities;
 use neon_engine::{Game, Step};
 use ratatui::DefaultTerminal;
 use ratatui::crossterm::event::{self, Event, KeyEventKind};
@@ -71,9 +72,12 @@ pub(crate) fn run<'a>(
     options: Option<Host<'a>>,
     test_fault: Option<&str>,
 ) -> io::Result<()> {
+    // The interface runs `panel`: the game may now offer it.
+    game.set_capabilities(Capabilities::TUI);
     let mut app = App::new(game, renderer, first, persistence).with_motion(!reduce_motion);
     if let Some(options) = options {
-        app = app.with_options(options);
+        // Only the campaign has the presentation commands, and `panel` with them.
+        app = app.with_options(options).with_panel_command();
     }
     let (mut terminal, _guard) = term::enter()?;
     event_loop(&mut terminal, &mut app, test_fault.and_then(Fault::parse))

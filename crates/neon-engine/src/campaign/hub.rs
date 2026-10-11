@@ -11,7 +11,7 @@ use crate::prompt::Input;
 use crate::save::{SLOT_COUNT, SaveRequest};
 use crate::text::Text;
 
-use super::commands::{COMMANDS, CONTEXT, FRONTEND};
+use super::commands::{COMMANDS, CONTEXT};
 use super::dispatch::{arg_id, invalid};
 use super::keys;
 use super::play::band_text;
@@ -81,7 +81,7 @@ impl CampaignGame {
                     Text::new("campaign.help.col_effect"),
                 ],
                 CONTEXT,
-                FRONTEND,
+                self.frontend,
                 |spec| self.availability(spec),
             )),
             Some(name) => self.help_for(name, events),
@@ -93,7 +93,7 @@ impl CampaignGame {
         let lookup = COMMANDS.parse(
             name,
             CONTEXT,
-            FRONTEND,
+            self.frontend,
             |spec| self.availability(spec),
             &NoLists,
         );
@@ -699,7 +699,7 @@ impl CampaignGame {
     }
 }
 
-fn site_status_word(status: SiteStatus) -> Text {
+pub(super) fn site_status_word(status: SiteStatus) -> Text {
     Text::new(match status {
         SiteStatus::Unknown => "campaign.site_status.unknown",
         SiteStatus::Known => "campaign.site_status.known",

@@ -175,8 +175,8 @@ Trois paliers, calculés sur la taille **à chaque image** :
 
 | Palier | Taille | Contenu |
 |---|---|---|
-| Full | ≥ 100×28 | barre d'état, journal encadré, panneau de 32 colonnes permanent, saisie, barre d'aide |
-| Compact | ≥ 64×20 | idem sans encadrement du journal ; le panneau est un tiroir (`F2`, ou une commande `panel` à prévoir) |
+| Full | ≥ 100×28 | barre d'état, journal encadré, panneau de 30 colonnes permanent (masquable par `F2` ou `panel`), saisie, barre d'aide |
+| Compact | ≥ 64×20 | idem sans encadrement du journal ; le panneau est un tiroir posé sur la droite du journal (`F2`, ou la commande `panel`), fermé tant qu'on ne l'ouvre pas |
 | Trop petit | sinon | une phrase : « Terminal trop petit : 50×15. Minimum 64×20… » ; l'état de la partie est conservé |
 
 Rendu réel du spike à 100×30 (palette `mono`, anglais ; `TestBackend`, snapshot `insta` [E]) :
@@ -394,9 +394,9 @@ Deux conséquences : la palette `cvd` doit être **opaque** (sur fond blanc le j
 | ID | Exigence | Test | Spike |
 |---|---|---|---|
 | CLA-1 | Tout est faisable au clavier ; la souris n'ajoute rien | P | ✔ (périmètre du spike) |
-| CLA-2 | `Échap` ferme toujours la modale, puis le tiroir, puis revient au bas du journal : aucun piège | P | ✔ |
+| CLA-2 | `Échap` ferme toujours la modale, puis le tiroir, puis revient au bas du journal : aucun piège (tiroir, défilement, ligne, menu : l'ordre est testé) | P | ✔ |
 | CLA-3 | TAB complète dans la saisie, ne change jamais de focus (il n'y a qu'un champ) | U | ✔ |
-| CLA-4 | Chaque raccourci a une **commande** équivalente (`F2` ↔ `panel`) : certains terminaux ou claviers captent les touches de fonction | U | ○ |
+| CLA-4 | Chaque raccourci a une **commande** équivalente (`F2` ↔ `panel`) : certains terminaux ou claviers captent les touches de fonction | U | ○ (`F2` ↔ `panel` fait ; `Ctrl+P` ↔ `plain` et le défilement restent) |
 | CLA-5 | AltGr (`CONTROL\|ALT`) insère le caractère ; Ctrl seul reste un raccourci | U | ✔ |
 | CLA-6 | Ctrl+C quitte proprement, Ctrl+Z suspend et reprend (Unix) | P | ✔ |
 | CLA-7 | `help` liste les raccourcis ; aucun chord de plus de deux touches | U | ○ |

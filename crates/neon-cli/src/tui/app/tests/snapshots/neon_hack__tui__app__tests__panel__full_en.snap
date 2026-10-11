@@ -1,0 +1,33 @@
+---
+source: crates/neon-cli/src/tui/app/tests/panel.rs
+expression: "picture(&app, 100, 28)"
+---
+100x28
+ Neon │ Notoriety 0/100 (Discreet)
+╭Terminal────────────────────────────────────────────────────────────╮╭Panel───────────────────────╮
+│                                                                    ││Notoriety 0/100             │
+│Nexus Corp runs the city from its tower in sector 1. Down here, its ││[░░░░░░░░░░] Discreet       │
+│Aurora Dawn clinics fit a free implant, the Halcyon, and the        ││                            │
+│neighbors swear they have never rested so well.                     ││▸ Quests                    │
+│The corporations keep the sky, the underground keeps the shadows,   ││First Steps                 │
+│and the net keeps the rest. A deck, a connection and the habit of   ││- Open the journal (quests) │
+│staying awake: that is all it takes to be called a hacker.          ││- Read the help (help)      │
+│[Enter] to continue                                                 ││- Explore the net (net)     │
+│                                                                    ││- Check the status sheet    │
+│Encrypted channel #7: incoming connection.                          ││(status)                    │
+│ECHO-7 » Finally. For the record, I'm not a corp, not a cop and not ││- Talk to ECHO-7 (talk      │
+│a trap. I'm ECHO-7, and yours is the only deck in sector 7 that     ││echo7)                      │
+│still answers.                                                      ││- Breach the local station  │
+│ECHO-7 » Handle on file: Neon. Until you earn another name, you're a││(hack localhost)            │
+│rookie. Don't take it personally.                                   ││- Cover your tracks (laylow)│
+│ECHO-7 » I have a first job for you. Nothing dangerous: a walk      ││                            │
+│around your own deck. But first, the ropes.                         ││▸ The net                   │
+│Start the guided tutorial? ECHO-7 walks through the first commands, ││localhost: known            │
+│and `tutorial skip` ends it at any time. [Y/n] n                    ││                            │
+│Tutorial skipped. `tutorial restart` starts it later.               ││▸ Inventory                 │
+│New quest: First Steps in the Shadows                               ││Credits: 100                │
+│Type `help` to list the commands, then `quests` to read the first   ││No item yet.                │
+│quest.                                                              ││                            │
+╰────────────────────────────────────────────────────────────────────╯╰────────────────────────────╯
+>
+F2 panel | Tab complete | Ctrl+C quit | Up/Down history | PgUp/PgDn scroll

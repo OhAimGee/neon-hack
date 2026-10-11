@@ -20,6 +20,7 @@ mod hack;
 mod hub;
 mod keys;
 mod link;
+mod panel;
 mod play;
 mod prologue;
 mod resolver;
@@ -33,7 +34,7 @@ pub use state::{Band, CampaignState, Difficulty, SiteStatus};
 
 use thiserror::Error;
 
-use crate::command::Availability;
+use crate::command::{Availability, Capabilities};
 use crate::content::schema::QuestStatus;
 use crate::content::{Content, Fact};
 use crate::event::{Event, Gauge};
@@ -65,6 +66,9 @@ pub struct CampaignGame {
     /// A checkpoint is wanted at the end of this step (a main quest opened, a decision or an
     /// irreversible purchase is about to be made). Not saved.
     checkpoint: bool,
+    /// What the frontend that runs the game can do. Not saved: it belongs to the session, and
+    /// a game answers as a plain frontend would until it is told otherwise.
+    frontend: Capabilities,
 }
 
 impl CampaignGame {
@@ -81,6 +85,7 @@ impl CampaignGame {
             state: CampaignState::new(content, difficulty, seed),
             over: false,
             checkpoint: false,
+            frontend: Capabilities::PLAIN,
         })
     }
 
@@ -99,6 +104,7 @@ impl CampaignGame {
             state,
             over: false,
             checkpoint: false,
+            frontend: Capabilities::PLAIN,
         })
     }
 
@@ -212,8 +218,6 @@ impl Game for CampaignGame {
         let notoriety = self.state.notoriety();
         let mut band = play::band_text(Band::of(notoriety));
         keys::gloss(&mut band);
-        let mut objectives = self.view_objectives();
-        objectives.iter_mut().for_each(keys::gloss);
         View {
             player: self.state.handle.clone(),
             gauges: vec![GaugeReading {
@@ -222,8 +226,12 @@ impl Game for CampaignGame {
                 max: 100,
                 band,
             }],
-            objectives,
+            sections: self.panel_sections(),
         }
+    }
+
+    fn set_capabilities(&mut self, capabilities: Capabilities) {
+        self.frontend = capabilities;
     }
 
     fn complete(&self, line: &str) -> Vec<String> {
@@ -232,28 +240,6 @@ impl Game for CampaignGame {
 }
 
 impl CampaignGame {
-    /// The pending objectives of the active quests, for the side panel: the short title of
-    /// each quest, then what is left to do.
-    fn view_objectives(&self) -> Vec<Text> {
-        let c = self.content;
-        let mut lines = Vec::new();
-        for id in &self.state.quest_log {
-            if self.state.missions.status(id) != QuestStatus::Active {
-                continue;
-            }
-            lines.push(keys::quest_title_short(id));
-            for line in crate::content::eval::journal(c, &self.state.missions, id) {
-                if line.state == crate::content::eval::ObjectiveState::Pending && !line.optional {
-                    lines.push(
-                        Text::new("campaign.view.objective")
-                            .with_text("text", keys::quest_objective(id, line.index + 1)),
-                    );
-                }
-            }
-        }
-        lines
-    }
-
     /// A line the game says at the start of a session on a game under way.
     fn situation(&self) -> Vec<Event> {
         if self.state.handle.is_empty() {

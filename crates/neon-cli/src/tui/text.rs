@@ -112,6 +112,30 @@ pub(crate) fn head(text: &str, width: usize) -> String {
     kept
 }
 
+/// The first parts of `text`, cut at `separator`, that fit in `width` columns: whole parts or
+/// none, so that a shortcut is never shown cut in two. The first part is cut like [`head`]
+/// when it alone is too wide.
+pub(crate) fn segments(text: &str, separator: &str, width: usize) -> String {
+    let text = sanitize(text);
+    let mut kept = String::new();
+    for part in text.split(separator) {
+        let candidate = if kept.is_empty() {
+            part.to_owned()
+        } else {
+            format!("{kept}{separator}{part}")
+        };
+        if self::width(&candidate) > width {
+            break;
+        }
+        kept = candidate;
+    }
+    if kept.is_empty() {
+        head(&text, width)
+    } else {
+        kept
+    }
+}
+
 /// The part of a one-row text to show in `width` columns so that the cursor stays in sight,
 /// and the column of the cursor in what is shown. A text that fits is shown from its start;
 /// a longer one loses its first graphemes until the cursor, which needs a cell of its own,
@@ -203,6 +227,17 @@ mod tests {
         // A wide character can make the drop overshoot by one column.
         let (shown, column) = window("日本語日本語", 12, 5);
         assert!(column < 5 && width(&shown) <= 5, "{shown:?} {column}");
+    }
+
+    #[test]
+    fn segments_keep_whole_parts_only() {
+        let help = "Tab complete | F2 panel | Ctrl+C quit";
+        assert_eq!(segments(help, " | ", 80), help);
+        assert_eq!(segments(help, " | ", 23), "Tab complete | F2 panel");
+        assert_eq!(segments(help, " | ", 22), "Tab complete");
+        // Too narrow for the first part: it is cut, there is nothing better to show.
+        assert_eq!(segments(help, " | ", 5), "Tab c");
+        assert_eq!(segments("", " | ", 5), "");
     }
 
     #[test]

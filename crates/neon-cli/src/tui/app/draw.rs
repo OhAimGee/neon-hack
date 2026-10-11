@@ -20,10 +20,10 @@ use super::{
 };
 use crate::palette::{Accent, Ansi, Hue, Palette, Style as PaletteStyle};
 use crate::render::LineKind;
-use crate::tui::text::{head, width, window, wrap};
+use crate::tui::text::{head, segments, window, wrap};
 
-/// Width of the bar in the panel, without its brackets.
-const BAR_WIDTH: usize = 10;
+/// What separates the shortcuts of the help line.
+const HELP_SEPARATOR: &str = " | ";
 
 /// Borders made of characters every terminal and every code page has.
 const ASCII_BORDER: border::Set<'static> = border::Set {
@@ -127,24 +127,35 @@ impl App<'_> {
         );
 
         if with_panel {
-            let [log_area, panel_area] =
-                Layout::horizontal([Constraint::Min(20), Constraint::Length(PANEL_WIDTH)])
-                    .areas(body_area);
+            // The permanent panel can be hidden (`panel`, F2): the log then takes its room.
+            let (log_area, panel_area) = if self.panel.visible {
+                let [log_area, panel_area] =
+                    Layout::horizontal([Constraint::Min(20), Constraint::Length(PANEL_WIDTH)])
+                        .areas(body_area);
+                (log_area, Some(panel_area))
+            } else {
+                (body_area, None)
+            };
             let block =
                 self.frame_block(&Text::new("ui.tui.log_title").with_term("terminal", "terminal"));
             let inner = block.inner(log_area);
             frame.render_widget(block, log_area);
             self.draw_log(frame, inner);
             self.draw_staging(frame, inner);
-            self.draw_panel(frame, panel_area, &view);
+            if let Some(panel_area) = panel_area {
+                self.draw_panel(frame, panel_area, &view);
+            }
         } else {
             self.draw_log(frame, body_area);
             self.draw_staging(frame, body_area);
+            if self.panel.drawer {
+                self.draw_drawer(frame, body_area, &view);
+            }
         }
         self.draw_prompt(frame, prompt_area, prompt);
         let help = self.renderer.text(&Text::new("ui.tui.help"));
         frame.render_widget(
-            Paragraph::new(head(&help, usize::from(area.width)))
+            Paragraph::new(segments(&help, HELP_SEPARATOR, usize::from(area.width)))
                 .style(Style::default().add_modifier(Modifier::DIM)),
             help_area,
         );
@@ -190,68 +201,6 @@ impl App<'_> {
             reading.max,
             self.renderer.text(&reading.band),
         )
-    }
-
-    /// The permanent panel of the full layout: for now the gauges, named and numbered, and
-    /// the objectives. This is the one place the panel's content is decided.
-    fn draw_panel(&self, frame: &mut Frame<'_>, area: Rect, view: &View) {
-        let block = self.frame_block(&Text::new("ui.tui.panel_title").with_term("panel", "panel"));
-        let inner = block.inner(area);
-        let inner_width = usize::from(inner.width);
-        let mut lines: Vec<TuiLine<'static>> = Vec::new();
-        for reading in &view.gauges {
-            lines.push(TuiLine::from(Span::styled(
-                head(
-                    &format!(
-                        "{} {}/{}",
-                        self.renderer.text(&Text::new(reading.gauge.name_key())),
-                        reading.value,
-                        reading.max
-                    ),
-                    inner_width,
-                ),
-                Style::default().add_modifier(Modifier::BOLD),
-            )));
-            let bar = self.bar(reading.value, reading.max);
-            let band = self.renderer.text(&reading.band);
-            if width(&format!("{bar} {band}")) <= inner_width {
-                // The bar takes the colour of the pressure; the word next to it says the same.
-                let palette = self.renderer.palette();
-                let pressure = to_style(palette.pressure(reading.value, reading.max), &palette);
-                lines.push(TuiLine::from(vec![
-                    Span::styled(bar, pressure),
-                    Span::raw(format!(" {band}")),
-                ]));
-            } else {
-                for row in wrap(&format!("{bar} {band}"), inner_width) {
-                    lines.push(TuiLine::from(row));
-                }
-            }
-            lines.push(TuiLine::default());
-        }
-        for objective in &view.objectives {
-            for row in wrap(&self.renderer.text(objective), inner_width) {
-                lines.push(TuiLine::from(row));
-            }
-        }
-        frame.render_widget(Paragraph::new(lines).block(block), area);
-    }
-
-    fn bar(&self, value: i32, max: i32) -> String {
-        let (filled_char, empty_char) = if self.renderer.mode.ascii {
-            ('#', '.')
-        } else {
-            ('█', '░')
-        };
-        let max = usize::try_from(max.max(1)).unwrap_or(1);
-        let value = usize::try_from(value.max(0)).unwrap_or(0).min(max);
-        // At least one cell as soon as there is something to show.
-        let filled = (value * BAR_WIDTH / max).max(usize::from(value > 0));
-        let mut bar = String::from("[");
-        bar.extend(std::iter::repeat_n(filled_char, filled));
-        bar.extend(std::iter::repeat_n(empty_char, BAR_WIDTH - filled));
-        bar.push(']');
-        bar
     }
 
     // ---- The log -------------------------------------------------------------------------

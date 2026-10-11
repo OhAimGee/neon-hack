@@ -22,4 +22,4 @@ Type `help` to list the commands, then `quests` to read the
 first quest.
 status  save
 > s
-Tab complete | Up/Down history | PgUp/PgDn scroll | Ctrl+C quit
+F2 panel | Tab complete | Ctrl+C quit | Up/Down history

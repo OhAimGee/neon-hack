@@ -11,7 +11,7 @@ use crate::save::SaveRequest;
 use crate::text::Text;
 
 use super::CampaignGame;
-use super::commands::{COMMANDS, CONTEXT, FRONTEND, WIRED};
+use super::commands::{COMMANDS, CONTEXT, WIRED};
 use super::resolver::Lists;
 use super::state::{CampaignState, DEFAULT_HANDLE, Flow, HANDLE_MAX_CHARS};
 use super::tutorial::Completion;
@@ -125,14 +125,14 @@ impl CampaignGame {
         let open = |spec: &CommandSpec| self.availability(spec);
         match self.prompt() {
             Prompt::Command if !line.contains(char::is_whitespace) => {
-                COMMANDS.complete(line, CONTEXT, FRONTEND, open)
+                COMMANDS.complete(line, CONTEXT, self.frontend, open)
             }
             Prompt::Command => {
                 let lists = Lists {
                     c: self.content,
                     s: &self.state,
                 };
-                COMMANDS.complete_args(line, CONTEXT, FRONTEND, open, &lists)
+                COMMANDS.complete_args(line, CONTEXT, self.frontend, open, &lists)
             }
             Prompt::Choice(choice) => {
                 let prefix = line.to_ascii_lowercase();
@@ -168,7 +168,7 @@ impl CampaignGame {
             COMMANDS.parse(
                 line,
                 CONTEXT,
-                FRONTEND,
+                self.frontend,
                 |spec| self.availability(spec),
                 &lists,
             )

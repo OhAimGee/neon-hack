@@ -30,4 +30,4 @@ expression: "picture(&app, 100, 28)"
 │                                                                    ││                            │
 ╰────────────────────────────────────────────────────────────────────╯╰────────────────────────────╯
 >
-Tab compléter | Haut/Bas historique | PgUp/PgDn défiler | Ctrl+C quitter
+F2 panneau | Tab compléter | Ctrl+C quitter | Haut/Bas historique | PgUp/PgDn défiler

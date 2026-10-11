@@ -385,7 +385,7 @@ fn a_new_game_opens_full_screen_with_the_layout_of_the_wide_tier() {
         rows[1].starts_with("╭Terminal") && rows[1].contains("╭Panel"),
         "{rows:#?}"
     );
-    assert!(rows[27].starts_with("Tab complete"), "{rows:#?}");
+    assert!(rows[27].starts_with("F2 panel"), "{rows:#?}");
     assert!(session.contains("== N E O N   H A C K =="));
     assert_eq!(session.input_row(), "Handle [Neon]:");
     // The cursor is on the input line, after the label.
@@ -471,10 +471,40 @@ fn the_compact_tier_at_64x20_has_no_panel() {
         !session.contains('╭'.to_string().as_str()),
         "no boxes in the compact tier"
     );
-    assert!(rows[19].starts_with("Tab complete"));
+    assert!(rows[19].starts_with("F2 panel"), "{:?}", rows[19]);
     assert_eq!(session.input_row(), ">");
     session.send(b"help\r");
-    session.wait_text("> help");
+    // The table of commands now fills the log: its title is what shows the command ran.
+    session.wait_text("Commands");
+    let status = quit_with_control_c(&mut session);
+    assert!(status.success());
+    assert_restored(&session);
+}
+
+#[test]
+fn f2_and_the_panel_command_show_and_hide_the_panel_at_both_tiers() {
+    // F2 as an xterm sends it.
+    const F2: &[u8] = b"\x1bOQ";
+    let mut session = at_command_line(28, 100);
+    session.wait_text("Inventory");
+    session.send(F2);
+    session.wait_for("the panel hidden", |s| !s.contains("Inventory"));
+    session.type_line("panel");
+    session.wait_text("Panel shown.");
+    session.wait_text("Inventory");
+    let status = quit_with_control_c(&mut session);
+    assert!(status.success());
+    assert_restored(&session);
+
+    let mut session = at_command_line(20, 64);
+    assert!(!session.contains("Inventory"));
+    session.send(F2);
+    session.wait_text("Inventory");
+    // Escape closes the drawer and keeps the game where it was.
+    session.send(ESCAPE);
+    session.wait_for("the drawer closed", |s| !s.contains("Inventory"));
+    session.type_line("panel");
+    session.wait_text("Inventory");
     let status = quit_with_control_c(&mut session);
     assert!(status.success());
     assert_restored(&session);
@@ -489,7 +519,7 @@ fn resizing_redraws_every_tier_and_loses_nothing() {
 
     session.resize(20, 64);
     session.wait_for("the compact tier", |s| {
-        !s.contains("Panel") && s.rows()[19].starts_with("Tab complete")
+        !s.contains("Panel") && s.rows()[19].starts_with("F2 panel")
     });
     assert_eq!(session.input_row(), "> sta", "the typed line is kept");
 
@@ -963,7 +993,7 @@ fn options_open_in_the_log_and_the_language_changes_the_whole_screen() {
     session.wait_text("== Settings ==");
     assert!(session.contains("reduce_motion"));
     assert!(
-        session.rows()[27].starts_with("Tab complete"),
+        session.rows()[27].starts_with("F2 panel"),
         "{:#?}",
         session.rows()
     );

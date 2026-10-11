@@ -370,11 +370,15 @@ impl Player {
                     said.push_str(&render_event(event, catalog, *mode));
                 }
                 said.push_str(&render_prompt(&step.prompt, catalog, *mode));
-                // The side panel reads the view: the objectives and the gauge's band.
+                // The side panel reads the view: its sections and the gauge's band.
                 let view = self.game.view();
                 for text in view
-                    .objectives
+                    .sections
                     .iter()
+                    .flat_map(|section| {
+                        std::iter::once(&section.title)
+                            .chain(section.rows.iter().map(|row| &row.text))
+                    })
                     .chain(view.gauges.iter().map(|gauge| &gauge.band))
                 {
                     said.push_str(&render(text, catalog, *mode));

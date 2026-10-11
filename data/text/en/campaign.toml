@@ -268,6 +268,19 @@ active = "In progress: {title}"
 [campaign.view]
 objective = "- {text}"
 
+[campaign.panel]
+quests = "{quest^}s"
+net = "{net^}"
+inventory = "Inventory"
+unread = "To read"
+no_quest = "No {quest} under way."
+no_site = "No {site} known yet."
+no_item = "No item yet."
+site = "{name}: {status}"
+objective_progress = "- {text} ({have}/{need})"
+messages = "{n} unread {n|{message}|{message}s}"
+archives = "{n} to open in the {archives}"
+
 [campaign.alert]
 band_up = "{notoriety} up: {band}."
 band_down = "{notoriety} down: {band}."

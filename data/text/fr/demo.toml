@@ -71,6 +71,9 @@ bye = "Au revoir, {name}."
 [demo]
 unknown_command = "Commande inconnue : {command}"
 
+[demo.panel]
+objectives = "Objectifs"
+
 [demo.objective]
 deck = "Acheter l'amélioration du deck ({price} {price|crédit|crédits})."
 trace = "Gardez votre trace sous {limit}."

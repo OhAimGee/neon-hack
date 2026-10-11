@@ -48,7 +48,10 @@ too_small = "Terminal too small ({width}x{height}): at least {min_width}x{min_he
 press_key = "Press any key to leave."
 log_title = "{terminal^}"
 panel_title = "{panel^}"
-help = "Tab complete | Up/Down history | PgUp/PgDn scroll | Ctrl+C quit"
+panel_more = "... {rows} more {rows|row|rows}"
+panel_shown = "{panel^} shown."
+panel_hidden = "{panel^} hidden."
+help = "F2 panel | Tab complete | Ctrl+C quit | Up/Down history | PgUp/PgDn scroll"
 scrolled = "[Scrolled back: {rows} {rows|line|lines} below. End or Esc to return.]"
 
 [ui.tui.fx]
