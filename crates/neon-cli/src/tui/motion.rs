@@ -35,6 +35,16 @@ const HACK_CURVE: [(f64, f64); 6] = [
     (1.0, 1.0),
 ];
 const LAYLOW_CURVE: [(f64, f64); 4] = [(0.0, 0.0), (0.3, 0.35), (0.7, 0.75), (1.0, 1.0)];
+/// Decryption: a quick look at the header, then the long work on the blocks.
+const DECRYPT_CURVE: [(f64, f64); 5] = [
+    (0.0, 0.0),
+    (0.15, 0.15),
+    (0.40, 0.35),
+    (0.85, 0.90),
+    (1.0, 1.0),
+];
+/// A purchase: the card is read, the amount goes through, the receipt comes back.
+const BUY_CURVE: [(f64, f64); 4] = [(0.0, 0.0), (0.25, 0.30), (0.75, 0.85), (1.0, 1.0)];
 
 /// What a staging needs to be drawn: the effect itself, and the notoriety it moves.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -66,6 +76,8 @@ impl Staging {
         match self.effect {
             Effect::Hack { .. } => Duration::from_millis(1800),
             Effect::Laylow { .. } => Duration::from_millis(1400),
+            Effect::Decrypt { .. } => Duration::from_millis(1600),
+            Effect::Buy { .. } => Duration::from_millis(1200),
         }
         .min(MAX_DURATION)
     }
@@ -83,6 +95,8 @@ impl Staging {
         match self.effect {
             Effect::Hack { .. } => &HACK_CURVE,
             Effect::Laylow { .. } => &LAYLOW_CURVE,
+            Effect::Decrypt { .. } => &DECRYPT_CURVE,
+            Effect::Buy { .. } => &BUY_CURVE,
         }
     }
 
@@ -151,6 +165,23 @@ impl Staging {
         Some(value.round() as i32)
     }
 
+    /// The credits left on the account, on their way down while a purchase goes through:
+    /// the balance before at the start, the balance after once the bar is full.
+    pub(crate) fn balance(&self) -> Option<u32> {
+        let Effect::Buy { price, balance, .. } = self.effect else {
+            return None;
+        };
+        let paid = filled(
+            self.progress(),
+            usize::try_from(price).unwrap_or(usize::MAX),
+        );
+        Some(
+            balance
+                .saturating_add(price)
+                .saturating_sub(u32::try_from(paid).unwrap_or(u32::MAX)),
+        )
+    }
+
     /// The face of the noise: it changes every [`NOISE_STEP_MS`].
     fn noise_face(&self) -> u64 {
         u64::try_from(self.elapsed.as_millis() / NOISE_STEP_MS).unwrap_or(u64::MAX)
@@ -159,10 +190,11 @@ impl Staging {
     /// What identifies this staging, so that two intrusions do not show the same noise.
     fn seed(&self) -> u64 {
         match &self.effect {
-            Effect::Hack { site, .. } => site.bytes().fold(0xcbf2_9ce4_8422_2325, |hash, byte| {
-                (hash ^ u64::from(byte)).wrapping_mul(0x0100_0000_01b3)
-            }),
+            Effect::Hack { site, .. } => hash(site),
             Effect::Laylow { cooling } => 0x9e37_79b9 ^ u64::from(*cooling),
+            // Two documents, or two purchases, do not show the same figures.
+            Effect::Decrypt { document, .. } => hash(&format!("{document:?}")),
+            Effect::Buy { item, price, .. } => hash(&format!("{item:?}")) ^ u64::from(*price),
         }
     }
 
@@ -191,6 +223,13 @@ impl Staging {
         }
         Noise { locked, live }
     }
+}
+
+/// A hash of a text (FNV-1a), to tell one staging from another.
+fn hash(text: &str) -> u64 {
+    text.bytes().fold(0xcbf2_9ce4_8422_2325, |hash, byte| {
+        (hash ^ u64::from(byte)).wrapping_mul(0x0100_0000_01b3)
+    })
 }
 
 /// How many of `cells` cells `progress` (0 to 1) fills, rounded down: a bar is never fuller

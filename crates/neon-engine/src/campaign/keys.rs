@@ -4,7 +4,7 @@
 use crate::content::ids::{
     ChoiceId, ContactId, DecisionId, EndingId, ItemId, QuestId, ReadableId, ServiceId, TopicId,
 };
-use crate::event::{Event, Table};
+use crate::event::{Effect, Event, Table};
 use crate::prompt::{Choice, Prompt};
 use crate::text::{Arg, Text};
 
@@ -178,7 +178,10 @@ pub(super) fn gloss_event(event: &mut Event) {
             columns.iter_mut().for_each(gloss);
             rows.iter_mut().flatten().for_each(gloss);
         }
-        Event::Effect(_) | Event::Break => {}
+        Event::Effect(Effect::Decrypt { document: text, .. } | Effect::Buy { item: text, .. }) => {
+            gloss(text);
+        }
+        Event::Effect(Effect::Hack { .. } | Effect::Laylow { .. }) | Event::Break => {}
     }
 }
 

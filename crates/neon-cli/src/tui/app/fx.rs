@@ -43,6 +43,19 @@ const HACK_PHASE_KEYS: [&str; 5] = [
     "ui.tui.fx.hack.phase.4",
     "ui.tui.fx.hack.phase.5",
 ];
+/// What the decryption is doing, step by step.
+const DECRYPT_PHASE_KEYS: [&str; 4] = [
+    "ui.tui.fx.decrypt.phase.1",
+    "ui.tui.fx.decrypt.phase.2",
+    "ui.tui.fx.decrypt.phase.3",
+    "ui.tui.fx.decrypt.phase.4",
+];
+/// What the purchase is doing, step by step.
+const BUY_PHASE_KEYS: [&str; 3] = [
+    "ui.tui.fx.buy.phase.1",
+    "ui.tui.fx.buy.phase.2",
+    "ui.tui.fx.buy.phase.3",
+];
 /// What the cover is doing, step by step.
 const LAYLOW_PHASE_KEYS: [&str; 3] = [
     "ui.tui.fx.laylow.phase.1",
@@ -87,6 +100,14 @@ impl App<'_> {
             Effect::Laylow { cooling } => (
                 Text::new("ui.tui.fx.laylow.title"),
                 self.laylow_pieces(staging, *cooling, inner_width),
+            ),
+            Effect::Decrypt { document, fragment } => (
+                Text::new("ui.tui.fx.decrypt.title").with_text("name", document.clone()),
+                self.decrypt_pieces(staging, *fragment, inner_width),
+            ),
+            Effect::Buy { item, price, .. } => (
+                Text::new("ui.tui.fx.buy.title").with_text("name", item.clone()),
+                self.buy_pieces(staging, item, *price, inner_width),
             ),
         };
         // Room for the borders, then the rows that matter most.
@@ -181,6 +202,75 @@ impl App<'_> {
                 .with_int("cooling", i64::from(cooling))
         } else {
             Text::new(phase_key(&LAYLOW_PHASE_KEYS, staging.phase()))
+        };
+        pieces.push(self.phase_piece(&phase, staging.is_done(), width));
+        pieces.extend(self.noise_pieces(staging, width));
+        pieces.push(self.hint_piece(width));
+        pieces
+    }
+
+    fn decrypt_pieces(&self, staging: &Staging, fragment: bool, width: usize) -> Vec<Piece> {
+        let status_key = if staging.is_done() {
+            "ui.tui.fx.decrypt.status_done"
+        } else {
+            "ui.tui.fx.decrypt.status"
+        };
+        let status = Text::new(status_key).with_int("percent", i64::from(staging.percent()));
+        let mut pieces = self.status_pieces(&status, width);
+        pieces.push(blank(1));
+        pieces.push(self.bar_piece(staging, width));
+        let phase = if staging.is_done() {
+            let key = if fragment {
+                "ui.tui.fx.decrypt.done_fragment"
+            } else {
+                "ui.tui.fx.decrypt.done"
+            };
+            Text::new(key)
+                .with_term("document", "document")
+                .with_term("fragment", "fragment")
+                .with_term("archives", "archives")
+        } else {
+            Text::new(phase_key(&DECRYPT_PHASE_KEYS, staging.phase()))
+        };
+        pieces.push(self.phase_piece(&phase, staging.is_done(), width));
+        pieces.extend(self.noise_pieces(staging, width));
+        pieces.push(self.hint_piece(width));
+        pieces
+    }
+
+    fn buy_pieces(&self, staging: &Staging, item: &Text, price: u32, width: usize) -> Vec<Piece> {
+        let status_key = if staging.is_done() {
+            "ui.tui.fx.buy.status_done"
+        } else {
+            "ui.tui.fx.buy.status"
+        };
+        let status = Text::new(status_key).with_int("percent", i64::from(staging.percent()));
+        let mut pieces = self.status_pieces(&status, width);
+        pieces.push(blank(1));
+        pieces.push(self.bar_piece(staging, width));
+        let credits = |amount: u32| {
+            Text::new("campaign.price")
+                .with_int("price", i64::from(amount))
+                .with_term("credit", "credit")
+        };
+        let debit = Text::new("ui.tui.fx.buy.debit").with_text("price", credits(price));
+        let mut rows = vec![debit];
+        if let Some(balance) = staging.balance() {
+            rows.push(Text::new("ui.tui.fx.buy.balance").with_text("balance", credits(balance)));
+        }
+        for row in rows {
+            pieces.push(Piece {
+                line: TuiLine::from(Span::styled(
+                    head(&self.renderer.text(&row), width),
+                    self.accent_style(Accent::Threat),
+                )),
+                keep: 1,
+            });
+        }
+        let phase = if staging.is_done() {
+            Text::new("campaign.buy.done").with_text("name", item.clone())
+        } else {
+            Text::new(phase_key(&BUY_PHASE_KEYS, staging.phase()))
         };
         pieces.push(self.phase_piece(&phase, staging.is_done(), width));
         pieces.extend(self.noise_pieces(staging, width));

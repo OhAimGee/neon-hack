@@ -684,6 +684,12 @@ fn a_document_is_decrypted_from_the_list_and_gives_a_fragment() {
     let said = driver.line("decrypt 1");
     assert!(said.contains("Document decrypted: "), "{said}");
     assert!(said.contains("New fragment in the archives: "), "{said}");
+    // The staging carries the title the messages give, and says a fragment came of it.
+    let [Effect::Decrypt { document, fragment }] = effects(&driver)[..] else {
+        panic!("one decryption: {:?}", driver.last.events);
+    };
+    assert!(*fragment);
+    assert!(said.contains(&render_cell(document)), "{said}");
     let said = driver.line("archives");
     assert!(
         said.contains("[1] doc_phase2 - ") && said.contains("decrypted"),
@@ -700,7 +706,9 @@ fn a_document_is_decrypted_from_the_list_and_gives_a_fragment() {
             .contains("[2] f05 - Intercepted Transmission - read")
     );
     assert!(driver.line("decrypt 1").contains("already decrypted"));
+    assert!(effects(&driver).is_empty(), "a refusal stages nothing");
     assert!(driver.line("decrypt 2").contains("not encrypted"));
+    assert!(effects(&driver).is_empty());
 }
 
 #[test]
@@ -947,9 +955,23 @@ fn a_purchase_is_confirmed_after_a_checkpoint_and_cannot_be_repeated() {
     let said = driver.line("y");
     assert!(said.contains("[Reward] Bought: Ghost Protocol."), "{said}");
     assert_eq!(driver.credits(), credits - 80);
+    // The staging says what was paid and what is left, which is what the account now holds.
+    let [
+        Effect::Buy {
+            item,
+            price,
+            balance,
+        },
+    ] = effects(&driver)[..]
+    else {
+        panic!("one purchase: {:?}", driver.last.events);
+    };
+    assert_eq!((*price, *balance), (80, credits - 80));
+    assert!(said.contains(&render_cell(item)), "{said}");
     assert_eq!(driver.saves.last(), Some(&SaveRequest::Autosave));
     let said = driver.line("buy 1");
     assert!(driver.errored() && said.contains("owned"), "{said}");
+    assert!(effects(&driver).is_empty());
     assert_eq!(driver.game.state.missions.owned.len(), 1);
 }
 

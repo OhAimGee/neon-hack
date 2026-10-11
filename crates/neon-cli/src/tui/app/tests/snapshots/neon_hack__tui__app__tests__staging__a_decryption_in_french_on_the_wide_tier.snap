@@ -1,0 +1,33 @@
+---
+source: crates/neon-cli/src/tui/app/tests/staging.rs
+expression: "picture(&app, 100, 28)"
+---
+100x28
+ Neon
+╭Terminal────────────────────────────────────────────────────────────╮╭Panneau─────────────────────╮
+│> decrypt                                                           ││                            │
+│                                                                    ││                            │
+│                                                                    ││                            │
+│                                                                    ││                            │
+│                                                                    ││                            │
+│                                                                    ││                            │
+│                                                                    ││                            │
+│   ╭Déchiffrement : Personnel register──────────────────────────╮   ││                            │
+│   │Déchiffrement en cours, progression 61 %                    │   ││                            │
+│   │                                                            │   ││                            │
+│   │█████████████████████████████████░░░░░░░░░░░░░░░░░░░░░  61 %│   ││                            │
+│   │▸ Déchiffrement des blocs                                   │   ││                            │
+│   │8B F6 2F 57 54 72 D9 F8 E8 8B 8F DC 9F 79 AF 55 05 7D 1E EC │   ││                            │
+│   │42 7E F6 F0 97 19 9A 91 AD 22 64 C7 68 CA AB 37 C6 2A D7 3F │   ││                            │
+│   │Une touche pour passer.                                     │   ││                            │
+│   ╰────────────────────────────────────────────────────────────╯   ││                            │
+│                                                                    ││                            │
+│                                                                    ││                            │
+│                                                                    ││                            │
+│                                                                    ││                            │
+│                                                                    ││                            │
+│                                                                    ││                            │
+│                                                                    ││                            │
+╰────────────────────────────────────────────────────────────────────╯╰────────────────────────────╯
+>
+Tab compléter | Haut/Bas historique | PgUp/PgDn défiler | Ctrl+C quitter

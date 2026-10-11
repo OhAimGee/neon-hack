@@ -90,6 +90,31 @@ done = "Tracks covered, {notoriety} -{cooling}."
 2 = "Scrambling the relays"
 3 = "New cover in place"
 
+[ui.tui.fx.decrypt]
+title = "Decrypting: {name}"
+status = "Decryption in progress, {percent}% done"
+status_done = "Decryption complete, {percent}% done"
+done = "{document^} decrypted."
+done_fragment = "{document^} decrypted, new {fragment} in the {archives}."
+
+[ui.tui.fx.decrypt.phase]
+1 = "Reading the header"
+2 = "Looking for the key"
+3 = "Decrypting the blocks"
+4 = "Checking integrity"
+
+[ui.tui.fx.buy]
+title = "Purchase: {name}"
+status = "Purchase in progress, {percent}% done"
+status_done = "Purchase complete, {percent}% done"
+debit = "Debit: {price}"
+balance = "Balance: {balance}"
+
+[ui.tui.fx.buy.phase]
+1 = "Checking the balance"
+2 = "Sending the payment"
+3 = "Receipt confirmed"
+
 [ui.fallback]
 too_small = "The terminal is too small ({width}x{height}, at least {min_width}x{min_height} needed): using the line-by-line interface."
 no_terminal = "The full-screen interface needs a terminal: using the line-by-line interface."

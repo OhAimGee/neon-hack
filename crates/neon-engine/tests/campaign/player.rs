@@ -516,7 +516,8 @@ fn step_texts(step: &Step) -> Vec<&Text> {
             }
             Event::Changed { band, .. } => texts.push(band),
             Event::Decor { alt, .. } => texts.push(alt),
-            Event::Effect(_) | Event::Break => {}
+            Event::Effect(effect) => texts.extend(effect.texts()),
+            Event::Break => {}
         }
     }
     match &step.prompt {

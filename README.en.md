@@ -88,7 +88,7 @@ In a real terminal that is big enough, the game opens **full screen** (status ba
 | `--plain` | line-by-line interface, even on a terminal |
 | `--tui` | full-screen interface, with a word on `stderr` if the terminal cannot show it |
 | `--screen-reader` | screen-reader mode: line-by-line interface, no symbols to spell out |
-| `--reduce-motion` | no animation in the full-screen interface (the `hack` and `laylow` scenes): the result shows at once; screen-reader mode implies it |
+| `--reduce-motion` | no animation in the full-screen interface (the `hack`, `laylow`, `decrypt` and purchase scenes): the result shows at once; screen-reader mode implies it |
 | `--ascii` | 7-bit ASCII: symbols, accents and typed text transliterated, no decoration |
 | `--lang fr` / `--lang en` | language of the texts (English by default) |
 | `--verbosity brief\|normal\|full` | how much atmosphere is shown |

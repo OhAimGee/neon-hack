@@ -17,6 +17,32 @@ fn laylow() -> Staging {
     Staging::new(Effect::Laylow { cooling: 10 }, Some((30, 20)))
 }
 
+fn decrypt() -> Staging {
+    Staging::new(
+        Effect::Decrypt {
+            document: neon_engine::text::Text::new("ui.raw").with_str("value", "Ledger"),
+            fragment: true,
+        },
+        None,
+    )
+}
+
+fn buy() -> Staging {
+    Staging::new(
+        Effect::Buy {
+            item: neon_engine::text::Text::new("ui.raw").with_str("value", "Ghost Protocol"),
+            price: 80,
+            balance: 420,
+        },
+        None,
+    )
+}
+
+/// Every kind of scene there is.
+fn every_scene() -> [Staging; 4] {
+    [hack("localhost"), laylow(), decrypt(), buy()]
+}
+
 /// Steps through a whole staging at the pace of the frames, collecting what each frame shows.
 fn frames(mut staging: Staging) -> Vec<Staging> {
     let mut all = vec![staging.clone()];
@@ -29,7 +55,7 @@ fn frames(mut staging: Staging) -> Vec<Staging> {
 
 #[test]
 fn a_staging_never_outlasts_the_ceiling() {
-    for staging in [hack("localhost"), laylow()] {
+    for staging in every_scene() {
         assert!(staging.duration() <= MAX_DURATION);
         let mut staging = staging;
         staging.tick(Duration::from_secs(3600));
@@ -40,7 +66,7 @@ fn a_staging_never_outlasts_the_ceiling() {
 
 #[test]
 fn the_bar_starts_empty_ends_full_and_never_goes_back() {
-    for staging in [hack("localhost"), laylow()] {
+    for staging in every_scene() {
         let all = frames(staging);
         let first = all.first().unwrap();
         let last = all.last().unwrap();
@@ -74,6 +100,32 @@ fn the_phases_follow_the_curve_and_the_last_one_is_reached() {
         assert!(phases.contains(&wanted), "phase {wanted} is never shown");
     }
     assert_eq!(laylow().phases(), 3);
+    assert_eq!(decrypt().phases(), 4);
+    assert_eq!(buy().phases(), 3);
+    // Every step of every scene is reached.
+    for scene in [laylow(), decrypt(), buy()] {
+        let phases: Vec<Phase> = frames(scene.clone()).iter().map(Staging::phase).collect();
+        for wanted in 1..=scene.phases() {
+            assert!(
+                phases.contains(&wanted),
+                "{:?}: phase {wanted}",
+                scene.effect()
+            );
+        }
+    }
+}
+
+#[test]
+fn the_balance_goes_down_by_the_price_while_the_purchase_goes_through() {
+    let all = frames(buy());
+    assert_eq!(all.first().unwrap().balance(), Some(500));
+    assert_eq!(all.last().unwrap().balance(), Some(420));
+    for pair in all.windows(2) {
+        assert!(pair[0].balance() >= pair[1].balance(), "it only goes down");
+    }
+    // Only a purchase has a balance.
+    assert_eq!(hack("x").balance(), None);
+    assert_eq!(decrypt().balance(), None);
 }
 
 #[test]

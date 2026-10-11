@@ -88,7 +88,7 @@ Dans un vrai terminal assez grand, le jeu s'ouvre en **plein écran** (barre d'�
 | `--plain` | interface ligne par ligne, même sur un terminal |
 | `--tui` | interface plein écran, et un mot sur `stderr` si le terminal ne peut pas la montrer |
 | `--screen-reader` | mode lecteur d'écran : interface ligne par ligne, sans symboles à épeler |
-| `--reduce-motion` | pas d'animation en plein écran (les scènes de `hack` et de `laylow`) : le résultat s'affiche tout de suite ; le mode lecteur d'écran l'impose |
+| `--reduce-motion` | pas d'animation en plein écran (les scènes de `hack`, `laylow`, `decrypt` et d'un achat) : le résultat s'affiche tout de suite ; le mode lecteur d'écran l'impose |
 | `--ascii` | ASCII 7 bits : symboles, accents et texte tapé translittérés, sans décoration |
 | `--lang fr` / `--lang en` | langue des textes (anglais par défaut) |
 | `--verbosity brief\|normal\|full` | quantité d'ambiance affichée |

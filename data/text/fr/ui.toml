@@ -90,6 +90,31 @@ done = "Pistes brouillées, {notoriety} -{cooling}."
 2 = "Brouillage des relais"
 3 = "Fausse identité en place"
 
+[ui.tui.fx.decrypt]
+title = "Déchiffrement : {name}"
+status = "Déchiffrement en cours, progression {percent} %"
+status_done = "Déchiffrement terminé, progression {percent} %"
+done = "{document^} déchiffré."
+done_fragment = "{document^} déchiffré, nouveau {fragment} dans les {archives}."
+
+[ui.tui.fx.decrypt.phase]
+1 = "Lecture de l'en-tête"
+2 = "Recherche de la clé"
+3 = "Déchiffrement des blocs"
+4 = "Contrôle d'intégrité"
+
+[ui.tui.fx.buy]
+title = "Transaction : {name}"
+status = "Transaction en cours, progression {percent} %"
+status_done = "Transaction terminée, progression {percent} %"
+debit = "Débit : {price}"
+balance = "Solde : {balance}"
+
+[ui.tui.fx.buy.phase]
+1 = "Vérification du solde"
+2 = "Paiement envoyé"
+3 = "Reçu validé"
+
 [ui.fallback]
 too_small = "Le terminal est trop petit ({width}x{height}, {min_width}x{min_height} au minimum) : affichage ligne par ligne."
 no_terminal = "L'interface plein écran demande un terminal : affichage ligne par ligne."
