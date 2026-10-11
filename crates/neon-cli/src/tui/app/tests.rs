@@ -16,6 +16,7 @@ use crate::render::{LineKind, Verbosity};
 use crate::test_support::{catalog_en, catalog_fr};
 
 mod snapshots;
+mod staging;
 
 fn app_with<'a>(game: &'a mut DemoGame, catalog: &'a Catalog, mode: RenderMode) -> App<'a> {
     let first = game.start();

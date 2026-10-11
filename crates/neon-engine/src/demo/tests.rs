@@ -526,7 +526,7 @@ fn texts_of(step: &Step) -> Vec<Text> {
                 texts.push(Text::new(gauge.name_key()));
                 texts.push(band.clone());
             }
-            Event::Break => {}
+            Event::Effect(_) | Event::Break => {}
         }
     }
     match &step.prompt {

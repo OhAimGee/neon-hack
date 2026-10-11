@@ -3,7 +3,7 @@ source: crates/neon-cli/src/tui/app/tests/snapshots.rs
 expression: "styled(PaletteChoice::Default, true)"
 ---
 64x20
- 0   0-63  fg=Reset bg=Reset REVERSED
+ 0   0-63  fg=Magenta bg=Reset BOLD | REVERSED
  1   0-41  fg=Cyan bg=Reset NONE
  2   0-61  fg=Cyan bg=Reset NONE
  3   0-42  fg=Cyan bg=Reset NONE

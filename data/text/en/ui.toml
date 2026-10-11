@@ -51,6 +51,45 @@ panel_title = "{panel^}"
 help = "Tab complete | Up/Down history | PgUp/PgDn scroll | Ctrl+C quit"
 scrolled = "[Scrolled back: {rows} {rows|line|lines} below. End or Esc to return.]"
 
+[ui.tui.fx]
+skip = "Press any key to skip."
+defences = "{ice} {pips}"
+percent = "{percent}%"
+
+[ui.tui.fx.hack]
+title = "{run^}: {name}"
+status = "Hack in progress, {percent}% done, {site} security: {security}"
+done = "Access gained, {n} {n|file|files} taken."
+done_empty = "Access gained, nothing new to take."
+status_done = "Hack complete, {percent}% done, {site} security: {security}"
+
+[ui.tui.fx.hack.phase]
+1 = "Scanning ports"
+2 = "Bypassing the defences"
+3 = "Injecting the payload"
+4 = "Escalating privileges"
+5 = "Extracting files"
+
+[ui.tui.fx.security]
+1 = "minimal"
+2 = "low"
+3 = "moderate"
+4 = "high"
+5 = "critical"
+6 = "extreme"
+
+[ui.tui.fx.laylow]
+title = "Lie low"
+status = "Covering your tracks, {percent}% done"
+status_done = "Tracks covered, {percent}% done"
+notoriety = "{gauge}: {value}"
+done = "Tracks covered, {notoriety} -{cooling}."
+
+[ui.tui.fx.laylow.phase]
+1 = "Wiping the logs"
+2 = "Scrambling the relays"
+3 = "New cover in place"
+
 [ui.fallback]
 too_small = "The terminal is too small ({width}x{height}, at least {min_width}x{min_height} needed): using the line-by-line interface."
 no_terminal = "The full-screen interface needs a terminal: using the line-by-line interface."

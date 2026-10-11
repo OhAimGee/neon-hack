@@ -176,6 +176,26 @@ const fn hue(rgb: (u8, u8, u8), ansi: Ansi) -> Hue {
     Hue { rgb, ansi }
 }
 
+/// The parts of the full-screen interface that are not lines of the log: its frame, its
+/// titles, what moves while a scene is staged. Like a line, each is told by more than its
+/// colour.
+#[cfg(feature = "tui")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Accent {
+    /// Borders of the boxes.
+    Frame,
+    /// Titles of the boxes.
+    Title,
+    /// The bar across the top.
+    Bar,
+    /// Something being worked out: noise still running.
+    Live,
+    /// Something settled: noise that has become a result.
+    Locked,
+    /// What the player is up against.
+    Threat,
+}
+
 /// How one kind of line is drawn: a colour and attributes. Never a blink.
 #[allow(
     clippy::struct_excessive_bools,
@@ -297,6 +317,118 @@ impl Palette {
             LineKind::Error => colored(roles.danger, underline),
             LineKind::Decor => colored(roles.accent, plain()),
             LineKind::Gauge => colored(roles.warning, plain()),
+        }
+    }
+
+    /// How a part of the interface is drawn: neon where there is colour, attributes where
+    /// there is none.
+    #[cfg(feature = "tui")]
+    pub(crate) fn accent(&self, accent: Accent) -> Style {
+        if self.choice == PaletteChoice::Mono {
+            return match accent {
+                Accent::Frame => plain(),
+                Accent::Title | Accent::Locked => Style {
+                    bold: true,
+                    ..plain()
+                },
+                Accent::Bar => Style {
+                    reverse: true,
+                    ..plain()
+                },
+                Accent::Live => Style {
+                    dim: true,
+                    ..plain()
+                },
+                Accent::Threat => Style {
+                    bold: true,
+                    underline: true,
+                    ..plain()
+                },
+            };
+        }
+        let roles = self.roles();
+        let colored = |hue: Hue, style: Style| Style {
+            hue: Some(hue),
+            ..style
+        };
+        let bold = Style {
+            bold: true,
+            ..plain()
+        };
+        match accent {
+            Accent::Frame => colored(roles.accent, plain()),
+            Accent::Title => colored(roles.speech, bold),
+            Accent::Bar => colored(
+                roles.accent,
+                Style {
+                    reverse: true,
+                    bold: true,
+                    ..plain()
+                },
+            ),
+            Accent::Live => colored(
+                roles.accent,
+                Style {
+                    dim: true,
+                    ..plain()
+                },
+            ),
+            Accent::Locked => colored(roles.good, bold),
+            Accent::Threat => colored(roles.warning, bold),
+        }
+    }
+
+    /// The colour at `position` (0 to 1) along the neon gradient, from magenta to cyan; `None`
+    /// where there is no colour. Exact where the palette is, the nearer named colour otherwise.
+    #[cfg(feature = "tui")]
+    pub(crate) fn gradient(&self, position: f64) -> Option<Hue> {
+        if self.choice == PaletteChoice::Mono {
+            return None;
+        }
+        let roles = self.roles();
+        let position = position.clamp(0.0, 1.0);
+        let mix = |from: u8, to: u8| {
+            let value = f64::from(from) + (f64::from(to) - f64::from(from)) * position;
+            // Rounded and in range by construction: both ends are bytes.
+            #[allow(
+                clippy::cast_possible_truncation,
+                clippy::cast_sign_loss,
+                reason = "an interpolation between two bytes is a byte"
+            )]
+            {
+                value.round() as u8
+            }
+        };
+        let (from, to) = (roles.accent, roles.speech);
+        Some(Hue {
+            rgb: (
+                mix(from.rgb.0, to.rgb.0),
+                mix(from.rgb.1, to.rgb.1),
+                mix(from.rgb.2, to.rgb.2),
+            ),
+            ansi: if position < 0.5 { from.ansi } else { to.ansi },
+        })
+    }
+
+    /// The colour of a reading that gets worse as it grows (a gauge): calm, then wary, then
+    /// in danger. The words next to the number say the same.
+    #[cfg(feature = "tui")]
+    pub(crate) fn pressure(&self, value: i32, max: i32) -> Style {
+        if self.choice == PaletteChoice::Mono {
+            return plain();
+        }
+        let roles = self.roles();
+        let max = max.max(1);
+        let hue = if value * 3 < max {
+            roles.good
+        } else if value * 3 < max * 2 {
+            roles.warning
+        } else {
+            roles.danger
+        };
+        Style {
+            hue: Some(hue),
+            ..plain()
         }
     }
 

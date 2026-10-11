@@ -886,3 +886,70 @@ fn with_colour_the_default_palette_uses_the_named_colours_of_the_terminal() {
         "the default palette is transparent: the theme shows through"
     );
 }
+
+// ---- Staged scenes --------------------------------------------------------------------------
+
+/// Asks for the first intrusion and confirms it.
+fn hack_localhost(session: &mut Session) {
+    session.type_line("hack localhost");
+    session.wait_for("the confirmation", |s| s.input_row().contains("[Y/n]"));
+    session.type_line("y");
+}
+
+#[test]
+fn an_intrusion_is_staged_then_the_screen_goes_still_again() {
+    let mut session = at_command_line(28, 100);
+    hack_localhost(&mut session);
+    session.wait_text("Hack in progress");
+    session.wait_text("site security: minimal");
+    // The scene ends by itself, and the result is what is left on the screen.
+    session.wait_text("localhost: 1 file taken.");
+    assert!(!session.contains("Hack in progress"), "{}", session.text());
+    assert!(!session.contains("Hack complete"), "{}", session.text());
+    // And nothing moves any more: the idle interface writes nothing, scenes included.
+    session.settle(Duration::from_millis(300));
+    let before = session.received;
+    session.pump(Duration::from_millis(500));
+    assert_eq!(
+        session.received, before,
+        "the scene must not leave a timer behind"
+    );
+    assert_taken(&session);
+}
+
+#[test]
+fn a_key_skips_the_scene_and_is_typed_into_the_line() {
+    let mut session = at_command_line(28, 100);
+    hack_localhost(&mut session);
+    session.wait_text("Hack in progress");
+    session.send(b"x");
+    session.wait_text("localhost: 1 file taken.");
+    session.wait_input("> x");
+    assert!(!session.contains("Hack in progress"));
+}
+
+#[test]
+fn the_scene_is_drawn_on_the_compact_tier_too() {
+    let mut session = at_command_line(20, 64);
+    hack_localhost(&mut session);
+    session.wait_text("Hack in progress");
+    session.wait_text("localhost: 1 file taken.");
+    assert_taken(&session);
+}
+
+#[test]
+fn reduced_motion_shows_the_result_at_once_with_no_scene() {
+    for (args, settings) in [
+        (&["--reduce-motion"][..], Settings::Text("# test\n")),
+        (&[][..], Settings::Text("reduce_motion = true\n")),
+    ] {
+        let mut session = Session::start_with(28, 100, args, &settings, &[]);
+        wait_for_the_handle_question(&mut session);
+        play_the_opening(&mut session, "Neon");
+        hack_localhost(&mut session);
+        session.wait_for("the result, and never a scene", |s| {
+            assert!(!s.contains("Hack in progress"), "{}", s.text());
+            s.contains("localhost: 1 file taken.")
+        });
+    }
+}

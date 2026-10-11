@@ -7,16 +7,18 @@
 //! a pseudo-terminal (`tests/pty.rs`).
 //!
 //! The screen is redrawn when the state can have changed (a key, a paste, a new size) and
-//! never otherwise: the engine has no clock, so there is no timer, and an idle interface
-//! writes nothing.
+//! never otherwise: the engine has no clock, so an idle interface writes nothing. The one
+//! exception is a staged scene ([`motion`]): while one plays, which is at most two seconds
+//! and ends at the first key, the screen is redrawn every [`motion::FRAME`].
 
 mod app;
 mod editor;
+mod motion;
 mod term;
 mod text;
 
 use std::io;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use neon_engine::{Game, Step};
 use ratatui::DefaultTerminal;
@@ -64,9 +66,10 @@ pub(crate) fn run(
     first: Step,
     renderer: Renderer<'_>,
     persistence: Persistence,
+    reduce_motion: bool,
     test_fault: Option<&str>,
 ) -> io::Result<()> {
-    let mut app = App::new(game, renderer, first, persistence);
+    let mut app = App::new(game, renderer, first, persistence).with_motion(!reduce_motion);
     let (mut terminal, _guard) = term::enter()?;
     event_loop(&mut terminal, &mut app, test_fault.and_then(Fault::parse))
 }
@@ -77,6 +80,9 @@ fn event_loop(
     mut fault: Option<Fault>,
 ) -> io::Result<()> {
     let mut dirty = true;
+    // When the scene being staged was last moved forward; only meaningful while one plays.
+    let mut last_frame = Instant::now();
+    let mut animating = false;
     loop {
         if dirty {
             terminal.draw(|frame| app.draw(frame))?;
@@ -91,7 +97,26 @@ fn event_loop(
                 None => {}
             }
         }
-        let mut next = event::read()?;
+        // A scene just began: its clock starts now, not when the last key was read.
+        if app.is_animating() && !animating {
+            last_frame = Instant::now();
+        }
+        animating = app.is_animating();
+        let mut next = if animating {
+            // Wait for a key only until the next frame is due.
+            let waited = last_frame.elapsed();
+            if !event::poll(motion::FRAME.saturating_sub(waited))? {
+                let now = Instant::now();
+                app.tick(now.duration_since(last_frame));
+                last_frame = now;
+                dirty = true;
+                continue;
+            }
+            event::read()?
+        } else {
+            // Nothing moves: block until something happens, and write nothing meanwhile.
+            event::read()?
+        };
         for _ in 0..BATCH_MAX {
             dirty |= handle(app, next);
             if app.should_quit() {

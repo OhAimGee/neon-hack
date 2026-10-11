@@ -3,7 +3,7 @@ source: crates/neon-cli/src/tui/app/tests/snapshots.rs
 expression: "styled(PaletteChoice::HighContrast, true)"
 ---
 64x20
- 0   0-63  fg=Rgb(255, 255, 255) bg=Rgb(0, 0, 0) REVERSED
+ 0   0-63  fg=Rgb(255, 128, 255) bg=Rgb(0, 0, 0) BOLD | REVERSED
  1   0-41  fg=Rgb(0, 255, 255) bg=Rgb(0, 0, 0) NONE
  1  42-63  fg=Rgb(255, 255, 255) bg=Rgb(0, 0, 0) NONE
  2   0-61  fg=Rgb(0, 255, 255) bg=Rgb(0, 0, 0) NONE

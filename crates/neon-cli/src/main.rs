@@ -72,6 +72,11 @@ struct Cli {
     #[arg(long, help_heading = "Presentation")]
     screen_reader: bool,
 
+    /// No animation in the full-screen interface: the screen only changes when you act. A
+    /// screen reader implies it. Also `reduce_motion = true` in `settings.toml`.
+    #[arg(long, help_heading = "Presentation")]
+    reduce_motion: bool,
+
     /// Colour: `auto` (a terminal that can show it), `always`, or `never`. `NO_COLOR` turns it
     /// off unless this says otherwise; a screen reader never gets any.
     #[arg(long, value_enum, value_name = "WHEN", help_heading = "Presentation")]
@@ -220,6 +225,7 @@ impl Cli {
             verbosity: self.verbosity,
             ascii: self.ascii,
             screen_reader: self.screen_reader || answer == Some(ModeAnswer::ScreenReader),
+            reduce_motion: self.reduce_motion,
             color: self.no_color.then_some(ColorChoice::Never).or(self.color),
             palette: self.palette,
         }
@@ -307,6 +313,11 @@ fn print_settings(cli: &Cli, env: &Env) -> io::Result<()> {
             "display",
             format!("{:?}", shown.display.value.name()),
             shown.display.source,
+        ),
+        line(
+            "reduce_motion",
+            shown.reduce_motion.value.to_string(),
+            shown.reduce_motion.source,
         ),
         line(
             "data_dir",
@@ -409,6 +420,7 @@ fn run_game(cli: &Cli, env: &Env, kind: Kind) -> io::Result<()> {
             first,
             renderer,
             persistence,
+            shown.reduce_motion.value,
             env.test_fault.as_deref(),
         );
     }

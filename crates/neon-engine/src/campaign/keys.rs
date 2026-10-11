@@ -178,7 +178,7 @@ pub(super) fn gloss_event(event: &mut Event) {
             columns.iter_mut().for_each(gloss);
             rows.iter_mut().flatten().for_each(gloss);
         }
-        Event::Break => {}
+        Event::Effect(_) | Event::Break => {}
     }
 }
 

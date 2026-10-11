@@ -1,0 +1,33 @@
+---
+source: crates/neon-cli/src/tui/app/tests/staging.rs
+expression: "picture(&app, 100, 28)"
+---
+100x28
+ Neon
++Terminal------------------------------------------------------------++Panel-----------------------+
+|> hack                                                              ||                            |
+|                                                                    ||                            |
+|                                                                    ||                            |
+|                                                                    ||                            |
+|                                                                    ||                            |
+|                                                                    ||                            |
+|   +Run: corp-server-01-----------------------------------------+   ||                            |
+|   |Hack complete, 100% done, site security: high               |   ||                            |
+|   |                                                            |   ||                            |
+|   |######################################################  100%|   ||                            |
+|   |ICE ####..                                                  |   ||                            |
+|   |> Access gained, 2 files taken.                             |   ||                            |
+|   |AA 49 4B C1 44 89 EB BB 5F E8 FA CD 73 7C F4 FE DC E6 EF 9E |   ||                            |
+|   |69 03 3D C5 BC FD 9A BD C9 23 E9 F0 FC D5 74 74 CE C4 17 8C |   ||                            |
+|   |Press any key to skip.                                      |   ||                            |
+|   +------------------------------------------------------------+   ||                            |
+|                                                                    ||                            |
+|                                                                    ||                            |
+|                                                                    ||                            |
+|                                                                    ||                            |
+|                                                                    ||                            |
+|                                                                    ||                            |
+|                                                                    ||                            |
++--------------------------------------------------------------------++----------------------------+
+>
+Tab complete | Up/Down history | PgUp/PgDn scroll | Ctrl+C quit

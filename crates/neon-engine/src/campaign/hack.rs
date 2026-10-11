@@ -14,7 +14,7 @@ use crate::content::Fact;
 use crate::content::eval::applicable;
 use crate::content::ids::SiteId;
 use crate::content::schema::{Goal, Objective, QuestStatus, SiteMark};
-use crate::event::Event;
+use crate::event::{Effect, Event};
 use crate::prompt::Input;
 use crate::text::Text;
 
@@ -93,6 +93,12 @@ impl CampaignGame {
             (0, _) => "campaign.hack.empty",
             _ => "campaign.hack.done",
         };
+        // The same tier that prices the notoriety says how well the site is defended.
+        events.push(Event::Effect(Effect::Hack {
+            site: site.as_str().to_owned(),
+            security: u8::try_from(tier).unwrap_or(u8::MAX),
+            taken: u32::try_from(taken).unwrap_or(u32::MAX),
+        }));
         events.push(Event::system(
             Text::new(result)
                 .with_str("name", site.as_str())

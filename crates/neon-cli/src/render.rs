@@ -129,6 +129,9 @@ impl Renderer<'_> {
                 to,
                 band,
             } => self.changed(*gauge, *from, *to, band).into_iter().collect(),
+            // Staging for the full-screen interface: it has no text of its own, and the
+            // messages around it say what it stages.
+            Event::Effect(_) => Vec::new(),
             Event::Break if self.verbosity == Verbosity::Brief => Vec::new(),
             Event::Break => vec![Line::new(LineKind::Blank, String::new())],
         }

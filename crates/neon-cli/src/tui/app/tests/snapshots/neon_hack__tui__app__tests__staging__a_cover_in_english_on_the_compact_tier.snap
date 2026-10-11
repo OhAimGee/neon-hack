@@ -1,0 +1,25 @@
+---
+source: crates/neon-cli/src/tui/app/tests/staging.rs
+expression: "picture(&app, 64, 20)"
+---
+64x20
+ Neon
+> laylow
+
+
+ ╭Lie low─────────────────────────────────────────────────────╮
+ │Covering your tracks, 59% done                              │
+ │                                                            │
+ │████████████████████████████████░░░░░░░░░░░░░░░░░░░░░░   59%│
+ │Notoriety: 24                                               │
+ │▸ Scrambling the relays                                     │
+ │00 E5 42 93 85 3C 4F 6F E9 D7 00 12 4C 77 72 D2 73 C7 CA 26 │
+ │A0 A0 19 0E 8D 03 BA AB 0E 28 3A 6A CC 0B A7 00 30 E5 5E 16 │
+ │Press any key to skip.                                      │
+ ╰────────────────────────────────────────────────────────────╯
+
+
+
+
+>
+Tab complete | Up/Down history | PgUp/PgDn scroll | Ctrl+C quit

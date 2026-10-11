@@ -547,6 +547,23 @@ fn print_settings_shows_each_value_and_where_it_comes_from() {
 }
 
 #[test]
+fn reduced_motion_comes_from_the_command_line_the_file_or_a_screen_reader() {
+    let dir = tempfile::tempdir().unwrap();
+    let shown = |extra: &[&str]| {
+        let mut args = vec!["--print-settings", "--data-dir", dir_arg(&dir)];
+        args.extend_from_slice(extra);
+        stdout(&run_in_env(&args, "", &[]))
+    };
+    assert!(shown(&[]).contains("reduce_motion = false  # default"));
+    assert!(shown(&["--reduce-motion"]).contains("reduce_motion = true  # command line"));
+    assert!(shown(&["--screen-reader"]).contains("reduce_motion = true  # screen reader"));
+    settings_in(dir.path(), "reduce_motion = true\n");
+    assert!(shown(&[]).contains("reduce_motion = true  # settings.toml"));
+    settings_in(dir.path(), "reduce_motion = false\nscreen_reader = true\n");
+    assert!(shown(&[]).contains("reduce_motion = true  # screen reader"));
+}
+
+#[test]
 fn the_most_specific_source_wins_for_each_setting() {
     let dir = tempfile::tempdir().unwrap();
     settings_in(dir.path(), "lang = \"en\"\nverbosity = \"full\"\n");

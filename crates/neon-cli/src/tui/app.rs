@@ -7,17 +7,20 @@
 //! would say.
 
 mod draw;
+mod fx;
 
 use std::cell::Cell;
 use std::collections::VecDeque;
+use std::time::Duration;
 
-use neon_engine::event::Event;
+use neon_engine::event::{Event, Gauge};
 use neon_engine::text::Text;
 use neon_engine::{Game, Input, Prompt, Step};
 use ratatui::crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use ratatui::layout::Rect;
 
 use super::editor::{LineEditor, MAX_CHARS};
+use super::motion::Staging;
 use crate::input::{InputError, to_input};
 use crate::persist::Persistence;
 use crate::render::Renderer;
@@ -83,6 +86,14 @@ pub(crate) struct App<'a> {
     candidates: Vec<String>,
     finished: bool,
     quit: bool,
+    /// Whether scenes may be staged (`--reduce-motion` and the screen reader say no).
+    motion: bool,
+    /// The scene being staged over the log, if any. It ends by itself, or at the first key.
+    staging: Option<Staging>,
+    /// Entries at the end of the log that the staged scene keeps back until it is over, so
+    /// that the window reveals the result instead of sitting on top of it. Always 0 when no
+    /// scene plays.
+    held: usize,
 }
 
 impl<'a> App<'a> {
@@ -107,9 +118,42 @@ impl<'a> App<'a> {
             candidates: Vec::new(),
             finished: false,
             quit: false,
+            motion: false,
+            staging: None,
+            held: 0,
         };
         app.apply(first);
         app
+    }
+
+    /// Allows (or forbids) staging the scenes the game tells of. Off until asked for, so that
+    /// an interface that is not told about motion never moves by itself.
+    pub(crate) fn with_motion(mut self, motion: bool) -> Self {
+        self.motion = motion;
+        self
+    }
+
+    /// True while a scene is being staged: the screen then needs to be drawn again at the
+    /// pace of [`super::motion::FRAME`] even though nothing was typed. This is the only time
+    /// the interface moves by itself.
+    pub(crate) fn is_animating(&self) -> bool {
+        self.staging.is_some()
+    }
+
+    /// Moves the staged scene forward by the time that passed.
+    pub(crate) fn tick(&mut self, elapsed: Duration) {
+        if let Some(staging) = &mut self.staging {
+            staging.tick(elapsed);
+            if staging.is_over() {
+                self.end_staging();
+            }
+        }
+    }
+
+    /// Ends the staged scene, if any, and lets the log show what it kept back.
+    fn end_staging(&mut self) {
+        self.staging = None;
+        self.held = 0;
     }
 
     pub(crate) fn should_quit(&self) -> bool {
@@ -124,8 +168,15 @@ impl<'a> App<'a> {
     }
 
     fn apply(&mut self, step: Step) {
+        let staging = staging_of(&step.events).filter(|_| self.motion);
+        let pushed = step.events.len();
         for event in step.events {
             self.push(LogEntry::Event(event));
+        }
+        if let Some(staging) = staging {
+            // The log is capped: never more than what is left of it.
+            self.held = pushed.min(self.log.len());
+            self.staging = Some(staging);
         }
         self.finished = step.prompt == Prompt::End;
         // A prompt that asks for a short answer says how short.
@@ -138,6 +189,8 @@ impl<'a> App<'a> {
     }
 
     fn submit(&mut self, input: Input) {
+        // The player acted: whatever was staged is over.
+        self.end_staging();
         let mut step = self.game.handle(input);
         self.persistence.after_step(&*self.game, &mut step);
         // The player acted: show what came of it.
@@ -150,6 +203,8 @@ impl<'a> App<'a> {
     /// Handles one key press (or auto-repeat; releases are filtered out before).
     pub(crate) fn on_key(&mut self, key: KeyEvent) {
         self.candidates.clear();
+        // Any key ends a staged scene, and is then handled as usual: nothing typed is lost.
+        self.end_staging();
         if self.finished {
             self.quit = true;
             return;
@@ -252,6 +307,7 @@ impl<'a> App<'a> {
     /// A paste goes into the line, where it can be read and edited: it never runs anything.
     pub(crate) fn on_paste(&mut self, pasted: &str) {
         self.candidates.clear();
+        self.end_staging();
         if self.finished {
             self.quit = true;
         } else if self.shown_tier.get() != Tier::TooSmall {
@@ -337,6 +393,25 @@ impl<'a> App<'a> {
             self.candidates = candidates;
         }
     }
+}
+
+/// The scene to stage for what the game just said: the last effect of the step, with the
+/// notoriety it moved if the same step told of it.
+fn staging_of(events: &[Event]) -> Option<Staging> {
+    let effect = events.iter().rev().find_map(|event| match event {
+        Event::Effect(effect) => Some(effect.clone()),
+        _ => None,
+    })?;
+    let notoriety = events.iter().find_map(|event| match event {
+        Event::Changed {
+            gauge: Gauge::Notoriety,
+            from,
+            to,
+            ..
+        } => Some((*from, *to)),
+        _ => None,
+    });
+    Some(Staging::new(effect, notoriety))
 }
 
 /// The longest start shared by every candidate, without regard to case, in the case of the

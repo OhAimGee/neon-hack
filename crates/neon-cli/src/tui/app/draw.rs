@@ -18,9 +18,9 @@ use ratatui::widgets::{Block, Borders, Paragraph};
 use super::{
     App, CANDIDATE_ROWS_MAX, COMPACT_SIZE, LogEntry, PANEL_WIDTH, PROMPT_AREA_MAX, Tier, tier,
 };
-use crate::palette::{Ansi, Hue, Palette, Style as PaletteStyle};
+use crate::palette::{Accent, Ansi, Hue, Palette, Style as PaletteStyle};
 use crate::render::LineKind;
-use crate::tui::text::{head, window, wrap};
+use crate::tui::text::{head, width, window, wrap};
 
 /// Width of the bar in the panel, without its brackets.
 const BAR_WIDTH: usize = 10;
@@ -56,12 +56,8 @@ impl App<'_> {
         let palette = self.renderer.palette();
         // An opaque palette paints its background under every cell, so that its contrast
         // does not depend on the terminal's theme.
-        if let Some(background) = palette.background {
-            let mut base = Style::default().bg(color_of(background, &palette));
-            if let Some(foreground) = palette.foreground {
-                base = base.fg(color_of(foreground, &palette));
-            }
-            frame.render_widget(Block::default().style(base), area);
+        if palette.background.is_some() {
+            frame.render_widget(Block::default().style(self.base_style()), area);
         }
         let tier = tier(area);
         self.shown_tier.set(tier);
@@ -69,6 +65,26 @@ impl App<'_> {
             Tier::TooSmall => self.draw_too_small(frame, area),
             tier => self.draw_main(frame, area, tier == Tier::Full),
         }
+    }
+
+    /// What every cell is painted with before anything is written: the background and text
+    /// colour of an opaque palette, nothing for the others.
+    pub(super) fn base_style(&self) -> Style {
+        let palette = self.renderer.palette();
+        let mut base = Style::default();
+        if let Some(background) = palette.background {
+            base = base.bg(color_of(background, &palette));
+        }
+        if let Some(foreground) = palette.foreground {
+            base = base.fg(color_of(foreground, &palette));
+        }
+        base
+    }
+
+    /// The style of a part of the interface that is not a line of the log.
+    pub(super) fn accent_style(&self, accent: Accent) -> Style {
+        let palette = self.renderer.palette();
+        to_style(palette.accent(accent), &palette)
     }
 
     /// The whole screen is one sentence, centred, in the language of the game. The state of
@@ -106,7 +122,7 @@ impl App<'_> {
 
         frame.render_widget(
             Paragraph::new(head(&self.status_line(&view), usize::from(area.width)))
-                .style(Style::default().add_modifier(Modifier::REVERSED)),
+                .style(self.accent_style(Accent::Bar)),
             status_area,
         );
 
@@ -119,9 +135,11 @@ impl App<'_> {
             let inner = block.inner(log_area);
             frame.render_widget(block, log_area);
             self.draw_log(frame, inner);
+            self.draw_staging(frame, inner);
             self.draw_panel(frame, panel_area, &view);
         } else {
             self.draw_log(frame, body_area);
+            self.draw_staging(frame, body_area);
         }
         self.draw_prompt(frame, prompt_area, prompt);
         let help = self.renderer.text(&Text::new("ui.tui.help"));
@@ -138,9 +156,11 @@ impl App<'_> {
     }
 
     /// A box with a title, in characters the mode allows.
-    fn frame_block(&self, title: &Text) -> Block<'static> {
+    pub(super) fn frame_block(&self, title: &Text) -> Block<'static> {
         let block = Block::default()
             .borders(Borders::ALL)
+            .border_style(self.accent_style(Accent::Frame))
+            .title_style(self.accent_style(Accent::Title))
             .title(self.renderer.text(title));
         if self.renderer.mode.ascii {
             block.border_set(ASCII_BORDER)
@@ -192,15 +212,20 @@ impl App<'_> {
                 ),
                 Style::default().add_modifier(Modifier::BOLD),
             )));
-            for row in wrap(
-                &format!(
-                    "{} {}",
-                    self.bar(reading.value, reading.max),
-                    self.renderer.text(&reading.band)
-                ),
-                inner_width,
-            ) {
-                lines.push(TuiLine::from(row));
+            let bar = self.bar(reading.value, reading.max);
+            let band = self.renderer.text(&reading.band);
+            if width(&format!("{bar} {band}")) <= inner_width {
+                // The bar takes the colour of the pressure; the word next to it says the same.
+                let palette = self.renderer.palette();
+                let pressure = to_style(palette.pressure(reading.value, reading.max), &palette);
+                lines.push(TuiLine::from(vec![
+                    Span::styled(bar, pressure),
+                    Span::raw(format!(" {band}")),
+                ]));
+            } else {
+                for row in wrap(&format!("{bar} {band}"), inner_width) {
+                    lines.push(TuiLine::from(row));
+                }
             }
             lines.push(TuiLine::default());
         }
@@ -277,7 +302,9 @@ impl App<'_> {
             count += rows.len();
             blocks.push(rows);
         }
-        for entry in self.log.iter().rev() {
+        // What a staged scene keeps back is not laid out until the scene is over.
+        let shown = self.log.len().saturating_sub(self.held);
+        for entry in self.log.iter().take(shown).rev() {
             if count >= wanted {
                 break;
             }
@@ -394,7 +421,7 @@ impl App<'_> {
 
 /// A palette colour as a terminal colour: exact where the palette and the terminal allow it,
 /// the terminal's own named colour otherwise.
-fn color_of(hue: Hue, palette: &Palette) -> Color {
+pub(super) fn color_of(hue: Hue, palette: &Palette) -> Color {
     if palette.uses_exact_colors() {
         let (red, green, blue) = hue.rgb;
         return Color::Rgb(red, green, blue);

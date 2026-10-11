@@ -13,6 +13,7 @@
 //! | ASCII | `--ascii`, `settings.toml`, a locale that names a non-UTF-8 charset, off |
 //! | screen reader | `--screen-reader`, `settings.toml`, off |
 //! | display | `--plain` / `--tui`, `settings.toml`, auto |
+//! | reduce motion | a screen reader (always), `--reduce-motion`, `settings.toml`, off |
 //!
 //! The environment is read **once** ([`Env::from_process`]) and passed by value, so the rules
 //! are plain functions that tests call with a hand-made [`Env`]; nothing here changes the
@@ -217,6 +218,7 @@ pub(crate) struct CliPresentation {
     pub(crate) verbosity: Option<VerbosityChoice>,
     pub(crate) ascii: bool,
     pub(crate) screen_reader: bool,
+    pub(crate) reduce_motion: bool,
     pub(crate) color: Option<ColorChoice>,
     pub(crate) palette: Option<PaletteChoice>,
 }
@@ -229,6 +231,7 @@ pub(crate) struct FileSettings {
     verbosity: Option<VerbosityChoice>,
     ascii: Option<bool>,
     screen_reader: Option<bool>,
+    reduce_motion: Option<bool>,
     color: Option<ColorChoice>,
     palette: Option<PaletteChoice>,
     display: Option<DisplayChoice>,
@@ -243,6 +246,8 @@ pub(crate) enum Source {
     EnvDataDir,
     File,
     Locale,
+    /// A screen reader is in use, which asks for the stillest screen.
+    ScreenReader,
     /// There is no colour, so the palette is `mono`.
     NoColor,
     Default,
@@ -258,6 +263,7 @@ impl Source {
             Self::EnvDataDir => "NEON_HACK_DATA_DIR",
             Self::File => "settings.toml",
             Self::Locale => "locale",
+            Self::ScreenReader => "screen reader",
             Self::Default => "default",
         }
     }
@@ -282,6 +288,8 @@ pub(crate) struct Presentation {
     pub(crate) ascii: Sourced<bool>,
     pub(crate) screen_reader: Sourced<bool>,
     pub(crate) display: Sourced<DisplayChoice>,
+    /// No animation: the screen only changes when the player acts.
+    pub(crate) reduce_motion: Sourced<bool>,
     /// Whether there is colour at all, and why.
     pub(crate) color: (bool, ColorSource),
     pub(crate) palette: Sourced<PaletteChoice>,
@@ -333,6 +341,15 @@ pub(crate) fn resolve(cli: CliPresentation, env: &Env, file: FileSettings) -> Pr
     } else {
         sourced(DisplayChoice::Auto, Source::Default)
     };
+    let reduce_motion = if screen_reader.value {
+        sourced(true, Source::ScreenReader)
+    } else if cli.reduce_motion {
+        sourced(true, Source::Cli)
+    } else if let Some(choice) = file.reduce_motion {
+        sourced(choice, Source::File)
+    } else {
+        sourced(false, Source::Default)
+    };
     let color = decide(ColorInputs {
         cli: cli.color,
         no_color: env.no_color,
@@ -362,6 +379,7 @@ pub(crate) fn resolve(cli: CliPresentation, env: &Env, file: FileSettings) -> Pr
         ascii,
         screen_reader,
         display,
+        reduce_motion,
         color,
         palette,
         truecolor: env.terminal().truecolor,

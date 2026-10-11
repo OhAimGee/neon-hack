@@ -121,8 +121,32 @@ pub enum Event {
         /// Name of the level the gauge is now in (`calm`, `critical`...).
         band: Text,
     },
+    /// A moment a frontend may stage (see [`Effect`]). Says nothing the messages around it do
+    /// not say: a frontend that has no use for it drops it.
+    Effect(Effect),
     /// A blank separation.
     Break,
+}
+
+/// A moment of the game worth staging, with the facts a frontend needs to stage it. Purely
+/// presentational: the state of the game has already changed when the event is sent, and
+/// nothing a player can read depends on it being shown.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Effect {
+    /// An intrusion on a site.
+    Hack {
+        /// Identifier of the site, as typed in commands.
+        site: String,
+        /// How well the site is defended, from 1 (the lightest) up.
+        security: u8,
+        /// Files taken by this intrusion.
+        taken: u32,
+    },
+    /// Cover bought with `laylow`.
+    Laylow {
+        /// Notoriety the service removes.
+        cooling: u16,
+    },
 }
 
 impl Event {
@@ -192,7 +216,7 @@ impl Event {
                 role, importance, ..
             } if !role.is_critical() => *importance,
             // Decoration is dropped at brief verbosity, like any other non-essential content.
-            Self::Decor { .. } => Importance::Normal,
+            Self::Decor { .. } | Self::Effect(_) => Importance::Normal,
             _ => Importance::Essential,
         }
     }
@@ -280,5 +304,11 @@ mod tests {
             alt: Text::new("k"),
         };
         assert_eq!(decor.importance(), Importance::Normal);
+    }
+
+    #[test]
+    fn an_effect_is_staging_not_information() {
+        let effect = Event::Effect(Effect::Laylow { cooling: 5 });
+        assert_eq!(effect.importance(), Importance::Normal);
     }
 }
