@@ -3,6 +3,7 @@
 use super::support::*;
 use crate::campaign::{CampaignGame, Difficulty};
 use crate::content::schema::{ContactState, QuestStatus};
+use crate::event::{Effect, Event, Role};
 use crate::game::Game;
 use crate::prompt::{Input, Prompt};
 use crate::save::SaveRequest;
@@ -11,7 +12,7 @@ use crate::text::Lang;
 /// The names `help` lists, in order.
 fn listed(driver: &mut Driver) -> Vec<String> {
     driver.line("help");
-    let crate::event::Event::Screen(table) = &driver.last.events[0] else {
+    let Event::Screen(table) = &driver.last.events[0] else {
         panic!("help is a table: {:?}", driver.last.events);
     };
     table
@@ -811,6 +812,95 @@ fn crossing_a_band_of_notoriety_is_an_alert() {
     assert!(said.contains("Notoriety 27 -> 35 (Watched)"), "{said}");
 }
 
+/// The effects of the last step, in order.
+fn effects(driver: &Driver) -> Vec<&Effect> {
+    driver
+        .last
+        .events
+        .iter()
+        .filter_map(|event| match event {
+            Event::Effect(effect) => Some(effect),
+            _ => None,
+        })
+        .collect()
+}
+
+#[test]
+fn a_hack_stages_the_intrusion_before_its_result() {
+    let mut driver = Driver::new();
+    driver.lines(&["hack localhost", "y"]);
+    assert_eq!(
+        effects(&driver),
+        [&Effect::Hack {
+            site: "localhost".to_owned(),
+            security: 1,
+            taken: 1
+        }]
+    );
+    // The staging comes first: the result is what the screen settles on.
+    let position = |wanted: fn(&Event) -> bool| driver.last.events.iter().position(wanted);
+    let staged = position(|event| matches!(event, Event::Effect(_))).unwrap();
+    let told = position(|event| {
+        matches!(
+            event,
+            Event::Message {
+                role: Role::System,
+                ..
+            }
+        )
+    });
+    assert!(
+        told.is_some_and(|told| staged < told),
+        "{:?}",
+        driver.last.events
+    );
+    // A second intrusion takes nothing, and the staging says so.
+    driver.lines(&["hack localhost", "y"]);
+    assert_eq!(
+        effects(&driver),
+        [&Effect::Hack {
+            site: "localhost".to_owned(),
+            security: 1,
+            taken: 0
+        }]
+    );
+}
+
+#[test]
+fn the_staging_of_a_hack_follows_the_level_of_the_site() {
+    let mut driver = Driver::new();
+    driver.lines(&["hack localhost", "y"]);
+    driver.finish_m01();
+    driver.lines(&["hack corp-server-01", "y"]);
+    let [Effect::Hack { site, security, .. }] = effects(&driver)[..] else {
+        panic!("one intrusion: {:?}", driver.last.events);
+    };
+    assert_eq!((site.as_str(), *security), ("corp-server-01", 2));
+}
+
+#[test]
+fn a_hack_that_is_called_off_or_refused_stages_nothing() {
+    let mut driver = Driver::new();
+    driver.lines(&["hack localhost", "n"]);
+    assert!(effects(&driver).is_empty());
+    driver.line("hack nowhere");
+    assert!(effects(&driver).is_empty());
+}
+
+#[test]
+fn the_staging_changes_no_line_of_text() {
+    let mut driver = Driver::new();
+    let said = driver.lines(&["hack localhost", "y"]);
+    // The effect renders as nothing, in every language: the result alone is told.
+    assert!(said.contains("localhost"), "{said}");
+    for lang in [Lang::En, Lang::Fr] {
+        let cat = catalog(lang);
+        for effect in effects(&driver) {
+            assert_eq!(render_event(&Event::Effect(effect.clone()), &cat), "");
+        }
+    }
+}
+
 // -------------------------------------------------------------------------- shop, buy, laylow
 
 #[test]
@@ -900,6 +990,7 @@ fn laylow_sells_cover_that_lowers_the_notoriety_for_credits() {
     let said = driver.line("laylow 1");
     assert!(said.contains("Lie low: Notoriety lowered by 10."), "{said}");
     assert_eq!(driver.game.notoriety(), notoriety - 10);
+    assert_eq!(effects(&driver), [&Effect::Laylow { cooling: 10 }]);
     assert_eq!(driver.credits(), credits - 25);
     // The services are not payments of the story.
     assert!(driver.game.state.missions.payments.is_empty());

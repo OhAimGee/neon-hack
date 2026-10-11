@@ -261,6 +261,7 @@ pub(super) fn render_event(event: &Event, cat: &Catalog) -> String {
             render(band, cat, mode)
         ),
         Event::Decor { alt, .. } => format!("{}\n", render(alt, cat, mode)),
+        Event::Effect(_) => String::new(),
         Event::Break => "\n".to_owned(),
     }
 }

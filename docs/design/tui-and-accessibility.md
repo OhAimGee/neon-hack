@@ -136,6 +136,8 @@ L'alternative (le moteur résout la langue) est écartée : il lui faudrait conn
 
 Le moteur ne contient aucune durée. La « machine à écrire » est une présentation : état d'avancement d'un événement dans le journal, avancé par `event::poll(timeout)` uniquement pendant qu'elle court, interrompue par n'importe quelle touche (la touche est ensuite traitée normalement) et plafonnée à 2 s par événement quelle que soit sa longueur `[H]`. Réglages : `off` | `fast` (≈ 400 car/s) | `normal` (≈ 120) | `slow` (≈ 40). Défauts : `off` en plain, en mode lecteur d'écran et avec `--reduce-motion` ; `fast` en TUI (cohérent avec la décision 9 de l'audit).
 
+**Mises en scène (R-19).** Le même mécanisme porte les *scènes* : quand le moteur annonce un moment à mettre en scène (`Event::Effect`, aujourd'hui `hack` et `laylow`), la TUI ouvre au-dessus du journal une fenêtre qui se remplit (barre en dégradé magenta vers cyan, pourcentage, niveau de défense du site en mots et en pastilles, étape en cours, dump hexadécimal qui se fige derrière la barre) et retient les lignes du résultat jusqu'à sa fin. Le moteur a déjà résolu l'action : la scène ne change **rien** à l'état et ne montre rien que les messages suivants ne disent en mots. Elle dure 1,8 s (`hack`) ou 1,4 s (`laylow`), jamais plus de 2 s, dont ≈ 0,3 s tenues sur le résultat ; n'importe quelle touche la termine et est ensuite traitée normalement ; `--reduce-motion` (ou `reduce_motion = true`) et le mode lecteur d'écran la suppriment. Les chiffres du dump changent huit fois par seconde au plus, sur une zone réduite : rien ne clignote.
+
 ### 2.6 Découpage
 
 | Où | Quoi |
@@ -314,7 +316,7 @@ Autres constats [E] : `Terminal::clear()` (ratatui 0.30.2) lit d'abord la positi
 
 ### 4.8 Modèle de redessin
 
-Le moteur n'a pas de minuterie, donc **la TUI est purement pilotée par les événements** : `event::read()` bloquant, un `draw` par événement. En veille, elle n'écrit rien du tout [E : 1,5 s de silence, zéro octet]. Pas de curseur clignotant dessiné par l'application, pas de spinner. `poll(timeout)` n'est utilisé que pendant qu'une machine à écrire court (§ 2.5).
+Le moteur n'a pas de minuterie, donc **la TUI est purement pilotée par les événements** : `event::read()` bloquant, un `draw` par événement. En veille, elle n'écrit rien du tout [E : 1,5 s de silence, zéro octet]. Pas de curseur clignotant dessiné par l'application, pas de spinner qui tourne sans raison. `poll(timeout)` n'est utilisé que pendant qu'une machine à écrire ou une mise en scène court (§ 2.5) : au plus 2 s, après quoi la TUI revient à `event::read()` bloquant et n'écrit plus rien.
 
 ---
 
@@ -362,12 +364,16 @@ Deux conséquences : la palette `cvd` doit être **opaque** (sur fond blanc le j
 
 | ID | Exigence | Test | Spike |
 |---|---|---|---|
-| MOT-1 | Pas de clignotement ni de scintillement (voir COL-4) ; aucun élément ne bascule sur minuterie | S | ✔ |
+| MOT-1 | Pas de clignotement ni de scintillement (voir COL-4) ; aucun élément ne bascule sur minuterie, hors une mise en scène bornée (MOT-7) | S | ✔ |
 | MOT-2 | En veille, la TUI n'écrit aucun octet | P | ✔ |
 | MOT-3 | Machine à écrire : `off`/`fast`/`normal`/`slow`, interruptible par toute touche, jamais bloquante pour la saisie, ne touche jamais à l'état, plafond 2 s par événement | U | ○ |
 | MOT-4 | `--reduce-motion`, `--screen-reader` et le plain imposent `off` | U | ○ |
 | MOT-5 | Aucune pause chronométrée : toute attente est un `Prompt::Continue` ou une saisie | L | ○ (`sleep`/`Instant` interdits dans le moteur) |
 | MOT-6 | Aucun délai d'expiration sur une invite ; sauvegarde après chaque commande (déjà le cas en C) | U | ○ |
+| MOT-7 | Une mise en scène dure 2 s au plus, ne change jamais l'état du jeu, se termine seule et laisse la TUI muette (MOT-2) ; l'horloge est dans la TUI, jamais dans le moteur | U + P | ✔ |
+| MOT-8 | Toute touche (et tout collage) termine la scène et est ensuite traité comme d'habitude : aucune saisie perdue, aucune invite retardée | U + P | ✔ |
+| MOT-9 | `--reduce-motion`, `reduce_motion = true` et le mode lecteur d'écran suppriment les scènes : le résultat est affiché tout de suite | U + P | ✔ |
+| MOT-10 | Une scène est faite de texte d'abord (pourcentage, niveau de défense, étape écrits) ; la couleur et les pastilles s'y ajoutent ; sans couleur, attributs seuls ; en `--ascii`, 7 bits ; fenêtre non dessinée si la place manque, jamais de panique | S | ✔ |
 
 ### 5.4 Mode lecteur d'écran (`--screen-reader`, `NEON_SCREEN_READER`, réglage)
 
@@ -621,6 +627,7 @@ Un moteur factice (`spike-engine`, ≈ 980 lignes avec ses tests : PCG32, catalo
 **Mouvement et temps**
 - [ ] Veille silencieuse (MOT-2) ✔
 - [ ] Machine à écrire réglable, interruptible, plafonnée ; désactivée par `--reduce-motion` et en lecteur d'écran (MOT-3, MOT-4)
+- [x] Mises en scène bornées, interruptibles par toute touche sans perte de saisie, supprimées par `--reduce-motion` et en lecteur d'écran, dites en mots (MOT-7 à MOT-10)
 - [ ] Aucune pause chronométrée, aucune horloge dans le moteur, aucun délai sur les invites (MOT-5, MOT-6)
 
 **Lecteur d'écran**

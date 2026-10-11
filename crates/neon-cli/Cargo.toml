@@ -16,7 +16,7 @@ path = "src/main.rs"
 # The full-screen interface. `--no-default-features` builds the plain frontend only,
 # and CI checks that this build keeps working.
 default = ["tui"]
-tui = ["dep:ratatui", "dep:unicode-width"]
+tui = ["dep:ratatui", "dep:unicode-width", "dep:unicode-segmentation", "dep:signal-hook"]
 
 [dependencies]
 neon-engine = { workspace = true }
@@ -27,11 +27,21 @@ toml = { workspace = true }
 thiserror = { workspace = true }
 ratatui = { workspace = true, optional = true }
 unicode-width = { workspace = true, optional = true }
+unicode-segmentation = { workspace = true, optional = true }
+
+# Gives the terminal back when the process is told to stop from the outside (Unix only).
+[target.'cfg(unix)'.dependencies]
+signal-hook = { workspace = true, optional = true }
 
 [dev-dependencies]
 proptest = { workspace = true }
 insta = { workspace = true }
 tempfile = { workspace = true }
+
+# Tests that run the real binary in a pseudo-terminal (docs/design/tui-and-accessibility.md 4.6).
+[target.'cfg(unix)'.dev-dependencies]
+portable-pty = { workspace = true }
+vt100 = { workspace = true }
 
 [lints]
 workspace = true

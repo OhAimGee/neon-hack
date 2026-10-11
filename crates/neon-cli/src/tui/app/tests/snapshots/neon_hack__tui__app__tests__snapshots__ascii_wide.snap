@@ -1,0 +1,33 @@
+---
+source: crates/neon-cli/src/tui/app/tests/snapshots.rs
+expression: wide
+---
+100x28
+ Neon | Notoriete 4/100 (Discret)
++Terminal------------------------------------------------------------++Panneau---------------------+
+|                                                                    ||Notoriete 4/100             |
+|Canal chiffre #7 : connexion entrante.                              ||[#.........] Discret        |
+|ECHO-7: Enfin. Pour memoire, je ne suis ni une corporation, ni un   ||                            |
+|flic, ni un piege. Je suis ECHO-7, et le tien est le seul deck du   ||Premiers Pas                |
+|secteur 7 qui repond encore.                                        ||- Ouvrir le journal (quests)|
+|ECHO-7: Handle en dossier : Neon. Tant que tu n'as pas gagne un     ||- Lire l'aide (help)        |
+|autre nom, tu es un rookie. Ne le prends pas mal.                   ||- Explorer le reseau (net)  |
+|ECHO-7: J'ai un premier travail pour toi. Rien de dangereux : un    ||- Consulter la fiche d'etat |
+|tour du proprietaire sur ton propre deck. Mais d'abord, les bases.  ||(status)                    |
+|Lancer le tutoriel guide ? ECHO-7 passe en revue les premieres      ||- Parler a ECHO-7 (talk     |
+|commandes, et `tutorial skip` y met fin a tout moment. [O/n] n      ||echo7)                      |
+|Tutoriel ignore. `tutorial restart` le lance plus tard.             ||- Effacer ses traces        |
+|Nouvelle quete : Premiers Pas dans l'Ombre                          ||(laylow)                    |
+|Taper `help` pour lister les commandes, puis `quests` pour lire la  ||                            |
+|premiere quete.                                                     ||                            |
+|> nonsense                                                          ||                            |
+|[Erreur] Commande inconnue : nonsense. Voir `help`.                 ||                            |
+|> hack localhost                                                    ||                            |
+|Lancer l'intrusion sur le site localhost ? Elle est resolue         ||                            |
+|aussitot. [O/n] y                                                   ||                            |
+|Intrusion sur localhost : 1 fichier pris.                           ||                            |
+|Notoriete +4 (0 -> 4, Discret).                                     ||                            |
+|Objectif atteint : Percer le poste local (hack localhost)           ||                            |
++--------------------------------------------------------------------++----------------------------+
+>
+Tab completer | Haut/Bas historique | PgUp/PgDn defiler | Ctrl+C quitter

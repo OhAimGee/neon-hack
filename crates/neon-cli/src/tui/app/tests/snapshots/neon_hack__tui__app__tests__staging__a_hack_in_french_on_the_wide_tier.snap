@@ -1,0 +1,33 @@
+---
+source: crates/neon-cli/src/tui/app/tests/staging.rs
+expression: "picture(&app, 100, 28)"
+---
+100x28
+ Neon
+╭Terminal────────────────────────────────────────────────────────────╮╭Panneau─────────────────────╮
+│> hack                                                              ││                            │
+│                                                                    ││                            │
+│                                                                    ││                            │
+│                                                                    ││                            │
+│                                                                    ││                            │
+│                                                                    ││                            │
+│   ╭Intrusion : corp-server-01──────────────────────────────────╮   ││                            │
+│   │Hack en cours, progression 50 %, sécurité du site : élevée  │   ││                            │
+│   │                                                            │   ││                            │
+│   │███████████████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░  50 %│   ││                            │
+│   │ICE ■■■■□□                                                  │   ││                            │
+│   │▸ Contournement des défenses                                │   ││                            │
+│   │AA 49 4B C1 44 89 EB BB 5F E8 47 05 3C 58 71 58 AD D1 A9 B0 │   ││                            │
+│   │69 03 3D C5 BC FD 9A BD C9 23 14 2C 70 0D 8A 62 A8 16 F7 64 │   ││                            │
+│   │Une touche pour passer.                                     │   ││                            │
+│   ╰────────────────────────────────────────────────────────────╯   ││                            │
+│                                                                    ││                            │
+│                                                                    ││                            │
+│                                                                    ││                            │
+│                                                                    ││                            │
+│                                                                    ││                            │
+│                                                                    ││                            │
+│                                                                    ││                            │
+╰────────────────────────────────────────────────────────────────────╯╰────────────────────────────╯
+>
+Tab compléter | Haut/Bas historique | PgUp/PgDn défiler | Ctrl+C quitter

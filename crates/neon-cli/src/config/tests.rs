@@ -97,6 +97,42 @@ fn a_language_the_game_does_not_have_falls_through_to_the_next_source() {
 }
 
 #[test]
+fn motion_is_reduced_by_a_screen_reader_then_the_command_line_then_the_file() {
+    let none = CliPresentation::default();
+    let nothing = FileSettings::default();
+    let env = Env::default();
+    assert_eq!(
+        resolve(none, &env, nothing).reduce_motion,
+        sourced(false, Source::Default)
+    );
+    assert_eq!(
+        resolve(none, &env, file("reduce_motion = true")).reduce_motion,
+        sourced(true, Source::File)
+    );
+    let flag = CliPresentation {
+        reduce_motion: true,
+        ..none
+    };
+    assert_eq!(
+        resolve(flag, &env, file("reduce_motion = false")).reduce_motion,
+        sourced(true, Source::Cli)
+    );
+    // A screen reader always gets the stillest screen, whatever the file says.
+    let reader = CliPresentation {
+        screen_reader: true,
+        ..none
+    };
+    assert_eq!(
+        resolve(reader, &env, file("reduce_motion = false")).reduce_motion,
+        sourced(true, Source::ScreenReader)
+    );
+    assert_eq!(
+        resolve(none, &env, file("screen_reader = true")).reduce_motion,
+        sourced(true, Source::ScreenReader)
+    );
+}
+
+#[test]
 fn verbosity_screen_reader_and_ascii_go_command_line_then_file_then_default() {
     let settings = file("verbosity = \"full\"\nascii = true\nscreen_reader = true");
     let none = CliPresentation::default();
@@ -185,6 +221,7 @@ fn the_settings_file_ignores_unknown_keys_and_refuses_wrong_values() {
         "verbosity = \"loud\"",
         "ascii = \"yes\"",
         "screen_reader = 1",
+        "reduce_motion = \"yes\"",
         "lang = ",
         "not toml ===",
     ] {
@@ -376,4 +413,35 @@ fn the_settings_file_accepts_colour_and_palette_and_refuses_unknown_ones() {
     ] {
         assert!(parse_file(bad).is_err(), "{bad}");
     }
+}
+
+#[test]
+fn the_display_wish_goes_command_line_then_file_then_auto() {
+    let display = |cli: Option<DisplayChoice>, text: &str| {
+        let cli = CliPresentation {
+            display: cli,
+            ..CliPresentation::default()
+        };
+        let resolved = resolve(cli, &Env::default(), file(text)).display;
+        (resolved.value, resolved.source)
+    };
+    assert_eq!(display(None, ""), (DisplayChoice::Auto, Source::Default));
+    assert_eq!(
+        display(None, "display = \"plain\""),
+        (DisplayChoice::Plain, Source::File)
+    );
+    assert_eq!(
+        display(None, "display = \"tui\""),
+        (DisplayChoice::Tui, Source::File)
+    );
+    assert_eq!(
+        display(Some(DisplayChoice::Tui), "display = \"plain\""),
+        (DisplayChoice::Tui, Source::Cli)
+    );
+    assert_eq!(
+        display(Some(DisplayChoice::Plain), "display = \"tui\""),
+        (DisplayChoice::Plain, Source::Cli)
+    );
+    // A value the game does not know makes the file unusable, as for every other setting.
+    assert!(parse_file("display = \"holographic\"").is_err());
 }

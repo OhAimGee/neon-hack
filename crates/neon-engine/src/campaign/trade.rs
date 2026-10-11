@@ -3,7 +3,7 @@
 use crate::command::ArgRef;
 use crate::content::Fact;
 use crate::content::ids::{ItemId, ServiceId};
-use crate::event::Event;
+use crate::event::{Effect, Event};
 use crate::prompt::Input;
 use crate::text::Text;
 
@@ -136,6 +136,9 @@ impl CampaignGame {
             return;
         };
         let (price, cooling) = (service.price, service.cooling);
+        events.push(Event::Effect(Effect::Laylow {
+            cooling: u16::from(cooling),
+        }));
         events.push(Event::system(
             Text::new("campaign.laylow.done")
                 .with_text("name", keys::service_name(id))
