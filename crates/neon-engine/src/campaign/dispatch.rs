@@ -11,16 +11,20 @@ use crate::save::SaveRequest;
 use crate::text::Text;
 
 use super::CampaignGame;
-use super::commands::{COMMANDS, CONTEXT, FRONTEND};
+use super::commands::{COMMANDS, CONTEXT, FRONTEND, WIRED};
 use super::resolver::Lists;
 use super::state::{CampaignState, DEFAULT_HANDLE, Flow, HANDLE_MAX_CHARS};
 use super::tutorial::Completion;
 
 /// Whether a command is open, or why not: the rules of `unlocks.toml`, and the commands that
-/// only the frontend can run (which no frontend hands over yet).
+/// only the frontend can run (open once frontends take them in charge, see [`WIRED`]).
 pub(super) fn availability(c: &Content, s: &CampaignState, spec: &CommandSpec) -> Availability {
     if matches!(spec.handled_by, HandledBy::Frontend(_)) {
-        return Availability::Locked(Text::new("campaign.unlock.frontend"));
+        return if WIRED.contains(&spec.name) {
+            Availability::Open
+        } else {
+            Availability::Locked(Text::new("campaign.unlock.frontend"))
+        };
     }
     match c.unlocks.iter().find(|rule| rule.command == spec.name) {
         Some(rule) if !rule.when.eval(c, &s.missions) => {

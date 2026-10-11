@@ -258,7 +258,7 @@ fn read_limited(path: &Path) -> io::Result<Option<String>> {
 /// Replaces `path` with `data` so that a reader sees the old file or the new one, never a
 /// mix, and a failure leaves the old file untouched. `before_rename` lets a test inject a
 /// failure at the worst moment.
-fn write_atomic(
+pub(crate) fn write_atomic(
     path: &Path,
     data: &[u8],
     before_rename: impl FnOnce() -> io::Result<()>,

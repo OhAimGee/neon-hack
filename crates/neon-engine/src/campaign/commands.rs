@@ -16,9 +16,32 @@ pub(super) const FRONTEND: Capabilities = Capabilities::PLAIN;
 /// The names `help <command>` accepts: every command of the table, in table order (a test
 /// keeps it equal to [`SPECS`]).
 pub(super) const NAMES: &[&str] = &[
-    "help", "status", "quit", "load", "panel", "plain", "export", "quests", "accept", "contacts",
-    "talk", "messages", "read", "archives", "decrypt", "net", "hack", "shop", "buy", "laylow",
-    "link", "hint", "save", "tutorial",
+    "help",
+    "status",
+    "options",
+    "verbosity",
+    "quit",
+    "load",
+    "panel",
+    "plain",
+    "export",
+    "quests",
+    "accept",
+    "contacts",
+    "talk",
+    "messages",
+    "read",
+    "archives",
+    "decrypt",
+    "net",
+    "hack",
+    "shop",
+    "buy",
+    "laylow",
+    "link",
+    "hint",
+    "save",
+    "tutorial",
 ];
 
 const HELP_ARGS: &[ArgSpec] = &[ArgSpec::optional(ArgKind::Word(NAMES))];
@@ -36,6 +59,9 @@ const SLOT_OPTIONAL: &[ArgSpec] = &[ArgSpec::optional(ArgKind::Slot)];
 const PATH_OPTIONAL: &[ArgSpec] = &[ArgSpec::optional(ArgKind::Path)];
 /// The two things `tutorial` can be told besides its bare form.
 pub(super) const TUTORIAL_WORDS: &[&str] = &["skip", "restart"];
+/// The levels of detail `verbosity` takes (the same words as the `--verbosity` option).
+pub(super) const VERBOSITY_WORDS: &[&str] = &["brief", "normal", "full"];
+const VERBOSITY_ARGS: &[ArgSpec] = &[ArgSpec::optional(ArgKind::Word(VERBOSITY_WORDS))];
 const TUTORIAL_ARGS: &[ArgSpec] = &[ArgSpec::optional(ArgKind::Word(TUTORIAL_WORDS))];
 
 const fn engine(
@@ -72,9 +98,13 @@ const fn frontend(
     }
 }
 
-/// Every command of the campaign. Commands that only the frontend can run (`load`, `panel`,
-/// `plain`, `export`) are declared here too, so that they are listed, completed and checked
-/// like the others.
+/// The commands the frontend runs that frontends do take in charge today. The others (`load`,
+/// `panel`, `plain`, `export`) stay closed until a frontend wires them.
+pub(super) const WIRED: &[&str] = &["options", "verbosity"];
+
+/// Every command of the campaign. Commands that only the frontend can run (`options`,
+/// `verbosity`, `load`, `panel`, `plain`, `export`) are declared here too, so that they are
+/// listed, completed and checked like the others.
 pub(super) const SPECS: &[CommandSpec] = &[
     engine(
         "help",
@@ -89,6 +119,20 @@ pub(super) const SPECS: &[CommandSpec] = &[
         "campaign.help.status",
         Context::Anywhere,
         &[],
+    ),
+    frontend(
+        "options",
+        "campaign.help.options",
+        Context::Anywhere,
+        Scope::AnyFrontend,
+        PATH_OPTIONAL,
+    ),
+    frontend(
+        "verbosity",
+        "campaign.help.verbosity",
+        Context::Anywhere,
+        Scope::AnyFrontend,
+        VERBOSITY_ARGS,
     ),
     engine(
         "quit",

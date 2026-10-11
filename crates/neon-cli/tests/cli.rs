@@ -1038,6 +1038,101 @@ fn campaign_in(dir: &std::path::Path, args: &[&str], input: &str) -> Output {
 }
 
 #[test]
+fn the_presentation_commands_work_in_a_real_session_and_the_game_never_hears_of_them() {
+    let text = campaign(
+        &[],
+        &format!("{OPENING}options\nhelp\noptions lang fr\nhelp\nverbosity\nquit\ny\n"),
+    );
+    assert!(text.contains("> options\n== Settings =="), "{text}");
+    let (before, after) = text.split_once("> options lang fr\n").expect("the switch");
+    assert!(
+        before.contains("Commands\n") && before.contains("[3] options - "),
+        "{before}"
+    );
+    assert!(
+        after.starts_with("Réglage changé : lang = fr.\n"),
+        "{after}"
+    );
+    assert!(
+        after.contains("Commandes\n") && after.contains("Verbosité : normal."),
+        "{after}"
+    );
+    assert!(!text.contains("Unknown command"), "{text}");
+}
+
+#[test]
+fn options_save_keeps_the_changes_for_the_next_launch() {
+    let dir = tempfile::tempdir().unwrap();
+    settings_in(dir.path(), "# my notes\ndisplay = \"plain\"\n");
+    let played = campaign_in(
+        dir.path(),
+        &[],
+        &format!("{OPENING}options lang fr\noptions ascii on\noptions save\nquit\ny\n"),
+    );
+    assert!(played.status.success(), "{}", stderr(&played));
+    assert!(
+        stdout(&played).contains("Reglages gardes dans "),
+        "{}",
+        stdout(&played)
+    );
+    let file = std::fs::read_to_string(dir.path().join("settings.toml")).unwrap();
+    assert!(file.starts_with("# my notes\n"), "{file}");
+    assert!(
+        file.lines().any(|line| line == "display = \"plain\""),
+        "{file}"
+    );
+    assert!(file.lines().any(|line| line == "lang = \"fr\""), "{file}");
+    assert!(file.lines().any(|line| line == "ascii = true"), "{file}");
+    // The next launch reads it: the source of each value is the file.
+    let shown = stdout(&run_in_env(
+        &["--print-settings", "--data-dir", dir_arg(&dir)],
+        "",
+        &[],
+    ));
+    assert!(shown.contains("lang = \"fr\"  # settings.toml"), "{shown}");
+    assert!(shown.contains("ascii = true  # settings.toml"), "{shown}");
+}
+
+#[test]
+fn without_saving_or_with_a_damaged_file_options_save_writes_nothing() {
+    // `campaign` plays with --no-save.
+    let text = campaign(
+        &[],
+        &format!("{OPENING}options lang fr\noptions save\nquit\ny\n"),
+    );
+    assert!(
+        text.contains("Lancé avec --no-save : rien n'est écrit."),
+        "{text}"
+    );
+
+    let dir = tempfile::tempdir().unwrap();
+    settings_in(dir.path(), "lang = [broken\n");
+    let played = campaign_in(
+        dir.path(),
+        &[],
+        &format!("{OPENING}options palette mono\noptions save\nquit\ny\n"),
+    );
+    assert!(played.status.success(), "{}", stderr(&played));
+    assert!(
+        stdout(&played).contains("is damaged: it is left as it is."),
+        "{}",
+        stdout(&played)
+    );
+    assert_eq!(
+        std::fs::read_to_string(dir.path().join("settings.toml")).unwrap(),
+        "lang = [broken\n"
+    );
+}
+
+#[test]
+fn the_demo_has_no_presentation_commands() {
+    let output = run_with_input(&["--demo"], "\nNeon\ny\noptions\nquit\ny\n");
+    let text = stdout(&output);
+    assert!(text.contains("Unknown command"), "{text}");
+    assert!(!text.contains("== Settings =="), "{text}");
+}
+
+#[test]
 fn a_campaign_is_resumed_where_it_was_left_without_the_welcome() {
     let dir = tempfile::tempdir().unwrap();
     let first = campaign_in(

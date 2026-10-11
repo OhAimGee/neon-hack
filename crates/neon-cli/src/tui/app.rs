@@ -22,6 +22,7 @@ use ratatui::layout::Rect;
 use super::editor::{LineEditor, MAX_CHARS};
 use super::motion::Staging;
 use crate::input::{InputError, to_input};
+use crate::options::Host;
 use crate::persist::Persistence;
 use crate::render::Renderer;
 
@@ -60,8 +61,8 @@ pub(crate) fn tier(area: Rect) -> Tier {
     }
 }
 
-/// What the log keeps. Events are kept as events, so that changing the language would
-/// re-render the whole history; echoes of typed lines are frozen text.
+/// What the log keeps. Events are kept as events, so that changing the language or the mode
+/// re-renders the whole history; echoes of typed lines are the text as it was typed.
 enum LogEntry {
     Event(Event),
     Echo(String),
@@ -94,6 +95,8 @@ pub(crate) struct App<'a> {
     /// that the window reveals the result instead of sitting on top of it. Always 0 when no
     /// scene plays.
     held: usize,
+    /// The presentation commands (`options`, `verbosity`), when the game has them.
+    options: Option<Host<'a>>,
 }
 
 impl<'a> App<'a> {
@@ -121,6 +124,7 @@ impl<'a> App<'a> {
             motion: false,
             staging: None,
             held: 0,
+            options: None,
         };
         app.apply(first);
         app
@@ -130,6 +134,13 @@ impl<'a> App<'a> {
     /// an interface that is not told about motion never moves by itself.
     pub(crate) fn with_motion(mut self, motion: bool) -> Self {
         self.motion = motion;
+        self
+    }
+
+    /// Lets the player change the presentation in the middle of the game (`options`,
+    /// `verbosity`). Without it these lines go to the game, which does not take them.
+    pub(crate) fn with_options(mut self, options: Host<'a>) -> Self {
+        self.options = Some(options);
         self
     }
 
@@ -326,6 +337,9 @@ impl<'a> App<'a> {
         }
         self.editor.clear();
         self.echo(&line);
+        if self.prompt == Prompt::Command && self.run_presentation(&line) {
+            return;
+        }
         match input {
             Ok(input) => self.submit(input),
             Err(InputError::NotYesOrNo) => {
@@ -334,6 +348,25 @@ impl<'a> App<'a> {
                 ))));
             }
         }
+    }
+
+    /// Runs a line that is one of the presentation commands, if it is: the interface's own,
+    /// which the game never hears of. What they say goes to the log like anything else, and
+    /// the new settings reach the renderer and the motion.
+    fn run_presentation(&mut self, line: &str) -> bool {
+        let Some(host) = &mut self.options else {
+            return false;
+        };
+        let Some(events) = host.run(line) else {
+            return false;
+        };
+        host.apply(&mut self.renderer);
+        self.motion = !host.live.reduce_motion;
+        self.scroll.set(0);
+        for event in events {
+            self.push(LogEntry::Event(event));
+        }
+        true
     }
 
     /// Submits a line the player did not type (the `quit` of Ctrl-C).
@@ -346,8 +379,8 @@ impl<'a> App<'a> {
 
     fn echo(&mut self, line: &str) {
         let marker = self.renderer.prompt(&self.prompt).marker;
-        let echo = self.renderer.verbatim(&format!("{marker}{line}"));
-        self.push(LogEntry::Echo(echo));
+        // Kept as typed: the mode (ASCII) is applied when it is drawn, so that it can change.
+        self.push(LogEntry::Echo(format!("{marker}{line}")));
     }
 
     // ---- Completion ------------------------------------------------------------------------

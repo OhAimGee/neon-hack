@@ -26,16 +26,18 @@ Tutoriel, etape 1 sur 10 : Taper `help` pour lister les commandes ouvertes.
 Commandes
 1. Commande : help; Effet : Lister les commandes, ou en expliquer une
 2. Commande : status; Effet : Voir la situation
-3. Commande : quit; Effet : Sauvegarder et quitter le reseau
-4. Commande : quests; Effet : Voir le journal, ou les objectifs d'une quete
-5. Commande : contacts; Effet : Lister les contacts connus
-6. Commande : talk; Effet : Parler a un contact
-7. Commande : net; Effet : Cartographier le reseau, ou detailler un site
-8. Commande : hack; Effet : Lancer une intrusion sur un site connu
-9. Commande : laylow; Effet : Baisser la Notoriete avec un service
-10. Commande : hint; Effet : Demander un indice a ECHO-7
-11. Commande : save; Effet : Sauvegarder la partie dans un emplacement
-12. Commande : tutorial; Effet : Afficher, ignorer ou relancer le tutoriel guide
+3. Commande : options; Effet : Voir ou changer les reglages de presentation
+4. Commande : verbosity; Effet : Voir ou regler la quantite d'ambiance affichee
+5. Commande : quit; Effet : Sauvegarder et quitter le reseau
+6. Commande : quests; Effet : Voir le journal, ou les objectifs d'une quete
+7. Commande : contacts; Effet : Lister les contacts connus
+8. Commande : talk; Effet : Parler a un contact
+9. Commande : net; Effet : Cartographier le reseau, ou detailler un site
+10. Commande : hack; Effet : Lancer une intrusion sur un site connu
+11. Commande : laylow; Effet : Baisser la Notoriete avec un service
+12. Commande : hint; Effet : Demander un indice a ECHO-7
+13. Commande : save; Effet : Sauvegarder la partie dans un emplacement
+14. Commande : tutorial; Effet : Afficher, ignorer ou relancer le tutoriel guide
 Objectif atteint : Lire l'aide (help)
 ECHO-7: Ensuite, ton propre dossier : handle, argent, Notoriete. J'ai les memes trois sur toi.
 Tutoriel, etape 2 sur 10 : Taper `status` pour voir la situation.

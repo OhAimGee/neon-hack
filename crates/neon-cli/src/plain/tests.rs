@@ -415,3 +415,146 @@ fn mono_colours_write_nothing_but_bold_and_the_ascii_and_french_variants_stay_cl
         assert!(!colour_code, "mono has no colour code: {line:?}");
     }
 }
+
+// ---- The presentation commands -------------------------------------------------------------
+
+/// Plays the demo with the presentation commands, as the campaign has them.
+fn play_with_options(input: &[u8], fixed: crate::options::Fixed, colors: bool) -> String {
+    use crate::config::{LangChoice, VerbosityChoice};
+    use crate::options::{Catalogs, Host, Live, Target};
+
+    let (en, fr) = (catalog_en(), catalog_fr());
+    let catalogs = Catalogs { en: &en, fr: &fr };
+    let mut host = Host {
+        catalogs,
+        live: Live {
+            lang: LangChoice::En,
+            verbosity: VerbosityChoice::Normal,
+            ascii: false,
+            palette: PaletteChoice::Default,
+            reduce_motion: false,
+        },
+        fixed,
+        target: Target::Off,
+        changed: Vec::new(),
+    };
+    let renderer = Renderer {
+        catalog: &en,
+        mode: RenderMode {
+            screen_reader: fixed.screen_reader,
+            ascii: false,
+        },
+        verbosity: Verbosity::Normal,
+        colors: colors.then(|| Palette::new(PaletteChoice::Default, false)),
+    };
+    let mut out = Vec::new();
+    let mut game = DemoGame::new(1);
+    let first = game.start();
+    run_with_options(
+        &mut game,
+        first,
+        &renderer,
+        Some(&mut host),
+        &mut Cursor::new(input),
+        &mut out,
+        true,
+        &mut Persistence::disabled(),
+    )
+    .unwrap();
+    String::from_utf8(out).unwrap()
+}
+
+fn fixed() -> crate::options::Fixed {
+    crate::options::Fixed {
+        screen_reader: false,
+        color: false,
+        truecolor: false,
+    }
+}
+
+#[test]
+fn options_shows_the_settings_and_the_game_goes_on_where_it_was() {
+    let output = play_with_options(b"\nNeon\ny\noptions\nhelp\nquit\ny\n", fixed(), false);
+    assert!(output.contains("> options\n== Settings =="), "{output}");
+    assert!(output.contains("reduce_motion"), "{output}");
+    // The game never heard of it: the next prompt is the same, and `help` still works.
+    assert!(output.contains("> help\nCommands\n"), "{output}");
+    assert!(output.ends_with("Goodbye, Neon.\n"), "{output:?}");
+}
+
+#[test]
+fn the_language_changes_in_the_middle_of_the_game() {
+    let output = play_with_options(
+        b"\nNeon\ny\nhelp\noptions lang fr\nhelp\nverbosity\nquit\ny\n",
+        fixed(),
+        false,
+    );
+    let (before, after) = output.split_once("> options lang fr\n").unwrap();
+    assert!(
+        before.contains("Commands\n") && !before.contains("Commandes"),
+        "{before}"
+    );
+    assert!(
+        after.starts_with("Réglage changé : lang = fr.\n"),
+        "{after}"
+    );
+    assert!(after.contains("Commandes\n"), "{after}");
+    assert!(after.contains("Verbosité : normal."), "{after}");
+    assert!(
+        after.contains("Au revoir") || after.contains("Neon"),
+        "{after}"
+    );
+}
+
+#[test]
+fn verbosity_and_ascii_change_what_is_written_from_then_on() {
+    let output = play_with_options(
+        b"\nNeon\ny\noptions ascii on\noptions lang fr\nstatus\nquit\ny\n",
+        fixed(),
+        false,
+    );
+    let after = output.split_once("> options ascii on\n").unwrap().1;
+    // Seven bits from the next line on, accents included.
+    assert!(after.is_ascii(), "{after:?}");
+    assert!(after.contains("Reglage change : lang = fr."), "{after}");
+}
+
+#[test]
+fn a_palette_is_painted_only_when_the_colour_is_there() {
+    let painted = play_with_options(
+        b"\nNeon\ny\noptions palette high-contrast\nstatus\nquit\ny\n",
+        fixed(),
+        true,
+    );
+    assert!(painted.contains('\u{1b}'), "colour was there: {painted:?}");
+    let bare = play_with_options(
+        b"\nNeon\ny\noptions palette high-contrast\nstatus\nquit\ny\n",
+        fixed(),
+        false,
+    );
+    assert!(!bare.contains('\u{1b}'), "no colour was asked: {bare:?}");
+}
+
+#[test]
+fn a_mistake_is_said_and_the_prompt_comes_back() {
+    let output = play_with_options(b"\nNeon\ny\noptions speed fast\nquit\ny\n", fixed(), false);
+    assert!(
+        output.contains("Unknown setting: speed. See `options`.\n> "),
+        "{output}"
+    );
+}
+
+#[test]
+fn the_presentation_commands_are_only_read_at_the_command_prompt() {
+    // The answer to a question is the answer, whatever it looks like.
+    let output = play_with_options(b"\nNeon\ny\nquit\noptions\ny\n", fixed(), false);
+    assert!(!output.contains("== Settings =="), "{output}");
+    assert!(output.ends_with("Goodbye, Neon.\n"), "{output:?}");
+}
+
+#[test]
+fn without_a_host_the_lines_go_to_the_game() {
+    let output = english(b"\nNeon\ny\noptions\nquit\ny\n");
+    assert!(!output.contains("== Settings =="), "{output}");
+    assert!(output.contains("Unknown command"), "{output}");
+}

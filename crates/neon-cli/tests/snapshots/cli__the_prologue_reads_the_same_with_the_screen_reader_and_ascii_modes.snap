@@ -26,16 +26,18 @@ Tutorial, step 1 of 10: Type `help` to list the open commands.
 Commands
 1. Command: help; Effect: List the commands, or explain one
 2. Command: status; Effect: Show your situation
-3. Command: quit; Effect: Save and leave the net
-4. Command: quests; Effect: Show the journal, or the objectives of one quest
-5. Command: contacts; Effect: List the contacts you know
-6. Command: talk; Effect: Talk to a contact
-7. Command: net; Effect: Show the map of the net, or one site
-8. Command: hack; Effect: Start a run on a known site
-9. Command: laylow; Effect: Lower your Notoriety with a service
-10. Command: hint; Effect: Ask ECHO-7 for a hint
-11. Command: save; Effect: Save the game in a slot
-12. Command: tutorial; Effect: Show, skip or restart the guided tutorial
+3. Command: options; Effect: Show or change the presentation settings
+4. Command: verbosity; Effect: Show or set how much atmosphere is shown
+5. Command: quit; Effect: Save and leave the net
+6. Command: quests; Effect: Show the journal, or the objectives of one quest
+7. Command: contacts; Effect: List the contacts you know
+8. Command: talk; Effect: Talk to a contact
+9. Command: net; Effect: Show the map of the net, or one site
+10. Command: hack; Effect: Start a run on a known site
+11. Command: laylow; Effect: Lower your Notoriety with a service
+12. Command: hint; Effect: Ask ECHO-7 for a hint
+13. Command: save; Effect: Save the game in a slot
+14. Command: tutorial; Effect: Show, skip or restart the guided tutorial
 Objective done: Read the help (help)
 ECHO-7: Then know your own file: handle, money, Notoriety. I keep the same three on you.
 Tutorial, step 2 of 10: Type `status` to see the situation.

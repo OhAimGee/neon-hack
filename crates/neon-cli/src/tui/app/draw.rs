@@ -276,7 +276,7 @@ impl App<'_> {
                 .collect(),
             LogEntry::Echo(text) => {
                 let style = Style::default().add_modifier(Modifier::DIM);
-                wrap(text, width)
+                wrap(&self.renderer.verbatim(text), width)
                     .into_iter()
                     .map(|text| Row { text, style })
                     .collect()

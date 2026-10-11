@@ -71,6 +71,7 @@ pub(crate) struct PromptView {
 }
 
 /// Turns texts, events and prompts into lines, in one language and one mode.
+#[derive(Clone, Copy)]
 pub(crate) struct Renderer<'a> {
     pub(crate) catalog: &'a Catalog,
     pub(crate) mode: RenderMode,

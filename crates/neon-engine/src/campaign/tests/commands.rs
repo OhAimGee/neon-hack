@@ -116,8 +116,20 @@ fn help_lists_exactly_the_commands_that_are_open_and_each_one_runs() {
     assert_eq!(
         open,
         [
-            "help", "status", "quit", "quests", "contacts", "talk", "net", "hack", "laylow",
-            "hint", "save", "tutorial"
+            "help",
+            "status",
+            "options",
+            "verbosity",
+            "quit",
+            "quests",
+            "contacts",
+            "talk",
+            "net",
+            "hack",
+            "laylow",
+            "hint",
+            "save",
+            "tutorial"
         ]
     );
     for name in &open {
@@ -132,6 +144,23 @@ fn help_lists_exactly_the_commands_that_are_open_and_each_one_runs() {
             driver.send(Input::Confirm(false));
         }
     }
+}
+
+#[test]
+fn the_presentation_commands_are_listed_completed_and_explained_for_the_frontend_to_run() {
+    let mut driver = Driver::new();
+    assert_eq!(driver.game.complete("opt"), ["options"]);
+    assert_eq!(driver.game.complete("verb"), ["verbosity"]);
+    let said = driver.line("help options");
+    assert!(said.contains("Usage: `options [setting value]`"), "{said}");
+    let said = driver.line("help verbosity");
+    assert!(
+        said.contains("Usage: `verbosity [brief|normal|full]`"),
+        "{said}"
+    );
+    // Their words are read by the table, so that a typo is caught before it reaches a frontend.
+    let said = driver.line("verbosity loud");
+    assert!(driver.errored(), "{said}");
 }
 
 #[test]

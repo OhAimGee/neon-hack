@@ -12,7 +12,7 @@ use crate::tui::motion::FRAME;
 
 /// A game that answers `hack` and `laylow` with the scene and the words that go with it, so
 /// that the interface can be tried without playing the campaign to the shop.
-struct StageGame;
+pub(super) struct StageGame;
 
 fn raw(text: &str) -> Text {
     Text::new("ui.raw").with_str("value", text)
