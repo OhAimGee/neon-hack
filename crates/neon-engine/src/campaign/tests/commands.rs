@@ -741,6 +741,82 @@ fn a_document_is_decrypted_from_the_list_and_gives_a_fragment() {
 }
 
 #[test]
+fn the_lists_say_how_to_read_what_they_list_and_where_the_other_one_is() {
+    let mut driver = Driver::new();
+    driver.finish_m01();
+    let said = driver.line("messages");
+    assert!(said.contains("Read: `read <number or name>`."), "{said}");
+    assert!(
+        said.contains("The archives are read with `archives`."),
+        "{said}"
+    );
+    // The archives hold a document still encrypted: the list says what to do first.
+    let said = driver.line("archives");
+    assert!(
+        said.contains("Read: `archives <number or name>`."),
+        "{said}"
+    );
+    assert!(
+        said.contains("An encrypted document is decrypted first: `decrypt <number or name>`."),
+        "{said}"
+    );
+    // Once it is decrypted, only what is left to read is mentioned.
+    driver.line("decrypt 1");
+    let said = driver.line("archives");
+    assert!(
+        said.contains("Read: `archives <number or name>`."),
+        "{said}"
+    );
+    assert!(!said.contains("decrypted first"), "{said}");
+}
+
+#[test]
+fn read_on_an_archive_says_where_it_is_instead_of_just_refusing() {
+    let mut driver = Driver::new();
+    driver.finish_m01();
+    driver.line("decrypt 1");
+    // By name: the answer is the very line to type.
+    let said = driver.line("read f05");
+    assert!(driver.errored(), "{said}");
+    assert!(
+        said.contains("f05 is not a message: it is in the archives. See `archives f05`."),
+        "{said}"
+    );
+    assert!(
+        !driver
+            .game
+            .state
+            .missions
+            .opened
+            .contains(&"f05".parse().unwrap()),
+        "reading is still done by `archives`"
+    );
+    // By a number that is not a message: the usual refusal, and where the archives are read.
+    let said = driver.line("read 99");
+    assert!(driver.errored(), "{said}");
+    assert!(said.contains("Unknown"), "{said}");
+    assert!(
+        said.contains("The archives are read with `archives <number or name>`."),
+        "{said}"
+    );
+    // What the line says really reads the archive.
+    let said = driver.line("archives f05");
+    assert!(!driver.errored(), "{said}");
+    assert!(said.contains("Intercepted Transmission"), "{said}");
+}
+
+#[test]
+fn read_says_nothing_of_the_archives_to_a_player_who_has_none() {
+    let mut driver = Driver::new();
+    driver.finish_m01();
+    // The game refreshes its lists after a command: look before that happens.
+    driver.game.state.archive.clear();
+    let said = driver.line("read 99");
+    assert!(driver.errored(), "{said}");
+    assert!(!said.contains("archives"), "{said}");
+}
+
+#[test]
 fn a_document_that_needs_an_item_says_which() {
     let mut driver = Driver::new();
     driver.finish_m01();
