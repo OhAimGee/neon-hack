@@ -14,13 +14,20 @@ use crate::tui::motion::FRAME;
 /// that the interface can be tried without playing the campaign to the shop.
 struct StageGame;
 
+fn raw(text: &str) -> Text {
+    Text::new("ui.raw").with_str("value", text)
+}
+
 fn said(text: &str) -> Event {
     Event::message(
         Role::System,
         neon_engine::event::Importance::Essential,
-        Text::new("ui.raw").with_str("value", text),
+        raw(text),
     )
 }
+
+/// The commands of the stub that stage a scene.
+const SCENES: [&str; 4] = ["hack", "laylow", "decrypt", "buy"];
 
 impl Game for StageGame {
     fn start(&mut self) -> Step {
@@ -52,6 +59,21 @@ impl Game for StageGame {
                     band: Text::new("band.calm"),
                 },
                 said("Cover bought."),
+            ],
+            Input::Line(line) if line.trim() == "decrypt" => vec![
+                Event::Effect(Effect::Decrypt {
+                    document: raw("Personnel register"),
+                    fragment: true,
+                }),
+                said("Document decrypted."),
+            ],
+            Input::Line(line) if line.trim() == "buy" => vec![
+                Event::Effect(Effect::Buy {
+                    item: raw("Ghost Protocol"),
+                    price: 80,
+                    balance: 420,
+                }),
+                said("Bought."),
             ],
             Input::Line(line) if line.trim() == "tier6" => vec![
                 Event::Effect(Effect::Hack {
@@ -580,5 +602,157 @@ fn staged_screens_in_both_languages_and_sizes() {
     insta::assert_snapshot!(
         "a_finished_hack_in_ascii_on_the_wide_tier",
         picture(&app, 100, 28)
+    );
+}
+
+#[test]
+fn a_decryption_names_the_document_and_the_fragment_it_yields() {
+    let (catalog, mut game) = (catalog_en(), StageGame);
+    let mut app = stage_app(&mut game, &catalog, RenderMode::FULL, None, true);
+    type_line(&mut app, "decrypt");
+    let text = text_of(&screen(&app, 100, 28));
+    assert!(text.contains("Decrypting: Personnel register"), "{text}");
+    assert!(text.contains("Decryption in progress, 0% done"), "{text}");
+    assert!(text.contains("Reading the header"), "{text}");
+    advance(&mut app, 1_500);
+    let end = text_of(&screen(&app, 100, 28));
+    assert!(end.contains("Decryption complete, 100% done"), "{end}");
+    assert!(
+        end.contains("Document decrypted, new fragment in the archives."),
+        "{end}"
+    );
+    advance(&mut app, 5_000);
+    assert!(text_of(&screen(&app, 100, 28)).contains("Document decrypted."));
+}
+
+#[test]
+fn a_purchase_shows_the_debit_and_a_balance_that_goes_down_to_what_is_left() {
+    let (catalog, mut game) = (catalog_en(), StageGame);
+    let mut app = stage_app(&mut game, &catalog, RenderMode::FULL, None, true);
+    type_line(&mut app, "buy");
+    let text = text_of(&screen(&app, 100, 28));
+    assert!(text.contains("Purchase: Ghost Protocol"), "{text}");
+    assert!(text.contains("Debit: 80 credits"), "{text}");
+    assert!(text.contains("Balance: 500 credits"), "{text}");
+    advance(&mut app, 600);
+    let middle = text_of(&screen(&app, 100, 28));
+    let balance: u32 = middle
+        .split("Balance: ")
+        .nth(1)
+        .and_then(|rest| rest.split_whitespace().next())
+        .and_then(|number| number.parse().ok())
+        .expect("a balance");
+    assert!((420..500).contains(&balance), "{middle}");
+    // 1.15 s of 1.2 s: the bar is full and the result is held.
+    advance(&mut app, 550);
+    let end = text_of(&screen(&app, 100, 28));
+    assert!(end.contains("Balance: 420 credits"), "{end}");
+    assert!(end.contains("Bought: Ghost Protocol."), "{end}");
+}
+
+#[test]
+fn every_scene_obeys_the_rules_of_the_screen() {
+    for scene in SCENES {
+        // No colour: attributes only; nothing blinks; nothing outside seven bits in ASCII.
+        let catalog = catalog_fr();
+        let mut game = StageGame;
+        let mode = RenderMode {
+            screen_reader: false,
+            ascii: true,
+        };
+        let mut app = stage_app(&mut game, &catalog, mode, None, true);
+        type_line(&mut app, scene);
+        for _ in 0..40 {
+            for (width, height) in SIZES {
+                for row in screen(&app, width, height) {
+                    assert!(row.is_ascii(), "{scene}: {row:?}");
+                }
+                for cell in cells(&app, width, height) {
+                    assert_eq!(cell.fg, Color::Reset, "{scene} {width}x{height}: {cell:?}");
+                    assert_eq!(cell.bg, Color::Reset, "{scene} {width}x{height}: {cell:?}");
+                }
+            }
+            app.tick(FRAME);
+        }
+        for choice in [
+            PaletteChoice::Default,
+            PaletteChoice::HighContrast,
+            PaletteChoice::Cvd,
+            PaletteChoice::Mono,
+        ] {
+            for truecolor in [false, true] {
+                let catalog = catalog_en();
+                let mut game = StageGame;
+                let colors = Some(Palette::new(choice, truecolor));
+                let mut app = stage_app(&mut game, &catalog, RenderMode::FULL, colors, true);
+                type_line(&mut app, scene);
+                for _ in 0..40 {
+                    for (width, height) in SIZES {
+                        for cell in cells(&app, width, height) {
+                            assert!(
+                                !cell.modifier.contains(Modifier::SLOW_BLINK)
+                                    && !cell.modifier.contains(Modifier::RAPID_BLINK),
+                                "{scene} {choice:?}"
+                            );
+                            if choice == PaletteChoice::Mono {
+                                assert_eq!(cell.fg, Color::Reset, "{scene}: {cell:?}");
+                            }
+                        }
+                    }
+                    app.tick(FRAME);
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn every_scene_ends_by_itself_within_two_seconds_and_leaves_its_result() {
+    for scene in SCENES {
+        let (catalog, mut game) = (catalog_en(), StageGame);
+        let mut app = stage_app(&mut game, &catalog, RenderMode::FULL, None, true);
+        type_line(&mut app, scene);
+        let mut frames = 0;
+        while app.is_animating() {
+            app.tick(FRAME);
+            frames += 1;
+            assert!(frames <= 40, "{scene} still plays after {frames} frames");
+        }
+        let rows = screen(&app, 100, 28);
+        assert!(
+            has(&rows, "Intrusion over.")
+                || has(&rows, "Cover bought.")
+                || has(&rows, "Document decrypted.")
+                || has(&rows, "Bought."),
+            "{scene}: {rows:?}"
+        );
+    }
+}
+
+#[test]
+fn the_other_scenes_in_two_more_pictures() {
+    let picture = |app: &App<'_>, width: u16, height: u16| {
+        format!(
+            "{width}x{height}\n{}",
+            screen(app, width, height).join("\n")
+        )
+    };
+
+    let (catalog, mut game) = (catalog_fr(), StageGame);
+    let mut app = stage_app(&mut game, &catalog, RenderMode::FULL, None, true);
+    type_line(&mut app, "decrypt");
+    advance(&mut app, 800);
+    insta::assert_snapshot!(
+        "a_decryption_in_french_on_the_wide_tier",
+        picture(&app, 100, 28)
+    );
+
+    let (catalog, mut game) = (catalog_en(), StageGame);
+    let mut app = stage_app(&mut game, &catalog, RenderMode::FULL, None, true);
+    type_line(&mut app, "buy");
+    advance(&mut app, 600);
+    insta::assert_snapshot!(
+        "a_purchase_in_english_on_the_compact_tier",
+        picture(&app, 64, 20)
     );
 }

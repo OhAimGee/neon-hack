@@ -147,6 +147,34 @@ pub enum Effect {
         /// Notoriety the service removes.
         cooling: u16,
     },
+    /// A document being decrypted.
+    Decrypt {
+        /// Title of the document.
+        document: Text,
+        /// The decryption hands out a fragment of the archives.
+        fragment: bool,
+    },
+    /// A purchase at the stall.
+    Buy {
+        /// Name of the item bought.
+        item: Text,
+        /// What it costs, in credits.
+        price: u32,
+        /// Credits left once it is paid.
+        balance: u32,
+    },
+}
+
+impl Effect {
+    /// The texts the effect carries, so that a check can look every one of them up.
+    #[must_use]
+    pub fn texts(&self) -> Vec<&Text> {
+        match self {
+            Self::Hack { .. } | Self::Laylow { .. } => Vec::new(),
+            Self::Decrypt { document, .. } => vec![document],
+            Self::Buy { item, .. } => vec![item],
+        }
+    }
 }
 
 impl Event {

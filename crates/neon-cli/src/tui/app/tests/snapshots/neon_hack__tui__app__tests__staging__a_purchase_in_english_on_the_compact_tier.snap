@@ -1,0 +1,25 @@
+---
+source: crates/neon-cli/src/tui/app/tests/staging.rs
+expression: "picture(&app, 64, 20)"
+---
+64x20
+ Neon
+> buy
+
+
+ ╭Purchase: Ghost Protocol────────────────────────────────────╮
+ │Purchase in progress, 75% done                              │
+ │                                                            │
+ │████████████████████████████████████████░░░░░░░░░░░░░░   75%│
+ │Debit: 80 credits                                           │
+ │Balance: 440 credits                                        │
+ │▸ Sending the payment                                       │
+ │42 24 9A 1C 69 21 EA 40 12 D6 35 B6 D3 31 C2 61 D2 19 3B FB │
+ │70 10 35 9A 67 87 F2 3F 34 C2 19 E4 E0 26 40 D1 36 F8 F2 27 │
+ │Press any key to skip.                                      │
+ ╰────────────────────────────────────────────────────────────╯
+
+
+
+>
+Tab complete | Up/Down history | PgUp/PgDn scroll | Ctrl+C quit

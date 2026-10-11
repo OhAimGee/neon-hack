@@ -75,6 +75,13 @@ impl CampaignGame {
                     events.push(Event::error(reason));
                     return;
                 }
+                let price = self.content.item(item).map_or(0, |def| def.price.get());
+                let balance = self.state.credits(self.content).get().saturating_sub(price);
+                events.push(Event::Effect(Effect::Buy {
+                    item: keys::item_name(item),
+                    price,
+                    balance,
+                }));
                 events.push(Event::reward(
                     Text::new("campaign.buy.done").with_text("name", keys::item_name(item)),
                 ));

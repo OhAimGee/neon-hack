@@ -6,7 +6,7 @@ use crate::content::Fact;
 use crate::content::eval::{ObjectiveState, journal};
 use crate::content::ids::{QuestId, ReadableId, SiteId};
 use crate::content::schema::{QuestKind, QuestStatus, ReadableKind};
-use crate::event::{Event, Table};
+use crate::event::{Effect, Event, Table};
 use crate::prompt::Input;
 use crate::save::{SLOT_COUNT, SaveRequest};
 use crate::text::Text;
@@ -446,6 +446,14 @@ impl CampaignGame {
         };
         let (at, mut facts) = self.tick();
         facts.push(Fact::Decrypted { id: id.clone() });
+        let yields = self
+            .content
+            .readable(&id)
+            .and_then(|def| def.yields.clone());
+        events.push(Event::Effect(Effect::Decrypt {
+            document: keys::document_title(&id),
+            fragment: yields.is_some(),
+        }));
         events.push(Event::system(
             Text::new("campaign.decrypt.done")
                 .with_term("document", "document")
