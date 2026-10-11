@@ -386,7 +386,7 @@ Deux conséquences : la palette `cvd` doit être **opaque** (sur fond blanc le j
 | LEC-5 | Variantes `clé@sr` sans symbole ambigu (`→ · × ¢ ✓ ○ █ ░ ─ │ ╭ • … »`) : « de 4 à 14 », « 80 crédits », « 40 sur 100, niveau vigilance » | U | ✔ |
 | LEC-6 | Tableaux linéarisés avec le nom des colonnes : `1. Objet : Ghost Protocol ; Prix : 80 crédits ; État : disponible` | U | ✔ |
 | LEC-7 | Les changements d'état sont annoncés en texte après chaque commande (Trace, bande, gain, nouveau courrier) | U | ✔ (Trace) |
-| LEC-8 | Au premier lancement, une question en plain propose le mode d'affichage (plein écran / ligne par ligne / lecteur d'écran) et l'enregistre ; `options` la rouvre | P | ○ |
+| LEC-8 | Au premier lancement, une question en plain propose le mode d'affichage (plein écran / ligne par ligne / lecteur d'écran) et l'enregistre ; `options` la rouvre (la question du premier lancement est faite ; `options` règle déjà langue, verbosité, ASCII, palette et mouvement en cours de partie, R-20 ; changer d'interface en cours de partie attend R3.2) | P | ○ |
 | LEC-9 | Protocole manuel avant chaque version : NVDA + Windows Terminal, Narrator, VoiceOver + Terminal.app, Orca + gnome-terminal, brltty + console Linux | M | ○ (non fait ici) |
 
 ### 5.5 Clavier
@@ -419,7 +419,7 @@ Raccourcis : `Enter` valider · `Tab` compléter · `↑/↓` historique · `Ctr
 |---|---|---|---|
 | VRB-1 | `brief` : `Essential` seul ; `normal` : + `Normal` ; `full` : tout, plus les alternatives de décor et les annonces de variation | U | ✔ |
 | VRB-2 | `Error`, `Alert`, `Reward` et les invites sont toujours `Essential` (propriété du moteur, vérifiée sur une session) | U | ✔ |
-| VRB-3 | Réglable par `--verbosity`, réglage enregistré et commande `verbosity` ; le lecteur d'écran n'est jamais en dessous de `normal` | U | ✔ (drapeau) |
+| VRB-3 | Réglable par `--verbosity`, réglage enregistré et commande `verbosity` ; le lecteur d'écran n'est jamais en dessous de `normal` | U | ✔ |
 
 ### 5.8 ASCII
 

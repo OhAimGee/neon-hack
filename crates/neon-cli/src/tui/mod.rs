@@ -24,6 +24,7 @@ use neon_engine::{Game, Step};
 use ratatui::DefaultTerminal;
 use ratatui::crossterm::event::{self, Event, KeyEventKind};
 
+use crate::options::Host;
 use crate::persist::Persistence;
 use crate::render::Renderer;
 use app::App;
@@ -61,15 +62,19 @@ impl Fault {
 
 /// Runs the game in the full-screen interface until it ends. The terminal is given back
 /// whatever the way out.
-pub(crate) fn run(
-    game: &mut dyn Game,
+pub(crate) fn run<'a>(
+    game: &'a mut dyn Game,
     first: Step,
-    renderer: Renderer<'_>,
+    renderer: Renderer<'a>,
     persistence: Persistence,
     reduce_motion: bool,
+    options: Option<Host<'a>>,
     test_fault: Option<&str>,
 ) -> io::Result<()> {
     let mut app = App::new(game, renderer, first, persistence).with_motion(!reduce_motion);
+    if let Some(options) = options {
+        app = app.with_options(options);
+    }
     let (mut terminal, _guard) = term::enter()?;
     event_loop(&mut terminal, &mut app, test_fault.and_then(Fault::parse))
 }

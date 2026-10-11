@@ -148,7 +148,7 @@ impl LangChoice {
         }
     }
 
-    fn from_code(code: &str) -> Option<Self> {
+    pub(crate) fn from_code(code: &str) -> Option<Self> {
         match code.to_ascii_lowercase().as_str() {
             "en" => Some(Self::En),
             "fr" => Some(Self::Fr),

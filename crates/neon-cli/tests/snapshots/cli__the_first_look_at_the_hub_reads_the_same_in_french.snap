@@ -27,16 +27,18 @@ Taper `help` pour lister les commandes, puis `quests` pour lire la première qu�
 Commandes
 [1] help - Lister les commandes, ou en expliquer une
 [2] status - Voir la situation
-[3] quit - Sauvegarder et quitter le réseau
-[4] quests - Voir le journal, ou les objectifs d'une quête
-[5] contacts - Lister les contacts connus
-[6] talk - Parler à un contact
-[7] net - Cartographier le réseau, ou détailler un site
-[8] hack - Lancer une intrusion sur un site connu
-[9] laylow - Baisser la Notoriété avec un service
-[10] hint - Demander un indice à ECHO-7
-[11] save - Sauvegarder la partie dans un emplacement
-[12] tutorial - Afficher, ignorer ou relancer le tutoriel guidé
+[3] options - Voir ou changer les réglages de présentation
+[4] verbosity - Voir ou régler la quantité d'ambiance affichée
+[5] quit - Sauvegarder et quitter le réseau
+[6] quests - Voir le journal, ou les objectifs d'une quête
+[7] contacts - Lister les contacts connus
+[8] talk - Parler à un contact
+[9] net - Cartographier le réseau, ou détailler un site
+[10] hack - Lancer une intrusion sur un site connu
+[11] laylow - Baisser la Notoriété avec un service
+[12] hint - Demander un indice à ECHO-7
+[13] save - Sauvegarder la partie dans un emplacement
+[14] tutorial - Afficher, ignorer ou relancer le tutoriel guidé
 Objectif atteint : Lire l'aide (help)
 > status
 Handle : Neon

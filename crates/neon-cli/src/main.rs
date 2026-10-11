@@ -8,6 +8,7 @@
 mod config;
 mod frontend;
 mod input;
+mod options;
 mod palette;
 mod persist;
 mod plain;
@@ -27,7 +28,7 @@ use clap::{Parser, ValueEnum};
 use neon_engine::campaign::{CampaignGame, Difficulty};
 use neon_engine::demo::DemoGame;
 use neon_engine::event::Event;
-use neon_engine::text::{Catalog, RenderMode, Text, to_ascii};
+use neon_engine::text::{Catalog, Lang, RenderMode, Text, to_ascii};
 use neon_engine::{Game, Step};
 
 use crate::config::{
@@ -35,6 +36,7 @@ use crate::config::{
     VerbosityChoice,
 };
 use crate::frontend::{Facts, Frontend, ModeAnswer};
+use crate::options::{Catalogs, Fixed, Host, Live};
 use crate::palette::{ColorChoice, Palette, PaletteChoice};
 use crate::persist::Persistence;
 use crate::render::Renderer;
@@ -362,10 +364,16 @@ fn run_game(cli: &Cli, env: &Env, kind: Kind) -> io::Result<()> {
         }
     }
     let shown = setup.presentation;
-    let catalog = embedded_catalog(&shown)?;
+    // Both languages are loaded, so that `options lang` can switch in the middle of a game.
+    let catalog_en = embedded_catalog_of(Lang::En)?;
+    let catalog_fr = embedded_catalog_of(Lang::Fr)?;
+    let catalogs = Catalogs {
+        en: &catalog_en,
+        fr: &catalog_fr,
+    };
     // The two are independent and can be combined.
     let renderer = Renderer {
-        catalog: &catalog,
+        catalog: catalogs.get(shown.lang.value),
         mode: RenderMode {
             screen_reader: shown.screen_reader.value,
             ascii: shown.ascii.value,
@@ -376,6 +384,30 @@ fn run_game(cli: &Cli, env: &Env, kind: Kind) -> io::Result<()> {
             .0
             .then(|| Palette::new(shown.palette.value, shown.truecolor)),
     };
+    // The presentation commands belong to the campaign: the demo is a toy for the engine.
+    let mut options_host = (kind == Kind::Campaign).then(|| Host {
+        catalogs,
+        live: Live {
+            lang: shown.lang.value,
+            verbosity: shown.verbosity.value,
+            ascii: shown.ascii.value,
+            palette: shown.palette.value,
+            reduce_motion: shown.reduce_motion.value,
+        },
+        fixed: Fixed {
+            screen_reader: shown.screen_reader.value,
+            color: shown.color.0,
+            truecolor: shown.truecolor,
+        },
+        target: if cli.no_save {
+            options::Target::Off
+        } else if matches!(setup.file_state, FileState::Damaged(_)) {
+            options::Target::Damaged(setup.settings_file.clone())
+        } else {
+            options::Target::File(setup.settings_file.clone())
+        },
+        changed: Vec::new(),
+    });
     let store = Store::new(setup.data_dir.join(kind.saves_folder()));
     if cli.list_saves {
         return list_saves(&store, &renderer, &mut io::stdout().lock());
@@ -421,6 +453,7 @@ fn run_game(cli: &Cli, env: &Env, kind: Kind) -> io::Result<()> {
             renderer,
             persistence,
             shown.reduce_motion.value,
+            options_host,
             env.test_fault.as_deref(),
         );
     }
@@ -429,10 +462,11 @@ fn run_game(cli: &Cli, env: &Env, kind: Kind) -> io::Result<()> {
     let stdin = io::stdin();
     let echo_input = !env.stdin_is_terminal;
     let mut persistence = persistence;
-    plain::run(
+    plain::run_with_options(
         &mut *game,
         first,
         &renderer,
+        options_host.as_mut(),
         &mut BufReader::new(stdin.lock()),
         &mut io::stdout().lock(),
         echo_input,
@@ -446,6 +480,13 @@ fn terminal_size() -> Option<(u16, u16)> {
     return tui::terminal_size();
     #[cfg(not(feature = "tui"))]
     None
+}
+
+/// The texts of one language. They are checked by the tests, so this only fails on a broken
+/// build.
+fn embedded_catalog_of(lang: Lang) -> io::Result<Catalog> {
+    Catalog::embedded(lang)
+        .map_err(|errors| io::Error::other(format!("the texts do not load:\n{errors}")))
 }
 
 /// The texts in the language of these settings. They are checked by the tests, so this only

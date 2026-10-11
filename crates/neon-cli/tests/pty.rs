@@ -953,3 +953,91 @@ fn reduced_motion_shows_the_result_at_once_with_no_scene() {
         });
     }
 }
+
+// ---- The presentation commands -------------------------------------------------------------
+
+#[test]
+fn options_open_in_the_log_and_the_language_changes_the_whole_screen() {
+    let mut session = at_command_line(28, 100);
+    session.type_line("options");
+    session.wait_text("== Settings ==");
+    assert!(session.contains("reduce_motion"));
+    assert!(
+        session.rows()[27].starts_with("Tab complete"),
+        "{:#?}",
+        session.rows()
+    );
+
+    session.type_line("options lang fr");
+    // The bars and the history are drawn again in French at once.
+    session.wait_text("Réglage changé : lang = fr.");
+    session.wait_text("Tab compléter");
+    assert!(session.contains("== Réglages =="), "{}", session.text());
+    assert!(
+        session.rows()[0].contains("Notoriété"),
+        "{:#?}",
+        session.rows()
+    );
+
+    session.type_line("options lang en");
+    session.wait_text("Tab complete");
+    assert_taken(&session);
+}
+
+#[test]
+fn ascii_can_be_turned_on_in_the_game_and_the_screen_follows() {
+    let mut session = at_command_line(28, 100);
+    assert!(session.rows()[1].starts_with('╭'));
+    session.type_line("options ascii on");
+    session.wait_for("a screen in seven bits", |s| {
+        s.rows().iter().all(|row| row.is_ascii()) && s.contains("ascii = on")
+    });
+    assert!(session.rows()[1].starts_with('+'), "{:#?}", session.rows());
+}
+
+#[test]
+fn reduced_motion_set_in_the_game_removes_the_scene_of_the_next_intrusion() {
+    let mut session = at_command_line(28, 100);
+    session.type_line("options reduce_motion on");
+    session.wait_text("reduce_motion = on");
+    hack_localhost(&mut session);
+    session.wait_for("the result, and never a scene", |s| {
+        assert!(!s.contains("Hack in progress"), "{}", s.text());
+        s.contains("localhost: 1 file taken.")
+    });
+}
+
+#[test]
+fn a_setting_saved_from_the_game_is_there_at_the_next_launch() {
+    let folder = tempfile::tempdir().unwrap();
+    std::fs::write(folder.path().join("settings.toml"), "# test\n").unwrap();
+    let mut session = Session::launch(28, 100, &[], folder.path(), &[]);
+    wait_for_the_handle_question(&mut session);
+    play_the_opening(&mut session, "Neon");
+    session.type_line("options lang fr");
+    session.wait_text("Réglage changé : lang = fr.");
+    session.type_line("options save");
+    session.wait_text("Réglages gardés dans");
+    let written = std::fs::read_to_string(folder.path().join("settings.toml")).unwrap();
+    assert!(written.starts_with("# test\n"), "{written}");
+    assert!(
+        written.lines().any(|line| line == "lang = \"fr\""),
+        "{written}"
+    );
+    quit_with_control_c_in_french(&mut session);
+
+    let mut second = Session::launch(28, 100, &[], folder.path(), &[]);
+    second.wait_for("the game back, in French", |s| {
+        s.screen().alternate_screen() && s.contains("Tab compléter")
+    });
+}
+
+/// Quits the way the player does, in French: Ctrl-C asks, `o` confirms, any key leaves.
+fn quit_with_control_c_in_french(session: &mut Session) {
+    session.send(CTRL_C);
+    session.wait_for("the question", |s| s.input_row().contains("[o/N]"));
+    session.type_line("o");
+    session.wait_text("Appuyez sur une touche pour quitter.");
+    session.send(b" ");
+    session.finish();
+}

@@ -110,7 +110,7 @@ Saves live in the user's data folder, in a `saves-campaign` subfolder (`saves` f
 
 ### Settings
 
-The presentation options (`lang`, `verbosity`, `ascii`, `screen_reader`, `display`, `reduce_motion`) can be set once and for all in a `settings.toml` file in the data folder (the parent of the folder `--list-saves` shows, which is `saves-campaign`). The game only creates this file for the first-launch question (key `display`, plus `screen_reader` for screen-reader mode) and never modifies a file that exists; the rest is written by hand:
+The presentation options (`lang`, `verbosity`, `ascii`, `screen_reader`, `display`, `reduce_motion`) can be set once and for all in a `settings.toml` file in the data folder (the parent of the folder `--list-saves` shows, which is `saves-campaign`). The game only creates this file for the first-launch question (key `display`, plus `screen_reader` for screen-reader mode) or when you ask it to with `options save` (see below); it never modifies a damaged file. The rest is written by hand:
 
 ```toml
 lang = "fr"
@@ -120,6 +120,8 @@ screen_reader = false
 display = "auto"   # auto, tui or plain
 reduce_motion = false   # true: no animation
 ```
+
+**During a game**, the `options` command shows the settings; `options lang fr`, `options verbosity full`, `options ascii on`, `options palette cvd` or `options reduce_motion on` change them at once (the history on screen is drawn again in the new language). `verbosity brief|normal|full` sets the verbosity. These changes last for the game; `options save` writes the ones you made into `settings.toml`, leaving the other lines and the comments alone. `screen_reader` and `display` are set at launch.
 
 For each setting the most specific source wins: the command line, then the environment variable (`NEON_HACK_LANG` for the language), then `settings.toml`, then the system's configuration (`LANG` for the language; a locale that names a charset other than UTF-8, such as `fr_FR.ISO-8859-1`, turns `--ascii` on), then the default. `NEON_HACK_DATA_DIR` changes the data folder. For colours: `color` (`auto`, `always`, `never`) and `palette` can also be set in `settings.toml` (`NEON_HACK_PALETTE` for the palette); the standard `NO_COLOR` variable turns colour off (the `mono` palette only uses bold, underline and reverse video), unless `--color` is given; screen-reader mode never sends an escape sequence. `high-contrast` (white on black) and `cvd` (colours chosen for colour-vision deficiencies) paint their own background; their exact colours need a 24-bit terminal (`COLORTERM=truecolor`), otherwise the terminal approximates them. A damaged file is reported, never modified, and the defaults apply. `neon-hack --print-settings` shows the result.
 
