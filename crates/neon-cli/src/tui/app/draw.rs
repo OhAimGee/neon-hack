@@ -141,12 +141,14 @@ impl App<'_> {
             let inner = block.inner(log_area);
             frame.render_widget(block, log_area);
             self.draw_log(frame, inner);
+            self.draw_modal(frame, inner);
             self.draw_staging(frame, inner);
             if let Some(panel_area) = panel_area {
                 self.draw_panel(frame, panel_area, &view);
             }
         } else {
             self.draw_log(frame, body_area);
+            self.draw_modal(frame, self.modal_area(body_area));
             self.draw_staging(frame, body_area);
             if self.panel.drawer {
                 self.draw_drawer(frame, body_area, &view);
@@ -168,11 +170,16 @@ impl App<'_> {
 
     /// A box with a title, in characters the mode allows.
     pub(super) fn frame_block(&self, title: &Text) -> Block<'static> {
+        self.frame_block_titled(self.renderer.text(title))
+    }
+
+    /// [`App::frame_block`] for a title already written.
+    pub(super) fn frame_block_titled(&self, title: String) -> Block<'static> {
         let block = Block::default()
             .borders(Borders::ALL)
             .border_style(self.accent_style(Accent::Frame))
             .title_style(self.accent_style(Accent::Title))
-            .title(self.renderer.text(title));
+            .title(title);
         if self.renderer.mode.ascii {
             block.border_set(ASCII_BORDER)
         } else {

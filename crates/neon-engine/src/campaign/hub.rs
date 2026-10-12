@@ -6,7 +6,7 @@ use crate::content::Fact;
 use crate::content::eval::{ObjectiveState, journal};
 use crate::content::ids::{QuestId, ReadableId, SiteId};
 use crate::content::schema::{QuestKind, QuestStatus, ReadableKind};
-use crate::event::{Effect, Event, Table};
+use crate::event::{Effect, Event, ScreenKind, Table};
 use crate::prompt::Input;
 use crate::save::{SLOT_COUNT, SaveRequest};
 use crate::text::Text;
@@ -23,12 +23,18 @@ const TRUST_NEUTRAL: i32 = 20;
 const TRUST_FRIENDLY: i32 = 50;
 const TRUST_TRUSTED: i32 = 80;
 
-fn table(title: &'static str, columns: &[&'static str], rows: Vec<Vec<Text>>) -> Event {
-    Event::Screen(Table {
-        title: Text::new(title),
-        columns: columns.iter().map(|key| Text::new(key)).collect(),
+fn table(
+    kind: ScreenKind,
+    title: &'static str,
+    columns: &[&'static str],
+    rows: Vec<Vec<Text>>,
+) -> Table {
+    Table::new(
+        Text::new(title),
+        columns.iter().map(|key| Text::new(key)).collect(),
         rows,
-    })
+    )
+    .pinned(kind)
 }
 
 fn dash() -> Text {
@@ -175,35 +181,39 @@ impl CampaignGame {
 
     pub(super) fn cmd_quests(&mut self, args: &[ArgRef], events: &mut Vec<Event>) {
         match arg_id::<QuestId>(args, 0) {
-            None => {
-                let rows: Vec<Vec<Text>> = self
-                    .state
-                    .quest_log
-                    .iter()
-                    .filter_map(|id| {
-                        let quest = self.content.quest(id)?;
-                        Some(vec![
-                            Text::raw(id.as_str()),
-                            keys::quest_title(id),
-                            status_word(self.state.missions.status(id)),
-                            Text::raw(quest.chapter.to_string()),
-                        ])
-                    })
-                    .collect();
-                events.push(table(
-                    "campaign.quests.title",
-                    &[
-                        "campaign.col.id",
-                        "campaign.col.title",
-                        "campaign.col.status",
-                        "campaign.col.chapter",
-                    ],
-                    rows,
-                ));
-            }
+            None => events.push(Event::Screen(self.quests_table())),
             Some(id) => self.quest_detail(&id, events),
         }
         self.used("quests", events);
+    }
+
+    /// The journal: every quest the player has heard of, with its state.
+    fn quests_table(&self) -> Table {
+        let rows: Vec<Vec<Text>> = self
+            .state
+            .quest_log
+            .iter()
+            .filter_map(|id| {
+                let quest = self.content.quest(id)?;
+                Some(vec![
+                    Text::raw(id.as_str()),
+                    keys::quest_title(id),
+                    status_word(self.state.missions.status(id)),
+                    Text::raw(quest.chapter.to_string()),
+                ])
+            })
+            .collect();
+        table(
+            ScreenKind::Quests,
+            "campaign.quests.title",
+            &[
+                "campaign.col.id",
+                "campaign.col.title",
+                "campaign.col.status",
+                "campaign.col.chapter",
+            ],
+            rows,
+        )
     }
 
     fn quest_detail(&self, id: &QuestId, events: &mut Vec<Event>) {
@@ -265,6 +275,11 @@ impl CampaignGame {
     // --------------------------------------------------------------------- contacts
 
     pub(super) fn cmd_contacts(&mut self, events: &mut Vec<Event>) {
+        events.push(Event::Screen(self.contacts_table()));
+    }
+
+    /// The people the player knows, with how far they trust.
+    fn contacts_table(&self) -> Table {
         let c = self.content;
         let missions = &self.state.missions;
         let rows: Vec<Vec<Text>> = self
@@ -298,7 +313,8 @@ impl CampaignGame {
                 ]
             })
             .collect();
-        events.push(table(
+        table(
+            ScreenKind::Contacts,
             "campaign.contacts.title",
             &[
                 "campaign.col.id",
@@ -308,12 +324,26 @@ impl CampaignGame {
                 "campaign.col.offers",
             ],
             rows,
-        ));
+        )
     }
 
     // ------------------------------------------------------------------- messages
 
     pub(super) fn cmd_messages(&mut self, events: &mut Vec<Event>) {
+        let mail = self.mail_table();
+        if mail.rows.is_empty() {
+            events.push(Event::system(
+                Text::new("campaign.messages.empty").with_term("inbox", "inbox"),
+            ));
+            return;
+        }
+        events.push(Event::Screen(mail));
+        // `read` is for these; the archives have their own command, which this line names.
+        events.push(Event::system(Text::new("campaign.messages.hint")));
+    }
+
+    /// The inbox, each message marked read or not.
+    fn mail_table(&self) -> Table {
         let rows: Vec<Vec<Text>> = self
             .state
             .inbox
@@ -331,13 +361,8 @@ impl CampaignGame {
                 ]
             })
             .collect();
-        if rows.is_empty() {
-            events.push(Event::system(
-                Text::new("campaign.messages.empty").with_term("inbox", "inbox"),
-            ));
-            return;
-        }
-        events.push(table(
+        table(
+            ScreenKind::Mail,
             "campaign.messages.title",
             &[
                 "campaign.col.id",
@@ -345,9 +370,7 @@ impl CampaignGame {
                 "campaign.col.status",
             ],
             rows,
-        ));
-        // `read` is for these; the archives have their own command, which this line names.
-        events.push(Event::system(Text::new("campaign.messages.hint")));
+        )
     }
 
     pub(super) fn cmd_read(&mut self, args: &[ArgRef], events: &mut Vec<Event>) {
@@ -376,6 +399,29 @@ impl CampaignGame {
             self.read_archive(&id, events);
             return;
         }
+        let archives = self.archives_table();
+        if archives.rows.is_empty() {
+            events.push(Event::system(
+                Text::new("campaign.archives.empty").with_term("archives", "archives"),
+            ));
+            return;
+        }
+        events.push(Event::Screen(archives));
+        // How to read what is listed, and what to do first with what is still encrypted.
+        events.push(Event::system(Text::new("campaign.archives.hint")));
+        let encrypted = self.state.archive.iter().any(|id| {
+            self.content
+                .readable(id)
+                .is_some_and(|def| def.kind == ReadableKind::Document)
+                && !self.state.missions.opened.contains(id)
+        });
+        if encrypted {
+            events.push(Event::system(Text::new("campaign.archives.hint_encrypted")));
+        }
+    }
+
+    /// The archives: documents to decrypt and fragments to read.
+    fn archives_table(&self) -> Table {
         let rows: Vec<Vec<Text>> = self
             .state
             .archive
@@ -405,13 +451,8 @@ impl CampaignGame {
                 Some(vec![Text::raw(id.as_str()), title, Text::new(state)])
             })
             .collect();
-        if rows.is_empty() {
-            events.push(Event::system(
-                Text::new("campaign.archives.empty").with_term("archives", "archives"),
-            ));
-            return;
-        }
-        events.push(table(
+        table(
+            ScreenKind::Archives,
             "campaign.archives.title",
             &[
                 "campaign.col.id",
@@ -419,18 +460,7 @@ impl CampaignGame {
                 "campaign.col.status",
             ],
             rows,
-        ));
-        // How to read what is listed, and what to do first with what is still encrypted.
-        events.push(Event::system(Text::new("campaign.archives.hint")));
-        let encrypted = self.state.archive.iter().any(|id| {
-            self.content
-                .readable(id)
-                .is_some_and(|def| def.kind == ReadableKind::Document)
-                && !self.state.missions.opened.contains(id)
-        });
-        if encrypted {
-            events.push(Event::system(Text::new("campaign.archives.hint_encrypted")));
-        }
+        )
     }
 
     fn read_archive(&mut self, id: &ReadableId, events: &mut Vec<Event>) {
@@ -492,45 +522,8 @@ impl CampaignGame {
     pub(super) fn cmd_net(&mut self, args: &[ArgRef], events: &mut Vec<Event>) {
         match arg_id::<SiteId>(args, 0) {
             None => {
-                let sites = &self.content.sites;
-                let known = |site: &&crate::content::schema::SiteDef| {
-                    self.state.site_status(site) != SiteStatus::Unknown
-                };
-                // The table stops at the last site the player knows: the numbers of the rows
-                // are those of the whole list, and the sites beyond are only counted.
-                let shown = sites
-                    .iter()
-                    .rposition(|site| known(&site))
-                    .map_or(0, |at| at + 1);
-                let rows: Vec<Vec<Text>> = sites
-                    .iter()
-                    .take(shown)
-                    .map(|site| {
-                        let status = self.state.site_status(site);
-                        if status == SiteStatus::Unknown {
-                            return vec![
-                                Text::raw(super::resolver::UNKNOWN_NAME),
-                                site_status_word(status),
-                                dash(),
-                            ];
-                        }
-                        vec![
-                            Text::raw(site.id.as_str()),
-                            site_status_word(status),
-                            Text::raw(site.unlock.tier.unwrap_or(1).to_string()),
-                        ]
-                    })
-                    .collect();
-                events.push(table(
-                    "campaign.net.title",
-                    &[
-                        "campaign.col.name",
-                        "campaign.col.status",
-                        "campaign.col.level",
-                    ],
-                    rows,
-                ));
-                let beyond = sites.len() - shown;
+                let (map, beyond) = self.net_table();
+                events.push(Event::Screen(map));
                 if beyond > 0 {
                     events.push(Event::system(
                         Text::new("campaign.net.more").with_int("n", count(beyond)),
@@ -541,6 +534,65 @@ impl CampaignGame {
         }
         // The old `scan` is the map of the net now: the `use` objectives still ask for it.
         self.used("scan", events);
+    }
+
+    /// The map of the net, and how many sites lie beyond what it shows.
+    fn net_table(&self) -> (Table, usize) {
+        let sites = &self.content.sites;
+        let known = |site: &&crate::content::schema::SiteDef| {
+            self.state.site_status(site) != SiteStatus::Unknown
+        };
+        // The table stops at the last site the player knows: the numbers of the rows
+        // are those of the whole list, and the sites beyond are only counted.
+        let shown = sites
+            .iter()
+            .rposition(|site| known(&site))
+            .map_or(0, |at| at + 1);
+        let rows: Vec<Vec<Text>> = sites
+            .iter()
+            .take(shown)
+            .map(|site| {
+                let status = self.state.site_status(site);
+                if status == SiteStatus::Unknown {
+                    return vec![
+                        Text::raw(super::resolver::UNKNOWN_NAME),
+                        site_status_word(status),
+                        dash(),
+                    ];
+                }
+                vec![
+                    Text::raw(site.id.as_str()),
+                    site_status_word(status),
+                    Text::raw(site.unlock.tier.unwrap_or(1).to_string()),
+                ]
+            })
+            .collect();
+        let map = table(
+            ScreenKind::Net,
+            "campaign.net.title",
+            &[
+                "campaign.col.name",
+                "campaign.col.status",
+                "campaign.col.level",
+            ],
+            rows,
+        );
+        (map, sites.len() - shown)
+    }
+
+    /// The screen a frontend keeps open, drawn from the game as it is now.
+    pub(super) fn screen_of(&self, kind: ScreenKind) -> Table {
+        let mut screen = match kind {
+            ScreenKind::Shop => self.shop_table(),
+            ScreenKind::Services => self.services_table(),
+            ScreenKind::Contacts => self.contacts_table(),
+            ScreenKind::Mail => self.mail_table(),
+            ScreenKind::Archives => self.archives_table(),
+            ScreenKind::Quests => self.quests_table(),
+            ScreenKind::Net => self.net_table().0,
+        };
+        keys::gloss_table(&mut screen);
+        screen
     }
 
     fn site_detail(&self, id: &SiteId, events: &mut Vec<Event>) {

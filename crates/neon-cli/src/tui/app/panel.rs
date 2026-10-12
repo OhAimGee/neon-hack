@@ -25,8 +25,6 @@ const BAR_WIDTH: usize = 10;
 /// What the player decided about the panel, which the layouts read.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) struct PanelState {
-    /// The game has a `panel` command, which this interface runs.
-    pub(super) command: bool,
     /// The permanent panel of the full layout is shown (it is, until the player hides it).
     pub(super) visible: bool,
     /// The drawer of the compact layout is open (it is closed, until the player opens it).
@@ -36,7 +34,6 @@ pub(super) struct PanelState {
 impl Default for PanelState {
     fn default() -> Self {
         Self {
-            command: false,
             visible: true,
             drawer: false,
         }

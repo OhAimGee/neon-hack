@@ -1,0 +1,25 @@
+---
+source: crates/neon-cli/src/tui/app/tests/modal.rs
+expression: "picture(&app, 64, 20)"
+---
+64x20
+ Neon │ Notoriété 4/100 (Discret)
+[Gain] +80 crédits
+[Gain] +10 réputation
+╭Étal──────────────────────────────────────────────────────────╮
+│ [1] ghost_protocol - Ghost Protocol - 80 crédits -           │
+│ disponible                                                   │
+│ [2] stealth_module - Stealth Module v2.0 - 150 crédits -     │
+│ disponible                                                   │
+│ [3] quantum_key - Quantum Encryption Key - 200 crédits -     │
+│ niveau 3 requis                                              │
+│ [4] neural_assistant - Neural Assistant v3.1 - 500 crédits - │
+│ niveau 4 requis                                              │
+│ [5] quantum_chip - Quantum Processing Chip - 800 crédits -   │
+│ niveau 5 requis                                              │
+╰ Échap ferme ─────────────────────────────────────────────────╯
+niveau 4 requis
+[5] quantum_chip - Quantum Processing Chip - 800 crédits -
+niveau 5 requis
+>
+F2 panneau | Tab compléter | Ctrl+C quitter

@@ -163,21 +163,20 @@ pub(super) fn gloss(text: &mut Text) {
     }
 }
 
+/// [`gloss`] for every text of a table.
+pub(super) fn gloss_table(table: &mut Table) {
+    gloss(&mut table.title);
+    table.columns.iter_mut().for_each(gloss);
+    table.rows.iter_mut().flatten().for_each(gloss);
+}
+
 /// [`gloss`] for every text of an event.
 pub(super) fn gloss_event(event: &mut Event) {
     match event {
         Event::Message { text, .. } => gloss(text),
         Event::Decor { alt, .. } => gloss(alt),
         Event::Changed { band, .. } => gloss(band),
-        Event::Screen(Table {
-            title,
-            columns,
-            rows,
-        }) => {
-            gloss(title);
-            columns.iter_mut().for_each(gloss);
-            rows.iter_mut().flatten().for_each(gloss);
-        }
+        Event::Screen(table) => gloss_table(table),
         Event::Effect(Effect::Decrypt { document: text, .. } | Effect::Buy { item: text, .. }) => {
             gloss(text);
         }

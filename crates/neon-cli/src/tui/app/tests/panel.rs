@@ -9,7 +9,7 @@ use super::*;
 /// The campaign past the opening, run by the full-screen interface (so `panel` is open).
 fn panel_app<'a>(game: &'a mut CampaignGame, catalog: &'a Catalog, mode: RenderMode) -> App<'a> {
     game.set_capabilities(Capabilities::TUI);
-    campaign_app(game, catalog, mode, None, "Neon").with_panel_command()
+    campaign_app(game, catalog, mode, None, "Neon").with_frontend_commands()
 }
 
 use neon_engine::campaign::CampaignGame;

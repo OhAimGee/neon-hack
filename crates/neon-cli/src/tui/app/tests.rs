@@ -15,8 +15,10 @@ use crate::persist::Persistence;
 use crate::render::{LineKind, Verbosity};
 use crate::test_support::{catalog_en, catalog_fr};
 
+mod modal;
 mod options;
 mod panel;
+mod plain;
 mod snapshots;
 mod staging;
 
@@ -284,12 +286,12 @@ fn control_d_ends_the_game_and_the_next_key_leaves() {
     let mut app = app_with(&mut game, &catalog, RenderMode::FULL);
     reach_command_line(&mut app);
     app.on_key(KeyEvent::new(KeyCode::Char('d'), KeyModifiers::CONTROL));
-    assert!(!app.should_quit());
+    assert!(app.exit().is_none());
     let rows = screen(&app, 100, 28);
     assert!(has(&rows, "Input closed: ending the session."));
     assert!(has(&rows, "Press any key to leave."));
     press(&mut app, KeyCode::Char(' '));
-    assert!(app.should_quit());
+    assert!(app.exit().is_some());
 }
 
 #[test]
@@ -300,7 +302,7 @@ fn control_c_asks_to_quit_like_the_quit_command_and_never_kills_the_process() {
     ctrl(&mut app, 'a');
     assert_eq!(input_line(&app), ">", "Ctrl+A types nothing");
     ctrl(&mut app, 'c');
-    assert!(!app.should_quit(), "a question first, like `quit`");
+    assert!(app.exit().is_none(), "a question first, like `quit`");
     let rows = screen(&app, 100, 28);
     assert!(has(&rows, "> quit"), "{rows:#?}");
     assert!(has(&rows, "[Y/n]") || has(&rows, "[y/N]"), "{rows:#?}");
@@ -308,7 +310,7 @@ fn control_c_asks_to_quit_like_the_quit_command_and_never_kills_the_process() {
     type_line(&mut app, "y");
     assert!(has(&screen(&app, 100, 28), "Press any key to leave."));
     press(&mut app, KeyCode::Char(' '));
-    assert!(app.should_quit());
+    assert!(app.exit().is_some());
 }
 
 #[test]
@@ -1296,11 +1298,11 @@ proptest! {
             }
             let mut terminal = Terminal::new(TestBackend::new(size.0, size.1)).unwrap();
             terminal.draw(|frame| app.draw(frame)).unwrap();
-            if !app.should_quit() && app.shown_tier.get() != Tier::TooSmall && !app.finished {
+            if app.exit().is_none() && app.shown_tier.get() != Tier::TooSmall && !app.finished {
                 let cursor = terminal.get_cursor_position().unwrap();
                 prop_assert!(cursor.x < size.0 && cursor.y < size.1, "{cursor:?} in {size:?}");
             }
-            if app.should_quit() {
+            if app.exit().is_some() {
                 break;
             }
         }

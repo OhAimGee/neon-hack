@@ -17,18 +17,21 @@ mod motion;
 mod term;
 mod text;
 
-use std::io;
+use std::io::{self, BufReader};
 use std::time::{Duration, Instant};
 
 use neon_engine::command::Capabilities;
+use neon_engine::event::Event as GameEvent;
+use neon_engine::text::Text;
 use neon_engine::{Game, Step};
 use ratatui::DefaultTerminal;
 use ratatui::crossterm::event::{self, Event, KeyEventKind};
 
 use crate::options::Host;
 use crate::persist::Persistence;
+use crate::plain;
 use crate::render::Renderer;
-use app::App;
+use app::{App, Exit};
 
 pub(crate) use app::COMPACT_SIZE;
 
@@ -62,7 +65,8 @@ impl Fault {
 }
 
 /// Runs the game in the full-screen interface until it ends. The terminal is given back
-/// whatever the way out.
+/// whatever the way out. If the player asks for the line-by-line display (`Ctrl+P`, `plain`)
+/// the game goes on there, from the state it is in: the frontend is a throwaway view.
 pub(crate) fn run<'a>(
     game: &'a mut dyn Game,
     first: Step,
@@ -72,15 +76,48 @@ pub(crate) fn run<'a>(
     options: Option<Host<'a>>,
     test_fault: Option<&str>,
 ) -> io::Result<()> {
-    // The interface runs `panel`: the game may now offer it.
+    // The interface runs `panel` and `plain`: the game may now offer them.
     game.set_capabilities(Capabilities::TUI);
     let mut app = App::new(game, renderer, first, persistence).with_motion(!reduce_motion);
     if let Some(options) = options {
-        // Only the campaign has the presentation commands, and `panel` with them.
-        app = app.with_options(options).with_panel_command();
+        // Only the campaign has the presentation commands, and `panel` and `plain` with them.
+        app = app.with_options(options).with_frontend_commands();
     }
-    let (mut terminal, _guard) = term::enter()?;
-    event_loop(&mut terminal, &mut app, test_fault.and_then(Fault::parse))
+    {
+        // The terminal goes back to the player at the end of this block, before anything else
+        // is written to it.
+        let (mut terminal, _guard) = term::enter()?;
+        event_loop(&mut terminal, &mut app, test_fault.and_then(Fault::parse))?;
+    }
+    if app.exit() == Some(Exit::Plain) {
+        return hand_over(app);
+    }
+    Ok(())
+}
+
+/// Plays on in the plain frontend, with the game, the settings and the saves of the
+/// interface that is leaving. The step is the one a loaded game starts from: nothing is
+/// replayed, and the situation is told again, since the log of the full-screen interface is
+/// gone with its screen.
+fn hand_over(app: App<'_>) -> io::Result<()> {
+    let (game, renderer, mut options, mut persistence) = app.into_parts();
+    // `panel` and `plain` are the full-screen interface's: the game stops offering them.
+    game.set_capabilities(Capabilities::PLAIN);
+    let mut first = game.resume();
+    first
+        .events
+        .insert(0, GameEvent::system(Text::new("ui.tui.switched_to_plain")));
+    plain::run_with_options(
+        game,
+        first,
+        &renderer,
+        options.as_mut(),
+        &mut BufReader::new(io::stdin().lock()),
+        &mut io::stdout().lock(),
+        // The terminal echoes what is typed.
+        false,
+        &mut persistence,
+    )
 }
 
 fn event_loop(
@@ -128,7 +165,7 @@ fn event_loop(
         };
         for _ in 0..BATCH_MAX {
             dirty |= handle(app, next);
-            if app.should_quit() {
+            if app.exit().is_some() {
                 return Ok(());
             }
             if event::poll(Duration::ZERO)? {

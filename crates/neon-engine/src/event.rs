@@ -77,6 +77,27 @@ impl Gauge {
     }
 }
 
+/// The screens a frontend may keep open beside the log, one per list the player comes back to.
+/// The game can draw each of them again at any time ([`crate::Game::screen`]), so a pinned
+/// screen follows the game instead of showing what it was when it opened.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ScreenKind {
+    /// What the stall sells.
+    Shop,
+    /// The cover services of `laylow`.
+    Services,
+    /// The people the player can talk to.
+    Contacts,
+    /// The inbox.
+    Mail,
+    /// The archives: documents and fragments.
+    Archives,
+    /// The quest journal.
+    Quests,
+    /// The map of the net.
+    Net,
+}
+
 /// A structured screen: a shop, a map, a mail box, a journal.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Table {
@@ -86,6 +107,29 @@ pub struct Table {
     pub columns: Vec<Text>,
     /// One row per entry, as many cells as columns.
     pub rows: Vec<Vec<Text>>,
+    /// The list this table is, when a frontend can keep it open and ask for it again.
+    /// `None` for a screen that is read once (the help).
+    pub pin: Option<ScreenKind>,
+}
+
+impl Table {
+    /// A table that is read once.
+    #[must_use]
+    pub fn new(title: Text, columns: Vec<Text>, rows: Vec<Vec<Text>>) -> Self {
+        Self {
+            title,
+            columns,
+            rows,
+            pin: None,
+        }
+    }
+
+    /// The same table, as a list a frontend can keep open.
+    #[must_use]
+    pub fn pinned(mut self, kind: ScreenKind) -> Self {
+        self.pin = Some(kind);
+        self
+    }
 }
 
 /// One thing the engine says.

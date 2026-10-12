@@ -1,0 +1,33 @@
+---
+source: crates/neon-cli/src/tui/app/tests/modal.rs
+expression: "picture(&app, 100, 28)"
+---
+100x28
+ Neon │ Notoriety 0/100 (Discreet)
+╭Terminal────────────────────────────────────────────────────────────╮╭Panel───────────────────────╮
+│Encrypted channel #7: incoming connection.                          ││Notoriety 0/100             │
+│ECHO-7 » Finally. For the record, I'm not a corp, not a cop and not ││[░░░░░░░░░░] Discreet       │
+│a trap. I'm ECHO-7, and yours is the only deck in sector 7 that     ││                            │
+│still answers.                                                      ││▸ Quests                    │
+│ECHO-7 » Handle on file: Neon. Until you earn another name, you're a││First Steps                 │
+│rookie. Don't take it personally.                                   ││- Read the help (help)      │
+│ECHO-7 » I have a first job for you. Nothing dangerous: a walk      ││- Check the status sheet    │
+│around your own deck. But first, the ropes.                         ││(status)                    │
+│Start the guided tutorial? ECHO-7 walks through the first commands, ││- Talk to ECHO-7 (talk      │
+│and╭The net────────────────────────────────────────────────────╮    ││echo7)                      │
+│Tut│ #  name       status  level                               │    ││- Breach the local station  │
+│New│ 1  localhost  known   1                                   │    ││(hack localhost)            │
+│Typ╰ Esc closes ───────────────────────────────────────────────╯t   ││- Cover your tracks (laylow)│
+│quest.                                                              ││                            │
+│> quests                                                            ││▸ The net                   │
+│== Journal ==                                                       ││localhost: known            │
+│[1] m01 - First Steps in the Shadows - active - 1                   ││                            │
+│Objective done: Open the journal (quests)                           ││▸ Inventory                 │
+│> net                                                               ││Credits: 100                │
+│== The net ==                                                       ││No item yet.                │
+│[1] localhost - known - 1                                           ││                            │
+│15 more sites still unknown.                                        ││                            │
+│Objective done: Explore the net (net)                               ││                            │
+╰────────────────────────────────────────────────────────────────────╯╰────────────────────────────╯
+>
+F2 panel | Tab complete | Ctrl+C quit | Up/Down history | PgUp/PgDn scroll

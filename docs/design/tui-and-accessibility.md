@@ -129,7 +129,7 @@ L'alternative (le moteur résout la langue) est écartée : il lui faudrait conn
 ### 2.4 `View`, écrans, menus
 
 - `View` = lecture seule, calculée à la demande : joueur, crédits, Trace et sa bande, quêtes actives, nœuds connus, inventaire. La TUI la lit à chaque image ; le plain n'en a besoin que pour `status`.
-- Un `Screen` (boutique, contacts, courrier, journal, carte) est une `Table` structurée. Le plain l'imprime en liste numérotée ; la TUI l'ouvre en modale **non capturante** (§ 4.3). Les actions (`buy 3`) sont des lignes de commande ordinaires.
+- Un `Screen` (boutique, contacts, courrier, journal, carte) est une `Table` structurée. Le plain l'imprime en liste numérotée ; la TUI l'ouvre en modale **non capturante** (§ 4.3). Les actions (`buy 3`) sont des lignes de commande ordinaires. (R-22) Une `Table` dit quelle liste elle est (`pin: Option<ScreenKind>`) quand la TUI peut la garder ouverte, et `Game::screen(kind)` la redessine à la demande depuis l'état du jeu, sans rien y changer : la modale se met ainsi à jour après chaque commande sans jamais rejouer une commande.
 - Un `Prompt::Choice` se répond par **numéro ou par nom** (comme `contact <n|nom>` aujourd'hui) ; une option indisponible dit sa raison en mots (reprise de la règle de la vitrine C).
 
 ### 2.5 Cadence
@@ -248,13 +248,13 @@ Une modale est une **vue épinglée**, jamais un mode : la saisie reste active, 
 | Carte du réseau | `map` | nœuds, liens, état | `hack <n\|nom>` | liste de liens |
 | Inventaire / deck | `deck` | programmes, charges | `equip <n>` | liste |
 
-Dans le spike : `Shop` et `Map` [E] ; les autres sont la même mécanique `[H]`. Dans le palier Compact, une modale plus haute que la zone défile avec `PgUp/PgDn` `[H]`.
+**Réalisé au lot R3.2b (R-22)** : `shop`, `laylow`, `contacts`, `messages`, `archives`, `quests` et `net` (sans argument) ouvrent leur modale ; `deck` et `map` de la phase R4 viendront avec l'intrusion tactique, et le tableau de `help` ne s'épingle pas (il se lit une fois). *Ouverture* : à chaque événement `Screen` épinglé ; une autre liste remplace la première, un pas sans liste la garde. *Mise à jour* : après chaque pas le jeu redessine la liste ouverte (`Game::screen`) ; si le jeu ne la montre plus, la modale se ferme. *Dessin* : au centre de la zone du journal (au palier Full, dans son cadre ; au palier Compact, hors du tiroir s'il est ouvert), effacée avant d'être peinte ; titre sans le décor `== … ==` du journal ; première colonne `#` avec le numéro de la ligne (celui que le journal écrit `[n]`) ; colonnes alignées si elles tiennent, sinon la **liste du journal** à la place (jamais de texte coupé ni de points de suspension) ; pied du cadre « Échap ferme ». *Défilement* : une modale plus haute que la zone garde son en-tête, défile avec `PgUp`/`PgDn` (le pied dit « 3-9/14 ») et ne laisse alors pas ces touches au journal ; sinon elles sont celles du journal. *Échap* : la modale d'abord, puis le tiroir, puis le bas du journal, la ligne, le menu (CLA-2, testé). Le journal garde la liste, ligne à ligne : fermer la modale ne fait rien perdre.
 
 ### 4.4 Redimensionnement, taille minimale, repli
 
 - `Event::Resize` (émis par SIGWINCH sous Unix, nativement par crossterm) ; la boucle redessine ; ratatui détecte le changement de taille au `draw`. Test pty : 100×30 → 80×24 (panneau parti) → 50×15 (« trop petit ») → 100×30 (panneau revenu) [E].
 - **Démarrage** sous 64×20 : repli automatique sur le plain, une ligne sur `stderr` annonce pourquoi, aucun écran alternatif [E].
-- **En cours de partie** : pas de bascule automatique (surprenante) ; l'écran « trop petit » s'affiche, la partie est intacte, `Ctrl+P` passe au plain. Ce passage rend le moteur à `plain::run_session(boot = false)` : l'état est conservé (même Trace avant et après) [E] ; le transcript continue le même fichier en ajout (code, non testé).
+- **En cours de partie** : pas de bascule automatique (surprenante) ; l'écran « trop petit » s'affiche, la partie est intacte, `Ctrl+P` passe au plain. Ce passage (R-22, `Ctrl+P` ou la commande `plain`, aussi depuis l'écran « trop petit ») rend le terminal, remet les capacités du plain au jeu et rend la partie à `plain::run_with_options` avec `Game::resume()` : l'état est conservé et rien n'est rejoué [E, pty]. Il n'y a pas de retour vers la TUI dans la même exécution (relancer le jeu reprend l'autosauvegarde).
 - Un terminal à largeur ambiguë « large » (locales CJK) compte `█ ─ → · … × ○ •` sur 2 colonnes (`width_cjk`) [E] : les cadres se décalent. `--ascii` est le remède (§ 5.8).
 
 ### 4.5 Cycle de vie du terminal : restauration garantie
@@ -396,7 +396,7 @@ Deux conséquences : la palette `cvd` doit être **opaque** (sur fond blanc le j
 | CLA-1 | Tout est faisable au clavier ; la souris n'ajoute rien | P | ✔ (périmètre du spike) |
 | CLA-2 | `Échap` ferme toujours la modale, puis le tiroir, puis revient au bas du journal : aucun piège (tiroir, défilement, ligne, menu : l'ordre est testé) | P | ✔ |
 | CLA-3 | TAB complète dans la saisie, ne change jamais de focus (il n'y a qu'un champ) | U | ✔ |
-| CLA-4 | Chaque raccourci a une **commande** équivalente (`F2` ↔ `panel`) : certains terminaux ou claviers captent les touches de fonction | U | ○ (`F2` ↔ `panel` fait ; `Ctrl+P` ↔ `plain` et le défilement restent) |
+| CLA-4 | Chaque raccourci a une **commande** équivalente (`F2` ↔ `panel`, `Ctrl+P` ↔ `plain`) : certains terminaux ou claviers captent les touches de fonction | U | ○ (`F2` ↔ `panel` et `Ctrl+P` ↔ `plain` faits ; le défilement reste) |
 | CLA-5 | AltGr (`CONTROL\|ALT`) insère le caractère ; Ctrl seul reste un raccourci | U | ✔ |
 | CLA-6 | Ctrl+C quitte proprement, Ctrl+Z suspend et reprend (Unix) | P | ✔ |
 | CLA-7 | `help` liste les raccourcis ; aucun chord de plus de deux touches | U | ○ |

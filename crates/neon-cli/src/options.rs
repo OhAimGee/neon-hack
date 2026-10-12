@@ -163,15 +163,15 @@ impl<'a> Host<'a> {
             }
         };
         vec![
-            Event::Screen(Table {
-                title: Text::new("ui.options.title"),
-                columns: vec![
+            Event::Screen(Table::new(
+                Text::new("ui.options.title"),
+                vec![
                     Text::new("ui.options.col_setting"),
                     Text::new("ui.options.col_value"),
                     Text::new("ui.options.col_choices"),
                 ],
                 rows,
-            }),
+            )),
             Event::system(hint),
             Event::system(Text::new("ui.options.usage")),
         ]

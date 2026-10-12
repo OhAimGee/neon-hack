@@ -147,17 +147,17 @@ fn a_gauge_that_did_not_move_says_nothing() {
 }
 
 fn help_screen() -> Event {
-    Event::Screen(Table {
-        title: Text::new("demo.help.title"),
-        columns: vec![
+    Event::Screen(Table::new(
+        Text::new("demo.help.title"),
+        vec![
             Text::new("demo.help.col_command"),
             Text::new("demo.help.col_effect"),
         ],
-        rows: vec![
+        vec![
             vec![Text::raw("scan"), Text::new("demo.help.scan")],
             vec![Text::raw("shop"), Text::new("demo.help.shop")],
         ],
-    })
+    ))
 }
 
 #[test]

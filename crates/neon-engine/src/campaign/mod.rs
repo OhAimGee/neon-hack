@@ -37,7 +37,7 @@ use thiserror::Error;
 use crate::command::{Availability, Capabilities};
 use crate::content::schema::QuestStatus;
 use crate::content::{Content, Fact};
-use crate::event::{Event, Gauge};
+use crate::event::{Event, Gauge, ScreenKind, Table};
 use crate::game::{Game, GaugeReading, View};
 use crate::prompt::{Input, Prompt, Step};
 use crate::save::{self, SaveError, SaveMeta, SaveRequest};
@@ -232,6 +232,14 @@ impl Game for CampaignGame {
 
     fn set_capabilities(&mut self, capabilities: Capabilities) {
         self.frontend = capabilities;
+    }
+
+    fn screen(&self, kind: ScreenKind) -> Option<Table> {
+        // Before the handle is known there is no hub to show: the opening is a story.
+        if self.state.handle.is_empty() || self.over {
+            return None;
+        }
+        Some(self.screen_of(kind))
     }
 
     fn complete(&self, line: &str) -> Vec<String> {
