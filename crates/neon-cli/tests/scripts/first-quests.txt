@@ -1,0 +1,113 @@
+Walker
+skip
+n
+talk echo7
+topic:advice
+quests
+help
+net
+status
+hack localhost
+y
+breach 2 backdoor
+breach 2 backdoor
+move 2
+end
+breach 3 backdoor
+breach 3 backdoor
+end
+move 3
+loot
+jackout
+laylow
+read mail-welcome
+talk r4z0r
+topic:how_to_earn
+hack corp-server-01
+y
+move 3
+loot
+use cloak
+end
+breach 4 exploit
+use cloak
+end
+breach 4 backdoor
+move 4
+loot
+jackout
+archives f01
+archives f02
+talk r4z0r
+0
+buy stealth_module
+y
+hack localhost
+y
+breach 2 backdoor
+breach 2 backdoor
+move 2
+end
+breach 3 backdoor
+breach 3 backdoor
+end
+move 3
+loot
+jackout
+hack corp-server-01
+y
+move 3
+loot
+use cloak
+end
+breach 4 exploit
+use cloak
+end
+breach 4 backdoor
+move 4
+loot
+jackout
+hack nexus-mainframe
+y
+breach 2 exploit
+end
+move 2
+breach 4 backdoor
+end
+breach 3 backdoor
+breach 4 decrypt
+breach 3 backdoor
+end
+breach 3 backdoor
+use spoof
+move 4
+loot
+end
+breach 6 backdoor
+breach 6 quantum
+end
+move 6
+loot
+breach 5 backdoor
+end
+move 4
+move 2
+move 3
+end
+loot
+end
+breach 5 backdoor
+end
+breach 5 backdoor
+breach 5 backdoor
+move 5
+loot
+jackout
+archives f07
+archives f08
+archives f09
+decrypt doc_phase2
+quests
+status
+quit
+y

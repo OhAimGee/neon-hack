@@ -1185,11 +1185,29 @@ fn with_colour_the_default_palette_uses_the_named_colours_of_the_terminal() {
 
 // ---- Staged scenes --------------------------------------------------------------------------
 
-/// Asks for the first intrusion and confirms it.
+/// What a player types to win the first intrusion with the deck of the first tier.
+const LOCALHOST_RUN: [&str; 10] = [
+    "breach 2 backdoor",
+    "breach 2 backdoor",
+    "move 2",
+    "end",
+    "breach 3 backdoor",
+    "breach 3 backdoor",
+    "end",
+    "move 3",
+    "loot",
+    "jackout",
+];
+
+/// Asks for the first intrusion, confirms it and plays it to the end: the scene comes with
+/// its result.
 fn hack_localhost(session: &mut Session) {
     session.type_line("hack localhost");
     session.wait_for("the confirmation", |s| s.input_row().contains("[Y/n]"));
     session.type_line("y");
+    for line in LOCALHOST_RUN {
+        session.type_line(line);
+    }
 }
 
 #[test]
