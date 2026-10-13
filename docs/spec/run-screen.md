@@ -471,3 +471,18 @@ Le panneau du § 6 est dessiné (décision R-30) par le panneau existant de la T
 | Compact | tiroir `F2` | tiroir `F2` ; chaque section est coupée à la place qui reste (`... 4 more rows`) |
 
 Reste de ce document à écrire ou à revoir : le premier palier de couleurs de ce panneau (l'ICE ouverte en vert, la patrouille qui menace en alerte) suit le `Tone` de chaque rangée ; une carte épinglée (`ScreenKind::Map`) n'est pas faite.
+
+## 16. Ce que le lot R4.6 a livré, et ce qu'il a changé à ce document
+
+La campagne joue l'intrusion du § 3 (décision R-31).
+
+| Sujet | Ce que dit le § 9 | Ce que fait R4.6 |
+|---|---|---|
+| Entrée | `hack` ouvre l'intrusion | idem, après confirmation et un point de contrôle |
+| Sauvegarde | l'état au début du tour et l'annulation | idem : `state.run` (`site`, `turn_start`, `undo`), rafraîchi après chaque commande |
+| Reprise | le tour recommence | idem ; une sauvegarde dont l'état n'est pas un début de tour est refusée |
+| Fin | rapport, puis faits du hub | idem ; la notoriété est le quart de la Trace finale (au moins 1), 25 si l'intrusion est grillée |
+| Grillé | recommencer | idem ; en Hardcore la partie est perdue (le point de contrôle est le retour) |
+| `skip` | Histoire seulement | idem, avec confirmation ; « automatique » ou « approximatif » dans le rapport |
+
+Les lignes du rapport sont celles du § 3.3 (tours, Trace finale, butin), suivies du résultat du hub et de la notoriété.

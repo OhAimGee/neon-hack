@@ -26,7 +26,7 @@ Quatre usages, quatre moteurs de calcul :
 | **Prévision** (la ligne « Prévision », la projection) | `forecast` = un `step` ; aucun solveur | exécution |
 | **Preuve de solvabilité** d'une intrusion (I2), à la validation du contenu et en CI | recherche exacte à sortie anticipée, kit minimal du palier | tests, CI, `neon-sim` |
 | **Marge de difficulté** (I21) | optimum exact avec le **kit minimal** (pas le kit complet : § 4) | tests, CI, `neon-sim` |
-| **`AutoResolve`** (mode histoire, campagne avant le moteur tactique) | chaîne bornée : (1) exact borné à **N = 5 000 expansions**, (2) sinon repli `anytime` (20 000 expansions à sortie anticipée, 15 à 35 ms), (3) sinon **Trace nominale par palier** (valeur de contenu), marquée « approximatif » dans la sauvegarde | exécution |
+| **`AutoResolve`** (`skip` en mode histoire, R-31) | chaîne bornée : (1) exact borné à **N = 5 000 expansions**, (2) sinon repli `anytime` (20 000 expansions à sortie anticipée, 15 à 35 ms), (3) sinon **Trace nominale par palier** (valeur de contenu), marquée « approximatif » dans la sauvegarde | exécution |
 
 **Conséquence sur G1/G8.** Les dossiers disaient « `AutoResolve` = application du plan **optimal** du solveur ». Ce n'est tenable que pour les petites intrusions (9 cas sur 23 mesurés sont décidés exactement à N = 5 000 ; toutes les missions de palier 5 à kit complet tombent dans le repli). `AutoResolve` devient « le meilleur plan que le solveur borné trouve, jamais pire que la Trace nominale du palier » : le mode histoire reste jouable de bout en bout, sans promettre l'optimum. Le rapport d'intrusion dit « automatique » (run-screen § 3.3) ; il dit « approximatif » quand l'étape 3 a servi.
 
@@ -81,3 +81,6 @@ Mesures sur le contenu livré (`data/world/runs.toml`), deck minimal du palier (
 ## 9. Limites
 
 Le modèle est une lecture de l'audit (chaque écart est marqué `CHOICE` dans `spikes/solver/src/model.rs`). Absents : brouillard et `probe`, compagnon, effet inter-intrusions de Backdoor, butin facultatif. Les missions sont écrites pour mesurer, ni équilibrées ni validées. Une seule machine virtualisée (Xeon 2,8 GHz, 4 cœurs), aucun « poste modeste » réel ; l'admissibilité de l'heuristique n'est testée que sur des états aléatoires de deux petites missions ; avec A\* ou la dominance, le départage par nombre de tours n'est plus garanti minimal (la Trace reste exacte) ; le repli `anytime` ignore les plans dont le pic de Trace dépasse la valeur finale visée. Non essayés : clé `u64`, IDA\*, recherche bidirectionnelle, base de motifs.
+
+
+**Lot R4.6.** `skip` de la campagne appelle `auto_resolve` depuis l'état du tour en cours ; l'étape 3 règle l'état sur la Trace nominale du palier (`[auto_resolve] nominal_trace = [16, 32, 48, 64, 80, 96]`) par `Mission::settled_at`, un état que la validation d'une sauvegarde accepte. La campagne ne s'en sert plus pour `hack`.
