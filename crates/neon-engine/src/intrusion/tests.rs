@@ -587,7 +587,8 @@ fn help_lists_the_commands_and_explains_one() {
     let mut game = game(SITE, Difficulty::Normal);
     game.start();
     let help = say(&mut game, "help");
-    assert_eq!(table_of(&help.events)[0].rows.len(), SPECS.len());
+    // `skip` is not listed: it is closed outside the story difficulty.
+    assert_eq!(table_of(&help.events)[0].rows.len(), SPECS.len() - 1);
     assert_eq!(
         kinds(&say(&mut game, "help breach")),
         ["run.help.breach", "run.help.usage"]

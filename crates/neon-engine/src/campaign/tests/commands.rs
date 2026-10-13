@@ -890,16 +890,19 @@ fn an_intrusion_takes_the_files_costs_notoriety_and_pays_the_first_breach_once()
     let notoriety = driver.game.notoriety();
     driver.line("hack corp-server-01");
     let said = driver.line("y");
+    // The best plan takes the objective, and the files of the node that holds it.
     assert!(
-        said.contains("Run on corp-server-01: 2 files taken."),
+        said.contains("Run on corp-server-01: 1 file taken."),
         "{said}"
     );
     assert!(said.contains("Notoriety "), "{said}");
     assert!(said.contains("[Reward] +"), "{said}");
-    assert_eq!(driver.game.notoriety(), notoriety + 8, "level 2 costs 8");
+    // It costs a quarter of the final Trace, at least one.
+    let heat = (final_trace(&said) / 4).max(1);
+    assert_eq!(driver.game.notoriety(), notoriety + heat);
     assert!(driver.credits() > credits);
     assert!(driver.game.state.missions.reputation.get() > reputation);
-    assert_eq!(driver.game.state.missions.extracted.len(), 2 + 1);
+    assert_eq!(driver.game.state.missions.extracted.len(), 1 + 1);
     // Again: nothing to take, nothing paid, and the world still notices.
     let (credits, reputation) = (
         driver.credits(),
@@ -911,19 +914,32 @@ fn an_intrusion_takes_the_files_costs_notoriety_and_pays_the_first_breach_once()
     assert!(!said.contains("[Reward]"), "{said}");
     assert_eq!(driver.credits(), credits);
     assert_eq!(driver.game.state.missions.reputation.get(), reputation);
-    assert_eq!(driver.game.notoriety(), notoriety + 16);
+    assert_eq!(driver.game.notoriety(), notoriety + heat + (final_trace(&said) / 4).max(1));
+}
+
+/// The final Trace a report says: `Final Trace - 6/100 (calm)`.
+fn final_trace(said: &str) -> u8 {
+    said.lines()
+        .find_map(|line| line.strip_prefix("[2] Final Trace - "))
+        .and_then(|rest| rest.split('/').next())
+        .and_then(|number| number.parse().ok())
+        .unwrap_or_else(|| panic!("no report in:\n{said}"))
 }
 
 #[test]
 fn crossing_a_band_of_notoriety_is_an_alert() {
     let mut driver = Driver::new();
     driver.finish_m02();
-    driver.game.state.base_notoriety = 27;
+    driver.game.state.base_notoriety = 29;
     driver.feed(Vec::new());
     driver.line("hack corp-server-01");
     let said = driver.line("y");
     assert!(said.contains("[ALERT] Notoriety up: Watched."), "{said}");
-    assert!(said.contains("Notoriety 27 -> 35 (Watched)"), "{said}");
+    let heat = (final_trace(&said) / 4).max(1);
+    assert!(
+        said.contains(&format!("Notoriety 29 -> {} (Watched)", 29 + heat)),
+        "{said}"
+    );
 }
 
 /// The effects of the last step, in order.
@@ -1107,6 +1123,10 @@ fn laylow_sells_cover_that_lowers_the_notoriety_for_credits() {
     let mut driver = Driver::new();
     driver.finish_m01();
     driver.lines(&["hack localhost", "y", "hack localhost", "y"]);
+    // The intrusions cost little notoriety, a quarter of the Trace each: the world noticed
+    // more than that.
+    driver.game.state.base_notoriety = 20;
+    driver.feed(Vec::new());
     let notoriety = driver.game.notoriety();
     assert!(notoriety >= 12);
     let said = driver.line("laylow");
