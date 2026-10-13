@@ -70,6 +70,7 @@ Ces constats **touchent le design**, pas seulement l'implémentation :
 - **S-9** : le rôle du solveur (outil de test et de CI ; exécution bornée avec repli, `AutoResolve` « meilleur effort », § 2).
 - **S-10** : la marge de difficulté se calcule sur le kit minimal du palier (§ 5 a).
 - **S-11** : les règles de § 5 b à e, en particulier la limitation de Spoof. C'est la décision de design la plus lourde de cette phase : elle décide si la tactique de l'intrusion garde un enjeu au palier 3 et au-delà.
+  - *Précision (lot R4.1, décision R-26).* Pour § 5 b, le propriétaire a retenu le **plancher** : Spoof n'efface que la Trace gagnée pendant le tour, jamais en dessous de la Trace du début du tour. Le solveur de R4.3 en tient compte : la Trace du début de tour ne baisse jamais, donc le gain de Spoof est borné par le bruit du tour et l'heuristique n'a plus à créditer 10 par charge.
 
 ## 8. Limites
 
