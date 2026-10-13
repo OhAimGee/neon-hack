@@ -686,6 +686,97 @@ fn load_asks_a_question_that_escape_answers_and_a_yes_replaces_the_game() {
 }
 
 #[test]
+fn with_the_mouse_asked_for_the_wheel_scrolls_and_the_terminal_gets_the_mouse_back() {
+    let mut session = Session::start(28, 100, &["--mouse"]);
+    wait_for_the_handle_question(&mut session);
+    // The terminal reports the mouse now; without the option it never does (`assert_taken`).
+    assert_ne!(
+        session.screen().mouse_protocol_mode(),
+        vt100::MouseProtocolMode::None,
+        "the mouse was asked for"
+    );
+    play_the_opening(&mut session, "Neon");
+    for _ in 0..3 {
+        session.type_line("help");
+        session.wait_input(">");
+    }
+    // A notch of the wheel up, as an SGR report (button 64), goes back three rows...
+    session.send(b"\x1b[<64;10;10M");
+    session.wait_text("Scrolled back: 3 lines below");
+    // ...a click does nothing, and a notch down comes forward again.
+    session.send(b"\x1b[<0;10;10M\x1b[<0;10;10m");
+    session.send(b"\x1b[<65;10;10M");
+    session.wait_for("the bottom of the log", |s| !s.contains("Scrolled back"));
+    let status = quit_with_control_c(&mut session);
+    assert!(status.success());
+    assert_restored(&session);
+}
+
+#[test]
+fn the_mouse_is_given_back_when_the_game_goes_line_by_line() {
+    let mut session = Session::start(28, 100, &["--mouse"]);
+    wait_for_the_handle_question(&mut session);
+    play_the_opening(&mut session, "Neon");
+    session.send(b"\x10");
+    session.wait_for("the plain display", |s| !s.screen().alternate_screen());
+    assert_restored(&session);
+    // What the plain display says is written once the terminal is cooked again: only then does
+    // the end-of-input key mean the end of the input (sent earlier, it is read as a raw byte).
+    session.wait_text("Back on the net, Neon");
+    session.send(CTRL_D);
+    assert!(session.finish().success());
+}
+
+/// What the shell reads of the program's state: `T` while it is stopped.
+#[cfg(unix)]
+fn process_state(session: &Session) -> String {
+    let pid = session.child.process_id().unwrap();
+    let output = std::process::Command::new("ps")
+        .args(["-o", "stat=", "-p", &pid.to_string()])
+        .output()
+        .unwrap();
+    String::from_utf8_lossy(&output.stdout).trim().to_owned()
+}
+
+#[cfg(unix)]
+#[test]
+fn control_z_gives_the_terminal_back_stops_and_comes_back_whole_on_continue() {
+    let mut session = at_command_line(28, 100);
+    session.send(b"sta");
+    session.wait_input("> sta");
+    // Control-Z is a key in raw mode: the game itself gives the terminal back and stops.
+    session.send(b"\x1a");
+    let started = Instant::now();
+    while !process_state(&session).starts_with('T') {
+        session.pump(Duration::from_millis(20));
+        assert!(
+            started.elapsed() < DEADLINE,
+            "the game did not stop: {}",
+            process_state(&session)
+        );
+    }
+    session.pump(Duration::from_millis(100));
+    assert_restored(&session);
+    // `fg`: the screen is taken again and drawn whole, with what was typed.
+    session.signal("CONT");
+    session.wait_for("the screen back", |s| {
+        s.screen().alternate_screen() && s.input_row() == "> sta" && s.contains("Panel")
+    });
+    assert_taken(&session);
+    assert!(
+        session.rows()[0].contains("Notoriety 0/100"),
+        "{:#?}",
+        session.rows()
+    );
+    let status = {
+        session.send(b"\x15");
+        quit_with_control_c(&mut session)
+    };
+    assert!(status.success());
+    assert_restored(&session);
+}
+
+#[test]
 fn resizing_redraws_every_tier_and_loses_nothing() {
     let mut session = at_command_line(28, 100);
     assert!(session.contains("Panel"));

@@ -122,6 +122,29 @@ fn the_typewriter_is_fast_unless_the_command_line_then_the_file_say_otherwise() 
 }
 
 #[test]
+fn the_mouse_is_left_to_the_terminal_unless_the_command_line_or_the_file_ask_for_the_wheel() {
+    let none = CliPresentation::default();
+    let env = Env::default();
+    assert_eq!(
+        resolve(none, &env, FileSettings::default()).mouse,
+        sourced(false, Source::Default)
+    );
+    assert_eq!(
+        resolve(none, &env, file("mouse = true")).mouse,
+        sourced(true, Source::File)
+    );
+    let flag = CliPresentation {
+        mouse: true,
+        ..none
+    };
+    assert_eq!(
+        resolve(flag, &env, file("mouse = false")).mouse,
+        sourced(true, Source::Cli)
+    );
+    assert!(parse_file("mouse = \"yes\"").is_err());
+}
+
+#[test]
 fn motion_is_reduced_by_a_screen_reader_then_the_command_line_then_the_file() {
     let none = CliPresentation::default();
     let nothing = FileSettings::default();

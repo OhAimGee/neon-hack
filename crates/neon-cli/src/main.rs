@@ -87,6 +87,12 @@ struct Cli {
     #[arg(long, value_enum, value_name = "SPEED", help_heading = "Presentation")]
     typewriter: Option<config::TypewriterChoice>,
 
+    /// The full-screen interface listens to the mouse wheel to scroll the log. The terminal
+    /// then keeps the mouse for the game: selecting and copying text take Shift. Also
+    /// `mouse = true` in `settings.toml`.
+    #[arg(long, help_heading = "Presentation")]
+    mouse: bool,
+
     /// Colour: `auto` (a terminal that can show it), `always`, or `never`. `NO_COLOR` turns it
     /// off unless this says otherwise; a screen reader never gets any.
     #[arg(long, value_enum, value_name = "WHEN", help_heading = "Presentation")]
@@ -237,6 +243,7 @@ impl Cli {
             screen_reader: self.screen_reader || answer == Some(ModeAnswer::ScreenReader),
             reduce_motion: self.reduce_motion,
             typewriter: self.typewriter,
+            mouse: self.mouse,
             color: self.no_color.then_some(ColorChoice::Never).or(self.color),
             palette: self.palette,
         }
@@ -335,6 +342,7 @@ fn print_settings(cli: &Cli, env: &Env) -> io::Result<()> {
             format!("{:?}", shown.typewriter.value.name()),
             shown.typewriter.source,
         ),
+        line("mouse", shown.mouse.value.to_string(), shown.mouse.source),
         line(
             "data_dir",
             format!("{:?}", setup.data_dir.display().to_string()),
@@ -408,6 +416,7 @@ fn run_game(cli: &Cli, env: &Env, kind: Kind) -> io::Result<()> {
             palette: shown.palette.value,
             reduce_motion: shown.reduce_motion.value,
             typewriter: shown.typewriter.value,
+            display: shown.display.value,
         },
         fixed: Fixed {
             screen_reader: shown.screen_reader.value,
@@ -468,9 +477,10 @@ fn run_game(cli: &Cli, env: &Env, kind: Kind) -> io::Result<()> {
             first,
             renderer,
             persistence,
-            tui::Motion {
-                reduced: shown.reduce_motion.value,
+            tui::Feel {
+                reduced_motion: shown.reduce_motion.value,
                 typewriter: shown.typewriter.value,
+                mouse: shown.mouse.value,
             },
             options_host,
             env.test_fault.as_deref(),

@@ -18,25 +18,27 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use neon_engine::event::{Event, Table};
 use neon_engine::text::{Catalog, Text};
 
-use crate::config::{LangChoice, TypewriterChoice, VerbosityChoice};
+use crate::config::{DisplayChoice, LangChoice, TypewriterChoice, VerbosityChoice};
 use crate::palette::{Palette, PaletteChoice};
 use crate::render::Renderer;
 use crate::store::write_atomic;
 use crate::transcript::Transcript;
 
 /// The settings the player can change in the middle of a game, in the order of the screen.
-const SETTINGS: [&str; 6] = [
+const SETTINGS: [&str; 7] = [
     "lang",
     "verbosity",
     "ascii",
     "palette",
     "reduce_motion",
     "typewriter",
+    "display",
 ];
 const LANGS: [&str; 2] = ["en", "fr"];
 const VERBOSITIES: [&str; 3] = ["brief", "normal", "full"];
 const SWITCH: [&str; 2] = ["on", "off"];
 const TYPEWRITERS: [&str; 4] = ["off", "fast", "normal", "slow"];
+const DISPLAYS: [&str; 3] = ["auto", "tui", "plain"];
 const PALETTES: [&str; 4] = ["default", "high-contrast", "cvd", "mono"];
 /// What the first line of a new `settings.toml` says.
 const NEW_FILE_HEADER: &str = "# Written by the options command of neon-hack; edit freely.\n\
@@ -68,6 +70,9 @@ pub(crate) struct Live {
     pub(crate) reduce_motion: bool,
     /// How fast the text is typed out; reduced motion stops it whatever this is.
     pub(crate) typewriter: TypewriterChoice,
+    /// Which interface to ask for at the next launch. Changing it does not change the
+    /// interface that is running: `plain` is what does that.
+    pub(crate) display: DisplayChoice,
 }
 
 /// What was decided at launch and stays.
@@ -159,6 +164,7 @@ impl<'a> Host<'a> {
             "palette" => self.live.palette.name().to_owned(),
             "reduce_motion" => switch(self.live.reduce_motion),
             "typewriter" => self.live.typewriter.name().to_owned(),
+            "display" => self.live.display.name().to_owned(),
             _ => String::new(),
         }
     }
@@ -239,6 +245,10 @@ impl<'a> Host<'a> {
         if setting == "palette" && !self.fixed.color {
             events.push(Event::system(Text::new("ui.options.no_colour")));
         }
+        if setting == "display" {
+            // The interface that is running stays; this is the one asked for next time.
+            events.push(Event::system(Text::new("ui.options.display_later")));
+        }
         events
     }
 
@@ -252,6 +262,7 @@ impl<'a> Host<'a> {
             "palette" => live.palette = PaletteChoice::from_name(value)?,
             "reduce_motion" => live.reduce_motion = switch_of(value)?,
             "typewriter" => live.typewriter = typewriter_of(value)?,
+            "display" => live.display = DisplayChoice::from_name(value)?,
             _ => return None,
         }
         Some(live)
@@ -355,6 +366,7 @@ fn choices(setting: &str) -> &'static [&'static str] {
         "verbosity" => &VERBOSITIES,
         "palette" => &PALETTES,
         "typewriter" => &TYPEWRITERS,
+        "display" => &DISPLAYS,
         _ => &SWITCH,
     }
 }

@@ -8,7 +8,7 @@ RPG textuel cyberpunk pour le terminal. Vous êtes un hacker novice à Neo-Tokyo
 
 ## Statut
 
-**La campagne se joue de bout en bout, du nouveau jeu à l'épilogue, mais le jeu n'est pas terminé.** C'est le jeu lancé par défaut (`neon-hack`) : prologue, tutoriel guidé, commandes du hub, cinq fins et épilogue, FR et EN, avec les intrusions résolues automatiquement (le moteur tactique est la phase R4). Les textes des chapitres 1 et 2 sont écrits ; ceux des chapitres 3 à 6, des fins et de l'épilogue sont encore des brouillons `TODO <clé>` (502 par langue). La démonstration du moteur reste accessible avec `--demo`. Le cadrage, le socle (phase R1), les spécifications (phase P1) et le contenu et la campagne (phase R2) sont terminés ; l'interface plein écran (R3) a son cœur (R3.1 : saisie, défilement, paliers de taille, terminal toujours rendu) ; son panneau latéral complet (R3.2a), ses écrans épinglés et sa bascule vers le plain (R3.2b) sont faits ; son transcript et sa machine à écrire sont faits (R3.3b) ; `load` l'est aussi (R3.3c) ; les derniers réglages sont le lot R3.3d.
+**La campagne se joue de bout en bout, du nouveau jeu à l'épilogue, mais le jeu n'est pas terminé.** C'est le jeu lancé par défaut (`neon-hack`) : prologue, tutoriel guidé, commandes du hub, cinq fins et épilogue, FR et EN, avec les intrusions résolues automatiquement (le moteur tactique est la phase R4). Les textes des chapitres 1 et 2 sont écrits ; ceux des chapitres 3 à 6, des fins et de l'épilogue sont encore des brouillons `TODO <clé>` (502 par langue). La démonstration du moteur reste accessible avec `--demo`. Le cadrage, le socle (phase R1), les spécifications (phase P1) et le contenu et la campagne (phase R2) sont terminés ; l'interface plein écran (R3) a son cœur (R3.1 : saisie, défilement, paliers de taille, terminal toujours rendu) ; son panneau latéral complet (R3.2a), ses écrans épinglés et sa bascule vers le plain (R3.2b) sont faits ; son transcript et sa machine à écrire sont faits (R3.3b) ; `load` l'est aussi (R3.3c), puis `options display`, `--mouse` et `Ctrl+Z` (R3.3d) : l'interface plein écran (R3) est terminée.
 
 | Étape | État |
 |---|---|
@@ -31,7 +31,7 @@ RPG textuel cyberpunk pour le terminal. Vous êtes un hacker novice à Neo-Tokyo
 | Phase R2 (contenu et campagne) | **terminée** |
 | Phase R3.1 : cœur de la TUI (choix du frontal et question du premier lancement, saisie avec historique et TAB, journal défilant, paliers 64×20 et 100×28, terminal rendu par toutes les sorties, tests dans un pseudo-terminal) | fait |
 | Phase R3.2a : panneau latéral complet (quêtes, réseau, inventaire, à lire), tiroir `F2` et commande `panel` | fait |
-| Réglages restants (R3.3d), intrusion tactique (R4), textes des chapitres 3 à 6 (R5), équilibrage (R6) | à venir |
+| Intrusion tactique (R4), textes des chapitres 3 à 6 (R5), équilibrage (R6) | à venir |
 
 ## Jouer en local
 
@@ -90,6 +90,8 @@ Dans un vrai terminal assez grand, le jeu s'ouvre en **plein écran** (barre d'�
 | `--tui` | interface plein écran, et un mot sur `stderr` si le terminal ne peut pas la montrer |
 | `--screen-reader` | mode lecteur d'écran : interface ligne par ligne, sans symboles à épeler |
 | `--reduce-motion` | pas d'animation en plein écran (les scènes de `hack`, `laylow`, `decrypt` et d'un achat) : le résultat s'affiche tout de suite ; le mode lecteur d'écran l'impose |
+| `--typewriter off\|fast\|normal\|slow` | vitesse à laquelle l'interface plein écran tape le texte (`fast` par défaut ; une touche montre la suite ; `--reduce-motion` la supprime) |
+| `--mouse` | la molette fait défiler le journal en plein écran ; le terminal garde alors la souris pour le jeu (sélectionner et copier demandent Maj) |
 | `--ascii` | ASCII 7 bits : symboles, accents et texte tapé translittérés, sans décoration |
 | `--lang fr` / `--lang en` | langue des textes (anglais par défaut) |
 | `--verbosity brief\|normal\|full` | quantité d'ambiance affichée |
@@ -112,7 +114,7 @@ Les sauvegardes sont dans le dossier de données de l'utilisateur, sous-dossier 
 
 ### Réglages
 
-Les options de présentation (`lang`, `verbosity`, `ascii`, `screen_reader`, `display`, `reduce_motion`) se fixent une fois pour toutes dans un fichier `settings.toml`, dans le dossier de données (le dossier parent de celui que montre `--list-saves`, qui est `saves-campaign`). Le jeu ne crée ce fichier que pour la question du premier lancement (clé `display`, et `screen_reader` pour le mode lecteur d'écran) ou quand vous le lui demandez avec `options save` (voir plus bas) ; il ne modifie jamais un fichier abîmé. Le reste s'écrit à la main :
+Les options de présentation (`lang`, `verbosity`, `ascii`, `screen_reader`, `display`, `reduce_motion`, `typewriter`, `mouse`) se fixent une fois pour toutes dans un fichier `settings.toml`, dans le dossier de données (le dossier parent de celui que montre `--list-saves`, qui est `saves-campaign`). Le jeu ne crée ce fichier que pour la question du premier lancement (clé `display`, et `screen_reader` pour le mode lecteur d'écran) ou quand vous le lui demandez avec `options save` (voir plus bas) ; il ne modifie jamais un fichier abîmé. Le reste s'écrit à la main :
 
 ```toml
 lang = "fr"
@@ -121,9 +123,11 @@ ascii = false
 screen_reader = false
 display = "auto"   # auto, tui ou plain
 reduce_motion = false   # true : pas d'animation
+typewriter = "fast"   # off, fast, normal ou slow
+mouse = false   # true : la molette fait défiler
 ```
 
-**En cours de partie**, la commande `options` affiche les réglages ; `options lang fr`, `options verbosity full`, `options ascii on`, `options palette cvd` ou `options reduce_motion on` les changent tout de suite (l'historique de l'écran est redessiné dans la nouvelle langue). `verbosity brief|normal|full` règle la verbosité. Ces changements valent pour la partie ; `options save` écrit dans `settings.toml` ceux que vous avez faits, sans toucher aux autres lignes ni aux commentaires. `screen_reader` et `display` se règlent au lancement.
+**En cours de partie**, la commande `options` affiche les réglages ; `options lang fr`, `options verbosity full`, `options ascii on`, `options palette cvd`, `options typewriter slow`, `options display plain` (le mode demandé au prochain lancement) ou `options reduce_motion on` les changent tout de suite (l'historique de l'écran est redessiné dans la nouvelle langue). `verbosity brief|normal|full` règle la verbosité. Ces changements valent pour la partie ; `options save` écrit dans `settings.toml` ceux que vous avez faits, sans toucher aux autres lignes ni aux commentaires. `screen_reader` et `display` se règlent au lancement.
 
 Pour chaque réglage, la source la plus précise gagne : la ligne de commande, puis la variable d'environnement (`NEON_HACK_LANG` pour la langue), puis `settings.toml`, puis la configuration du système (`LANG` pour la langue ; une locale qui nomme un autre jeu de caractères que l'UTF-8, comme `fr_FR.ISO-8859-1`, active `--ascii`), puis la valeur par défaut. `NEON_HACK_DATA_DIR` change le dossier de données. Côté couleurs : `color` (`auto`, `always`, `never`) et `palette` se règlent aussi dans `settings.toml` (`NEON_HACK_PALETTE` pour la palette) ; la variable standard `NO_COLOR` éteint la couleur (la palette `mono` n'emploie que gras, soulignement et vidéo inverse), mais pas si `--color` est donné ; le mode lecteur d'écran n'envoie jamais de séquence d'échappement. `high-contrast` (blanc sur noir) et `cvd` (couleurs adaptées aux daltonismes) peignent leur fond ; leurs couleurs exactes demandent un terminal 24 bits (`COLORTERM=truecolor`), sinon le terminal en donne l'approximation. Un fichier abîmé est signalé, n'est jamais modifié, et les valeurs par défaut s'appliquent. `neon-hack --print-settings` montre le résultat.
 

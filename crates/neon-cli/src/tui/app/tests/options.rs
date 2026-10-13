@@ -5,7 +5,7 @@ use std::fs;
 
 use super::staging::StageGame;
 use super::*;
-use crate::config::{LangChoice, TypewriterChoice, VerbosityChoice};
+use crate::config::{DisplayChoice, LangChoice, TypewriterChoice, VerbosityChoice};
 use crate::options::{Catalogs, Fixed, Host, Live, Target};
 
 pub(super) fn host<'a>(en: &'a Catalog, fr: &'a Catalog, target: Target) -> Host<'a> {
@@ -18,6 +18,7 @@ pub(super) fn host<'a>(en: &'a Catalog, fr: &'a Catalog, target: Target) -> Host
             palette: PaletteChoice::Default,
             reduce_motion: false,
             typewriter: TypewriterChoice::Fast,
+            display: DisplayChoice::Auto,
         },
         fixed: Fixed {
             screen_reader: false,

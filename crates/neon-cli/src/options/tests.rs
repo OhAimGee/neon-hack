@@ -5,7 +5,7 @@ use neon_engine::text::RenderMode;
 use tempfile::TempDir;
 
 use super::*;
-use crate::config::{FileState, TypewriterChoice, load_file};
+use crate::config::{DisplayChoice, FileState, TypewriterChoice, load_file};
 use crate::render::Verbosity;
 use crate::test_support::{catalog_en, catalog_fr};
 use crate::transcript::Transcript;
@@ -18,6 +18,7 @@ fn live() -> Live {
         palette: PaletteChoice::Default,
         reduce_motion: false,
         typewriter: TypewriterChoice::Fast,
+        display: DisplayChoice::Auto,
     }
 }
 
@@ -164,6 +165,7 @@ fn a_setting_changes_is_confirmed_and_reaches_the_renderer() {
             palette: PaletteChoice::Cvd,
             reduce_motion: true,
             typewriter: TypewriterChoice::Fast,
+            display: DisplayChoice::Auto,
         }
     );
     assert!(std::ptr::eq(renderer.catalog, &raw const fr));
@@ -648,4 +650,51 @@ fn a_speed_that_does_not_exist_is_refused_and_the_setting_stays() {
     );
     assert!(said.contains("off, fast, normal, slow"), "{said}");
     assert_eq!(host.live.typewriter, TypewriterChoice::Fast);
+}
+
+// ---------------------------------------------------------------------------------- display
+
+#[test]
+fn the_display_asked_for_next_time_is_a_setting_that_saves_and_says_when_it_applies() {
+    let (en, fr) = (catalog_en(), catalog_fr());
+    let folder = tempfile::tempdir().unwrap();
+    let mut host = host(&en, &fr, file_target(&folder));
+    let shown = said(&plain_renderer(&en), &ran(&mut host, "options"));
+    assert!(
+        shown.contains("display") && shown.contains("auto, tui, plain"),
+        "{shown}"
+    );
+    let changed = said(
+        &plain_renderer(&en),
+        &ran(&mut host, "options display PLAIN"),
+    );
+    assert!(changed.contains("display = plain"), "{changed}");
+    assert!(changed.contains("next launch"), "{changed}");
+    assert_eq!(host.live.display, DisplayChoice::Plain);
+    ran(&mut host, "options save");
+    let written = fs::read_to_string(settings_path(&folder)).unwrap();
+    assert!(
+        written.lines().any(|line| line == "display = \"plain\""),
+        "{written}"
+    );
+    let (_, state) = load_file(&settings_path(&folder));
+    assert_eq!(state, FileState::Loaded);
+    // Only the other settings say nothing of the next launch.
+    let other = said(
+        &plain_renderer(&en),
+        &ran(&mut host, "options typewriter off"),
+    );
+    assert!(!other.contains("next launch"), "{other}");
+}
+
+#[test]
+fn a_display_that_does_not_exist_is_refused_and_the_setting_stays() {
+    let (en, fr) = (catalog_en(), catalog_fr());
+    let mut host = host(&en, &fr, Target::Off);
+    let said = said(
+        &plain_renderer(&en),
+        &ran(&mut host, "options display window"),
+    );
+    assert!(said.contains("auto, tui, plain"), "{said}");
+    assert_eq!(host.live.display, DisplayChoice::Auto);
 }
