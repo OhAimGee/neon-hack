@@ -268,10 +268,11 @@ fn both_frontends_export_the_same_transcript_for_the_same_script() {
         plain.contains("> quests") && plain.contains("Unknown command"),
         "{plain}"
     );
-    // Only the folder differs, in the line that asked for the export.
-    let folder_name =
-        |text: &str, which: &str| text.replace(&format!("/{which}/log.txt"), "/X/log.txt");
-    assert_eq!(folder_name(&plain, "plain"), folder_name(&tui, "tui"));
+    // Only the path differs, in the line that asked for the export: whatever the system writes
+    // paths with, each file is replaced by the same mark.
+    let masked =
+        |text: &str, file: &std::path::Path| text.replace(&file.display().to_string(), "<file>");
+    assert_eq!(masked(&plain, &plain_file), masked(&tui, &tui_file));
 }
 
 #[test]
