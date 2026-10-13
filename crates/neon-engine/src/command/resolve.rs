@@ -244,14 +244,17 @@ fn list_candidates(candidates: &[Candidate]) -> String {
 #[must_use]
 pub fn fold(text: &str) -> String {
     let mut out = String::with_capacity(text.len());
-    for c in text.chars() {
-        if c.is_ascii() {
-            out.push(c.to_ascii_lowercase());
+    // Lowercase first, then transliterate what is left: some capitals only become a letter the
+    // game can transliterate once lowercased (the angstrom sign U+212B is `å`), and folding the
+    // result again must change nothing.
+    for lower in text.chars().flat_map(char::to_lowercase) {
+        if lower.is_ascii() {
+            out.push(lower);
             continue;
         }
-        let plain = to_ascii(c.encode_utf8(&mut [0; 4]));
+        let plain = to_ascii(lower.encode_utf8(&mut [0; 4]));
         if plain == "?" {
-            out.extend(c.to_lowercase());
+            out.push(lower);
         } else {
             out.push_str(&plain.to_ascii_lowercase());
         }

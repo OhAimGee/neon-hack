@@ -1414,6 +1414,14 @@ proptest! {
     }
 
     #[test]
+    fn folding_a_capital_that_only_lowercases_to_a_known_letter_is_stable(
+        text in "[\\u{212A}\\u{212B}\\u{2126}\\u{1E9E}a-zA-Z]{0,8}",
+    ) {
+        let once = fold(&text);
+        prop_assert_eq!(fold(&once), once.clone());
+    }
+
+    #[test]
     fn folding_ignores_case_and_accents(text in "[a-zA-ZàâäçéèêëîïôöùûüÿœÀÂÉÈÊÎÔÙÛÇ0-9 -]{0,16}") {
         prop_assert_eq!(fold(&text.to_uppercase()), fold(&text.to_lowercase()));
         prop_assert!(fold(&text).is_ascii());
@@ -1514,4 +1522,16 @@ fn operation() -> impl Strategy<Value = Operation> {
         any::<usize>().prop_map(Operation::Restock),
         Just(Operation::Discover),
     ]
+}
+
+#[test]
+fn a_capital_that_lowercases_to_a_known_letter_folds_to_its_plain_form() {
+    // The angstrom sign (U+212B) is not the letter `Å` (U+00C5) but lowercases to `å`; the
+    // kelvin sign (U+212A) lowercases to `k`. Both fold in one step, to what folding gives again.
+    assert_eq!(fold("\u{212B}"), "a");
+    assert_eq!(fold("\u{212A}"), "k");
+    assert_eq!(fold("\u{C5}"), "a");
+    assert_eq!(fold("\u{E5}"), "a");
+    // A letter the game cannot transliterate stays itself, lowercased.
+    assert_eq!(fold("\u{416}"), "\u{436}");
 }
