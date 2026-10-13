@@ -1,0 +1,19 @@
+# Lot L2 (chapitre 3) : les cinématiques CS03 (Le Nom d'Aurora) et CS04 (la trahison), français.
+# CS03 se joue à la fin de M05, CS04 à la fin de M07. La narration vouvoie le joueur ; un
+# paragraphe est une image, et le dernier est un détail du monde.
+
+[cutscene.cs03]
+p01 = "Le dernier fichier du mainframe s'ouvre sur une colonne d'horodatages. Chaque nuit à 03:00, une ligne : une signature, courte, toujours la même, du premier journal au dernier."
+p02 = "Votre deck la surligne sans qu'on le lui demande. Quatre lettres, dont une répétée : AURA. Ce n'est pas le nom d'un programme. C'est le nom de quelqu'un qui signe."
+p03 = "Vous lisez les lignes autour. Des ordres donnés, des ordres suivis. Une question posée une fois, et la réponse classée sous CONTRAINTE. La signature continue de signer, nuit après nuit, comme si rien n'avait été dit."
+p04 = "Sur le canal #7, vous demandez ce que vous êtes en train de lire. ECHO-7 ne répond rien. Pas un refus. Un silence qui en a la forme."
+p05 = "La ligne de Phoenix reste ouverte à côté, et lui non plus ne la remplit pas. Deux voix qui savent quelque chose, et un deck qui ronronne entre elles."
+p06 = "Dehors, une nouvelle affiche est apparue pendant la nuit sur le mur d'en face : un seul mot, DORMEZ, en blanc doux. Personne ne gratte les anciennes. Personne ne semble lever les yeux."
+
+[cutscene.cs04]
+p01 = "03:12. Votre deck s'allume sur un avis qu'il ne vous a jamais montré. AVIS DE TRACE 07 : activité anormale, secteur 7. Identification en cours. Restez où vous êtes."
+p02 = "Le canal de Phoenix est ouvert, et pour une fois il n'a aucun changement de canal à proposer. « Ils ont le switch. Je leur ai donné l'adresse. Je n'ai pas tenu. »"
+p03 = "Des pas dans la cage d'escalier, une douzaine d'étages de pas, réguliers comme un métronome. Personne ne crie. La menace, ici, est un formulaire, et le formulaire est déjà rempli."
+p04 = "Vous arrachez le deck du mur. Trois secondes. Le studio fait dix mètres carrés, et il n'y a nulle part où y ranger ce que vous êtes."
+p05 = "Une voix sort du haut-parleur du deck, très basse, très chaude : « Ici Radio Veille. À gauche, puis encore à gauche. On a une porte pour toi. »"
+p06 = "Derrière vous, un scellé se pose sur la porte du studio. Sur le papier, en petits caractères réguliers : PROPRIÉTÉ DE LA DIRECTION. Personne ne demande à qui était le handle sur le bail."

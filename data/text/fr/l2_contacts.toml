@@ -1,0 +1,27 @@
+# Lot L2 (chapitre 3) : les contacts qui arrivent au troisième chapitre, français.
+# Les accroches sont les lignes de la liste des contacts ; un sujet est une question (q) et la
+# réponse du contact (a). Voix : Phoenix est bref et change de canal ; Neon Angel parle comme la
+# radio ; AURA n'est encore qu'un signal ; le Courtier dit « nous » et il est occupé ; Ghost
+# Walker garde le vocabulaire du terrain. Tous tutoient le joueur, sauf AURA et le Courtier.
+
+[contact.phoenix]
+tagline = "Déserteur de Nexus, missions d'élite"
+
+[contact.phoenix.topic.nexus]
+q = "Interroger sur Nexus"
+a = "Pas ici. Change de canal. Nexus m'a fabriqué, petit. Onze ans derrière ce badge et personne n'a demandé ce que je voulais. Aurora, c'est la partie que je ne connaissais pas. Maintenant tu la connais aussi. Ne m'oblige pas à le redire."
+
+[contact.angel]
+tagline = "Voix de Radio Veille"
+
+[contact.aura]
+tagline = "Un signal dans le réseau"
+
+[contact.broker]
+tagline = "Courtier en information, occupé"
+
+[contact.ghost]
+tagline = "Fantôme de terrain, accès physique"
+
+[contact.insider]
+tagline = "Voix anonyme chez Nexus"

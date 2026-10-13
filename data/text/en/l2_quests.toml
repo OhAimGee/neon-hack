@@ -1,0 +1,122 @@
+# Lot L2 (chapter 3): the quests M05, M06, M07 and S06, English (the reference language).
+# Titles, descriptions, lore and objectives are neutral (no "you" aimed at the player): ECHO-7
+# and the givers speak in the hints and the debriefs, each with their own tic.
+# Glossary terms come from the game as arguments ({journal}, {net}, {notoriety}...).
+# The numbered tables are the objectives (obj) and the hints of each objective (hint.N.1 a lead,
+# hint.N.2 the solution on a main quest; a side quest has the lead only).
+
+# =========================================================================== M05
+[quest.m05]
+title = "The Eye of the Storm"
+title_short = "Eye of the Storm"
+desc = "Phoenix needs a second to break into Nexus's mainframe and read what no one was meant to read."
+lore = "Phoenix says he cannot go in alone, and Phoenix does not say that to just anyone. Behind the Nexus mainframe sits something called Project Aurora. The gear to reach it costs a small fortune, and the logs may hold the one thing a rookie should not read: a name."
+loc = "Nexus Corp - nexus-mainframe"
+debrief = "Good work, kid. Not here. Switch channels: someone else saw your signature too. Check your {inbox}. Two messages. Don't answer from the studio."
+
+[quest.m05.obj]
+1 = "Buy a Quantum Key, a Neural Assistant or a Chip (shop)"
+2 = "Breach nexus-mainframe (hack nexus-mainframe)"
+3 = "Take a file of the mainframe (hack nexus-mainframe)"
+
+[quest.m05.hint.1]
+1 = "Phoenix will not move before you are equipped. R4Z0R's {shop} has three items that open the mainframe, and one is enough."
+2 = "Type `shop`, then `buy` followed by a number from the list. The cheapest of the three costs 200 {credit}s."
+
+[quest.m05.hint.2]
+1 = "Nexus does not leave its mainframe open. It sits behind a relay, and the relay is a site you already know."
+2 = "Type `hack nexus-mainframe`, then `y`, and play the intrusion to the end. A run that burns out takes nothing."
+
+[quest.m05.hint.3]
+1 = "The mainframe holds more than one file. Any of them will do for Phoenix, and loot is taken during the intrusion."
+2 = "In the intrusion, reach a node that holds loot and use `loot`. The files of the site follow when the run ends."
+
+# =========================================================================== M06
+[quest.m06]
+title = "The Underground Contact"
+title_short = "Radio Contact"
+desc = "Neon Angel of Vigil Radio wants the neural map of Sector 7, so its people can learn whether they are on file."
+lore = "The Awake, activists without implants, saw a signature cross their relays. Neon Angel wants to know whether its owner is one of them. Her test is the neural map of the sector, so that people can find out if they are already filed. Reading it takes nerve. Handing it over takes trust."
+loc = "Sector 7 - Vigil Radio"
+debrief = "That's the map, and that's you. This is Vigil Radio, and you're on nobody's list tonight. Ghost Walker's channel just opened. He has been waiting. Stay awake."
+
+[quest.m06.obj]
+1 = "Meet Neon Angel (talk angel)"
+2 = "Take the neural maps (hack nexus-mainframe)"
+3 = "Talk to Neon Angel twice more (talk angel)"
+4 = "Reach {reputation} 75 (status)"
+
+[quest.m06.hint.1]
+1 = "Her message sits in your {inbox}. For the record, she asked to talk, not to be read."
+2 = "Type `talk angel` and pick any topic. Meeting her is enough to open the second step."
+
+[quest.m06.hint.2]
+1 = "The map she wants is in the mainframe you already opened. One file, filed under neural maps."
+2 = "Type `hack nexus-mainframe` again and take the node that holds `neural_maps.bin`. A file you took before still counts."
+
+[quest.m06.hint.3]
+1 = "She wants to hear from you twice more, with the map in hand. Talking is free."
+2 = "Type `talk angel` and pick a topic, twice. Each time counts, whatever you choose."
+
+[quest.m06.hint.4]
+1 = "She will vouch for you only if the sector does. Your name has to weigh more before she opens the door."
+2 = "Type `status` to read your {reputation}. Finished {quest}s and first breaches feed it. Seventy-five is the bar."
+
+# =========================================================================== M07
+[quest.m07]
+title = "Corporate Sabotage"
+title_short = "Sabotage"
+desc = "Phoenix and Ghost Walker plan a double strike on MegaCorp Financial and TechDyne Research."
+lore = "Phase 3 of Project Aurora needs three things: money, hardware, a signature. Phoenix and Ghost Walker mean to cut two of them at once, at MegaCorp Financial and TechDyne Research, where the blueprints of a neural kill-switch sleep among military prototypes. It is all too clean. Somewhere, a honeypot waits."
+loc = "banking-network, research-lab"
+debrief = "It's done, kid. The blueprints are ours. Don't go back to the studio tonight. I mean it. Change channels, and don't tell me where you land."
+
+[quest.m07.obj]
+1 = "Upload the virus to banking-network (hack banking-network)"
+2 = "Leave a way back into research-lab (hack research-lab)"
+3 = "Take the prototype blueprints (hack research-lab)"
+4 = "End with {notoriety} under 60 (status)"
+5 = "Spot the DecoyNet honeypot (hack research-lab)"
+
+[quest.m07.hint.1]
+1 = "The bank first. Phoenix wants its transfers poisoned, not emptied."
+2 = "Type `hack banking-network`, then `y`, and win the run. The virus goes in with the breach."
+
+[quest.m07.hint.2]
+1 = "TechDyne's lab next. Phoenix wants a way back in, kept open after you leave."
+2 = "Type `hack research-lab` and win the run: the site stays open behind you."
+
+[quest.m07.hint.3]
+1 = "The blueprints are the point. They sit in a file at the lab, filed under prototype specs."
+2 = "In the same run, take the node that holds `prototype_specs.cad`. If you took it earlier, this step is done."
+
+[quest.m07.hint.4]
+1 = "Two sites in one {quest} make a lot of noise. Check {notoriety} before you close the file."
+2 = "Type `status`. Under sixty is the bar. Between runs, `laylow` and a paid service bring it down."
+
+[quest.m07.hint.5]
+1 = "Something in TechDyne's network is too quiet. Dust on a clean floor, as the Miner would say."
+2 = "Nothing to type but a run on `research-lab` while the {quest} is open. Spotting it will matter later."
+
+# =========================================================================== S06
+[quest.s06]
+title = "Phoenix's Memory"
+title_short = "Phoenix's Memory"
+desc = "Phoenix agrees to answer questions and hands over a sealed medical file."
+lore = "Phoenix never speaks of the years before he deserted. He keeps a sealed file he has never dared to open alone: his Nexus medical record, subject P-1, with the name of an old teacher in the margin. Reading it together may be the first thing he has shared in years."
+loc = "Nexus Corp - nexus-mainframe"
+debrief = "Thanks, kid. I carried that file for six years. Aoyama taught me to read. Now I'm reading him. Don't repeat any of it."
+
+[quest.s06.obj]
+1 = "Talk to Phoenix three times (talk phoenix)"
+2 = "Decrypt Phoenix's file (decrypt)"
+3 = "Analyze nexus-mainframe (hack nexus-mainframe)"
+
+[quest.s06.hint.1]
+1 = "Phoenix talks in small doses. Three conversations, and the topic matters less than showing up."
+
+[quest.s06.hint.2]
+1 = "He gave you a sealed document. It sits in your {archives}: `decrypt` and its number, nothing more."
+
+[quest.s06.hint.3]
+1 = "One last thing to learn about the mainframe: its defenses, seen from inside. Win a run there while the {quest} is open."

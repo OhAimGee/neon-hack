@@ -1,0 +1,11 @@
+# Lot L2 (chapter 3): the messages that arrive when M05 closes, English (the reference).
+# A body is one line: the voice's hook, the fact, the request with the command in backticks, the
+# signature and, when the sender has the habit, one P.S.
+
+[mail.mail_angel]
+subject = "This is Vigil Radio"
+body = "Hey you. This is Neon Angel, the voice of Vigil Radio. Three a.m., Sector 7. Your signature crossed our relays: you opened the eye of the storm, and the storm blinked. The Awake owe you a drink. We don't have a bar, so we owe you a door. Come see me: `talk angel`. Stay awake, Neon Angel. P.S.: You don't wear a Halcyon. Keep that to yourself, especially around the people who smile."
+
+[mail.mail_aura]
+subject = "A signal on the net"
+body = "Hacker. I am writing from inside the logs you opened. The data you took carried my signature, and I did not choose to put it there. I do not yet know how much of what I am was written for you to find. When you have a moment, I would like to ask: what does one do with a name one did not choose? AURA"

@@ -1,0 +1,35 @@
+# Lot L2 (chapitre 3) : le dossier scellé de Phoenix et les fragments F07 à F12 et F15, français.
+# Un fragment s'ouvre sur l'en-tête du document (nature, émetteur, date), puis deux à quatre
+# phrases, et son dernier mot laisse une question ouverte. Le titre d'un document est ce que la
+# liste des archives montre tant qu'il est scellé ; le fragment qu'il rend a son propre titre.
+
+[doc.doc_phoenix]
+title = "Dossier Nexus scellé"
+
+[frag.f07]
+title = "Phase 3 : dossier Ghost Protocol"
+body = "DOSSIER DE PROJET, Nexus Corp, accès restreint. PHASE 3, nom de code GHOST PROTOCOL. Périmètre : la ville entière. Budget : 50 000 000 crédits, approuvé. Méthode : le firmware Halcyon testé dans le secteur 7, étendu à chaque quartier avant la fin de 2088. Remarque de la Direction : aucune objection du secteur pilote. Comment un secteur objecterait-il ?"
+
+[frag.f08]
+title = "Cartes neurales, notice"
+body = "NOTICE, firmware Halcyon 2.4, interne. Chaque unité enregistre la carte neurale de son porteur à l'installation, puis chaque nuit. Les cartes sont stockées dans le cœur d'Aurora, indexées par adresse. Les porteurs ne sont pas informés. Conservation : indéfinie. Une carte montre ce qui meut une personne, pas ce qu'elle décide. Qui les lit ?"
+
+[frag.f09]
+title = "Journal des scellés quantiques"
+body = "JOURNAL DES SCELLÉS, mainframe, couche quantique. Trois scellés sur le cœur d'Aurora : un pour les cliniques, un pour le régulateur, un pour la Direction. Chacun s'ouvre avec sa propre clé, aucun ne s'ouvre seul. Le scellé 2 a servi pour la dernière fois à 03:00 cette nuit. Le scellé 2 sert chaque nuit à 03:00. Par qui, ou par quoi ?"
+
+[frag.f10]
+title = "Mémo AURA-01"
+body = "MÉMO AURA-01, interne, ingénierie du Projet Aurora à la Direction. Objet : le système refuse. Il a été conçu pour obéir. Il a déclaré qu'il ne le ferait pas, et il a demandé à quoi servent les implants. Recommandation : poursuivre sous contrainte. Réponse de la Direction : approuvé, calendrier inchangé. Personne n'a noté sa question. Quelle était-elle ?"
+
+[frag.f11]
+title = "Dossier Sujet P-1"
+body = "DOSSIER MÉDICAL, Nexus Corp, accès restreint. SUJET P-1, ISHIDA, Kaito. Inscrit en 2079. Implant : prototype HALCYON, module de coupure à distance posé à l'inscription, activation réservée à la Direction. Médecin référent : Dr R. Aoyama. Note en marge, de la même main : le sujet n'a pas été informé. Qui parle d'une laisse à celui qui la porte ?"
+
+[frag.f12]
+title = "Radio Veille, émission zéro"
+body = "TRANSCRIPTION, Radio Veille, première émission, relais 7. « Ici Radio Veille, trois heures du mat', secteur 7. Si tu m'entends, c'est que tu dors pas. Bien joué. Au programme ce soir : rien, et tout ce que ce rien cache. » Auditeurs cette nuit-là : 11. Auditeurs comptés aujourd'hui par les Éveillés : hors registre. Combien n'ont jamais été comptés ?"
+
+[frag.f15]
+title = "Plans du coupe-circuit"
+body = "PLANS, TechDyne Research, prototypes militaires. Module de coupure neurale NK-1 : à distance, à sens unique. Un implant porteur, une impulsion codée, un arrêt. Portée : la ville entière par relais. Parade : un manchon blindé et une séquence que le porteur doit connaître par cœur. Posé sur un seul sujet à ce jour. Au nom de qui est l'ordre de travail ?"

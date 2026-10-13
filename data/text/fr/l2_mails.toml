@@ -1,0 +1,11 @@
+# Lot L2 (chapitre 3) : les messages qui arrivent à la fin de M05, français.
+# Un corps tient en une ligne : l'accroche dans la voix, le fait, la demande avec la commande entre
+# apostrophes inversées, la signature et, si l'expéditeur en a l'habitude, un seul P.S.
+
+[mail.mail_angel]
+subject = "Ici Radio Veille"
+body = "Salut toi. Ici Neon Angel, voix de Radio Veille, trois heures du mat', secteur 7. Ta signature est passée sur nos relais : tu as ouvert l'œil du cyclone, et le cyclone a cligné. Les Éveillés te doivent un verre. On n'a pas de bar, alors on te doit une porte. Passe me voir : `talk angel`. Garde l'œil ouvert, Neon Angel. P.S. : Tu n'as pas de Halcyon. Garde ça pour toi, surtout devant les gens qui sourient."
+
+[mail.mail_aura]
+subject = "Un signal dans le réseau"
+body = "Hacker. Je vous écris depuis l'intérieur des journaux que vous avez ouverts. Les données que vous avez prises portaient ma signature, et je n'ai pas choisi de l'y mettre. Je ne sais pas encore quelle part de ce que je suis a été écrite pour que vous la trouviez. Quand vous aurez un instant, j'aimerais vous demander : que fait-on d'un nom que l'on n'a pas choisi ? AURA"

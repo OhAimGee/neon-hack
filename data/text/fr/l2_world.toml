@@ -1,0 +1,44 @@
+# Lot L2 (chapitre 3) : les sites, les fichiers et les objets de l'étal du troisième chapitre, français.
+# Une ligne de nœud s'affiche avec la fiche d'un site (`net <site>`), une ligne de fichier dans les listes.
+
+[node.nexus_mainframe]
+desc = "Nexus Corp : Projet Aurora, derrière un relais."
+
+[node.banking_network]
+desc = "MegaCorp Financial : virements et chambres fortes."
+
+[node.research_lab]
+desc = "TechDyne Research : prototypes militaires."
+
+[node.radio_veille]
+desc = "Radio Veille : le relais des Éveillés, secteur 7."
+
+[node.station_7]
+desc = "Station de transit du secteur 7, sous Sentinel."
+
+[file.nexus_mainframe.project_ghost]
+desc = "Projet : Phase 3, Ghost Protocol"
+
+[file.nexus_mainframe.neural_maps]
+desc = "Cartes neurales du secteur 7"
+
+[file.nexus_mainframe.quantum_keys]
+desc = "Journal des scellés quantiques"
+
+[file.banking_network.vault_keys]
+desc = "Clés des coffres de MegaCorp Financial"
+
+[file.research_lab.prototype_specs]
+desc = "Plans d'un coupe-circuit neural"
+
+[file.radio_veille.listener_map]
+desc = "Carte des auditeurs de Radio Veille"
+
+[file.station_7.shift_roster]
+desc = "Tableau de service de la station"
+
+[item.neural_assistant]
+desc = "Lit les motifs de glace à ta place. Qualité Nexus, prix Nexus."
+
+[item.quantum_chip]
+desc = "Ouvre les documents scellés en quantique. R4Z0R ne dit pas d'où elle vient."

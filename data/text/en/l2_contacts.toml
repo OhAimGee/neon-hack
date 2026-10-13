@@ -1,0 +1,26 @@
+# Lot L2 (chapter 3): the contacts who join in the third chapter, English (the reference).
+# Taglines are the lines of the contact list; a topic is a question (q) and the contact's answer (a).
+# Voices: Phoenix is clipped and changes channels; Neon Angel speaks like the radio; AURA is only
+# a signal for now; the Broker says "we" and is busy; Ghost Walker keeps to field words.
+
+[contact.phoenix]
+tagline = "Ex-Nexus defector, elite jobs"
+
+[contact.phoenix.topic.nexus]
+q = "Ask about Nexus"
+a = "Not here. Switch channels. Nexus made me, kid. Eleven years behind that badge and nobody asked what I wanted. Aurora is the part I didn't know. Now you know it too. Don't make me say it twice."
+
+[contact.angel]
+tagline = "Voice of Vigil Radio"
+
+[contact.aura]
+tagline = "A signal on the net"
+
+[contact.broker]
+tagline = "Broker of information, busy"
+
+[contact.ghost]
+tagline = "Field ghost, physical access"
+
+[contact.insider]
+tagline = "Anonymous voice inside Nexus"

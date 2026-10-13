@@ -1,0 +1,44 @@
+# Lot L2 (chapter 3): the sites, the files and the shop items of the third chapter, English.
+# A node line is shown with the file of a site (`net <site>`), a file line in lists.
+
+[node.nexus_mainframe]
+desc = "Nexus Corp: Project Aurora, behind a relay."
+
+[node.banking_network]
+desc = "MegaCorp Financial: transfers and vaults."
+
+[node.research_lab]
+desc = "TechDyne Research: military prototypes."
+
+[node.radio_veille]
+desc = "Vigil Radio: the Awake's relay, Sector 7."
+
+[node.station_7]
+desc = "Sector 7 transit station, watched by Sentinel."
+
+[file.nexus_mainframe.project_ghost]
+desc = "Project file: Phase 3, Ghost Protocol"
+
+[file.nexus_mainframe.neural_maps]
+desc = "Neural maps of Sector 7 carriers"
+
+[file.nexus_mainframe.quantum_keys]
+desc = "Log of the quantum seals"
+
+[file.banking_network.vault_keys]
+desc = "Vault keys of MegaCorp Financial"
+
+[file.research_lab.prototype_specs]
+desc = "Blueprints of a neural kill-switch"
+
+[file.radio_veille.listener_map]
+desc = "Map of Vigil Radio's listeners"
+
+[file.station_7.shift_roster]
+desc = "Shift roster of the transit station"
+
+[item.neural_assistant]
+desc = "Reads ICE patterns for you. Nexus-grade, and priced like it."
+
+[item.quantum_chip]
+desc = "Opens quantum-sealed documents. R4Z0R won't say where it came from."
