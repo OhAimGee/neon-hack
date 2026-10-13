@@ -72,6 +72,12 @@ Ces constats **touchent le design**, pas seulement l'implémentation :
 - **S-11** : les règles de § 5 b à e, en particulier la limitation de Spoof. C'est la décision de design la plus lourde de cette phase : elle décide si la tactique de l'intrusion garde un enjeu au palier 3 et au-delà.
   - *Précision (lot R4.1, décision R-26).* Pour § 5 b, le propriétaire a retenu le **plancher** : Spoof n'efface que la Trace gagnée pendant le tour, jamais en dessous de la Trace du début du tour. Le solveur de R4.3 en tient compte : la Trace du début de tour ne baisse jamais, donc le gain de Spoof est borné par le bruit du tour et l'heuristique n'a plus à créditer 10 par charge.
 
-## 8. Limites
+## 8. Mise en œuvre et mesures (lot R4.3)
+
+Le solveur est dans `neon_engine::run::solve` (décision R-28, [`DECISIONS.md`](../design/DECISIONS.md)). Trois points d'entrée : `prove_solvable`, `optimum`, `auto_resolve`. Les bornes sont des nombres d'expansions (jamais le temps) : `AUTO_EXACT_EXPANSIONS` = 5 000, `AUTO_ANYTIME_EXPANSIONS` = 20 000, `PROOF_EXPANSIONS` = 2 000 000 pour les tests et outils.
+
+Mesures sur le contenu livré (`data/world/runs.toml`), deck minimal du palier (programmes sans limite de charges), quatre difficultés : les **64 intrusions sont prouvées solubles**, avec un optimum exact calculé en 2 ms à 0,5 s en debug (6 499 expansions au pire, `sentinel-hub` en Histoire). La Trace optimale va de 5 à 71 (de 8 à 41 en Normal), soit une marge sur le plafond de 100 d'au moins 29. Avec le deck complet, `auto_resolve` rend un optimum prouvé pour 28 intrusions sur 64 et le meilleur plan rencontré pour les 36 autres. Ces valeurs sont celles de départ des graphes (R4.2) : l'équilibre est le travail de `neon-sim` (R6).
+
+## 9. Limites
 
 Le modèle est une lecture de l'audit (chaque écart est marqué `CHOICE` dans `spikes/solver/src/model.rs`). Absents : brouillard et `probe`, compagnon, effet inter-intrusions de Backdoor, butin facultatif. Les missions sont écrites pour mesurer, ni équilibrées ni validées. Une seule machine virtualisée (Xeon 2,8 GHz, 4 cœurs), aucun « poste modeste » réel ; l'admissibilité de l'heuristique n'est testée que sur des états aléatoires de deux petites missions ; avec A\* ou la dominance, le départage par nombre de tours n'est plus garanti minimal (la Trace reste exacte) ; le repli `anytime` ignore les plans dont le pic de Trace dépasse la valeur finale visée. Non essayés : clé `u64`, IDA\*, recherche bidirectionnelle, base de motifs.

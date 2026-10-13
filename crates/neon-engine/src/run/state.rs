@@ -66,7 +66,7 @@ impl TraceBand {
 
 /// The whole state of a run. It is small and `Copy`, so a turn can be remembered by keeping
 /// one, and two states are equal exactly when the runs are in the same place.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct RunState {
     pub(super) position: NodeId,
     pub(super) trace: u8,
