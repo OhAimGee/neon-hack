@@ -1,6 +1,6 @@
 //! The panel of an intrusion for the full-screen interface, written from the [`RunView`]: the
 //! turn and its cycles, the nodes, the patrols, the forecast, the deck. The sections ride the
-//! same channel as the quests and the net of the hub ([`View::sections`]); every row is short
+//! same channel as the quests and the net of the hub ([`crate::game::View::sections`]); every row is short
 //! (the panel is 30 columns wide) and says in words what a command also says
 //! (`docs/spec/run-screen.md` § 6).
 
