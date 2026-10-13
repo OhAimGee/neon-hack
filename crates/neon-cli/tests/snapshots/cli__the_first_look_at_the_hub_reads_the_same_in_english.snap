@@ -30,15 +30,16 @@ Commands
 [3] options - Show or change the presentation settings
 [4] verbosity - Show or set how much atmosphere is shown
 [5] quit - Save and leave the net
-[6] quests - Show the journal, or the objectives of one quest
-[7] contacts - List the contacts you know
-[8] talk - Talk to a contact
-[9] net - Show the map of the net, or one site
-[10] hack - Start a run on a known site
-[11] laylow - Lower your Notoriety with a service
-[12] hint - Ask ECHO-7 for a hint
-[13] save - Save the game in a slot
-[14] tutorial - Show, skip or restart the guided tutorial
+[6] export - Write the transcript of the session to a file
+[7] quests - Show the journal, or the objectives of one quest
+[8] contacts - List the contacts you know
+[9] talk - Talk to a contact
+[10] net - Show the map of the net, or one site
+[11] hack - Start a run on a known site
+[12] laylow - Lower your Notoriety with a service
+[13] hint - Ask ECHO-7 for a hint
+[14] save - Save the game in a slot
+[15] tutorial - Show, skip or restart the guided tutorial
 Objective done: Read the help (help)
 > status
 Handle: Neon
