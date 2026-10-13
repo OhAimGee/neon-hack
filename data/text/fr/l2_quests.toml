@@ -73,7 +73,7 @@ debrief = "C'est fait, petit. Les plans sont à nous. Ne rentre pas au studio ce
 
 [quest.m07.obj]
 1 = "Envoyer le virus dans banking-network (hack banking-network)"
-2 = "Laisser un chemin de retour dans research-lab (hack research-lab)"
+2 = "Laisser un retour ouvert dans research-lab (hack research-lab)"
 3 = "Prendre les plans du prototype (hack research-lab)"
 4 = "Finir avec une {notoriety} sous 60 (status)"
 5 = "Repérer le honeypot DecoyNet (hack research-lab)"
