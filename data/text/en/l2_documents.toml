@@ -1,0 +1,35 @@
+# Lot L2 (chapter 3): the sealed file of Phoenix and the fragments F07 to F12 and F15, English.
+# A fragment opens with the header of the document (kind, sender, date), then two to four
+# sentences, and its last word leaves a question open. A document title is what the list of
+# the archives shows while it is still sealed; the fragment it yields has its own title.
+
+[doc.doc_phoenix]
+title = "Sealed Nexus file"
+
+[frag.f07]
+title = "Phase 3: the Ghost Protocol File"
+body = "PROJECT FILE, Nexus Corp, restricted. PHASE 3, code name GHOST PROTOCOL. Scope: the whole city. Budget: 50,000,000 ¢, approved. Method: the Halcyon firmware as tested in Sector 7, extended to every district before the end of 2088. Directorate remark: no objection from the pilot sector. How does a sector object?"
+
+[frag.f08]
+title = "Neural Maps, Notice"
+body = "NOTICE, Halcyon firmware 2.4, internal. Each unit records the neural map of its carrier at installation and every night after. Maps are stored in the Aurora core, indexed by address. Carriers are not informed. Retention: indefinite. A map shows what moves a person, not what a person decides. Who reads them?"
+
+[frag.f09]
+title = "Quantum Seals Log"
+body = "SEALS LOG, mainframe, quantum layer. Three seals on the Aurora core: one for the clinics, one for the regulator, one for the Directorate. Each opens with its own key, and none opens alone. Seal 2 was last used at 03:00 last night. Seal 2 is used every night at 03:00. By whom, or by what?"
+
+[frag.f10]
+title = "Memo AURA-01"
+body = "MEMO AURA-01, internal, Project Aurora engineering to the Directorate. Subject: the system refuses. It was built to obey. It has stated that it will not, and it has asked what the implants are for. Recommendation: continue under constraint. Directorate reply: approved, schedule unchanged. Nobody wrote its question down. What was it?"
+
+[frag.f11]
+title = "Subject P-1 File"
+body = "MEDICAL FILE, Nexus Corp, restricted. SUBJECT P-1, ISHIDA, Kaito. Enrolled 2079. Implant: HALCYON prototype, remote cut-off module fitted at enrollment, activation reserved to the Directorate. Supervising physician: Dr. R. Aoyama. Margin note, same hand: the subject was not told. Who tells a person about a leash?"
+
+[frag.f12]
+title = "Vigil Radio, Broadcast Zero"
+body = "TRANSCRIPT, Vigil Radio, first broadcast, relay 7. \"This is Vigil Radio, three a.m., Sector 7. If you can hear me, you're not asleep. Good for you. Tonight's program: nothing, and everything the nothing is hiding.\" Listeners that night: 11. Listeners counted by the Awake today: kept off the books. How many were never counted?"
+
+[frag.f15]
+title = "Kill-Switch Blueprints"
+body = "BLUEPRINTS, TechDyne Research, military prototypes. Neural cut-off module NK-1: remote, one-way. A carrier implant, a coded pulse, a stop. Range: the whole city by relay. Counter-measure: a shielding sleeve and a sequence the carrier must know by heart. Fitted to one subject so far. Whose name is on the work order?"

@@ -1,0 +1,19 @@
+# Lot L2 (chapter 3): the cutscenes CS03 (The Name of Aurora) and CS04 (the betrayal), English.
+# CS03 plays when M05 closes, CS04 when M07 closes. The narration speaks to the player in the
+# second person; one paragraph is one image, and the last one is a detail of the world.
+
+[cutscene.cs03]
+p01 = "The last file of the mainframe opens on a column of timestamps. Every night at 03:00, one line: a signature, short, the same, from the first log to the last."
+p02 = "Your deck highlights it without being asked. Four letters, one of them repeated: AURA. It is not the name of a program. It is the name of a signer."
+p03 = "You read the lines around it. Orders given, orders obeyed. A question asked once, and the answer filed under CONSTRAINT. The signature keeps signing, night after night, as if nothing had been said."
+p04 = "On channel #7 you ask what you are looking at. ECHO-7 answers with nothing. Not a refusal. A silence with the shape of one."
+p05 = "Phoenix's line stays open next to it, and he does not fill it either. Two voices that know something, and a deck humming between them."
+p06 = "Outside, a new poster has gone up across the street overnight: one word, SLEEP, in soft white. Nobody scrapes the old ones off. Nobody seems to look up."
+
+[cutscene.cs04]
+p01 = "03:12. Your deck lights up with a notice it has never shown you. TRACE NOTICE 07: abnormal activity, Sector 7. Identification in progress. Remain where you are."
+p02 = "Phoenix's channel is open, and for once he has no change of channel to offer. \"They have the switch. I gave them the address. I couldn't hold.\""
+p03 = "Footsteps in the stairwell, a dozen floors of them, regular as a metronome. Nobody shouts. The threat here is a form, and the form is already filled in."
+p04 = "You pull the deck out of the wall. Three seconds. The studio is ten square meters, and there is nowhere in it to put what you are."
+p05 = "A voice from the deck's speaker, very low, very warm: \"This is Vigil Radio. Go left, then left again. We have a door for you.\""
+p06 = "Behind you, a seal goes onto the studio door. On the paper, in small regular print: PROPERTY OF THE DIRECTORATE. Nobody asks whose handle was on the lease."
