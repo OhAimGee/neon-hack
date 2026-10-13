@@ -436,3 +436,22 @@ Règles vérifiées au chargement (erreur `fichier:ligne`) :
 **Rythme.** Le palier d'un site est celui qui le débloque. Le rythme de la difficulté (`run::Pace` : multiplicateur de Trace en quarts et cycles ajoutés) vient de `Difficulty::pace()` : Histoire ×½ et +1 cycle, Normal ×1, Expert ×1,25, Hardcore ×1,5.
 
 **Ce que ces données ne sont pas.** Les forces de glace, les patrouilles et les decks sont de départ : l'équilibre se règle avec `neon-sim` (R6), et la preuve que chaque intrusion est terminable avec le deck minimal vient avec le solveur (R4.3). Un test joue pour l'instant un joueur simple (plus court chemin, meilleur programme, Cloak en fin de tour) sur chaque site, en Histoire et en Normal, et exige qu'il gagne. Le briefing et le nom d'affichage d'un site, lus au début de l'intrusion, viennent avec les commandes (R4.4).
+
+## 14. Ce que le lot R4.4 a livré, et ce qu'il a changé à ce document
+
+Le moteur de l'intrusion parle : `neon_engine::intrusion` (décision R-29). Les lignes, leur ordre (§ 3), leur importance (§ 7) et la prévision (§ 4) sont ceux de ce document ; les exemples du § 5 se rejouent avec `neon-hack --intrusion corp-server-01` (les snapshots de `crates/neon-cli/tests/snapshots/cli__a_whole_intrusion_*` en sont la version automatique, que le § 12 annonçait).
+
+Écarts voulus, tous à reprendre dans les lots qui suivent :
+
+| Sujet | Ce que dit le document | Ce que fait R4.4 | Quand |
+|---|---|---|---|
+| `View` | une énumération `Hub \| Run` | la `View` plate reste ; `IntrusionGame::run_view()` rend le `RunView` | R4.5 (`Game::run_view`) |
+| Brouillard | `Knowledge::Unknown`, `probe` | rien de caché dans les règles : pas de `probe`, pas d'inconnu dans la vue | pas de lot prévu |
+| `skip`, mode histoire | résolution automatique | absent de la table | R4.6 |
+| Rapport | 4 lignes dont la Notoriété | 3 lignes (tours, Trace finale, butin) | R4.6 |
+| Nom du site | « MegaCorp Industries, serveur de paie » | l'identifiant (`corp-server-01`) | contenu (R5) |
+| Désigner un nœud | numéro ou nom | numéro (le résolveur n'a pas de langue) | à revoir avec la TUI |
+| Largeur du panneau | nom de programme à 8 colonnes | « Brute-Force » en fait 11 : noms courts à écrire | R4.5 |
+| Intro de la prévision de Histoire | `run.forecast.next_turn` | une ligne `Normal` : « Prévision, tour suivant (2) : Trace +7 » | — |
+
+La langue française n'emploie pas d'article devant un nœud ou une patrouille (« patrouille 1 scanne Passerelle (1) ») : les noms de nœuds viennent des données et leur genre n'est pas connu du moteur.

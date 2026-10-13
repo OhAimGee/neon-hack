@@ -124,7 +124,13 @@ impl Voice<'_> {
     }
 
     /// The charges a limited program has left, for the line that uses one.
-    fn used(&self, after: &RunState, program: Program, key: &'static str, left: &'static str) -> Text {
+    fn used(
+        &self,
+        after: &RunState,
+        program: Program,
+        key: &'static str,
+        left: &'static str,
+    ) -> Text {
         match after.supply(self.mission, program) {
             Some(crate::run::Supply::Limited(count)) => {
                 Text::new(left).with_int("left", number(count))
@@ -176,10 +182,7 @@ impl Voice<'_> {
                     Text::new("run.move").with_text("at", self.node(to)),
                 )),
                 Fact::Breached {
-                    node,
-                    program,
-                    to,
-                    ..
+                    node, program, to, ..
                 } => {
                     let strength = self.mission.ice(node).map_or(0, |ice| ice.strength);
                     events.push(Event::system(
@@ -223,7 +226,12 @@ impl Voice<'_> {
                 }
                 Fact::ExtraCycles { count } => {
                     let text = self
-                        .used(after, Program::Overclock, "run.use.overclock", "run.use.overclock_left")
+                        .used(
+                            after,
+                            Program::Overclock,
+                            "run.use.overclock",
+                            "run.use.overclock_left",
+                        )
                         .with_int("count", number(count));
                     events.push(Event::system(text));
                 }
@@ -365,22 +373,23 @@ impl Voice<'_> {
                 ));
             }
             for fact in &turn.facts {
-                if let Some(text) = self.forecast_fact(turn, fact) {
+                if let Some(text) = self.forecast_fact(turn, *fact) {
                     events.push(aside(text));
                 }
             }
             if turn.after.status() == Status::Burned {
                 events.push(Event::alert(
                     Severity::Warning,
-                    Text::new("run.forecast.burn").with_int("max", number(self.mission.trace_cap())),
+                    Text::new("run.forecast.burn")
+                        .with_int("max", number(self.mission.trace_cap())),
                 ));
             }
         }
         events
     }
 
-    fn forecast_fact(&self, turn: &ForecastTurn, fact: &Fact) -> Option<Text> {
-        Some(match *fact {
+    fn forecast_fact(&self, turn: &ForecastTurn, fact: Fact) -> Option<Text> {
+        Some(match fact {
             Fact::PatrolMoved { patrol, to, .. } => Text::new("run.forecast.patrol_moves")
                 .with_int("id", number(patrol.saturating_add(1)))
                 .with_text("to", self.node(to)),

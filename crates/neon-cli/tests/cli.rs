@@ -1734,3 +1734,71 @@ fn no_question_is_asked_on_a_pipe_and_no_settings_file_is_created() {
     assert!(!stdout(&output).contains("How do you want to play?"));
     assert!(!dir.path().join("settings.toml").exists());
 }
+
+// -- One intrusion on its own (`--intrusion`) ---------------------------------------------
+
+/// The commands of a whole intrusion on the payroll site: a look around, a mistake, a turn taken
+/// back and played again, the end of a turn, the loot, and a jack out that is asked twice.
+const WHOLE_INTRUSION: &str = "help\nmap\nstatus\nbogus\nmove 2\nmove 3\nbreach 4 brute\nundo\nmove 3\nbreach 4 brute\nbreach 4 brute\nend\nmove 4\nloot\njackout\nn\nstatus\njackout\ny\n";
+
+fn intrusion(extra: &[&str], script: &str) -> String {
+    let mut args = vec!["--intrusion", "corp-server-01", "--plain"];
+    args.extend_from_slice(extra);
+    let output = run_with_input(&args, script);
+    assert!(output.status.success(), "{}", stderr(&output));
+    assert!(output.stderr.is_empty(), "{}", stderr(&output));
+    stdout(&output)
+}
+
+#[test]
+fn a_whole_intrusion_is_played_with_its_commands_in_english() {
+    let text = intrusion(&[], WHOLE_INTRUSION);
+    assert!(
+        text.starts_with("Run: corp-server-01.\nTurn 1: Trace 0/100 (calm)"),
+        "{text}"
+    );
+    assert!(text.contains("Undo: back to turn 1"), "{text}");
+    assert!(
+        text.contains("You jack out of corp-server-01 with the loot."),
+        "{text}"
+    );
+    assert!(text.contains("Run report"), "{text}");
+    insta::assert_snapshot!(text);
+}
+
+#[test]
+fn a_whole_intrusion_reads_the_same_in_french() {
+    let text = intrusion(&["--lang", "fr"], WHOLE_INTRUSION);
+    assert!(text.contains("Rapport d'intrusion"), "{text}");
+    assert!(
+        !text.contains("run"),
+        "no English word of the game in French: {text}"
+    );
+    insta::assert_snapshot!(text);
+}
+
+#[test]
+fn a_whole_intrusion_reads_aloud_and_in_ascii() {
+    let text = intrusion(&["--screen-reader", "--ascii"], WHOLE_INTRUSION);
+    assert!(text.is_ascii(), "{text}");
+    assert!(
+        text.contains("1. Node: Gateway; State: you are here"),
+        "{text}"
+    );
+    insta::assert_snapshot!(text);
+    let french = intrusion(
+        &["--screen-reader", "--ascii", "--lang", "fr"],
+        WHOLE_INTRUSION,
+    );
+    assert!(french.is_ascii(), "{french}");
+    insta::assert_snapshot!(french);
+}
+
+#[test]
+fn an_intrusion_that_cannot_begin_says_why_and_leaves_no_save() {
+    let output = run_with_input(&["--intrusion", "nowhere"], "");
+    assert!(!output.status.success());
+    assert!(stderr(&output).contains("no site"), "{}", stderr(&output));
+    let output = run_with_input(&["--intrusion", "corp-server-01", "--demo"], "");
+    assert!(!output.status.success(), "two games at once are refused");
+}

@@ -50,13 +50,10 @@ impl Lists<'_> {
         let (mission, state) = (self.mission, self.state);
         match command {
             "move" if state.position() == node => Some(Text::new("run.reason.here")),
-            "move" if !mission.is_linked(state.position(), node) => {
+            "move" | "breach" if !mission.is_linked(state.position(), node) => {
                 Some(Text::new("run.reason.not_linked"))
             }
             "move" if !state.is_open(mission, node) => Some(Text::new("run.reason.ice_up")),
-            "breach" if !mission.is_linked(state.position(), node) => {
-                Some(Text::new("run.reason.not_linked"))
-            }
             "breach" if mission.ice(node).is_none() || state.is_open(mission, node) => {
                 Some(Text::new("run.reason.no_ice"))
             }

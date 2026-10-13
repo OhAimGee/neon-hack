@@ -5,9 +5,11 @@ use crate::event::{Event, Table};
 use crate::prompt::{Choice, Prompt};
 use crate::text::{Arg, Text};
 
+use super::view::RunView;
+
 const TERMS: &[&str] = &[
     "run", "turn", "cycle", "node", "patrol", "program", "trace", "forecast", "loot", "jackout",
-    "ice", "deck", "undo", "burned", "noise", "site",
+    "ice", "deck", "undo", "burned", "noise", "site", "intel",
 ];
 
 /// Gives a text, and the texts nested in its arguments, the terms it was not given.
@@ -41,6 +43,17 @@ pub(super) fn gloss_event(event: &mut Event) {
     }
 }
 
+/// [`gloss`] for every text of a view, so a panel renders it as the terminal would.
+pub(super) fn gloss_view(view: &mut RunView) {
+    gloss(&mut view.site);
+    gloss(&mut view.trace.band);
+    view.nodes.iter_mut().for_each(|node| gloss(&mut node.name));
+    view.deck
+        .iter_mut()
+        .for_each(|program| gloss(&mut program.name));
+    view.forecast.iter_mut().for_each(gloss);
+}
+
 /// [`gloss`] for every text of a prompt.
 pub(super) fn gloss_prompt(prompt: &mut Prompt) {
     match prompt {
@@ -52,7 +65,9 @@ pub(super) fn gloss_prompt(prompt: &mut Prompt) {
             cancel,
         }) => {
             gloss(title);
-            options.iter_mut().for_each(|option| gloss(&mut option.label));
+            for option in options {
+                gloss(&mut option.label);
+            }
             cancel.iter_mut().for_each(gloss);
         }
         Prompt::Command | Prompt::Continue | Prompt::End => {}

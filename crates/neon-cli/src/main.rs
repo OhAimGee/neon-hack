@@ -29,8 +29,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use clap::{Parser, ValueEnum};
 use neon_engine::campaign::{CampaignGame, Difficulty};
 use neon_engine::demo::DemoGame;
-use neon_engine::intrusion::IntrusionGame;
 use neon_engine::event::Event;
+use neon_engine::intrusion::IntrusionGame;
 use neon_engine::text::{Catalog, Lang, RenderMode, Text, to_ascii};
 use neon_engine::{Game, Step};
 
@@ -606,8 +606,8 @@ fn open_game(
 ) -> io::Result<(Box<dyn Game>, Step)> {
     if let (Kind::Intrusion, Some(site)) = (kind, cli.intrusion.as_deref()) {
         let difficulty = cli.difficulty.map_or(Difficulty::Normal, Difficulty::from);
-        let mut game =
-            IntrusionGame::new(site, difficulty).map_err(|error| io::Error::other(error.to_string()))?;
+        let mut game = IntrusionGame::new(site, difficulty)
+            .map_err(|error| io::Error::other(error.to_string()))?;
         let first = game.start();
         return Ok((Box::new(game), first));
     }

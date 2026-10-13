@@ -165,7 +165,9 @@ impl Intrusion {
                 let state = self.run.state();
                 let done = match self.run.undo_left() {
                     Undo::Unlimited => Text::new("run.undo.done_unlimited"),
-                    Undo::Left(count) => Text::new("run.undo.done").with_int("left", i64::from(count)),
+                    Undo::Left(count) => {
+                        Text::new("run.undo.done").with_int("left", i64::from(count))
+                    }
                 };
                 events.push(Event::system(
                     done.with_int("number", i64::from(state.turn()))

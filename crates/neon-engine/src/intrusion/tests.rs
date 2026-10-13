@@ -9,7 +9,7 @@ use crate::event::{Event, Importance, Role, Table};
 use crate::game::Game;
 use crate::ids::ContactId;
 use crate::prompt::{Input, Prompt, Step};
-use crate::run::solve::{PROOF_EXPANSIONS, Outcome, optimum};
+use crate::run::solve::{PROOF_EXPANSIONS, Proof, prove_solvable};
 use crate::run::tests::{Dice, payroll, random_mission};
 use crate::run::{Action, Program, Status, forecast, legal_actions};
 use crate::text::{Arg, Catalog, Lang, Text};
@@ -76,7 +76,10 @@ fn texts_of(step: &Step) -> Vec<&Text> {
             Event::Changed { band, .. } => collect(band, &mut out),
             Event::Screen(table) => {
                 collect(&table.title, &mut out);
-                table.columns.iter().for_each(|text| collect(text, &mut out));
+                table
+                    .columns
+                    .iter()
+                    .for_each(|text| collect(text, &mut out));
                 table
                     .rows
                     .iter()
@@ -86,9 +89,8 @@ fn texts_of(step: &Step) -> Vec<&Text> {
             Event::Decor { .. } | Event::Effect(_) | Event::Break => {}
         }
     }
-    match &step.prompt {
-        Prompt::Confirm { question, .. } => collect(question, &mut out),
-        _ => {}
+    if let Prompt::Confirm { question, .. } = &step.prompt {
+        collect(question, &mut out);
     }
     out
 }
@@ -210,7 +212,11 @@ fn nothing_the_game_says_needs_the_flavor_verbosity() {
     for line in ["map", "status", "breach 2 brute", "end", "undo", "help"] {
         events.extend(say(&mut game, line).events);
     }
-    assert!(events.iter().all(|event| event.importance() != Importance::Flavor));
+    assert!(
+        events
+            .iter()
+            .all(|event| event.importance() != Importance::Flavor)
+    );
 }
 
 #[test]
@@ -231,7 +237,10 @@ fn a_refused_action_says_only_why() {
     let step = say(&mut game, "move 2");
     assert_eq!(kinds(&step), ["error.arg.unavailable"]);
     // Loot where there is none: the rules refuse.
-    assert_eq!(kinds(&say(&mut game, "loot")), ["run.error.nothing_to_loot"]);
+    assert_eq!(
+        kinds(&say(&mut game, "loot")),
+        ["run.error.nothing_to_loot"]
+    );
     // Jacking out too early.
     assert_eq!(kinds(&say(&mut game, "jackout")), ["run.error.objectives"]);
 }
@@ -244,7 +253,9 @@ fn random_session(seed: u64, site: &str, difficulty: Difficulty) -> Vec<Step> {
     let mut game = game(site, difficulty);
     let mut steps = vec![game.start()];
     let programs: Vec<&str> = Program::ALL.iter().map(|program| program.id()).collect();
-    let words = ["map", "status", "help", "undo", "end", "end", "loot", "jackout", "quit", "bogus"];
+    let words = [
+        "map", "status", "help", "undo", "end", "end", "loot", "jackout", "quit", "bogus",
+    ];
     for _ in 0..90 {
         let step = match game.prompt() {
             Prompt::End => break,
@@ -284,7 +295,8 @@ fn every_text_an_intrusion_says_exists_in_both_languages_with_its_arguments() {
                         let template = catalog.get(&text.key).unwrap_or_else(|| {
                             panic!("{:?}: `{}` is missing", catalog.lang(), text.key)
                         });
-                        let given: BTreeSet<&str> = text.args.iter().map(|(name, _)| *name).collect();
+                        let given: BTreeSet<&str> =
+                            text.args.iter().map(|(name, _)| *name).collect();
                         let wanted = template.placeholders();
                         assert!(
                             wanted.is_subset(&given),
@@ -297,9 +309,33 @@ fn every_text_an_intrusion_says_exists_in_both_languages_with_its_arguments() {
             }
         }
     }
+    // A run that is burned, and one that is won, to reach the result and the report.
+    let mut burned = game(SITE, Difficulty::Hardcore);
+    let mut steps = vec![burned.start()];
+    while burned.prompt() != Prompt::End {
+        steps.push(say(&mut burned, "end"));
+    }
+    for step in &steps {
+        for text in texts_of(step) {
+            seen.insert(text.key.to_string());
+            for catalog in &catalogs {
+                assert!(
+                    catalog.get(&text.key).is_some(),
+                    "`{}` is missing",
+                    text.key
+                );
+            }
+        }
+    }
     // The sweep reaches the main families of the intrusion.
-    for key in ["run.breach", "run.end.scan", "run.projection", "run.result.won", "run.report.title"] {
-        let _ = key;
+    for key in [
+        "run.breach",
+        "run.end.scan",
+        "run.projection",
+        "run.alert.band",
+        "run.report.title",
+    ] {
+        assert!(seen.contains(key), "the sweep never met `{key}`");
     }
     assert!(seen.len() > 40, "only {} texts reached", seen.len());
 }
@@ -343,7 +379,7 @@ fn states_to_check(seed: u64, site: &str) -> Vec<IntrusionGame> {
         if action == Action::Jackout {
             continue;
         }
-        let line = super::tests::line_of(action);
+        let line = line_of(action);
         game.handle(Input::Line(line));
         states.push(game.clone());
     }
@@ -391,7 +427,8 @@ fn everything_in_the_view_is_also_said_by_map_and_status() {
                         assert!(row[2].args.contains(&("family", Arg::Term(ice.family))));
                     }
                 }
-                let links: Vec<String> = node.links.iter().map(|n| n.number().to_string()).collect();
+                let links: Vec<String> =
+                    node.links.iter().map(|n| n.number().to_string()).collect();
                 assert!(row[3].args.contains(&("list", Arg::Str(links.join(", ")))));
                 let loot = match node.loot {
                     LootState::None => "run.map.loot.none",
@@ -461,7 +498,10 @@ fn everything_in_the_view_is_also_said_by_map_and_status() {
                 assert_eq!(*said, shown);
             }
             let total_line = message(&status, "run.forecast.total").unwrap();
-            assert_eq!(int(total_line, "total"), Some(i64::from(view.forecast_total)));
+            assert_eq!(
+                int(total_line, "total"),
+                Some(i64::from(view.forecast_total))
+            );
         }
     }
 }
@@ -496,13 +536,23 @@ fn the_projection_is_written_only_when_the_announced_trace_changes_and_is_then_e
                 _ => None,
             });
             if action == Action::End {
-                assert!(projection.is_none(), "the next turn shows the whole forecast");
+                assert!(
+                    projection.is_none(),
+                    "the next turn shows the whole forecast"
+                );
             } else if was == now.total() {
-                assert!(projection.is_none(), "seed {seed}: unchanged forecast announced");
+                assert!(
+                    projection.is_none(),
+                    "seed {seed}: unchanged forecast announced"
+                );
             } else {
-                let text = projection.unwrap_or_else(|| panic!("seed {seed}: change not announced"));
+                let text =
+                    projection.unwrap_or_else(|| panic!("seed {seed}: change not announced"));
                 assert_eq!(int(text, "total"), Some(i64::from(now.total())));
-                assert_eq!(int(text, "from"), Some(i64::from(after.trace().min(mission.trace_cap()))));
+                assert_eq!(
+                    int(text, "from"),
+                    Some(i64::from(after.trace().min(mission.trace_cap())))
+                );
             }
         }
     }
@@ -519,8 +569,14 @@ fn commands_are_read_against_the_lists_of_the_screen() {
     assert_eq!(kinds(&say(&mut game, "move")), ["error.arg.missing"]);
     assert_eq!(kinds(&say(&mut game, "move 9")), ["error.arg.unknown"]);
     // A utility is not a breach, a breach is not a utility: the list says so.
-    assert_eq!(kinds(&say(&mut game, "breach 2 cloak")), ["error.arg.unavailable"]);
-    assert_eq!(kinds(&say(&mut game, "use brute")), ["error.arg.unavailable"]);
+    assert_eq!(
+        kinds(&say(&mut game, "breach 2 cloak")),
+        ["error.arg.unavailable"]
+    );
+    assert_eq!(
+        kinds(&say(&mut game, "use brute")),
+        ["error.arg.unavailable"]
+    );
     // An alias, and a case that does not matter.
     assert_eq!(kinds(&say(&mut game, "GO 3"))[0], "run.move");
 }
@@ -531,7 +587,10 @@ fn help_lists_the_commands_and_explains_one() {
     game.start();
     let help = say(&mut game, "help");
     assert_eq!(table_of(&help.events)[0].rows.len(), SPECS.len());
-    assert_eq!(kinds(&say(&mut game, "help breach")), ["run.help.breach", "run.help"]);
+    assert_eq!(
+        kinds(&say(&mut game, "help breach")),
+        ["run.help.breach", "run.help.usage"]
+    );
     assert_eq!(kinds(&say(&mut game, "help map")), ["run.help.map"]);
 }
 
@@ -555,7 +614,10 @@ fn undo_takes_back_the_turn_and_counts_what_is_left() {
     say(&mut game, "breach 2 brute");
     let step = say(&mut game, "undo");
     assert_eq!(kinds(&step)[0], "run.undo.done");
-    assert_eq!(int(message(&step, "run.undo.done").unwrap(), "left"), Some(2));
+    assert_eq!(
+        int(message(&step, "run.undo.done").unwrap(), "left"),
+        Some(2)
+    );
     assert_eq!(game.intrusion().state().trace(), 0);
     // Expert has none; Story has no limit.
     let mut expert = self::game(SITE, Difficulty::Expert);
@@ -565,7 +627,10 @@ fn undo_takes_back_the_turn_and_counts_what_is_left() {
     let mut story = self::game(SITE, Difficulty::Story);
     story.start();
     say(&mut story, "breach 2 brute");
-    assert_eq!(kinds(&say(&mut story, "undo"))[0], "run.undo.done_unlimited");
+    assert_eq!(
+        kinds(&say(&mut story, "undo"))[0],
+        "run.undo.done_unlimited"
+    );
 }
 
 #[test]
@@ -580,7 +645,10 @@ fn jackout_asks_when_loot_is_left_behind() {
     }
     // The extra loot of the Archives is still there.
     let step = say(&mut game, "jackout");
-    assert!(matches!(step.prompt, Prompt::Confirm { default: false, .. }));
+    assert!(matches!(
+        step.prompt,
+        Prompt::Confirm { default: false, .. }
+    ));
     assert_eq!(game.intrusion().state().status(), Status::Running);
     // No: the run goes on.
     let step = game.handle(Input::Confirm(false));
@@ -597,7 +665,10 @@ fn jackout_asks_when_loot_is_left_behind() {
 fn quit_asks_first_and_the_input_closing_ends_the_game() {
     let mut game = game(SITE, Difficulty::Normal);
     game.start();
-    assert!(matches!(say(&mut game, "quit").prompt, Prompt::Confirm { .. }));
+    assert!(matches!(
+        say(&mut game, "quit").prompt,
+        Prompt::Confirm { .. }
+    ));
     assert_eq!(game.handle(Input::Confirm(false)).prompt, Prompt::Command);
     say(&mut game, "exit");
     assert_eq!(game.handle(Input::Confirm(true)).prompt, Prompt::End);
@@ -621,7 +692,10 @@ fn waiting_burns_the_run_and_the_game_ends_with_the_report() {
     let kinds = kinds(&step);
     assert!(kinds.contains(&"run.result.burned".to_owned()));
     assert_eq!(kinds.last().unwrap(), "screen:run.report.title");
-    assert!(!kinds.contains(&"run.turn.start".to_owned()), "no turn after the end");
+    assert!(
+        !kinds.contains(&"run.turn.start".to_owned()),
+        "no turn after the end"
+    );
     assert_eq!(game.intrusion().state().status(), Status::Burned);
     // The Trace the interface shows never goes past the cap it burns at.
     assert!(game.run_view().trace.value <= game.run_view().trace.max);
@@ -651,7 +725,10 @@ fn the_game_reads_as_a_game() {
     assert_eq!(view.player, SITE);
     assert_eq!(view.gauges.len(), 1);
     assert_eq!(view.gauges[0].max, 100);
-    assert!(game.snapshot().is_err(), "an intrusion on its own is not saved");
+    assert!(
+        game.snapshot().is_err(),
+        "an intrusion on its own is not saved"
+    );
     assert!(game.load("").is_err());
     let _ = Capabilities::PLAIN;
     let _ = ContactId::new("echo7");
@@ -666,12 +743,12 @@ fn an_unknown_site_cannot_be_played() {
 // -- Playing the whole way through the commands ------------------------------------------
 
 #[test]
-fn the_best_plan_of_every_site_plays_through_the_commands_to_the_same_end() {
+fn a_winning_plan_of_every_site_plays_through_the_commands_to_the_same_end() {
     let content = embedded_content().unwrap();
     for site in &content.sites {
         let difficulty = Difficulty::Normal;
         let mission = content.mission(&site.id, difficulty.pace()).unwrap();
-        let Outcome::Solved { plan, .. } = optimum(&mission, PROOF_EXPANSIONS).outcome else {
+        let Proof::Solvable(plan) = prove_solvable(&mission, PROOF_EXPANSIONS) else {
             panic!("{}: no plan", site.id);
         };
         let mut game = game(site.id.as_str(), difficulty);
@@ -684,7 +761,12 @@ fn the_best_plan_of_every_site_plays_through_the_commands_to_the_same_end() {
             }
         }
         assert_eq!(game.prompt(), Prompt::End, "{}", site.id);
-        assert_eq!(game.intrusion().state().status(), Status::Won, "{}", site.id);
+        assert_eq!(
+            game.intrusion().state().status(),
+            Status::Won,
+            "{}",
+            site.id
+        );
         assert_eq!(game.intrusion().state().trace(), plan.trace, "{}", site.id);
     }
 }
@@ -698,7 +780,8 @@ fn the_payroll_run_of_the_spec_keeps_its_numbers_through_the_lists() {
         mission: &mission,
         state: &state,
     };
-    let rows = crate::command::Resolver::list(&lists, crate::command::ArgKind::Node, &SPECS[3]).rows;
+    let rows =
+        crate::command::Resolver::list(&lists, crate::command::ArgKind::Node, &SPECS[3]).rows;
     assert_eq!(rows.len(), mission.node_count());
     assert_eq!(rows[0].display(), "1");
 }

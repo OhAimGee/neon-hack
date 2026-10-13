@@ -44,7 +44,6 @@ use crate::prompt::{Input, Prompt, Step};
 use crate::save::{self, SaveError, SaveMeta, SaveRequest};
 use crate::text::Text;
 
-
 const BANNER: &[&str] = &["== N E O N   H A C K =="];
 
 /// Why a campaign could not be started.

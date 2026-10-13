@@ -247,7 +247,9 @@ impl Voice<'_> {
                 };
                 let charges = match program.charges {
                     Charges::Unlimited => Text::new("run.deck.unlimited"),
-                    Charges::Left(count) => Text::new("run.deck.left").with_int("count", number(count)),
+                    Charges::Left(count) => {
+                        Text::new("run.deck.left").with_int("count", number(count))
+                    }
                 };
                 vec![
                     program.name,

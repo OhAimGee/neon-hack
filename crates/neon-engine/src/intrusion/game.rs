@@ -15,7 +15,7 @@ use crate::save::SaveError;
 use crate::text::Text;
 
 use super::commands::{COMMANDS, CONTEXT};
-use super::gloss::{gloss, gloss_event, gloss_prompt};
+use super::gloss::{gloss, gloss_event, gloss_prompt, gloss_view};
 use super::lists::Lists;
 use super::session::{Intrusion, StartError};
 
@@ -82,7 +82,9 @@ impl IntrusionGame {
     /// The panel of the interface: everything it draws, read from the state.
     #[must_use]
     pub fn run_view(&self) -> super::RunView {
-        self.intrusion.view()
+        let mut view = self.intrusion.view();
+        gloss_view(&mut view);
+        view
     }
 
     fn step(&self, mut events: Vec<Event>) -> Step {
@@ -170,7 +172,10 @@ impl IntrusionGame {
             "end" => self.do_action(Action::End, events),
             "jackout" => {
                 let left = self.intrusion.loot_left();
-                let ready = self.intrusion.state().objectives_done(self.intrusion.run().mission());
+                let ready = self
+                    .intrusion
+                    .state()
+                    .objectives_done(self.intrusion.run().mission());
                 if ready && left > 0 {
                     self.flow = Some(Flow::ConfirmJackout { left });
                 } else {
@@ -204,8 +209,7 @@ impl IntrusionGame {
             events.push(Event::system(Text::dynamic(spec.help.to_owned())));
             if !spec.args.is_empty() {
                 events.push(Event::system(
-                    Text::new("run.help.usage")
-                        .with_text("usage", Text::dynamic(spec.usage_key())),
+                    Text::new("run.help.usage").with_text("usage", Text::dynamic(spec.usage_key())),
                 ));
             }
         } else {

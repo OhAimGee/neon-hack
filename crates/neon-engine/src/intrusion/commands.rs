@@ -41,7 +41,13 @@ const fn engine(
 
 /// Every command of an intrusion.
 pub(super) const SPECS: &[CommandSpec] = &[
-    engine("help", &["h"], "run.help.help", Context::Anywhere, HELP_ARGS),
+    engine(
+        "help",
+        &["h"],
+        "run.help.help",
+        Context::Anywhere,
+        HELP_ARGS,
+    ),
     engine("status", &["st"], "run.help.status", Context::Anywhere, &[]),
     engine("map", &[], "run.help.map", Context::Run, &[]),
     engine("move", &["go"], "run.help.move", Context::Run, NODE),

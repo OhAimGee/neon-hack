@@ -1,0 +1,119 @@
+---
+source: crates/neon-cli/tests/cli.rs
+expression: text
+---
+Run: corp-server-01.
+Turn 1: Trace 0/100 (calm), cycles 3/3.
+Forecast: Trace +7 at the end of the turn.
+Forecast: patrol 1 moves to Archives (3).
+Forecast: patrol 1 scans Gateway (1): Trace +5, unless Cloak is active.
+Forecast: ambient Trace +2.
+> help
+Commands
+[1] help - List the commands, or explain one
+[2] status - Show the Trace, the cycles, the deck and the forecast
+[3] map - Show the nodes, their ICE, and where the patrols go
+[4] move - Move to a linked node whose ICE is open
+[5] breach - Breach the ICE of a linked node with a program
+[6] use - Use a utility program: Cloak, Spoof, Ghost, Overclock
+[7] loot - Take the loot of the node you are on
+[8] end - End the turn: the patrols move and scan, the ambient Trace rises
+[9] jackout - Jack out with the loot you took
+[10] undo - Take back the turn under way
+[11] quit - Leave the run
+> map
+Map: corp-server-01
+[1] Gateway - you are here - no defense - links 2, 3 - no loot
+[2] Firewall - closed - Network 2, progress 0/2 - links 1, 3 - no loot
+[3] Archives - open - no defense - links 1, 2, 4, 5 - loot: an extra
+[4] Vault - closed - Network 4, progress 0/4 - links 3, 5 - loot: the objective
+[5] Cameras - closed - AI Guardian 3, progress 0/3 - links 3, 4 - no loot
+Patrol 1: at Cameras (5), then Archives (3).
+> status
+Trace 0/100 (calm).
+Cycles 3/3.
+Deck
+[1] Brute-Force - Network 2 - 1 cycle - noise 5 - unlimited
+[2] Exploit - Network 3 - 2 cycles - noise 2 - 2 left
+[3] Backdoor - Network 1 - 1 cycle - noise 1 - unlimited
+[4] Decrypt - Encryption 2 - 1 cycle - noise 3 - unlimited
+[5] Spoof - utility - 1 cycle - noise 0 - 2 left
+[6] Cloak - utility - 1 cycle - noise 0 - 2 left
+Loot: 0 of 2 taken.
+Undos left: 3.
+Forecast: Trace +7 at the end of the turn.
+Forecast: patrol 1 moves to Archives (3).
+Forecast: patrol 1 scans Gateway (1): Trace +5, unless Cloak is active.
+Forecast: ambient Trace +2.
+> bogus
+[Error] Unknown command: bogus. See `help`.
+> move 2
+[Error] 2 is unavailable: its ICE is still up.
+> move 3
+Position: Archives (3).
+Cycles 2/3.
+> breach 4 brute
+Brute-Force on Vault (4): progress 2/4.
+Trace +5 (0 → 5, calm).
+Cycles 1/3.
+> undo
+Undo: back to turn 1, Trace 0/100 (calm). Undos left: 2.
+Turn 1: Trace 0/100 (calm), cycles 3/3.
+Forecast: Trace +7 at the end of the turn.
+Forecast: patrol 1 moves to Archives (3).
+Forecast: patrol 1 scans Gateway (1): Trace +5, unless Cloak is active.
+Forecast: ambient Trace +2.
+> move 3
+Position: Archives (3).
+Cycles 2/3.
+> breach 4 brute
+Brute-Force on Vault (4): progress 2/4.
+Trace +5 (0 → 5, calm).
+Cycles 1/3.
+> breach 4 brute
+Brute-Force on Vault (4): progress 4/4.
+Vault (4) is open.
+Trace +5 (5 → 10, calm).
+Cycles 0/3. No cycle left: `end` ends the turn.
+> end
+Patrol 1 moves to Archives (3).
+[ALERT] Patrol 1 scans Archives (3): Trace +5.
+Ambient Trace +2.
+Trace +7 (10 → 17, calm).
+
+Turn 2: Trace 17/100 (calm), cycles 3/3.
+Forecast: Trace +7 at the end of the turn.
+Forecast: patrol 1 moves to Firewall (2).
+Forecast: patrol 1 scans Archives (3): Trace +5, unless Cloak is active.
+Forecast: ambient Trace +2.
+> move 4
+Position: Vault (4).
+End of the turn now: Trace +2 (17 → 19, calm).
+Cycles 2/3.
+> loot
+[Reward] Loot taken at Vault (4): the objective.
+Cycles 1/3.
+> jackout
+Some loot is left (1). Jack out anyway? [y/N] n
+> status
+Trace 17/100 (calm).
+Cycles 1/3.
+Deck
+[1] Brute-Force - Network 2 - 1 cycle - noise 5 - unlimited
+[2] Exploit - Network 3 - 2 cycles - noise 2 - 2 left
+[3] Backdoor - Network 1 - 1 cycle - noise 1 - unlimited
+[4] Decrypt - Encryption 2 - 1 cycle - noise 3 - unlimited
+[5] Spoof - utility - 1 cycle - noise 0 - 2 left
+[6] Cloak - utility - 1 cycle - noise 0 - 2 left
+Loot: 1 of 2 taken.
+Undos left: 2.
+Forecast: Trace +2 at the end of the turn.
+Forecast: patrol 1 moves to Firewall (2).
+Forecast: ambient Trace +2.
+> jackout
+Some loot is left (1). Jack out anyway? [y/N] y
+You jack out of corp-server-01 with the loot.
+Run report
+[1] Turns - 2
+[2] Final Trace - 17/100 (calm)
+[3] Loot - 1 of 2 taken

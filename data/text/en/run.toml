@@ -143,10 +143,10 @@ undo_unlimited = "Undos left: unlimited."
 undo_none = "Undos left: none."
 
 [run.undo]
-done = "Undo: back to the {turn} {number}, {trace} {value}/{max} ({band}). Undos left: {left}."
-"done@sr" = "Undo: back to the {turn} {number}, {trace} {value} out of {max}, level {band}. Undos left: {left}."
-done_unlimited = "Undo: back to the {turn} {number}, {trace} {value}/{max} ({band})."
-"done_unlimited@sr" = "Undo: back to the {turn} {number}, {trace} {value} out of {max}, level {band}."
+done = "Undo: back to {turn} {number}, {trace} {value}/{max} ({band}). Undos left: {left}."
+"done@sr" = "Undo: back to {turn} {number}, {trace} {value} out of {max}, level {band}. Undos left: {left}."
+done_unlimited = "Undo: back to {turn} {number}, {trace} {value}/{max} ({band})."
+"done_unlimited@sr" = "Undo: back to {turn} {number}, {trace} {value} out of {max}, level {band}."
 none = "No undo left."
 nothing = "Nothing to take back yet."
 
