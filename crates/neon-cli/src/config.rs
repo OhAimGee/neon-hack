@@ -186,6 +186,44 @@ impl From<VerbosityChoice> for Verbosity {
     }
 }
 
+/// How fast the full-screen interface types out what the game says. Only a presentation: the
+/// text is the same, and any key shows the rest of it at once.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub(crate) enum TypewriterChoice {
+    /// Everything appears at once.
+    Off,
+    /// About 400 characters a second.
+    Fast,
+    /// About 120 characters a second.
+    Normal,
+    /// About 40 characters a second.
+    Slow,
+}
+
+impl TypewriterChoice {
+    pub(crate) fn name(self) -> &'static str {
+        match self {
+            Self::Off => "off",
+            Self::Fast => "fast",
+            Self::Normal => "normal",
+            Self::Slow => "slow",
+        }
+    }
+
+    /// Characters a second, or `None` when nothing is typed out. Only the full-screen interface
+    /// types text out.
+    #[cfg(any(feature = "tui", test))]
+    pub(crate) fn rate(self) -> Option<f64> {
+        match self {
+            Self::Off => None,
+            Self::Fast => Some(400.0),
+            Self::Normal => Some(120.0),
+            Self::Slow => Some(40.0),
+        }
+    }
+}
+
 /// Which interface the player wants. The wish is not a promise: the full-screen interface
 /// needs a terminal that can show it (see `frontend`), and a screen reader never gets it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
@@ -219,6 +257,7 @@ pub(crate) struct CliPresentation {
     pub(crate) ascii: bool,
     pub(crate) screen_reader: bool,
     pub(crate) reduce_motion: bool,
+    pub(crate) typewriter: Option<TypewriterChoice>,
     pub(crate) color: Option<ColorChoice>,
     pub(crate) palette: Option<PaletteChoice>,
 }
@@ -232,6 +271,7 @@ pub(crate) struct FileSettings {
     ascii: Option<bool>,
     screen_reader: Option<bool>,
     reduce_motion: Option<bool>,
+    typewriter: Option<TypewriterChoice>,
     color: Option<ColorChoice>,
     palette: Option<PaletteChoice>,
     display: Option<DisplayChoice>,
@@ -290,6 +330,8 @@ pub(crate) struct Presentation {
     pub(crate) display: Sourced<DisplayChoice>,
     /// No animation: the screen only changes when the player acts.
     pub(crate) reduce_motion: Sourced<bool>,
+    /// How fast the text is typed out. Reduced motion stops the typing whatever this says.
+    pub(crate) typewriter: Sourced<TypewriterChoice>,
     /// Whether there is colour at all, and why.
     pub(crate) color: (bool, ColorSource),
     pub(crate) palette: Sourced<PaletteChoice>,
@@ -350,6 +392,13 @@ pub(crate) fn resolve(cli: CliPresentation, env: &Env, file: FileSettings) -> Pr
     } else {
         sourced(false, Source::Default)
     };
+    let typewriter = if let Some(choice) = cli.typewriter {
+        sourced(choice, Source::Cli)
+    } else if let Some(choice) = file.typewriter {
+        sourced(choice, Source::File)
+    } else {
+        sourced(TypewriterChoice::Fast, Source::Default)
+    };
     let color = decide(ColorInputs {
         cli: cli.color,
         no_color: env.no_color,
@@ -380,6 +429,7 @@ pub(crate) fn resolve(cli: CliPresentation, env: &Env, file: FileSettings) -> Pr
         screen_reader,
         display,
         reduce_motion,
+        typewriter,
         color,
         palette,
         truecolor: env.terminal().truecolor,

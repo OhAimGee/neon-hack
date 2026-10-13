@@ -260,7 +260,32 @@ impl App<'_> {
         }
         // What a staged scene keeps back is not laid out until the scene is over.
         let shown = self.log.len().saturating_sub(self.held);
-        for entry in self.log.iter().take(shown).rev() {
+        // What is being typed out is cut where the typing has got to; the rest is whole.
+        let typed = self.typing.map_or(0, |_| self.typed.min(shown));
+        if let Some(typing) = self.typing.filter(|_| typed > 0) {
+            let mut budget = typing.shown();
+            let mut rows: Vec<Row> = Vec::new();
+            'batch: for entry in self.log.iter().take(shown).skip(shown - typed) {
+                for row in self.entry_rows(entry, width) {
+                    let columns = crate::tui::text::width(&row.text);
+                    if columns <= budget {
+                        budget -= columns;
+                        rows.push(row);
+                    } else {
+                        if budget > 0 {
+                            rows.push(Row {
+                                text: head(&row.text, budget),
+                                style: row.style,
+                            });
+                        }
+                        break 'batch;
+                    }
+                }
+            }
+            count += rows.len();
+            blocks.push(rows);
+        }
+        for entry in self.log.iter().take(shown - typed).rev() {
             if count >= wanted {
                 break;
             }

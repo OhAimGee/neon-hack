@@ -134,7 +134,7 @@ L'alternative (le moteur résout la langue) est écartée : il lui faudrait conn
 
 ### 2.5 Cadence
 
-Le moteur ne contient aucune durée. La « machine à écrire » est une présentation : état d'avancement d'un événement dans le journal, avancé par `event::poll(timeout)` uniquement pendant qu'elle court, interrompue par n'importe quelle touche (la touche est ensuite traitée normalement) et plafonnée à 2 s par événement quelle que soit sa longueur `[H]`. Réglages : `off` | `fast` (≈ 400 car/s) | `normal` (≈ 120) | `slow` (≈ 40). Défauts : `off` en plain, en mode lecteur d'écran et avec `--reduce-motion` ; `fast` en TUI (cohérent avec la décision 9 de l'audit).
+Le moteur ne contient aucune durée. La « machine à écrire » est une présentation : état d'avancement d'un événement dans le journal, avancé par `event::poll(timeout)` uniquement pendant qu'elle court, interrompue par n'importe quelle touche (la touche est ensuite traitée normalement) et plafonnée à 2 s par événement quelle que soit sa longueur `[H]`. **Réalisé (R-23)** : un pas qui parle est tapé en entier en 2 s au plus (la vitesse monte plutôt que la durée), au rythme des colonnes d'affichage ; la ligne tapée par le joueur, l'invite et les menus n'y sont pas ; après une scène, c'est son résultat qui est tapé ; n'importe quelle touche, un collage ou un nouveau pas montre le reste d'un coup ; `--reduce-motion` la supprime ; le premier pas (le prologue) n'est pas tapé. Réglages : `off` | `fast` (≈ 400 car/s) | `normal` (≈ 120) | `slow` (≈ 40). Défauts : `off` en plain, en mode lecteur d'écran et avec `--reduce-motion` ; `fast` en TUI (cohérent avec la décision 9 de l'audit).
 
 **Mises en scène (R-19).** Le même mécanisme porte les *scènes* : quand le moteur annonce un moment à mettre en scène (`Event::Effect`, aujourd'hui `hack`, `laylow`, `decrypt` et `buy`), la TUI ouvre au-dessus du journal une fenêtre qui se remplit (barre en dégradé magenta vers cyan, pourcentage, niveau de défense du site en mots et en pastilles, étape en cours, dump hexadécimal qui se fige derrière la barre) et retient les lignes du résultat jusqu'à sa fin. Le moteur a déjà résolu l'action : la scène ne change **rien** à l'état et ne montre rien que les messages suivants ne disent en mots. Elle dure 1,8 s (`hack`), 1,6 s (`decrypt`), 1,4 s (`laylow`) ou 1,2 s (`buy`), jamais plus de 2 s, dont ≈ 0,3 s tenues sur le résultat ; n'importe quelle touche la termine et est ensuite traitée normalement ; `--reduce-motion` (ou `reduce_motion = true`) et le mode lecteur d'écran la suppriment. Les chiffres du dump changent huit fois par seconde au plus, sur une zone réduite : rien ne clignote.
 
@@ -439,7 +439,7 @@ Largeurs mesurées avec `unicode-width 0.2.2` [E, `examples/widths.rs`] : « é 
 |---|---|---|---|
 | EXP-1 | `--transcript FICHIER` : UTF-8, sans ANSI, ajouté et vidé à chaque commande (plain) | P | ✔ (contenu ; le vidage par commande est lu dans le code) |
 | EXP-2 | Le transcript de la TUI est **identique** à celui du plain pour le même script | U | ✔ |
-| EXP-3 | Commande `export [fichier]` en jeu ; transcript TUI écrit à la sortie et à l'export, pas à chaque touche | U | ○ |
+| EXP-3 | Commande `export [fichier]` en jeu ; transcript TUI écrit à la sortie et à l'export, pas à chaque touche | U | ○ (`export` fait, sans écrasement, même texte que le plain ; l'écriture à la sortie reste) |
 | EXP-4 | Entrées enregistrables (`--record` JSONL) et rejouables (`--replay`) : même graine + mêmes entrées = mêmes octets | P | ○ |
 
 ### 5.10 Taille et localisation
@@ -647,7 +647,7 @@ Un moteur factice (`spike-engine`, ≈ 980 lignes avec ses tests : PCG32, catalo
 
 **Export et déterminisme**
 - [ ] Transcript sans ANSI vidé à chaque commande ; identique entre TUI et plain (EXP-1, EXP-2) ✔
-- [ ] `export`, `--record`/`--replay` (EXP-3, EXP-4)
+- [ ] `--record`/`--replay` (EXP-4) ; `export` fait (EXP-3), l'écriture à la sortie reste
 - [ ] Même graine, mêmes octets, deux exécutions du binaire (§ 6.3) ✔
 
 **Taille, langue, plateformes**

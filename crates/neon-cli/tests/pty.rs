@@ -122,6 +122,11 @@ impl Session {
             command.env(name, value);
         }
         command.args(["--seed", "7"]);
+        // Tests read the screen as soon as the text is there: the text is not typed out unless
+        // a test is about that.
+        if !args.contains(&"--typewriter") {
+            command.args(["--typewriter", "off"]);
+        }
         command.args(args);
         let child = pair.slave.spawn_command(command).unwrap();
         // Without this the reader never sees the end of the output.
@@ -589,6 +594,66 @@ fn control_p_is_a_way_out_of_a_terminal_that_became_too_small() {
     session.wait_text("Handle: Neon");
     session.send(CTRL_D);
     assert!(session.finish().success());
+}
+
+#[test]
+fn export_writes_what_the_screen_said_to_a_file_that_is_not_overwritten() {
+    let mut session = at_command_line(28, 100);
+    session.type_line("status");
+    session.wait_text("Hints left");
+    // Without a name, into the transcripts folder of the data folder.
+    session.type_line("export");
+    session.wait_text("Transcript written to");
+    let folder = session.data.join("transcripts");
+    let files: Vec<_> = std::fs::read_dir(&folder)
+        .expect("the transcripts folder was made")
+        .map(|entry| entry.unwrap().path())
+        .collect();
+    assert_eq!(files.len(), 1, "{files:?}");
+    let text = std::fs::read_to_string(&files[0]).unwrap();
+    assert!(text.contains("> status\nHandle: Neon\n"), "{text}");
+    assert!(
+        !text.contains('\u{1b}'),
+        "no escape sequence in a transcript"
+    );
+    // A name that exists is refused and left alone.
+    session.type_line(&format!("export {}", files[0].display()));
+    session.wait_text("already exists");
+    assert_eq!(std::fs::read_to_string(&files[0]).unwrap(), text);
+    let status = quit_with_control_c(&mut session);
+    assert!(status.success());
+    assert_restored(&session);
+}
+
+#[test]
+fn the_text_is_typed_out_and_a_key_shows_the_rest() {
+    let mut session = Session::start(28, 100, &["--typewriter", "slow"]);
+    // The handle question is the first thing on the screen and appears at once (the opening
+    // is not typed); what the game says next is.
+    wait_for_the_handle_question(&mut session);
+    session.type_line("Neon");
+    session.wait_text("Welcome to the net");
+    // At 40 columns a second the first long paragraph is far from there yet.
+    assert!(
+        !session.contains("Press Enter to continue, or type `skip`"),
+        "{:#?}",
+        session.rows()
+    );
+    // A key shows all of it.
+    session.send(b" ");
+    session.wait_text("Press Enter to continue, or type `skip`");
+    // Nothing moves once it is all there.
+    session.settle(Duration::from_millis(300));
+    let status = {
+        // The key that skipped the typing was typed too: clear it, then close the input.
+        session.send(b"\x15");
+        session.send(CTRL_D);
+        session.wait_text("Press any key to leave.");
+        session.send(b" ");
+        session.finish()
+    };
+    assert!(status.success());
+    assert_restored(&session);
 }
 
 #[test]
@@ -1072,7 +1137,9 @@ fn options_open_in_the_log_and_the_language_changes_the_whole_screen() {
     let mut session = at_command_line(28, 100);
     session.type_line("options");
     session.wait_text("== Settings ==");
-    assert!(session.contains("reduce_motion"));
+    // The rows come after the title, maybe in another read of the terminal: wait for them.
+    session.wait_text("reduce_motion");
+    session.wait_text("typewriter");
     assert!(
         session.rows()[27].starts_with("F2 panel"),
         "{:#?}",

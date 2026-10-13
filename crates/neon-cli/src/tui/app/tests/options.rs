@@ -5,7 +5,7 @@ use std::fs;
 
 use super::staging::StageGame;
 use super::*;
-use crate::config::{LangChoice, VerbosityChoice};
+use crate::config::{LangChoice, TypewriterChoice, VerbosityChoice};
 use crate::options::{Catalogs, Fixed, Host, Live, Target};
 
 fn host<'a>(en: &'a Catalog, fr: &'a Catalog, target: Target) -> Host<'a> {
@@ -17,6 +17,7 @@ fn host<'a>(en: &'a Catalog, fr: &'a Catalog, target: Target) -> Host<'a> {
             ascii: false,
             palette: PaletteChoice::Default,
             reduce_motion: false,
+            typewriter: TypewriterChoice::Fast,
         },
         fixed: Fixed {
             screen_reader: false,
@@ -25,6 +26,7 @@ fn host<'a>(en: &'a Catalog, fr: &'a Catalog, target: Target) -> Host<'a> {
         },
         target,
         changed: Vec::new(),
+        export_dir: None,
     }
 }
 
@@ -199,5 +201,97 @@ fn saving_writes_the_file_and_says_where() {
     assert!(
         written.lines().any(|line| line == "lang = \"fr\""),
         "{written}"
+    );
+}
+
+// ---- The transcript ----------------------------------------------------------------------------
+
+/// EXP-2: the same script, played line by line and played full screen, gives the same file.
+#[test]
+fn both_frontends_export_the_same_transcript_for_the_same_script() {
+    use std::io::Cursor;
+
+    use super::snapshots::campaign;
+    use crate::plain::run_with_options;
+
+    let (en, fr) = (catalog_en(), catalog_fr());
+    let folder = tempfile::TempDir::new().unwrap();
+    let script = [
+        "Neon", "", "", "n", "quests", "help", "status", "net", "bogus",
+    ];
+    // The same file name in two folders, so that the line that asks for the export is the same.
+    fs::create_dir(folder.path().join("plain")).unwrap();
+    fs::create_dir(folder.path().join("tui")).unwrap();
+    let plain_file = folder.path().join("plain").join("log.txt");
+    let tui_file = folder.path().join("tui").join("log.txt");
+
+    // Line by line.
+    let mut game = campaign();
+    let first = game.start();
+    let input = format!("{}\nexport {}\n", script.join("\n"), plain_file.display());
+    let renderer = Renderer {
+        catalog: &en,
+        mode: RenderMode::FULL,
+        verbosity: Verbosity::Normal,
+        colors: None,
+    };
+    run_with_options(
+        &mut game,
+        first,
+        &renderer,
+        Some(&mut host(&en, &fr, Target::Off)),
+        &mut Cursor::new(input.into_bytes()),
+        &mut Vec::new(),
+        false,
+        &mut Persistence::disabled(),
+    )
+    .unwrap();
+
+    // Full screen.
+    let mut game = campaign();
+    let first = game.start();
+    let mut app = App::new(&mut game, renderer, first, Persistence::disabled()).with_options(host(
+        &en,
+        &fr,
+        Target::Off,
+    ));
+    for line in script {
+        type_line(&mut app, line);
+    }
+    type_line(&mut app, &format!("export {}", tui_file.display()));
+
+    let (plain, tui) = (
+        fs::read_to_string(&plain_file).unwrap(),
+        fs::read_to_string(&tui_file).unwrap(),
+    );
+    assert!(
+        plain.contains("> quests") && plain.contains("Unknown command"),
+        "{plain}"
+    );
+    // Only the path differs, in the line that asked for the export: whatever the system writes
+    // paths with, each file is replaced by the same mark.
+    let masked =
+        |text: &str, file: &std::path::Path| text.replace(&file.display().to_string(), "<file>");
+    assert_eq!(masked(&plain, &plain_file), masked(&tui, &tui_file));
+}
+
+#[test]
+fn the_transcript_keeps_what_the_log_has_forgotten() {
+    let (en, fr) = (catalog_en(), catalog_fr());
+    let folder = tempfile::TempDir::new().unwrap();
+    let file = folder.path().join("all.txt");
+    let mut game = DemoGame::new(3);
+    let mut app = demo_app(&mut game, &en, &fr, Target::Off);
+    for _ in 0..(LOG_CAPACITY / 2 + 10) {
+        type_line(&mut app, "bogus");
+    }
+    assert_eq!(app.log.len(), LOG_CAPACITY);
+    type_line(&mut app, &format!("export {}", file.display()));
+    let text = fs::read_to_string(&file).unwrap();
+    // Two lines for each wrong command (the echo and the answer): all of them are there.
+    assert!(
+        text.lines().count() > LOG_CAPACITY,
+        "{} lines",
+        text.lines().count()
     );
 }

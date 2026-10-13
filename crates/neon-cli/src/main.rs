@@ -16,6 +16,7 @@ mod render;
 mod store;
 #[cfg(test)]
 mod test_support;
+mod transcript;
 #[cfg(feature = "tui")]
 mod tui;
 
@@ -78,6 +79,12 @@ struct Cli {
     /// screen reader implies it. Also `reduce_motion = true` in `settings.toml`.
     #[arg(long, help_heading = "Presentation")]
     reduce_motion: bool,
+
+    /// How fast the full-screen interface types out the text: `off`, `fast`, `normal` or `slow`
+    /// [default: fast]. Any key shows the rest at once; reduced motion turns it off. Also
+    /// `typewriter = "slow"` in `settings.toml`.
+    #[arg(long, value_enum, value_name = "SPEED", help_heading = "Presentation")]
+    typewriter: Option<config::TypewriterChoice>,
 
     /// Colour: `auto` (a terminal that can show it), `always`, or `never`. `NO_COLOR` turns it
     /// off unless this says otherwise; a screen reader never gets any.
@@ -228,6 +235,7 @@ impl Cli {
             ascii: self.ascii,
             screen_reader: self.screen_reader || answer == Some(ModeAnswer::ScreenReader),
             reduce_motion: self.reduce_motion,
+            typewriter: self.typewriter,
             color: self.no_color.then_some(ColorChoice::Never).or(self.color),
             palette: self.palette,
         }
@@ -322,6 +330,11 @@ fn print_settings(cli: &Cli, env: &Env) -> io::Result<()> {
             shown.reduce_motion.source,
         ),
         line(
+            "typewriter",
+            format!("{:?}", shown.typewriter.value.name()),
+            shown.typewriter.source,
+        ),
+        line(
             "data_dir",
             format!("{:?}", setup.data_dir.display().to_string()),
             setup.data_dir_source,
@@ -393,6 +406,7 @@ fn run_game(cli: &Cli, env: &Env, kind: Kind) -> io::Result<()> {
             ascii: shown.ascii.value,
             palette: shown.palette.value,
             reduce_motion: shown.reduce_motion.value,
+            typewriter: shown.typewriter.value,
         },
         fixed: Fixed {
             screen_reader: shown.screen_reader.value,
@@ -407,6 +421,7 @@ fn run_game(cli: &Cli, env: &Env, kind: Kind) -> io::Result<()> {
             options::Target::File(setup.settings_file.clone())
         },
         changed: Vec::new(),
+        export_dir: (!cli.no_save).then(|| setup.data_dir.join("transcripts")),
     });
     let store = Store::new(setup.data_dir.join(kind.saves_folder()));
     if cli.list_saves {
@@ -452,7 +467,10 @@ fn run_game(cli: &Cli, env: &Env, kind: Kind) -> io::Result<()> {
             first,
             renderer,
             persistence,
-            shown.reduce_motion.value,
+            tui::Motion {
+                reduced: shown.reduce_motion.value,
+                typewriter: shown.typewriter.value,
+            },
             options_host,
             env.test_fault.as_deref(),
         );

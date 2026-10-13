@@ -30,15 +30,16 @@ Commandes
 [3] options - Voir ou changer les reglages de presentation
 [4] verbosity - Voir ou regler la quantite d'ambiance affichee
 [5] quit - Sauvegarder et quitter le reseau
-[6] quests - Voir le journal, ou les objectifs d'une quete
-[7] contacts - Lister les contacts connus
-[8] talk - Parler a un contact
-[9] net - Cartographier le reseau, ou detailler un site
-[10] hack - Lancer une intrusion sur un site connu
-[11] laylow - Baisser la Notoriete avec un service
-[12] hint - Demander un indice a ECHO-7
-[13] save - Sauvegarder la partie dans un emplacement
-[14] tutorial - Afficher, ignorer ou relancer le tutoriel guide
+[6] export - Ecrire le transcript de la session dans un fichier
+[7] quests - Voir le journal, ou les objectifs d'une quete
+[8] contacts - Lister les contacts connus
+[9] talk - Parler a un contact
+[10] net - Cartographier le reseau, ou detailler un site
+[11] hack - Lancer une intrusion sur un site connu
+[12] laylow - Baisser la Notoriete avec un service
+[13] hint - Demander un indice a ECHO-7
+[14] save - Sauvegarder la partie dans un emplacement
+[15] tutorial - Afficher, ignorer ou relancer le tutoriel guide
 Objectif atteint : Lire l'aide (help)
 > status
 Handle : Neon

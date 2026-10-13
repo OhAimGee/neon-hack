@@ -21,6 +21,7 @@ mod panel;
 mod plain;
 mod snapshots;
 mod staging;
+mod typewriter;
 
 fn app_with<'a>(game: &'a mut DemoGame, catalog: &'a Catalog, mode: RenderMode) -> App<'a> {
     let first = game.start();

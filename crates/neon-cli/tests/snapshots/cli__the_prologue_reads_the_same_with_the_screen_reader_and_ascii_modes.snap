@@ -29,15 +29,16 @@ Commands
 3. Command: options; Effect: Show or change the presentation settings
 4. Command: verbosity; Effect: Show or set how much atmosphere is shown
 5. Command: quit; Effect: Save and leave the net
-6. Command: quests; Effect: Show the journal, or the objectives of one quest
-7. Command: contacts; Effect: List the contacts you know
-8. Command: talk; Effect: Talk to a contact
-9. Command: net; Effect: Show the map of the net, or one site
-10. Command: hack; Effect: Start a run on a known site
-11. Command: laylow; Effect: Lower your Notoriety with a service
-12. Command: hint; Effect: Ask ECHO-7 for a hint
-13. Command: save; Effect: Save the game in a slot
-14. Command: tutorial; Effect: Show, skip or restart the guided tutorial
+6. Command: export; Effect: Write the transcript of the session to a file
+7. Command: quests; Effect: Show the journal, or the objectives of one quest
+8. Command: contacts; Effect: List the contacts you know
+9. Command: talk; Effect: Talk to a contact
+10. Command: net; Effect: Show the map of the net, or one site
+11. Command: hack; Effect: Start a run on a known site
+12. Command: laylow; Effect: Lower your Notoriety with a service
+13. Command: hint; Effect: Ask ECHO-7 for a hint
+14. Command: save; Effect: Save the game in a slot
+15. Command: tutorial; Effect: Show, skip or restart the guided tutorial
 Objective done: Read the help (help)
 ECHO-7: Then know your own file: handle, money, Notoriety. I keep the same three on you.
 Tutorial, step 2 of 10: Type `status` to see the situation.

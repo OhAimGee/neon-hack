@@ -14,6 +14,7 @@ use crate::input::{InputError, to_input};
 use crate::options::Host;
 use crate::persist::Persistence;
 use crate::render::Renderer;
+use crate::transcript::Transcript;
 
 /// [`run_with_options`] with no presentation commands, as the tests play it.
 #[cfg(test)]
@@ -65,8 +66,10 @@ pub(crate) fn run_with_options<'a>(
     let renderer = &mut renderer;
     let mut step = first;
     let mut closed = false;
+    // What is said and typed, for `export`.
+    let mut transcript = Transcript::new();
     loop {
-        write_step(out, renderer, &step)?;
+        write_step(out, renderer, &step, &mut transcript)?;
         if step.prompt == Prompt::End {
             return Ok(());
         }
@@ -83,6 +86,7 @@ pub(crate) fn run_with_options<'a>(
             host.as_deref_mut(),
             &step.prompt,
             echo_input,
+            &mut transcript,
         )? {
             typed
         } else {
@@ -95,15 +99,22 @@ pub(crate) fn run_with_options<'a>(
     }
 }
 
-fn write_step(out: &mut dyn Write, renderer: &Renderer<'_>, step: &Step) -> io::Result<()> {
+fn write_step(
+    out: &mut dyn Write,
+    renderer: &Renderer<'_>,
+    step: &Step,
+    transcript: &mut Transcript,
+) -> io::Result<()> {
     for event in &step.events {
         for line in renderer.event(event) {
             writeln!(out, "{}", renderer.paint(&line))?;
+            transcript.record([line.text]);
         }
     }
     let view = renderer.prompt(&step.prompt);
     for line in &view.header {
         writeln!(out, "{}", renderer.paint(line))?;
+        transcript.record([line.text.clone()]);
     }
     write!(out, "{}", view.marker)?;
     out.flush()
@@ -117,6 +128,7 @@ fn read_input<'a>(
     mut host: Option<&mut Host<'a>>,
     prompt: &Prompt,
     echo_input: bool,
+    transcript: &mut Transcript,
 ) -> io::Result<Option<Input>> {
     loop {
         let mut bytes = Vec::new();
@@ -129,15 +141,22 @@ fn read_input<'a>(
         if echo_input {
             writeln!(out, "{}", renderer.verbatim(line))?;
         }
-        // The presentation commands are the interface's: the game never hears of them.
+        // The line as typed, after the marker that asked for it: what a transcript reads.
+        transcript.record([format!(
+            "{}{}",
+            renderer.prompt(prompt).marker,
+            renderer.verbatim(line)
+        )]);
+        // The commands of the interface are its own: the game never hears of them.
         if *prompt == Prompt::Command
             && let Some(host) = host.as_deref_mut()
-            && let Some(events) = host.run(line)
+            && let Some(events) = host.run(line, transcript)
         {
             host.apply(renderer);
             for event in &events {
                 for rendered in renderer.event(event) {
                     writeln!(out, "{}", renderer.paint(&rendered))?;
+                    transcript.record([rendered.text]);
                 }
             }
             write!(out, "{}", renderer.prompt(prompt).marker)?;
@@ -150,6 +169,7 @@ fn read_input<'a>(
                 let error = Event::error(Text::new("ui.invalid_confirm"));
                 for rendered in renderer.event(&error) {
                     writeln!(out, "{}", renderer.paint(&rendered))?;
+                    transcript.record([rendered.text]);
                 }
                 write!(out, "{}", renderer.prompt(prompt).marker)?;
                 out.flush()?;
