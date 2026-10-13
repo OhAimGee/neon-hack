@@ -1,5 +1,6 @@
 //! The static data of one run, and the builder that checks it.
 
+use serde::Deserialize;
 use thiserror::Error;
 
 use super::program::{Family, PROGRAM_COUNT, Program, Supply};
@@ -57,7 +58,8 @@ impl NodeId {
 }
 
 /// What guards a node.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Ice {
     /// The family of programs that is strong against it.
     pub family: Family,
@@ -66,7 +68,8 @@ pub struct Ice {
 }
 
 /// What a node holds to be taken.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum LootKind {
     /// Taking it all is what a run is for: `jackout` is open once it is.
     Objective,
@@ -74,6 +77,31 @@ pub enum LootKind {
     Intel,
     /// Worth taking, never required.
     Extra,
+}
+
+impl LootKind {
+    /// Whether the run needs it taken.
+    #[must_use]
+    pub const fn is_objective(self) -> bool {
+        matches!(self, Self::Objective)
+    }
+}
+
+/// How hard a difficulty preset makes the rules bite: the only two knobs it turns inside a run.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Pace {
+    /// The multiplier of every Trace gain, in quarters (4 is plain).
+    pub gain_quarters: u8,
+    /// Cycles added to every turn.
+    pub bonus_cycles: u8,
+}
+
+impl Pace {
+    /// The rules as written.
+    pub const NORMAL: Self = Self {
+        gain_quarters: 4,
+        bonus_cycles: 0,
+    };
 }
 
 /// A patrol: a cyclic route walked one step a turn, and what keeps it scanning.

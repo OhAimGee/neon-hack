@@ -97,6 +97,12 @@ fn derive(c: &Content) -> Vec<(String, String)> {
             ));
         }
     }
+    for run in &c.runs {
+        out.own(format!("intrusion of `{}`", run.site));
+        for number in 1..=run.node.len() {
+            out.add(format!("site.{}.node.{number}.name", k(run.site.as_str())));
+        }
+    }
     for i in &c.items {
         out.own(format!("item `{}`", i.id));
         out.add(format!("item.{}.name", k(i.id.as_str())));
@@ -197,6 +203,7 @@ pub fn budget(key: &str) -> Option<usize> {
         ["frag", _, "body"] => Some(520),
         ["epilogue", _] | ["ending", _, _] => Some(300),
         ["node", _, "desc"] => Some(60),
+        ["site", _, "node", _, "name"] => Some(10),
         _ => intro_budget(&parts),
     }
 }

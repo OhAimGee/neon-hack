@@ -398,3 +398,41 @@ Validées par le propriétaire le 8 octobre 2026 (S-4 et S-5 de [`DECISIONS.md`]
 - Les maquettes sont à la main ; le premier snapshot automatique est un livrable de R4.
 - Le brouillard de guerre (nœuds inconnus, `probe` obligatoire) est décrit mais pas exercé ici ; le second spike du solveur (lot P1.2, `spikes/solver`) mesure le coût de la connaissance partielle.
 - L'écran de fin de campagne, le titre et les options sont hors de ce document (cross-check, trous).
+
+## 13. Les données des intrusions (lot R4.2)
+
+Les graphes sont des **données** : `data/world/runs.toml`, chargé et validé avec le reste du contenu (`neon_engine::content`), converti en `run::Mission` par `Content::mission(site, Pace)`. Les règles restent dans `neon_engine::run` ; ce fichier ne contient ni texte ni règle.
+
+```toml
+[[kit]]                       # le deck du palier (les programmes viendront de la boutique plus tard)
+tier = 2
+cycles = 3                    # cycles par tour, avant le bonus de la difficulté
+programs = ["brute", "backdoor", "cloak", "exploit", "decrypt", "spoof"]
+
+[[run]]
+site = "corp-server-01"       # une intrusion par site
+link = [[1, 2], [1, 3]]       # liens, par numéro de nœud
+ambient = 2                   # facultatif (2) ; intel_known = false ; start = 1
+[[run.node]]                  # nœud 1, numérotés à partir de 1 dans l'ordre d'écriture
+[[run.node]]                  # nœud 2
+ice = { family = "network", strength = 2 }          # network | encryption | human | ai_guardian, force 1 à 6
+loot = "objective"            # objective | intel | extra
+files = ["employee_records"]  # fichiers du site que ce butin extrait
+[[run.patrol]]
+route = [5, 3, 2, 3]          # un nœud par tour, en boucle
+anchor = 5                    # facultatif : processus gardien de ce nœud, il s'arrête quand sa glace est ouverte
+```
+
+Règles vérifiées au chargement (erreur `fichier:ligne`) :
+
+| Règle | Détail |
+|---|---|
+| Une intrusion par site | aucun site sans intrusion, aucune intrusion d'un site inconnu |
+| Mission jouable | celle de `MissionBuilder::build` : 1 à 8 nœuds, liens connus et sans doublon, tous les nœuds atteignables depuis le départ, au moins un butin `objective`, au plus 4 patrouilles, période des routes ≤ 16, ancre sur un nœud qui a de la glace |
+| Fichiers | chaque fichier du site est sur **un seul** nœud ; un nœud qui liste des fichiers porte un butin |
+| Un deck par palier | les six paliers, chacun avec au moins un programme de brèche **sans limite de charges** (toute glace s'ouvre avec le deck minimal), chaque deck contenant celui du palier d'avant, 1 à 7 cycles (un est gardé pour le bonus de la difficulté Histoire) |
+| Textes | une clé `site.<id>.node.<n>.name` par nœud, 10 colonnes au plus, dans les deux langues (budget du panneau, § 6.3) |
+
+**Rythme.** Le palier d'un site est celui qui le débloque. Le rythme de la difficulté (`run::Pace` : multiplicateur de Trace en quarts et cycles ajoutés) vient de `Difficulty::pace()` : Histoire ×½ et +1 cycle, Normal ×1, Expert ×1,25, Hardcore ×1,5.
+
+**Ce que ces données ne sont pas.** Les forces de glace, les patrouilles et les decks sont de départ : l'équilibre se règle avec `neon-sim` (R6), et la preuve que chaque intrusion est terminable avec le deck minimal vient avec le solveur (R4.3). Un test joue pour l'instant un joueur simple (plus court chemin, meilleur programme, Cloak en fin de tour) sur chaque site, en Histoire et en Normal, et exige qu'il gagne. Le briefing et le nom d'affichage d'un site, lus au début de l'intrusion, viennent avec les commandes (R4.4).

@@ -1,0 +1,189 @@
+# Names of the nodes of each intrusion (data/world/runs.toml), at most 10 columns.
+
+[site.localhost.node.1]
+name = "Gateway"
+[site.localhost.node.2]
+name = "Firewall"
+[site.localhost.node.3]
+name = "Archives"
+
+[site.corp_server_01.node.1]
+name = "Gateway"
+[site.corp_server_01.node.2]
+name = "Firewall"
+[site.corp_server_01.node.3]
+name = "Archives"
+[site.corp_server_01.node.4]
+name = "Vault"
+[site.corp_server_01.node.5]
+name = "Cameras"
+
+[site.nexus_mainframe.node.1]
+name = "Gateway"
+[site.nexus_mainframe.node.2]
+name = "Firewall"
+[site.nexus_mainframe.node.3]
+name = "Relay"
+[site.nexus_mainframe.node.4]
+name = "Archives"
+[site.nexus_mainframe.node.5]
+name = "Helpdesk"
+[site.nexus_mainframe.node.6]
+name = "Core"
+
+[site.underground_market.node.1]
+name = "Gateway"
+[site.underground_market.node.2]
+name = "Proxy"
+[site.underground_market.node.3]
+name = "Stalls"
+[site.underground_market.node.4]
+name = "Cellar"
+[site.underground_market.node.5]
+name = "Ledger"
+
+[site.research_lab.node.1]
+name = "Gateway"
+[site.research_lab.node.2]
+name = "Badge"
+[site.research_lab.node.3]
+name = "Lab"
+[site.research_lab.node.4]
+name = "Servers"
+[site.research_lab.node.5]
+name = "Guardian"
+[site.research_lab.node.6]
+name = "Safe"
+
+[site.banking_network.node.1]
+name = "Gateway"
+[site.banking_network.node.2]
+name = "Router"
+[site.banking_network.node.3]
+name = "Teller"
+[site.banking_network.node.4]
+name = "Ledger"
+[site.banking_network.node.5]
+name = "Cluster"
+[site.banking_network.node.6]
+name = "Vault"
+
+[site.radio_veille.node.1]
+name = "Gateway"
+[site.radio_veille.node.2]
+name = "Antenna"
+[site.radio_veille.node.3]
+name = "Console"
+[site.radio_veille.node.4]
+name = "Tapes"
+[site.radio_veille.node.5]
+name = "Watcher"
+
+[site.station_7.node.1]
+name = "Gateway"
+[site.station_7.node.2]
+name = "Turnstile"
+[site.station_7.node.3]
+name = "Control"
+[site.station_7.node.4]
+name = "Cameras"
+[site.station_7.node.5]
+name = "Roster"
+
+[site.gov_database.node.1]
+name = "Gateway"
+[site.gov_database.node.2]
+name = "Firewall"
+[site.gov_database.node.3]
+name = "Clerk"
+[site.gov_database.node.4]
+name = "Mainframe"
+[site.gov_database.node.5]
+name = "Warden"
+[site.gov_database.node.6]
+name = "Registry"
+
+[site.halcyon_clinic_7.node.1]
+name = "Gateway"
+[site.halcyon_clinic_7.node.2]
+name = "Reception"
+[site.halcyon_clinic_7.node.3]
+name = "Ward"
+[site.halcyon_clinic_7.node.4]
+name = "Records"
+[site.halcyon_clinic_7.node.5]
+name = "Monitor"
+[site.halcyon_clinic_7.node.6]
+name = "Lab"
+
+[site.sentinel_hub.node.1]
+name = "Gateway"
+[site.sentinel_hub.node.2]
+name = "Firewall"
+[site.sentinel_hub.node.3]
+name = "Console"
+[site.sentinel_hub.node.4]
+name = "Logs"
+[site.sentinel_hub.node.5]
+name = "Schedule"
+[site.sentinel_hub.node.6]
+name = "Sentinel"
+[site.sentinel_hub.node.7]
+name = "Token"
+
+[site.freeport_01.node.1]
+name = "Gateway"
+[site.freeport_01.node.2]
+name = "Beacon"
+[site.freeport_01.node.3]
+name = "Console"
+[site.freeport_01.node.4]
+name = "Core"
+
+[site.freeport_02.node.1]
+name = "Gateway"
+[site.freeport_02.node.2]
+name = "Buoy"
+[site.freeport_02.node.3]
+name = "Relay"
+[site.freeport_02.node.4]
+name = "Core"
+
+[site.freeport_03.node.1]
+name = "Gateway"
+[site.freeport_03.node.2]
+name = "Mast"
+[site.freeport_03.node.3]
+name = "Quay"
+[site.freeport_03.node.4]
+name = "Core"
+
+[site.shadow_exchange.node.1]
+name = "Gateway"
+[site.shadow_exchange.node.2]
+name = "Proxy"
+[site.shadow_exchange.node.3]
+name = "Auctions"
+[site.shadow_exchange.node.4]
+name = "Contracts"
+[site.shadow_exchange.node.5]
+name = "Oracle"
+[site.shadow_exchange.node.6]
+name = "Watcher"
+
+[site.aurora_core.node.1]
+name = "Gateway"
+[site.aurora_core.node.2]
+name = "Firewall"
+[site.aurora_core.node.3]
+name = "Relay"
+[site.aurora_core.node.4]
+name = "Manual"
+[site.aurora_core.node.5]
+name = "Guard"
+[site.aurora_core.node.6]
+name = "Trigger"
+[site.aurora_core.node.7]
+name = "Heart"
+[site.aurora_core.node.8]
+name = "Sentinel"

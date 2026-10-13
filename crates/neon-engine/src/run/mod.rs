@@ -35,7 +35,7 @@ pub use action::{Action, ActionError, Fact, Sink, Utility};
 pub use forecast::{Forecast, ForecastTurn, forecast};
 pub use mission::{
     Ice, LootKind, MAX_CYCLES, MAX_NODES, MAX_PATROLS, MAX_STRENGTH, Mission, MissionBuilder,
-    MissionError, NodeId,
+    MissionError, NodeId, Pace,
 };
 pub use program::{Family, PROGRAM_COUNT, Program, ProgramSpec, Supply};
 pub use rules::{apply, legal_actions};

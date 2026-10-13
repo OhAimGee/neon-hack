@@ -19,6 +19,7 @@ mod optimist;
 mod persist;
 mod props;
 mod regressions;
+mod runs;
 mod shipped;
 mod validation;
 mod view;
