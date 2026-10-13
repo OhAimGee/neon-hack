@@ -25,10 +25,14 @@ use self::modal::Modal;
 use self::panel::PanelState;
 use super::editor::{LineEditor, MAX_CHARS};
 use super::motion::Staging;
+use super::text::width;
+use super::typing::Typing;
+use crate::config::TypewriterChoice;
 use crate::input::{InputError, to_input};
 use crate::options::Host;
 use crate::persist::Persistence;
 use crate::render::Renderer;
+use crate::transcript::Transcript;
 
 /// Smallest terminal with the permanent side panel.
 pub(crate) const FULL_SIZE: (u16, u16) = (100, 28);
@@ -110,6 +114,13 @@ pub(crate) struct App<'a> {
     /// that the window reveals the result instead of sitting on top of it. Always 0 when no
     /// scene plays.
     held: usize,
+    /// Columns a second the text is typed out at, or `None` when it appears at once.
+    typewriter: Option<f64>,
+    /// The typing of the last step, if it is still going. It ends by itself, or at the first key.
+    typing: Option<Typing>,
+    /// Entries at the end of the log that are being typed out; only meaningful while
+    /// `typing` is set, and 0 otherwise.
+    typed: usize,
     /// The presentation commands (`options`, `verbosity`), when the game has them.
     options: Option<Host<'a>>,
     /// The game lists `panel` and `plain`, which this interface runs.
@@ -118,6 +129,9 @@ pub(crate) struct App<'a> {
     panel: PanelState,
     /// The list kept open beside the log, if any (see `modal`).
     modal: Option<Modal>,
+    /// Everything said and typed, as text, for `export`. The log keeps the most recent
+    /// events; this keeps the lines.
+    transcript: Transcript,
 }
 
 impl<'a> App<'a> {
@@ -145,10 +159,14 @@ impl<'a> App<'a> {
             motion: false,
             staging: None,
             held: 0,
+            typewriter: None,
+            typing: None,
+            typed: 0,
             options: None,
             frontend_commands: false,
             panel: PanelState::default(),
             modal: None,
+            transcript: Transcript::new(),
         };
         app.apply(first);
         app
@@ -158,6 +176,13 @@ impl<'a> App<'a> {
     /// an interface that is not told about motion never moves by itself.
     pub(crate) fn with_motion(mut self, motion: bool) -> Self {
         self.motion = motion;
+        self
+    }
+
+    /// Types out what the game says at this pace. Off until asked for, like motion, so that an
+    /// interface that is not told about it shows everything at once.
+    pub(crate) fn with_typewriter(mut self, choice: TypewriterChoice) -> Self {
+        self.typewriter = choice.rate();
         self
     }
 
@@ -179,23 +204,59 @@ impl<'a> App<'a> {
     /// pace of [`super::motion::FRAME`] even though nothing was typed. This is the only time
     /// the interface moves by itself.
     pub(crate) fn is_animating(&self) -> bool {
-        self.staging.is_some()
+        self.staging.is_some() || self.typing.is_some()
     }
 
-    /// Moves the staged scene forward by the time that passed.
+    /// Moves the staged scene, or the typing, forward by the time that passed. When a scene
+    /// ends by itself, what it kept back is then typed out.
     pub(crate) fn tick(&mut self, elapsed: Duration) {
         if let Some(staging) = &mut self.staging {
             staging.tick(elapsed);
             if staging.is_over() {
+                let kept_back = self.held;
+                self.end_staging();
+                self.start_typing(kept_back);
+            }
+        } else if let Some(typing) = &mut self.typing {
+            typing.tick(elapsed);
+            if typing.is_over() {
                 self.end_staging();
             }
         }
     }
 
-    /// Ends the staged scene, if any, and lets the log show what it kept back.
+    /// Ends the staged scene and the typing, if any: the log shows everything at once.
     fn end_staging(&mut self) {
         self.staging = None;
         self.held = 0;
+        self.typing = None;
+        self.typed = 0;
+    }
+
+    /// Starts typing out the last `count` entries of the log, if the player wants that: the
+    /// typewriter is on and motion is allowed.
+    fn start_typing(&mut self, count: usize) {
+        let count = count.min(self.log.len());
+        let Some(rate) = self.typewriter.filter(|_| self.motion) else {
+            return;
+        };
+        let total: usize = self
+            .log
+            .iter()
+            .rev()
+            .take(count)
+            .map(|entry| match entry {
+                LogEntry::Event(event) => self
+                    .renderer
+                    .event(event)
+                    .iter()
+                    .map(|line| width(&line.text))
+                    .sum(),
+                LogEntry::Echo(_) => 0,
+            })
+            .sum();
+        self.typing = Typing::new(total, rate);
+        self.typed = if self.typing.is_some() { count } else { 0 };
     }
 
     /// Whether the interface is done, and how.
@@ -217,6 +278,12 @@ impl<'a> App<'a> {
     }
 
     fn push(&mut self, entry: LogEntry) {
+        match &entry {
+            LogEntry::Event(event) => self
+                .transcript
+                .record(self.renderer.event(event).into_iter().map(|line| line.text)),
+            LogEntry::Echo(text) => self.transcript.record([self.renderer.verbatim(text)]),
+        }
         if self.log.len() >= LOG_CAPACITY {
             self.log.pop_front();
         }
@@ -234,7 +301,13 @@ impl<'a> App<'a> {
             // The log is capped: never more than what is left of it.
             self.held = pushed.min(self.log.len());
             self.staging = Some(staging);
+        } else {
+            self.start_typing(pushed);
         }
+        // A menu lists its choices above the input line, as the plain interface prints them.
+        let header = self.renderer.prompt(&step.prompt).header;
+        self.transcript
+            .record(header.into_iter().map(|line| line.text));
         self.finished = step.prompt == Prompt::End;
         // A prompt that asks for a short answer says how short.
         let limit = match &step.prompt {
@@ -452,11 +525,12 @@ impl<'a> App<'a> {
         let Some(host) = &mut self.options else {
             return false;
         };
-        let Some(events) = host.run(line) else {
+        let Some(events) = host.run(line, &self.transcript) else {
             return false;
         };
         host.apply(&mut self.renderer);
         self.motion = !host.live.reduce_motion;
+        self.typewriter = host.live.typewriter.rate();
         self.scroll.set(0);
         for event in events {
             self.push(LogEntry::Event(event));

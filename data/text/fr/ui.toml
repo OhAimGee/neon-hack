@@ -145,6 +145,12 @@ save_damaged = "Le fichier {file} est abîmé : il n'est pas modifié. Voir `neo
 save_nothing = "Rien à garder : aucun réglage n'a changé pendant cette partie."
 save_off = "Lancé avec --no-save : rien n'est écrit."
 
+[ui.export]
+done = "Transcript écrit dans {file} ({lines} {lines|ligne|lignes})."
+need_name = "Rien n'est écrit tout seul avec --no-save : donnez un nom de fichier, `export <fichier>`."
+exists = "{file} existe déjà : choisissez un autre nom, rien n'a été écrit."
+failed = "Impossible d'écrire le transcript : {reason}"
+
 [ui.fallback]
 too_small = "Le terminal est trop petit ({width}x{height}, {min_width}x{min_height} au minimum) : affichage ligne par ligne."
 no_terminal = "L'interface plein écran demande un terminal : affichage ligne par ligne."

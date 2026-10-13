@@ -8,7 +8,7 @@ RPG textuel cyberpunk pour le terminal. Vous êtes un hacker novice à Neo-Tokyo
 
 ## Statut
 
-**La campagne se joue de bout en bout, du nouveau jeu à l'épilogue, mais le jeu n'est pas terminé.** C'est le jeu lancé par défaut (`neon-hack`) : prologue, tutoriel guidé, commandes du hub, cinq fins et épilogue, FR et EN, avec les intrusions résolues automatiquement (le moteur tactique est la phase R4). Les textes des chapitres 1 et 2 sont écrits ; ceux des chapitres 3 à 6, des fins et de l'épilogue sont encore des brouillons `TODO <clé>` (502 par langue). La démonstration du moteur reste accessible avec `--demo`. Le cadrage, le socle (phase R1), les spécifications (phase P1) et le contenu et la campagne (phase R2) sont terminés ; l'interface plein écran (R3) a son cœur (R3.1 : saisie, défilement, paliers de taille, terminal toujours rendu) ; son panneau latéral complet (R3.2a), ses écrans épinglés et sa bascule vers le plain (R3.2b) sont faits ; ses derniers réglages sont le lot R3.3.
+**La campagne se joue de bout en bout, du nouveau jeu à l'épilogue, mais le jeu n'est pas terminé.** C'est le jeu lancé par défaut (`neon-hack`) : prologue, tutoriel guidé, commandes du hub, cinq fins et épilogue, FR et EN, avec les intrusions résolues automatiquement (le moteur tactique est la phase R4). Les textes des chapitres 1 et 2 sont écrits ; ceux des chapitres 3 à 6, des fins et de l'épilogue sont encore des brouillons `TODO <clé>` (502 par langue). La démonstration du moteur reste accessible avec `--demo`. Le cadrage, le socle (phase R1), les spécifications (phase P1) et le contenu et la campagne (phase R2) sont terminés ; l'interface plein écran (R3) a son cœur (R3.1 : saisie, défilement, paliers de taille, terminal toujours rendu) ; son panneau latéral complet (R3.2a), ses écrans épinglés et sa bascule vers le plain (R3.2b) sont faits ; son transcript et sa machine à écrire sont faits (R3.3b) ; `load` et les derniers réglages sont le lot R3.3c.
 
 | Étape | État |
 |---|---|
@@ -31,7 +31,7 @@ RPG textuel cyberpunk pour le terminal. Vous êtes un hacker novice à Neo-Tokyo
 | Phase R2 (contenu et campagne) | **terminée** |
 | Phase R3.1 : cœur de la TUI (choix du frontal et question du premier lancement, saisie avec historique et TAB, journal défilant, paliers 64×20 et 100×28, terminal rendu par toutes les sorties, tests dans un pseudo-terminal) | fait |
 | Phase R3.2a : panneau latéral complet (quêtes, réseau, inventaire, à lire), tiroir `F2` et commande `panel` | fait |
-| Commandes du frontal restantes (R3.3), intrusion tactique (R4), textes des chapitres 3 à 6 (R5), équilibrage (R6) | à venir |
+| `load` et réglages restants (R3.3c), intrusion tactique (R4), textes des chapitres 3 à 6 (R5), équilibrage (R6) | à venir |
 
 ## Jouer en local
 

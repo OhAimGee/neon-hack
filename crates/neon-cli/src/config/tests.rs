@@ -97,6 +97,31 @@ fn a_language_the_game_does_not_have_falls_through_to_the_next_source() {
 }
 
 #[test]
+fn the_typewriter_is_fast_unless_the_command_line_then_the_file_say_otherwise() {
+    let none = CliPresentation::default();
+    let env = Env::default();
+    assert_eq!(
+        resolve(none, &env, FileSettings::default()).typewriter,
+        sourced(TypewriterChoice::Fast, Source::Default)
+    );
+    assert_eq!(
+        resolve(none, &env, file("typewriter = \"slow\"")).typewriter,
+        sourced(TypewriterChoice::Slow, Source::File)
+    );
+    let flag = CliPresentation {
+        typewriter: Some(TypewriterChoice::Off),
+        ..none
+    };
+    assert_eq!(
+        resolve(flag, &env, file("typewriter = \"slow\"")).typewriter,
+        sourced(TypewriterChoice::Off, Source::Cli)
+    );
+    assert_eq!(TypewriterChoice::Off.rate(), None);
+    assert!(TypewriterChoice::Fast.rate() > TypewriterChoice::Normal.rate());
+    assert!(TypewriterChoice::Normal.rate() > TypewriterChoice::Slow.rate());
+}
+
+#[test]
 fn motion_is_reduced_by_a_screen_reader_then_the_command_line_then_the_file() {
     let none = CliPresentation::default();
     let nothing = FileSettings::default();
@@ -222,6 +247,8 @@ fn the_settings_file_ignores_unknown_keys_and_refuses_wrong_values() {
         "ascii = \"yes\"",
         "screen_reader = 1",
         "reduce_motion = \"yes\"",
+        "typewriter = \"instant\"",
+        "typewriter = true",
         "lang = ",
         "not toml ===",
     ] {

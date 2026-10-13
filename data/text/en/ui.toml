@@ -145,6 +145,12 @@ save_damaged = "The file {file} is damaged: it is left as it is. See `neon-hack 
 save_nothing = "Nothing to keep: no setting was changed during this game."
 save_off = "Started with --no-save: nothing is written."
 
+[ui.export]
+done = "Transcript written to {file} ({lines} {lines|line|lines})."
+need_name = "Nothing is written by itself with --no-save: give a file name, `export <file>`."
+exists = "{file} already exists: pick another name, nothing was written."
+failed = "Could not write the transcript: {reason}"
+
 [ui.fallback]
 too_small = "The terminal is too small ({width}x{height}, at least {min_width}x{min_height} needed): using the line-by-line interface."
 no_terminal = "The full-screen interface needs a terminal: using the line-by-line interface."

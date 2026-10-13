@@ -1,4 +1,4 @@
-//! The `options` and `verbosity` commands, run by the frontends.
+//! The `options`, `verbosity` and `export` commands, run by the frontends.
 //!
 //! They act on the display, not on the game, so a frontend takes the line before the engine
 //! sees it (the engine only declares them: they are listed, completed and explained like any
@@ -10,23 +10,33 @@
 //! during the session into `settings.toml` and leaves every other line, comment and key alone,
 //! and it never touches a file that does not read (a damaged file is the player's to repair).
 
-use std::fs;
-use std::io;
+use std::fs::{self, OpenOptions};
+use std::io::{self, Write};
 use std::path::PathBuf;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use neon_engine::event::{Event, Table};
 use neon_engine::text::{Catalog, Text};
 
-use crate::config::{LangChoice, VerbosityChoice};
+use crate::config::{LangChoice, TypewriterChoice, VerbosityChoice};
 use crate::palette::{Palette, PaletteChoice};
 use crate::render::Renderer;
 use crate::store::write_atomic;
+use crate::transcript::Transcript;
 
 /// The settings the player can change in the middle of a game, in the order of the screen.
-const SETTINGS: [&str; 5] = ["lang", "verbosity", "ascii", "palette", "reduce_motion"];
+const SETTINGS: [&str; 6] = [
+    "lang",
+    "verbosity",
+    "ascii",
+    "palette",
+    "reduce_motion",
+    "typewriter",
+];
 const LANGS: [&str; 2] = ["en", "fr"];
 const VERBOSITIES: [&str; 3] = ["brief", "normal", "full"];
 const SWITCH: [&str; 2] = ["on", "off"];
+const TYPEWRITERS: [&str; 4] = ["off", "fast", "normal", "slow"];
 const PALETTES: [&str; 4] = ["default", "high-contrast", "cvd", "mono"];
 /// What the first line of a new `settings.toml` says.
 const NEW_FILE_HEADER: &str = "# Written by the options command of neon-hack; edit freely.\n\
@@ -56,6 +66,8 @@ pub(crate) struct Live {
     pub(crate) ascii: bool,
     pub(crate) palette: PaletteChoice,
     pub(crate) reduce_motion: bool,
+    /// How fast the text is typed out; reduced motion stops it whatever this is.
+    pub(crate) typewriter: TypewriterChoice,
 }
 
 /// What was decided at launch and stays.
@@ -90,21 +102,30 @@ pub(crate) struct Host<'a> {
     /// Only those are kept by `options save`: a value that comes from the command line or from
     /// `NO_COLOR` is not frozen into the file by accident.
     pub(crate) changed: Vec<&'static str>,
+    /// Where `export` writes when it is given no name; `None` when nothing may be written by
+    /// itself (`--no-save`), and a name is then asked for.
+    pub(crate) export_dir: Option<PathBuf>,
 }
 
 /// A setting and a value, read from a line.
 enum Request {
     Show,
     Save,
-    Set { setting: String, value: String },
+    Set {
+        setting: String,
+        value: String,
+    },
     Verbosity(Option<String>),
+    /// `export`, with the path as typed (spaces and case kept) if there is one.
+    Export(Option<String>),
     Usage(&'static str),
 }
 
 impl<'a> Host<'a> {
-    /// Runs the line if it is one of the presentation commands (`options`, `verbosity`),
-    /// whatever its case; `None` means it is not, and belongs to the engine.
-    pub(crate) fn run(&mut self, line: &str) -> Option<Vec<Event>> {
+    /// Runs the line if it is one of the commands of the interface (`options`, `verbosity`,
+    /// `export`), whatever its case; `None` means it is not, and belongs to the engine.
+    /// `transcript` is what `export` writes.
+    pub(crate) fn run(&mut self, line: &str, transcript: &Transcript) -> Option<Vec<Event>> {
         let request = request(line)?;
         Some(match request {
             Request::Show => self.show(),
@@ -114,6 +135,7 @@ impl<'a> Host<'a> {
                 Text::new("ui.options.verbosity_now").with_str("value", self.live.verbosity.name()),
             )],
             Request::Verbosity(Some(value)) => self.set("verbosity", &value),
+            Request::Export(path) => self.export(path, transcript),
             Request::Usage(key) => vec![Event::error(Text::new(key))],
         })
     }
@@ -136,6 +158,7 @@ impl<'a> Host<'a> {
             "ascii" => switch(self.live.ascii),
             "palette" => self.live.palette.name().to_owned(),
             "reduce_motion" => switch(self.live.reduce_motion),
+            "typewriter" => self.live.typewriter.name().to_owned(),
             _ => String::new(),
         }
     }
@@ -228,9 +251,44 @@ impl<'a> Host<'a> {
             "ascii" => live.ascii = switch_of(value)?,
             "palette" => live.palette = PaletteChoice::from_name(value)?,
             "reduce_motion" => live.reduce_motion = switch_of(value)?,
+            "typewriter" => live.typewriter = typewriter_of(value)?,
             _ => return None,
         }
         Some(live)
+    }
+
+    /// Writes the transcript to a file that does not exist yet: a name the player typed is
+    /// never overwritten, and with none it goes to a new file of the transcripts folder.
+    fn export(&self, path: Option<String>, transcript: &Transcript) -> Vec<Event> {
+        let path = match (path, &self.export_dir) {
+            (Some(typed), _) => PathBuf::from(typed),
+            (None, Some(folder)) => {
+                if let Err(error) = fs::create_dir_all(folder) {
+                    return export_failed(&error);
+                }
+                let seconds = SystemTime::now()
+                    .duration_since(UNIX_EPOCH)
+                    .map_or(0, |elapsed| elapsed.as_secs());
+                folder.join(format!("transcript-{seconds}.txt"))
+            }
+            (None, None) => return vec![Event::error(Text::new("ui.export.need_name"))],
+        };
+        let file = OpenOptions::new().write(true).create_new(true).open(&path);
+        let written = file.and_then(|mut file| {
+            file.write_all(transcript.text().as_bytes())?;
+            file.flush()
+        });
+        match written {
+            Ok(()) => vec![Event::system(
+                Text::new("ui.export.done")
+                    .with_str("file", path.display().to_string())
+                    .with_int("lines", i64::try_from(transcript.len()).unwrap_or(i64::MAX)),
+            )],
+            Err(error) if error.kind() == io::ErrorKind::AlreadyExists => vec![Event::error(
+                Text::new("ui.export.exists").with_str("file", path.display().to_string()),
+            )],
+            Err(error) => export_failed(&error),
+        }
     }
 
     fn save(&self) -> Vec<Event> {
@@ -285,11 +343,18 @@ impl<'a> Host<'a> {
     }
 }
 
+fn export_failed(error: &io::Error) -> Vec<Event> {
+    vec![Event::error(
+        Text::new("ui.export.failed").with_str("reason", error.to_string()),
+    )]
+}
+
 fn choices(setting: &str) -> &'static [&'static str] {
     match setting {
         "lang" => &LANGS,
         "verbosity" => &VERBOSITIES,
         "palette" => &PALETTES,
+        "typewriter" => &TYPEWRITERS,
         _ => &SWITCH,
     }
 }
@@ -302,6 +367,16 @@ fn switch_of(value: &str) -> Option<bool> {
     match value {
         "on" | "true" => Some(true),
         "off" | "false" => Some(false),
+        _ => None,
+    }
+}
+
+fn typewriter_of(value: &str) -> Option<TypewriterChoice> {
+    match value {
+        "off" => Some(TypewriterChoice::Off),
+        "fast" => Some(TypewriterChoice::Fast),
+        "normal" => Some(TypewriterChoice::Normal),
+        "slow" => Some(TypewriterChoice::Slow),
         _ => None,
     }
 }
@@ -331,6 +406,17 @@ fn request(line: &str) -> Option<Request> {
         ("verbosity", []) => Some(Request::Verbosity(None)),
         ("verbosity", [value]) => Some(Request::Verbosity(Some((*value).to_owned()))),
         ("verbosity", _) => Some(Request::Usage("ui.options.verbosity_usage")),
+        ("export", _) => {
+            // The path is the rest of the line as typed: spaces and case are the file's.
+            let typed = line
+                .trim_start()
+                .get(command.len()..)
+                .unwrap_or_default()
+                .trim();
+            Some(Request::Export(
+                (!typed.is_empty()).then(|| typed.to_owned()),
+            ))
+        }
         _ => None,
     }
 }

@@ -5,9 +5,10 @@ use neon_engine::text::RenderMode;
 use tempfile::TempDir;
 
 use super::*;
-use crate::config::{FileState, load_file};
+use crate::config::{FileState, TypewriterChoice, load_file};
 use crate::render::Verbosity;
 use crate::test_support::{catalog_en, catalog_fr};
+use crate::transcript::Transcript;
 
 fn live() -> Live {
     Live {
@@ -16,6 +17,7 @@ fn live() -> Live {
         ascii: false,
         palette: PaletteChoice::Default,
         reduce_motion: false,
+        typewriter: TypewriterChoice::Fast,
     }
 }
 
@@ -34,6 +36,7 @@ fn host<'a>(en: &'a Catalog, fr: &'a Catalog, target: Target) -> Host<'a> {
         fixed: fixed(),
         target,
         changed: Vec::new(),
+        export_dir: None,
     }
 }
 
@@ -61,7 +64,8 @@ fn file_target(folder: &TempDir) -> Target {
 }
 
 fn ran(host: &mut Host<'_>, line: &str) -> Vec<Event> {
-    host.run(line).unwrap_or_else(|| panic!("{line:?} is ours"))
+    host.run(line, &Transcript::new())
+        .unwrap_or_else(|| panic!("{line:?} is ours"))
 }
 
 #[test]
@@ -77,7 +81,7 @@ fn only_the_presentation_commands_are_taken_whatever_their_case() {
         "verbose",
         "help options",
     ] {
-        assert!(host.run(line).is_none(), "{line:?}");
+        assert!(host.run(line, &Transcript::new()).is_none(), "{line:?}");
     }
     for line in [
         "options",
@@ -86,7 +90,7 @@ fn only_the_presentation_commands_are_taken_whatever_their_case() {
         "verbosity",
         "Verbosity full",
     ] {
-        assert!(host.run(line).is_some(), "{line:?}");
+        assert!(host.run(line, &Transcript::new()).is_some(), "{line:?}");
     }
 }
 
@@ -159,6 +163,7 @@ fn a_setting_changes_is_confirmed_and_reaches_the_renderer() {
             ascii: true,
             palette: PaletteChoice::Cvd,
             reduce_motion: true,
+            typewriter: TypewriterChoice::Fast,
         }
     );
     assert!(std::ptr::eq(renderer.catalog, &raw const fr));
@@ -492,4 +497,155 @@ proptest::proptest! {
             proptest::prop_assert_eq!(others, 1);
         }
     }
+}
+
+// ------------------------------------------------------------------------------------ export
+
+fn transcript_of(lines: &[&str]) -> Transcript {
+    let mut transcript = Transcript::new();
+    transcript.record(lines.iter().copied());
+    transcript
+}
+
+fn run_export(host: &mut Host<'_>, line: &str, transcript: &Transcript) -> Vec<Event> {
+    host.run(line, transcript)
+        .unwrap_or_else(|| panic!("{line:?} is ours"))
+}
+
+#[test]
+fn export_writes_the_transcript_where_it_is_told_and_keeps_the_name_as_typed() {
+    let (en, fr) = (catalog_en(), catalog_fr());
+    let folder = TempDir::new().unwrap();
+    let mut host = host(&en, &fr, Target::Off);
+    let transcript = transcript_of(&["> status", "Handle: Neon"]);
+    // Spaces and case belong to the file name; the command word may be in any case.
+    let target = folder.path().join("My Log.TXT");
+    let line = format!("EXPORT   {}  ", target.display());
+    let events = run_export(&mut host, &line, &transcript);
+    assert_eq!(
+        fs::read_to_string(&target).unwrap(),
+        "> status\nHandle: Neon\n"
+    );
+    let said = said(&plain_renderer(&en), &events);
+    assert!(
+        said.contains("My Log.TXT") && said.contains("(2 lines)"),
+        "{said}"
+    );
+}
+
+#[test]
+fn export_never_overwrites_a_file() {
+    let (en, fr) = (catalog_en(), catalog_fr());
+    let folder = TempDir::new().unwrap();
+    let mut host = host(&en, &fr, Target::Off);
+    let target = folder.path().join("log.txt");
+    fs::write(&target, "mine").unwrap();
+    let events = run_export(
+        &mut host,
+        &format!("export {}", target.display()),
+        &transcript_of(&["x"]),
+    );
+    assert_eq!(fs::read_to_string(&target).unwrap(), "mine");
+    let said = said(&plain_renderer(&en), &events);
+    assert!(said.contains("already exists"), "{said}");
+    assert!(matches!(
+        events.first(),
+        Some(Event::Message {
+            role: neon_engine::event::Role::Error,
+            ..
+        })
+    ));
+}
+
+#[test]
+fn export_without_a_name_makes_a_new_file_in_the_transcripts_folder() {
+    let (en, fr) = (catalog_en(), catalog_fr());
+    let folder = TempDir::new().unwrap();
+    let mut host = host(&en, &fr, Target::Off);
+    host.export_dir = Some(folder.path().join("transcripts"));
+    let events = run_export(&mut host, "export", &transcript_of(&["a", "b", "c"]));
+    let written: Vec<_> = fs::read_dir(folder.path().join("transcripts"))
+        .unwrap()
+        .map(|entry| entry.unwrap().path())
+        .collect();
+    assert_eq!(written.len(), 1, "{written:?}");
+    let name = written[0]
+        .file_name()
+        .unwrap()
+        .to_string_lossy()
+        .into_owned();
+    assert!(
+        name.starts_with("transcript-")
+            && Path::new(&name)
+                .extension()
+                .is_some_and(|extension| extension == "txt"),
+        "{name}"
+    );
+    assert_eq!(fs::read_to_string(&written[0]).unwrap(), "a\nb\nc\n");
+    assert!(said(&plain_renderer(&en), &events).contains("(3 lines)"));
+}
+
+#[test]
+fn with_no_save_export_needs_a_name_and_writes_nothing_by_itself() {
+    let (en, fr) = (catalog_en(), catalog_fr());
+    let mut host = host(&en, &fr, Target::Off);
+    let events = run_export(&mut host, "export", &transcript_of(&["a"]));
+    let said = said(&plain_renderer(&en), &events);
+    assert!(said.contains("give a file name"), "{said}");
+}
+
+#[test]
+fn an_unwritable_place_is_said_and_the_game_goes_on() {
+    let (en, fr) = (catalog_en(), catalog_fr());
+    let folder = TempDir::new().unwrap();
+    let mut host = host(&en, &fr, Target::Off);
+    let missing = folder.path().join("no-such-folder").join("log.txt");
+    let events = run_export(
+        &mut host,
+        &format!("export {}", missing.display()),
+        &Transcript::new(),
+    );
+    let said = said(&plain_renderer(&en), &events);
+    assert!(said.contains("Could not write the transcript"), "{said}");
+}
+
+// ------------------------------------------------------------------------------- typewriter
+
+#[test]
+fn the_typewriter_is_a_setting_with_four_speeds_and_it_is_kept_by_save() {
+    let (en, fr) = (catalog_en(), catalog_fr());
+    let folder = tempfile::tempdir().unwrap();
+    let mut host = host(&en, &fr, file_target(&folder));
+    let shown = said(&plain_renderer(&en), &ran(&mut host, "options"));
+    assert!(
+        shown.contains("typewriter") && shown.contains("off, fast, normal, slow"),
+        "{shown}"
+    );
+    let changed = said(
+        &plain_renderer(&en),
+        &ran(&mut host, "options typewriter SLOW"),
+    );
+    assert!(changed.contains("typewriter = slow"), "{changed}");
+    assert_eq!(host.live.typewriter, TypewriterChoice::Slow);
+    ran(&mut host, "options save");
+    let written = fs::read_to_string(settings_path(&folder)).unwrap();
+    assert!(
+        written.lines().any(|line| line == "typewriter = \"slow\""),
+        "{written}"
+    );
+    // What the game wrote, the game reads back.
+    let (_, state) = load_file(&settings_path(&folder));
+    assert_eq!(state, FileState::Loaded);
+}
+
+#[test]
+fn a_speed_that_does_not_exist_is_refused_and_the_setting_stays() {
+    let (en, fr) = (catalog_en(), catalog_fr());
+    let mut host = host(&en, &fr, Target::Off);
+    let said = said(
+        &plain_renderer(&en),
+        &ran(&mut host, "options typewriter instant"),
+    );
+    assert!(said.contains("off, fast, normal, slow"), "{said}");
+    assert_eq!(host.live.typewriter, TypewriterChoice::Fast);
 }

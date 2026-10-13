@@ -420,7 +420,7 @@ fn mono_colours_write_nothing_but_bold_and_the_ascii_and_french_variants_stay_cl
 
 /// Plays the demo with the presentation commands, as the campaign has them.
 fn play_with_options(input: &[u8], fixed: crate::options::Fixed, colors: bool) -> String {
-    use crate::config::{LangChoice, VerbosityChoice};
+    use crate::config::{LangChoice, TypewriterChoice, VerbosityChoice};
     use crate::options::{Catalogs, Host, Live, Target};
 
     let (en, fr) = (catalog_en(), catalog_fr());
@@ -433,10 +433,12 @@ fn play_with_options(input: &[u8], fixed: crate::options::Fixed, colors: bool) -
             ascii: false,
             palette: PaletteChoice::Default,
             reduce_motion: false,
+            typewriter: TypewriterChoice::Fast,
         },
         fixed,
         target: Target::Off,
         changed: Vec::new(),
+        export_dir: None,
     };
     let renderer = Renderer {
         catalog: &en,

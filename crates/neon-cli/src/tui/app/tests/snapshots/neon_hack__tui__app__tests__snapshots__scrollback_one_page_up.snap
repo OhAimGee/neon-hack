@@ -5,28 +5,28 @@ expression: "picture(&app, 100, 28)"
 100x28
  Neon │ Notoriety 0/100 (Discreet)
 ╭Terminal────────────────────────────────────────────────────────────╮╭Panel───────────────────────╮
-│[4] verbosity - Show or set how much atmosphere is shown            ││Notoriety 0/100             │
-│[5] quit - Save and leave the net                                   ││[░░░░░░░░░░] Discreet       │
-│[6] quests - Show the journal, or the objectives of one quest       ││                            │
-│[7] contacts - List the contacts you know                           ││▸ Quests                    │
-│[8] talk - Talk to a contact                                        ││First Steps                 │
-│[9] net - Show the map of the net, or one site                      ││- Open the journal (quests) │
-│[10] hack - Start a run on a known site                             ││- Explore the net (net)     │
-│[11] laylow - Lower your Notoriety with a service                   ││- Check the status sheet    │
-│[12] hint - Ask ECHO-7 for a hint                                   ││(status)                    │
-│[13] save - Save the game in a slot                                 ││- Talk to ECHO-7 (talk      │
-│[14] tutorial - Show, skip or restart the guided tutorial           ││echo7)                      │
-│> help                                                              ││- Breach the local station  │
-│Commands                                                            ││(hack localhost)            │
-│[1] help - List the commands, or explain one                        ││- Cover your tracks (laylow)│
-│[2] status - Show your situation                                    ││                            │
-│[3] options - Show or change the presentation settings              ││▸ The net                   │
-│[4] verbosity - Show or set how much atmosphere is shown            ││localhost: known            │
-│[5] quit - Save and leave the net                                   ││                            │
-│[6] quests - Show the journal, or the objectives of one quest       ││▸ Inventory                 │
-│[7] contacts - List the contacts you know                           ││Credits: 100                │
-│[8] talk - Talk to a contact                                        ││No item yet.                │
-│[9] net - Show the map of the net, or one site                      ││                            │
+│[7] quests - Show the journal, or the objectives of one quest       ││Notoriety 0/100             │
+│[8] contacts - List the contacts you know                           ││[░░░░░░░░░░] Discreet       │
+│[9] talk - Talk to a contact                                        ││                            │
+│[10] net - Show the map of the net, or one site                     ││▸ Quests                    │
+│[11] hack - Start a run on a known site                             ││First Steps                 │
+│[12] laylow - Lower your Notoriety with a service                   ││- Open the journal (quests) │
+│[13] hint - Ask ECHO-7 for a hint                                   ││- Explore the net (net)     │
+│[14] save - Save the game in a slot                                 ││- Check the status sheet    │
+│[15] tutorial - Show, skip or restart the guided tutorial           ││(status)                    │
+│> help                                                              ││- Talk to ECHO-7 (talk      │
+│Commands                                                            ││echo7)                      │
+│[1] help - List the commands, or explain one                        ││- Breach the local station  │
+│[2] status - Show your situation                                    ││(hack localhost)            │
+│[3] options - Show or change the presentation settings              ││- Cover your tracks (laylow)│
+│[4] verbosity - Show or set how much atmosphere is shown            ││                            │
+│[5] quit - Save and leave the net                                   ││▸ The net                   │
+│[6] export - Write the transcript of the session to a file          ││localhost: known            │
+│[7] quests - Show the journal, or the objectives of one quest       ││                            │
+│[8] contacts - List the contacts you know                           ││▸ Inventory                 │
+│[9] talk - Talk to a contact                                        ││Credits: 100                │
+│[10] net - Show the map of the net, or one site                     ││No item yet.                │
+│[11] hack - Start a run on a known site                             ││                            │
 │[Scrolled back: 21 lines below. End or Esc to return.]              ││                            │
 ╰────────────────────────────────────────────────────────────────────╯╰────────────────────────────╯
 >

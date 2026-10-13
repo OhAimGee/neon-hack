@@ -16,6 +16,7 @@ mod editor;
 mod motion;
 mod term;
 mod text;
+mod typing;
 
 use std::io::{self, BufReader};
 use std::time::{Duration, Instant};
@@ -27,6 +28,7 @@ use neon_engine::{Game, Step};
 use ratatui::DefaultTerminal;
 use ratatui::crossterm::event::{self, Event, KeyEventKind};
 
+use crate::config::TypewriterChoice;
 use crate::options::Host;
 use crate::persist::Persistence;
 use crate::plain;
@@ -64,6 +66,14 @@ impl Fault {
     }
 }
 
+/// How the interface moves: whether scenes play and how fast the text is typed out.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Motion {
+    /// `--reduce-motion`: no scene, no typing.
+    pub(crate) reduced: bool,
+    pub(crate) typewriter: TypewriterChoice,
+}
+
 /// Runs the game in the full-screen interface until it ends. The terminal is given back
 /// whatever the way out. If the player asks for the line-by-line display (`Ctrl+P`, `plain`)
 /// the game goes on there, from the state it is in: the frontend is a throwaway view.
@@ -72,13 +82,15 @@ pub(crate) fn run<'a>(
     first: Step,
     renderer: Renderer<'a>,
     persistence: Persistence,
-    reduce_motion: bool,
+    motion: Motion,
     options: Option<Host<'a>>,
     test_fault: Option<&str>,
 ) -> io::Result<()> {
     // The interface runs `panel` and `plain`: the game may now offer them.
     game.set_capabilities(Capabilities::TUI);
-    let mut app = App::new(game, renderer, first, persistence).with_motion(!reduce_motion);
+    let mut app = App::new(game, renderer, first, persistence)
+        .with_motion(!motion.reduced)
+        .with_typewriter(motion.typewriter);
     if let Some(options) = options {
         // Only the campaign has the presentation commands, and `panel` and `plain` with them.
         app = app.with_options(options).with_frontend_commands();
