@@ -18,6 +18,19 @@ use crate::prompt::{Input, Prompt, Step};
 use crate::save::SaveRequest;
 use crate::text::{Catalog, Lang, RenderMode, Text, render};
 
+/// The line that does an action of an intrusion.
+pub(super) fn action_line(action: crate::run::Action) -> String {
+    use crate::run::Action;
+    match action {
+        Action::Move(node) => format!("move {}", node.number()),
+        Action::Breach { node, program } => format!("breach {} {}", node.number(), program.id()),
+        Action::Use(utility) => format!("use {}", utility.program().id()),
+        Action::Loot => "loot".to_owned(),
+        Action::End => "end".to_owned(),
+        Action::Jackout => "jackout".to_owned(),
+    }
+}
+
 /// The embedded catalog of a language.
 pub(super) fn catalog(lang: Lang) -> Catalog {
     Catalog::embedded(lang).unwrap()
@@ -32,6 +45,9 @@ pub(super) struct Driver {
     pub(super) saves: Vec<SaveRequest>,
     /// Every event said so far.
     pub(super) history: Vec<Event>,
+    /// Whether an intrusion that begins is played out at once, by the best plan the bounded
+    /// solver finds (what a test of the hub wants), or left to the test (a test of the run).
+    pub(super) auto: bool,
 }
 
 impl Driver {
@@ -48,6 +64,7 @@ impl Driver {
             game,
             last,
             saves: Vec::new(),
+            auto: true,
         }
     }
 
@@ -95,7 +112,40 @@ impl Driver {
             _ => Input::Line(line.to_owned()),
         };
         self.send(input);
+        if self.auto {
+            self.play_intrusion();
+        }
         self.text()
+    }
+
+    /// Plays the intrusion under way to its end with the best plan the bounded solver finds
+    /// from where it stands, typing the commands as a player does. The last step is the one
+    /// that ended it, which holds the result and the report.
+    pub(super) fn play_intrusion(&mut self) {
+        use crate::run::solve::{PROOF_EXPANSIONS, Resolution, auto_resolve, Goal, solve};
+        while let Some(intrusion) = self.game.intrusion() {
+            let (mission, state) = (intrusion.run().mission().clone(), *intrusion.state());
+            let plan = match auto_resolve(&mission, &state) {
+                Resolution::Optimal(plan) | Resolution::Best(plan) => plan,
+                Resolution::Nominal => solve(&mission, &state, Goal::Feasible, PROOF_EXPANSIONS, u8::MAX)
+                    .plan()
+                    .cloned()
+                    .expect("every intrusion of the content has a plan"),
+            };
+            for action in &plan.actions {
+                if self.game.intrusion().is_none() {
+                    break;
+                }
+                self.send(Input::Line(action_line(*action)));
+                if matches!(self.last.prompt, Prompt::Confirm { .. }) {
+                    self.send(Input::Confirm(true));
+                }
+            }
+            assert!(
+                self.game.intrusion().is_none(),
+                "a plan of the solver ends the intrusion"
+            );
+        }
     }
 
     /// Sends several lines; returns what the last one caused.
