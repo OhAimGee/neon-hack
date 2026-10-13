@@ -3,23 +3,23 @@ source: crates/neon-cli/src/tui/app/tests/snapshots.rs
 expression: "picture(&app, 64, 20)"
 ---
 64x20
- Neon │ Notoriety 4/100 (Discreet)
-you're a rookie. Don't take it personally.
-ECHO-7 » I have a first job for you. Nothing dangerous: a walk
-around your own deck. But first, the ropes.
-Start the guided tutorial? ECHO-7 walks through the first
-commands, and `tutorial skip` ends it at any time. [Y/n] n
-Tutorial skipped. `tutorial restart` starts it later.
-New quest: First Steps in the Shadows
-Type `help` to list the commands, then `quests` to read the
-first quest.
-> nonsense
-[Error] Unknown command: nonsense. See `help`.
-> hack localhost
-Start the run on the site localhost? It is resolved at once.
-[Y/n] y
+ Neon │ Notoriety 2/100 (Discreet)
+Forecast: Trace +2 at the end of the turn.
+Forecast: ambient Trace +2.
+> move 3
+Position: Archives (3).
+Cycles 2/3.
+> loot
+[Reward] Loot taken at Archives (3): the objective.
+Cycles 1/3.
+> jackout
+You jack out of localhost with the loot.
+Run report
+[1] Turns - 3
+[2] Final Trace - 8/100 (calm)
+[3] Loot - 1 of 1 taken
 Run on localhost: 1 file taken.
-Notoriety +4 (0 → 4, Discreet).
+Notoriety +2 (0 → 2, Discreet).
 Objective done: Breach the local station (hack localhost)
 >
 F2 panel | Tab complete | Ctrl+C quit | Up/Down history

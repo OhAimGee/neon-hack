@@ -135,6 +135,9 @@ fn a_scene_goes_first_then_its_result_is_typed() {
     let mut app = typing_app(&mut game, &catalog, TypewriterChoice::Normal);
     type_line(&mut app, "hack localhost");
     type_line(&mut app, "y");
+    for line in LOCALHOST_RUN {
+        type_line(&mut app, line);
+    }
     // The scene is playing and the result is held back.
     assert!(app.staging.is_some());
     assert!(app.typing.is_none());
@@ -153,6 +156,9 @@ fn a_key_during_the_scene_skips_it_and_the_typing() {
     let mut app = typing_app(&mut game, &catalog, TypewriterChoice::Slow);
     type_line(&mut app, "hack localhost");
     type_line(&mut app, "y");
+    for line in LOCALHOST_RUN {
+        type_line(&mut app, line);
+    }
     assert!(app.staging.is_some());
     press(&mut app, KeyCode::Char('x'));
     assert!(!app.is_animating());

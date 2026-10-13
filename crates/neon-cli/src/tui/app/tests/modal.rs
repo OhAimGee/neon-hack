@@ -21,12 +21,11 @@ fn open_the_stall(app: &mut App<'_>) {
         "status",
         "talk echo7",
         "0",
-        "hack localhost",
-        "y",
-        "laylow",
     ] {
         type_line(app, line);
     }
+    hack_localhost(app);
+    type_line(app, "laylow");
 }
 
 #[test]

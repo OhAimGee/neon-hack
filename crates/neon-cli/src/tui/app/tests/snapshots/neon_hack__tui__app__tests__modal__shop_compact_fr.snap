@@ -3,7 +3,7 @@ source: crates/neon-cli/src/tui/app/tests/modal.rs
 expression: "picture(&app, 64, 20)"
 ---
 64x20
- Neon │ Notoriété 4/100 (Discret)
+ Neon │ Notoriété 2/100 (Discret)
 [Gain] +80 crédits
 [Gain] +10 réputation
 ╭Étal──────────────────────────────────────────────────────────╮

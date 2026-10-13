@@ -3,30 +3,30 @@ source: crates/neon-cli/src/tui/app/tests/snapshots.rs
 expression: "picture(&app, 100, 28)"
 ---
 100x28
- Neon │ Notoriety 4/100 (Discreet)
+ Neon │ Notoriety 2/100 (Discreet)
 ╭Terminal────────────────────────────────────────────────────────────╮╭Panel───────────────────────╮
-│[Enter] to continue                                                 ││Notoriety 4/100             │
-│                                                                    ││[█░░░░░░░░░] Discreet       │
-│Encrypted channel #7: incoming connection.                          ││                            │
-│ECHO-7 » Finally. For the record, I'm not a corp, not a cop and not ││▸ Quests                    │
-│a trap. I'm ECHO-7, and yours is the only deck in sector 7 that     ││First Steps                 │
-│still answers.                                                      ││- Open the journal (quests) │
-│ECHO-7 » Handle on file: Neon. Until you earn another name, you're a││- Read the help (help)      │
-│rookie. Don't take it personally.                                   ││- Explore the net (net)     │
-│ECHO-7 » I have a first job for you. Nothing dangerous: a walk      ││- Check the status sheet    │
-│around your own deck. But first, the ropes.                         ││(status)                    │
-│Start the guided tutorial? ECHO-7 walks through the first commands, ││- Talk to ECHO-7 (talk      │
-│and `tutorial skip` ends it at any time. [Y/n] n                    ││echo7)                      │
-│Tutorial skipped. `tutorial restart` starts it later.               ││- Cover your tracks (laylow)│
-│New quest: First Steps in the Shadows                               ││                            │
-│Type `help` to list the commands, then `quests` to read the first   ││▸ The net                   │
-│quest.                                                              ││localhost: pierced          │
-│> nonsense                                                          ││                            │
-│[Error] Unknown command: nonsense. See `help`.                      ││▸ Inventory                 │
-│> hack localhost                                                    ││Credits: 100                │
-│Start the run on the site localhost? It is resolved at once. [Y/n] y││No item yet.                │
+│Cycles 1/3.                                                         ││Notoriety 2/100             │
+│> end                                                               ││[█░░░░░░░░░] Discreet       │
+│Ambient Trace +2.                                                   ││                            │
+│Trace +2 (6 → 8, calm).                                             ││▸ Quests                    │
+│                                                                    ││First Steps                 │
+│Turn 3: Trace 8/100 (calm), cycles 3/3.                             ││- Open the journal (quests) │
+│Forecast: Trace +2 at the end of the turn.                          ││- Read the help (help)      │
+│Forecast: ambient Trace +2.                                         ││- Explore the net (net)     │
+│> move 3                                                            ││- Check the status sheet    │
+│Position: Archives (3).                                             ││(status)                    │
+│Cycles 2/3.                                                         ││- Talk to ECHO-7 (talk      │
+│> loot                                                              ││echo7)                      │
+│[Reward] Loot taken at Archives (3): the objective.                 ││- Cover your tracks (laylow)│
+│Cycles 1/3.                                                         ││                            │
+│> jackout                                                           ││▸ The net                   │
+│You jack out of localhost with the loot.                            ││localhost: pierced          │
+│Run report                                                          ││                            │
+│[1] Turns - 3                                                       ││▸ Inventory                 │
+│[2] Final Trace - 8/100 (calm)                                      ││Credits: 100                │
+│[3] Loot - 1 of 1 taken                                             ││No item yet.                │
 │Run on localhost: 1 file taken.                                     ││                            │
-│Notoriety +4 (0 → 4, Discreet).                                     ││                            │
+│Notoriety +2 (0 → 2, Discreet).                                     ││                            │
 │Objective done: Breach the local station (hack localhost)           ││                            │
 ╰────────────────────────────────────────────────────────────────────╯╰────────────────────────────╯
 >

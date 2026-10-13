@@ -533,6 +533,11 @@ fn the_real_campaign_stages_its_first_intrusion() {
         "nothing is staged before the intrusion is confirmed"
     );
     type_line(&mut app, "y");
+    // The scene is for the end of the intrusion, which is played turn by turn.
+    assert!(!app.is_animating(), "nothing is staged while the intrusion is played");
+    for line in LOCALHOST_RUN {
+        type_line(&mut app, line);
+    }
     assert!(app.is_animating());
     let text = text_of(&screen(&app, 100, 28));
     assert!(
