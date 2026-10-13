@@ -6,3 +6,4 @@
 # everyone who runs the test benefits from these saved cases.
 cc e2c6036544c59d060ca283d462c1c5e7b28efea9f989cd045df884db44f0a17c # shrinks to depth = 0, inputs = [Line("quit"), Confirm(true)]
 cc dcbdcb7b3ad2d277457339fb1bbf8e3216530f94aab2ee4e6aa840cfaf4e4079 # shrinks to depth = 0, inputs = [Line("<?")]
+cc 3568c053f08661582f706158462a0a37d9701e460e30f85d0fdc6fc2384208cd # shrinks to depth = 1, inputs = [Line("HACK localhost"), Confirm(true), Line("quit")]

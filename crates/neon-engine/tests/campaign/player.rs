@@ -9,6 +9,8 @@ use std::sync::OnceLock;
 use neon_engine::campaign::{CampaignGame, Difficulty};
 use neon_engine::event::{Event, Role};
 use neon_engine::prompt::{Input, Prompt, Step};
+use neon_engine::run::solve::{Resolution, auto_resolve};
+use neon_engine::run::{Action, LootKind};
 use neon_engine::save::SaveRequest;
 use neon_engine::text::{Arg, Catalog, Lang, RenderMode, Text, render};
 use neon_engine::{Game, content::Content};
@@ -245,6 +247,62 @@ impl Player {
         };
         self.type_line(&line);
         self.settle(mv);
+        if matches!(mv, Move::Hack(_)) {
+            self.play_intrusion(mv);
+        }
+    }
+
+    /// Plays the intrusion that `hack` opened to its end, typing the commands. The player takes
+    /// all the loot (the files are what the quests ask for), by the best plan the bounded solver
+    /// finds for a mission whose every loot is an objective: the same rules, so each of its
+    /// commands is a command of the real intrusion.
+    fn play_intrusion(&mut self, mv: &Move) {
+        while let Some(intrusion) = self.game.intrusion() {
+            let content = self.game.content();
+            let site = intrusion.site().clone();
+            let (Some(def), Some(site_def)) = (content.run(&site), content.site(&site)) else {
+                self.fail("an intrusion on a site that has none")
+            };
+            let mut greedy = def.clone();
+            for node in &mut greedy.node {
+                if node.loot.is_some() {
+                    node.loot = Some(LootKind::Objective);
+                }
+            }
+            let tier = site_def.unlock.tier.unwrap_or(1);
+            let Some(kit) = content.kit(tier) else {
+                self.fail("a site of a tier without a deck")
+            };
+            let Ok(mission) = greedy.mission(kit, self.game.state().difficulty().pace()) else {
+                self.fail("the greedy variant of an intrusion does not build")
+            };
+            let state = *intrusion.state();
+            let (Resolution::Optimal(plan) | Resolution::Best(plan)) =
+                auto_resolve(&mission, &state)
+            else {
+                self.fail("no plan for an intrusion of the content")
+            };
+            for action in &plan.actions {
+                if self.game.intrusion().is_none() {
+                    break;
+                }
+                let line = match action {
+                    Action::Move(node) => format!("move {}", node.number()),
+                    Action::Breach { node, program } => {
+                        format!("breach {} {}", node.number(), program.id())
+                    }
+                    Action::Use(utility) => format!("use {}", utility.program().id()),
+                    Action::Loot => "loot".to_owned(),
+                    Action::End => "end".to_owned(),
+                    Action::Jackout => "jackout".to_owned(),
+                };
+                self.type_line(&line);
+                self.settle(mv);
+            }
+            if self.game.intrusion().is_some() {
+                self.fail("a plan that does not end the intrusion");
+            }
+        }
     }
 
     /// Types a line at the command prompt.

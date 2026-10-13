@@ -946,13 +946,15 @@ pub struct ServiceDef {
     pub at: usize,
 }
 
-/// What an automatic intrusion costs in notoriety, by the tier of the site.
+/// What an automatic intrusion falls back on when no plan is found: the Trace its tier calls
+/// nominal.
 #[derive(Debug, Clone, Default, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct AutoResolveRules {
-    /// Notoriety added by one intrusion; entry `n - 1` is for a site of tier `n`, so there are
-    /// exactly [`MAX_TIER`] entries.
-    pub nominal_heat: Vec<u8>,
+    /// The final Trace of an automatic intrusion that no plan could play out (the notoriety it
+    /// costs follows from it, a quarter of it); entry `n - 1` is for a site of tier `n`, so
+    /// there are exactly [`MAX_TIER`] entries, each below the cap of 100.
+    pub nominal_trace: Vec<u8>,
 }
 
 /// How many hints a quest may use, by difficulty.

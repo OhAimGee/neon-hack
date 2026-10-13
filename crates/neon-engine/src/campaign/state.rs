@@ -16,7 +16,8 @@ use crate::content::ids::{ContactId, DecisionId, ItemId, QuestId, ReadableId, Si
 use crate::content::money::Credits;
 use crate::content::schema::{ContactState, HintBudgets, QuestStatus, ReadableKind, SiteDef, Turn};
 use crate::content::state::{HEAT_MAX, State};
-use crate::run::{Pace, Undo};
+use crate::intrusion::Intrusion;
+use crate::run::{Pace, RunState, Undo};
 use crate::save::{SaveState, hex_u64};
 
 use super::prologue::CONTINUE_PAGES;
@@ -209,6 +210,19 @@ pub(super) enum Flow {
     ConfirmQuit,
 }
 
+/// An intrusion under way, as a save keeps it: the start of the turn under way, because a game
+/// that is taken up again goes back to the start of the turn, never to the middle of one
+/// (`docs/spec/run-screen.md` § 9).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub(super) struct RunSave {
+    /// The site.
+    pub(super) site: SiteId,
+    /// The state at the start of the turn.
+    pub(super) turn_start: RunState,
+    /// The undos left.
+    pub(super) undo: Undo,
+}
+
 /// The saved state of a campaign.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct CampaignState {
@@ -251,6 +265,13 @@ pub struct CampaignState {
     pub(super) tutorial: Tutorial,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub(super) flows: Vec<Flow>,
+    /// The intrusion under way, if there is one. No menu is stacked while it lasts.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(super) run: Option<RunSave>,
+    /// The game was lost in Hardcore (an intrusion burned): nothing more is accepted, and a
+    /// save of it says so, so that it cannot be played again from where it was lost.
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub(super) lost: bool,
 }
 
 impl CampaignState {
@@ -291,6 +312,8 @@ impl CampaignState {
             hints: BTreeMap::new(),
             tutorial: Tutorial::default(),
             flows: vec![Flow::AskHandle],
+            run: None,
+            lost: false,
         };
         state.sync_lists(c);
         state
@@ -443,7 +466,25 @@ impl CampaignState {
         self.validate_lists(c)?;
         self.validate_hints(c)?;
         self.validate_flows(c)?;
+        self.validate_run(c)?;
         self.validate_tutorial()
+    }
+
+    /// An intrusion under way is a turn of the intrusion of its site, and nothing else is
+    /// open while it lasts.
+    fn validate_run(&self, c: &Content) -> Result<(), String> {
+        let Some(run) = &self.run else {
+            return Ok(());
+        };
+        if self.lost {
+            return Err("a lost game has no intrusion under way".to_owned());
+        }
+        if !self.flows.is_empty() {
+            return Err("a menu is open during an intrusion".to_owned());
+        }
+        Intrusion::resume(c, &run.site, self.difficulty, run.turn_start, run.undo)
+            .map(|_| ())
+            .map_err(|error| error.to_string())
     }
 
     fn validate_mods(&self, c: &Content) -> Result<(), String> {
@@ -555,6 +596,14 @@ impl CampaignState {
 )]
 fn is_zero(n: &u32) -> bool {
     *n == 0
+}
+
+#[allow(
+    clippy::trivially_copy_pass_by_ref,
+    reason = "serde calls `skip_serializing_if` with a reference"
+)]
+fn is_false(flag: &bool) -> bool {
+    !*flag
 }
 
 /// A list of ids with no repeat, each accepted by `known`.

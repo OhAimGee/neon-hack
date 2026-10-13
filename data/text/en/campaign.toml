@@ -201,11 +201,15 @@ relay = "Reached through {relay}."
 loot = "{loot^}: {taken}/{total} {total|file|files} taken."
 
 [campaign.hack]
-confirm = "Start the {run} on the {site} {name}? It is resolved at once."
+confirm = "Start the {run} on the {site} {name}? A checkpoint is saved first."
 cancelled = "{run^} cancelled."
 done = "{run^} on {name}: {n} {n|file|files} taken."
 again = "{run^} on {name}: nothing new to take."
 empty = "{run^} on {name}: no file to take."
+retry = "{run^} on {name} failed. Try again with `hack {name}`."
+unavailable = "This {run} cannot begin: {reason}."
+lost = "{trace^} {max}: the game is lost, {handle}. The checkpoint saved when the {run} began is the way back (`--load checkpoint-1`)."
+game_lost = "This game was lost, {handle}. Start over from a checkpoint (`--load checkpoint-1`) or a new game (`--new`)."
 
 [campaign.shop]
 title = "== {shop^} =="

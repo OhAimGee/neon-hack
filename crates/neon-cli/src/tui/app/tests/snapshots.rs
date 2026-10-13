@@ -49,8 +49,7 @@ pub(super) fn picture(app: &App<'_>, width: u16, height: u16) -> String {
 /// A few turns of play: a rejected command, a first intrusion (reward, the gauge moves).
 fn play(app: &mut App<'_>) {
     type_line(app, "nonsense");
-    type_line(app, "hack localhost");
-    type_line(app, "y");
+    hack_localhost(app);
 }
 
 #[test]

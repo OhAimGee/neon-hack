@@ -9,24 +9,101 @@ net
 status
 hack localhost
 y
+breach 2 backdoor
+breach 2 backdoor
+move 2
+end
+breach 3 backdoor
+breach 3 backdoor
+end
+move 3
+loot
+jackout
 laylow
 read mail-welcome
 talk r4z0r
 topic:how_to_earn
 hack corp-server-01
 y
+move 3
+loot
+use cloak
+end
+breach 4 exploit
+use cloak
+end
+breach 4 backdoor
+move 4
+loot
+jackout
 archives f01
 archives f02
 talk r4z0r
 0
+save 3
 buy stealth_module
 y
 hack localhost
 y
+breach 2 backdoor
+breach 2 backdoor
+move 2
+end
+breach 3 backdoor
+breach 3 backdoor
+end
+move 3
+loot
+jackout
 hack corp-server-01
 y
+move 3
+loot
+use cloak
+end
+breach 4 exploit
+use cloak
+end
+breach 4 backdoor
+move 4
+loot
+jackout
 hack nexus-mainframe
 y
+breach 2 exploit
+end
+move 2
+breach 4 backdoor
+end
+breach 3 backdoor
+breach 4 decrypt
+breach 3 backdoor
+end
+breach 3 backdoor
+use spoof
+move 4
+loot
+end
+breach 6 backdoor
+breach 6 quantum
+end
+move 6
+loot
+breach 5 backdoor
+end
+move 4
+move 2
+move 3
+end
+loot
+end
+breach 5 backdoor
+end
+breach 5 backdoor
+breach 5 backdoor
+move 5
+loot
+jackout
 archives f07
 archives f08
 archives f09
@@ -39,9 +116,26 @@ talk r4z0r
 topic:ledger_rumor
 talk miner
 topic:shelf
-save 3
 hack underground-market
 y
+breach 2 brute
+move 2
+use spoof
+use cloak
+end
+breach 3 backdoor
+breach 3 backdoor
+move 3
+use cloak
+end
+breach 5 quantum
+move 5
+use spoof
+end
+loot
+move 3
+loot
+jackout
 decrypt doc_ledger
 archives f04
 archives f06
@@ -49,6 +143,40 @@ buy quantum_key
 y
 hack nexus-mainframe
 y
+breach 2 exploit
+end
+move 2
+breach 4 backdoor
+end
+breach 3 backdoor
+breach 4 decrypt
+breach 3 backdoor
+end
+breach 3 backdoor
+use spoof
+move 4
+loot
+end
+breach 6 backdoor
+breach 6 quantum
+end
+move 6
+loot
+breach 5 backdoor
+end
+move 4
+move 2
+move 3
+end
+loot
+end
+breach 5 backdoor
+end
+breach 5 backdoor
+breach 5 backdoor
+move 5
+loot
+jackout
 accept s06
 archives f10
 read mail-aura
@@ -63,18 +191,91 @@ decrypt doc_phoenix
 archives f11
 hack nexus-mainframe
 y
+breach 2 exploit
+end
+move 2
+breach 4 backdoor
+end
+breach 3 backdoor
+breach 4 decrypt
+breach 3 backdoor
+end
+breach 3 backdoor
+use spoof
+move 4
+loot
+end
+breach 6 backdoor
+breach 6 quantum
+end
+move 6
+loot
+breach 5 backdoor
+end
+move 4
+move 2
+move 3
+end
+loot
+end
+breach 5 backdoor
+end
+breach 5 backdoor
+breach 5 backdoor
+move 5
+loot
+jackout
 talk angel
 0
 talk angel
 0
 hack banking-network
 y
+breach 2 exploit
+move 2
+breach 4 backdoor
+end
+breach 4 decrypt
+move 4
+breach 6 quantum
+end
+breach 6 backdoor
+loot
+move 6
+loot
+jackout
 hack research-lab
 y
+breach 3 exploit
+move 3
+breach 4 decrypt
+end
+breach 4 quantum
+move 4
+breach 6 backdoor
+end
+breach 6 quantum
+move 6
+loot
+jackout
 archives f15
-laylow new_identity
+laylow scrub_traces
 hack halcyon-clinic-7
 y
+breach 3 backdoor
+breach 3 exploit
+end
+move 3
+breach 4 quantum
+end
+move 4
+breach 6 quantum
+breach 6 backdoor
+loot
+use overclock
+move 6
+loot
+jackout
 archives f13
 talk angel
 decide:d2
@@ -83,6 +284,20 @@ talk phoenix
 topic:thank_you
 hack radio-veille
 y
+breach 2 exploit
+end
+move 2
+use cloak
+end
+breach 3 backdoor
+breach 3 backdoor
+breach 3 backdoor
+move 3
+end
+breach 4 quantum
+move 4
+loot
+jackout
 archives f12
 laylow new_identity
 accept s07
@@ -91,10 +306,68 @@ accept s12
 accept s13
 hack halcyon-clinic-7
 y
+breach 3 backdoor
+breach 3 exploit
+end
+move 3
+breach 4 quantum
+end
+move 4
+breach 6 quantum
+breach 6 backdoor
+loot
+use overclock
+move 6
+loot
+jackout
 link echo7
 link echo7
 talk r4z0r
 pay:s08
+hack sentinel-hub
+y
+breach 3 backdoor
+use spoof
+breach 2 backdoor
+breach 2 exploit
+end
+move 2
+breach 4 quantum
+move 4
+breach 5 brute
+end
+breach 5 exploit
+move 5
+breach 7 quantum
+end
+loot
+end
+move 4
+loot
+end
+move 5
+breach 7 backdoor
+move 4
+end
+breach 3 backdoor
+use spoof
+use cloak
+end
+use ghost
+breach 3 brute
+use cloak
+end
+breach 3 backdoor
+move 3
+loot
+move 4
+move 5
+use overclock
+move 7
+loot
+jackout
+archives f14
+archives f21
 talk angel
 0
 talk angel
@@ -105,12 +378,48 @@ talk angel
 pay:s13
 hack freeport-01
 y
+use ghost
+breach 2 brute
+breach 2 brute
+move 2
+breach 4 decrypt
+use overclock
+breach 4 decrypt
+use cloak
+end
+move 4
+loot
+jackout
 hack freeport-02
 y
+breach 2 quantum
+move 2
+breach 4 virus
+use overclock
+breach 4 backdoor
+use spoof
+end
+breach 4 brute
+move 4
+loot
+use spoof
+jackout
 hack freeport-03
 y
+use ghost
+breach 2 exploit
+breach 2 brute
+move 2
+use overclock
+breach 4 brute
+use cloak
+end
+breach 4 quantum
+move 4
+loot
+use spoof
+jackout
 link aura
-laylow new_identity
 accept s10
 accept s11
 archives f16
@@ -118,10 +427,47 @@ talk aura
 topic:brother
 hack freeport-01
 y
+use ghost
+breach 2 brute
+breach 2 brute
+move 2
+breach 4 decrypt
+use overclock
+breach 4 decrypt
+use cloak
+end
+move 4
+loot
+jackout
 hack freeport-02
 y
+breach 2 quantum
+move 2
+breach 4 virus
+use overclock
+breach 4 backdoor
+use spoof
+end
+breach 4 brute
+move 4
+loot
+use spoof
+jackout
 hack freeport-03
 y
+use ghost
+breach 2 exploit
+breach 2 brute
+move 2
+use overclock
+breach 4 brute
+use cloak
+end
+breach 4 quantum
+move 4
+loot
+use spoof
+jackout
 link aura
 talk broker
 pay:s11
@@ -143,7 +489,6 @@ talk echo7
 decide:echo
 believe
 accept s14
-laylow scrub_traces
 buy quantum_chip
 y
 decrypt doc_vault
@@ -155,15 +500,112 @@ talk echo7
 0
 hack gov-database
 y
+breach 3 backdoor
+end
+breach 2 backdoor
+breach 2 exploit
+end
+move 2
+breach 4 quantum
+end
+move 4
+breach 6 quantum
+breach 6 backdoor
+loot
+use overclock
+move 6
+loot
+jackout
 archives f24
 hack sentinel-hub
 y
-archives f14
-archives f21
-laylow scrub_traces
+breach 3 backdoor
+use spoof
+breach 2 backdoor
+breach 2 exploit
+end
+move 2
+breach 4 quantum
+move 4
+breach 5 brute
+end
+breach 5 exploit
+move 5
+breach 7 quantum
+end
+loot
+end
+move 4
+loot
+end
+move 5
+breach 7 backdoor
+move 4
+end
+breach 3 backdoor
+use spoof
+use cloak
+end
+use ghost
+breach 3 brute
+use cloak
+end
+breach 3 backdoor
+move 3
+loot
+move 4
+move 5
+use overclock
+move 7
+loot
+jackout
 archives f20
 hack aurora-core
 y
+use ghost
+breach 2 brute
+breach 2 exploit
+end
+move 2
+breach 4 quantum
+move 4
+breach 6 backdoor
+end
+breach 6 quantum
+move 6
+loot
+end
+breach 7 decrypt
+use spoof
+move 4
+end
+loot
+end
+breach 3 backdoor
+end
+breach 3 backdoor
+move 6
+end
+breach 7 decrypt
+breach 7 decrypt
+move 4
+end
+breach 3 backdoor
+use cloak
+end
+breach 3 backdoor
+use spoof
+use cloak
+end
+breach 3 backdoor
+move 3
+loot
+move 4
+move 6
+use overclock
+move 7
+loot
+jackout
 archives f23
 talk aura
 decide:d3

@@ -1,6 +1,6 @@
 //! The static data of one run, and the builder that checks it.
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use super::program::{Family, PROGRAM_COUNT, Program, Supply};
@@ -23,7 +23,8 @@ const FAR: u8 = u8::MAX;
 /// A node of the graph of a run: its position in the order the mission lists them.
 ///
 /// Frontends show [`NodeId::number`], which starts at 1.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[serde(transparent)]
 pub struct NodeId(u8);
 
 impl NodeId {

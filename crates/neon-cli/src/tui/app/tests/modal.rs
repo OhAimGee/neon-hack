@@ -14,19 +14,11 @@ fn modal_app<'a>(game: &'a mut CampaignGame, catalog: &'a Catalog, mode: RenderM
 
 /// What the player does to open the stall: the first quest, played to its end.
 fn open_the_stall(app: &mut App<'_>) {
-    for line in [
-        "quests",
-        "help",
-        "net",
-        "status",
-        "talk echo7",
-        "0",
-        "hack localhost",
-        "y",
-        "laylow",
-    ] {
+    for line in ["quests", "help", "net", "status", "talk echo7", "0"] {
         type_line(app, line);
     }
+    hack_localhost(app);
+    type_line(app, "laylow");
 }
 
 #[test]

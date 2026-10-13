@@ -63,10 +63,11 @@ id = "new_identity"
 price = 160
 cooling = 60
 
-# What an automatic intrusion (`hack` until the tactical run exists) costs in notoriety,
-# by the tier of the site: entry n is for a site of tier n + 1.
+# The final Trace of an automatic intrusion (`skip`) that no plan could play out, by the tier of
+# the site: entry n is for a site of tier n + 1. It costs a quarter of it in notoriety, like any
+# intrusion (4, 8, 12, 16, 20, 24).
 [auto_resolve]
-nominal_heat = [4, 8, 12, 16, 20, 24]
+nominal_trace = [16, 32, 48, 64, 80, 96]
 
 # Hints (`hint`) a quest may use, by difficulty.
 [hints]

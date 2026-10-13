@@ -9,8 +9,24 @@ use crate::text::{Arg, Text};
 use super::view::RunView;
 
 const TERMS: &[&str] = &[
-    "run", "turn", "cycle", "node", "patrol", "program", "trace", "forecast", "loot", "jackout",
-    "ice", "deck", "undo", "burned", "noise", "site", "intel",
+    "run",
+    "turn",
+    "cycle",
+    "node",
+    "patrol",
+    "program",
+    "trace",
+    "forecast",
+    "loot",
+    "jackout",
+    "ice",
+    "deck",
+    "undo",
+    "burned",
+    "noise",
+    "site",
+    "intel",
+    "difficulty_story",
 ];
 
 /// Gives a text, and the texts nested in its arguments, the terms it was not given.

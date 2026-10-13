@@ -7,11 +7,12 @@ use crate::content::eval::{ObjectiveState, journal};
 use crate::content::ids::{QuestId, ReadableId, SiteId};
 use crate::content::schema::{QuestKind, QuestStatus, ReadableKind};
 use crate::event::{Effect, Event, ScreenKind, Table};
+use crate::intrusion::{Intrusion, Question};
 use crate::prompt::Input;
 use crate::save::{SLOT_COUNT, SaveRequest};
 use crate::text::Text;
 
-use super::commands::{COMMANDS, CONTEXT};
+use super::commands::COMMANDS;
 use super::dispatch::{arg_id, invalid};
 use super::keys;
 use super::play::band_text;
@@ -86,7 +87,7 @@ impl CampaignGame {
                     Text::new("campaign.help.col_command"),
                     Text::new("campaign.help.col_effect"),
                 ],
-                CONTEXT,
+                self.context(),
                 self.frontend,
                 |spec| self.availability(spec),
             )),
@@ -98,7 +99,7 @@ impl CampaignGame {
     fn help_for(&self, name: &str, events: &mut Vec<Event>) {
         let lookup = COMMANDS.parse(
             name,
-            CONTEXT,
+            self.context(),
             self.frontend,
             |spec| self.availability(spec),
             &NoLists,
@@ -125,6 +126,13 @@ impl CampaignGame {
     // --------------------------------------------------------------------- status
 
     pub(super) fn cmd_status(&mut self, events: &mut Vec<Event>) {
+        // During an intrusion `status` is the status of the intrusion.
+        if let Some(intrusion) = &self.intrusion {
+            events.extend(intrusion.status());
+            Intrusion::gloss(events);
+            self.used("status", events);
+            return;
+        }
         let c = self.content;
         let s = &self.state;
         let missions = &s.missions;
@@ -721,7 +729,11 @@ impl CampaignGame {
     }
 
     pub(super) fn cmd_quit(&mut self) {
-        self.state.flows.push(Flow::ConfirmQuit);
+        if self.intrusion.is_some() {
+            self.question = Some(Question::Quit);
+        } else {
+            self.state.flows.push(Flow::ConfirmQuit);
+        }
     }
 
     /// Leaving saves the game at the command line, so the next launch picks up from there.

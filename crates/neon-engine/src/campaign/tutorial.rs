@@ -255,7 +255,11 @@ impl CampaignGame {
     /// After a command, at the command prompt: says the hint of the current step, once, when
     /// its command is open. Saying the closing step ends the tutorial.
     pub(super) fn teach(&mut self, events: &mut Vec<Event>) {
-        if self.over || !self.state.flows.is_empty() || self.state.tutorial.mode() != Mode::Active {
+        if self.is_over()
+            || self.intrusion.is_some()
+            || !self.state.flows.is_empty()
+            || self.state.tutorial.mode() != Mode::Active
+        {
             return;
         }
         let Some((index, step)) = self.state.tutorial.current() else {

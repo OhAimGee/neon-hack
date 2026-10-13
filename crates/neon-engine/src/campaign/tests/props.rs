@@ -218,7 +218,12 @@ proptest! {
             prop_assert_eq!(loaded.snapshot().unwrap(), text);
             // A game that is over is saved as it was at its last command: a loaded game is
             // never over.
-            if driver.last.prompt != Prompt::End {
+            // An intrusion under way comes back at the start of its turn, at the command line:
+            // the question it was asking (leave it, jack out) is not kept.
+            if driver.game.intrusion().is_some() {
+                prop_assert!(loaded.intrusion().is_some());
+                prop_assert_eq!(loaded.prompt(), Prompt::Command);
+            } else if driver.last.prompt != Prompt::End {
                 prop_assert_eq!(loaded.prompt(), driver.game.prompt());
             }
         }

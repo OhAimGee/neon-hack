@@ -1137,3 +1137,102 @@ proptest! {
         assert_eq!(hash_of(played.state()), hash_of(&reached));
     }
 }
+
+// -- Taking a run up again ---------------------------------------------------------------
+
+#[test]
+fn a_state_goes_through_a_save_and_comes_back_equal() {
+    for seed in 0..60 {
+        let mission = random_mission(seed);
+        let end = random_play(&mission, seed, 12, |_, _| {});
+        let text = toml::to_string(&end).unwrap();
+        assert_eq!(toml::from_str::<RunState>(&text).unwrap(), end, "{text}");
+    }
+    let undo = [Undo::Unlimited, Undo::Left(3), Undo::NONE];
+    for undo in undo {
+        let text = toml::to_string(&toml::Table::from_iter([(
+            "undo".to_owned(),
+            toml::Value::try_from(undo).unwrap(),
+        )]))
+        .unwrap();
+        let back: toml::Table = text.parse().unwrap();
+        assert_eq!(back["undo"].clone().try_into::<Undo>().unwrap(), undo);
+    }
+}
+
+#[test]
+fn only_the_start_of_a_turn_of_this_mission_is_accepted() {
+    for seed in 0..120 {
+        let mission = random_mission(seed);
+        // Every turn start a random play reaches is accepted.
+        let mut state = mission.initial_state();
+        assert_eq!(mission.turn_start_error(&state), None);
+        let mut dice = Dice::new(seed, 17);
+        for _ in 0..40 {
+            let legal = legal_actions(&mission, &state);
+            let Some(&action) = legal.get(dice.below(legal.len())) else {
+                break;
+            };
+            state = apply(&mission, &state, action, &mut ()).unwrap();
+            if action == Action::End && state.is_running() {
+                assert_eq!(mission.turn_start_error(&state), None, "seed {seed}");
+            }
+        }
+    }
+    let mission = payroll();
+    let start = mission.initial_state();
+    let mut broken = start;
+    broken.trace = 40;
+    assert!(
+        mission.turn_start_error(&broken).is_some(),
+        "a Trace that is not the floor"
+    );
+    let mut broken = start;
+    broken.cloak = true;
+    assert!(mission.turn_start_error(&broken).is_some());
+    let mut broken = start;
+    broken.progress[0] = 5;
+    assert!(
+        mission.turn_start_error(&broken).is_some(),
+        "progress where there is no ICE"
+    );
+    let mut broken = start;
+    broken.loot_taken = 0b1;
+    assert!(
+        mission.turn_start_error(&broken).is_some(),
+        "loot where there is none"
+    );
+    let mut broken = start;
+    broken.charges[Program::Cloak.index()] = 9;
+    assert!(
+        mission.turn_start_error(&broken).is_some(),
+        "more charges than the deck gave"
+    );
+    let mut broken = start;
+    broken.status = Status::Won;
+    assert!(mission.turn_start_error(&broken).is_some());
+}
+
+#[test]
+fn a_run_taken_up_again_can_take_back_only_the_turn_under_way() {
+    let mission = payroll();
+    let mut run = Run::new(mission.clone(), Undo::Left(2));
+    run.act(Action::End).unwrap();
+    let turn_start = *run.turn_start();
+    let mut again = Run::resume(mission, turn_start, run.undo_left());
+    assert_eq!(again.undo(), Err(UndoError::NothingToTakeBack));
+    again.act(Action::Use(Utility::Cloak)).unwrap();
+    assert_eq!(again.undo(), Ok(()));
+    assert_eq!(*again.state(), turn_start);
+}
+
+#[test]
+fn an_automatic_end_takes_every_loot_and_wins_at_the_trace_it_is_given() {
+    let mission = payroll();
+    let settled = mission.settled_at(&mission.initial_state(), 40);
+    assert_eq!(settled.status(), Status::Won);
+    assert_eq!(settled.trace(), 40);
+    assert!(settled.objectives_done(&mission));
+    // Never at or past the cap, which would be a burned run.
+    assert!(mission.settled_at(&mission.initial_state(), 255).trace() < mission.trace_cap());
+}

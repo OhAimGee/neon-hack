@@ -162,6 +162,8 @@ none = "Plus d'annulation possible."
 nothing = "Rien à annuler pour l'instant."
 
 [run.result]
+automatic = "Automatique : le meilleur plan que le solveur a trouvé a été joué."
+approximate = "Automatique : aucun plan trouvé, le résultat est approximatif (la {trace} est nominale)."
 won = "{jackout^} de {name} avec le {loot}."
 burned = "{trace^} {max} : {run} {burned}e."
 
@@ -185,6 +187,7 @@ confirm = "Du {loot} reste ({left}). {jackout^} quand même ?"
 confirm = "Quitter l'{run} en cours ? Elle est perdue."
 
 [run.error]
+skip = "La résolution automatique n'est ouverte qu'en difficulté {difficulty_story}."
 over = "L'{run} est terminée."
 cycles = "Pas assez de {cycle}s."
 not_linked = "Ce {node} n'est pas relié à la position actuelle."
@@ -230,6 +233,7 @@ loot = "Prendre le {loot} du {node} où l'on se trouve"
 end = "Terminer le {turn} : les {patrol}s bougent et scannent, la {trace} ambiante monte"
 jackout = "{jackout^} en gardant le {loot} pris"
 undo = "Reprendre le {turn} en cours"
+skip = "Jouer l'{run} automatiquement (seulement en difficulté {difficulty_story})"
 quit = "Quitter l'{run}"
 
 [run.bar]
@@ -258,3 +262,9 @@ pair = "{first}  {second}"
 [run.panel.state]
 here = "ici"
 open = "ouvert"
+
+[run.skip]
+confirm = "Jouer l'{run} automatiquement ? Elle se termine par le meilleur plan trouvé, qui n'est pas toujours le meilleur possible."
+
+[run.unlock]
+skip = "seulement en difficulté {difficulty_story}"

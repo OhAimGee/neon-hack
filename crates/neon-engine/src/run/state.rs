@@ -1,10 +1,13 @@
 //! Everything that changes during a run.
 
+use serde::{Deserialize, Serialize};
+
 use super::mission::{MAX_NODES, MAX_PATROLS, Mission, NodeId};
 use super::program::{PROGRAM_COUNT, Program, Supply};
 
 /// How a run stands.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum Status {
     /// Under way.
     Running,
@@ -66,7 +69,7 @@ impl TraceBand {
 
 /// The whole state of a run. It is small and `Copy`, so a turn can be remembered by keeping
 /// one, and two states are equal exactly when the runs are in the same place.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct RunState {
     pub(super) position: NodeId,
     pub(super) trace: u8,
@@ -264,5 +267,80 @@ impl RunState {
             Some(anchor) => !self.is_open(mission, anchor),
             None => true,
         }
+    }
+}
+
+impl Mission {
+    /// Why a state cannot be the start of a turn of this mission, if it cannot: what a save
+    /// is checked against before a run is taken up again.
+    #[must_use]
+    pub fn turn_start_error(&self, state: &RunState) -> Option<&'static str> {
+        let nodes = self.node_count();
+        if state.status != Status::Running {
+            return Some("the run is over");
+        }
+        if state.position.index() >= nodes {
+            return Some("the player is on a node that does not exist");
+        }
+        if state.trace >= self.trace_cap() || state.turn_floor != state.trace {
+            return Some("the Trace is not that of the start of a turn");
+        }
+        if state.turn == 0 || state.turn > 10_000 {
+            return Some("the turn is out of range");
+        }
+        if state.cycles != self.cycles_per_turn() || state.cloak || state.ghost {
+            return Some("a turn begins with all its cycles and nothing on");
+        }
+        for index in 0..MAX_NODES {
+            let progress = state.progress.get(index).copied().unwrap_or(0);
+            let strength = u8::try_from(index)
+                .ok()
+                .and_then(NodeId::new)
+                .filter(|node| node.index() < nodes)
+                .and_then(|node| self.ice(node))
+                .map_or(0, |ice| ice.strength);
+            if progress > strength {
+                return Some("progress goes past the strength of the ICE");
+            }
+        }
+        for node in self.nodes() {
+            if state.is_looted(node) && self.loot(node).is_none() {
+                return Some("loot taken where there is none");
+            }
+        }
+        if u16::from(state.loot_taken) >> nodes != 0 {
+            return Some("loot taken on a node that does not exist");
+        }
+        for (patrol, down) in state.down.iter().enumerate() {
+            if (patrol >= self.patrol_count() && *down != 0) || *down > super::VIRUS_TURNS {
+                return Some("a patrol is down that cannot be");
+            }
+        }
+        for program in Program::ALL {
+            let charges = state.charges.get(program.index()).copied().unwrap_or(0);
+            let allowed = match self.supply(program) {
+                Some(Supply::Limited(count)) => count,
+                _ => 0,
+            };
+            if charges > allowed {
+                return Some("more charges than the deck gave");
+            }
+        }
+        None
+    }
+
+    /// The state of a run the automatic resolution could not play out: every loot taken, the
+    /// run won, the Trace the tier calls nominal.
+    #[must_use]
+    pub fn settled_at(&self, state: &RunState, trace: u8) -> RunState {
+        let mut settled = *state;
+        for node in self.nodes() {
+            if self.loot(node).is_some() {
+                settled.loot_taken |= node.bit();
+            }
+        }
+        settled.trace = trace.min(self.trace_cap().saturating_sub(1));
+        settled.status = Status::Won;
+        settled
     }
 }

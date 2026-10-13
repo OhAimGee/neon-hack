@@ -1,5 +1,6 @@
 //! A run under way: the state, and the undo of whole turns.
 
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use super::action::{Action, ActionError, Fact};
@@ -9,7 +10,8 @@ use super::rules::{apply, legal_actions};
 use super::state::{RunState, Status};
 
 /// How many turns the player can still take back.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum Undo {
     /// As many as wanted.
     Unlimited,
@@ -80,6 +82,20 @@ impl Run {
         }
     }
 
+    /// Takes a run up at the start of a turn, as a save keeps it: the earlier turns cannot be
+    /// taken back any more, only the turn under way can.
+    #[must_use]
+    pub fn resume(mission: Mission, turn_start: RunState, undo: Undo) -> Self {
+        Self {
+            mission,
+            state: turn_start,
+            turn_start,
+            earlier: Vec::new(),
+            acted: false,
+            undo,
+        }
+    }
+
     /// The mission.
     #[must_use]
     pub fn mission(&self) -> &Mission {
@@ -96,6 +112,12 @@ impl Run {
     #[must_use]
     pub fn turn_start(&self) -> &RunState {
         &self.turn_start
+    }
+
+    /// Puts the run in a state the rules did not reach: an automatic intrusion that no plan
+    /// could play out, settled at the Trace its tier calls nominal.
+    pub(crate) fn settle(&mut self, state: RunState) {
+        self.state = state;
     }
 
     /// How many undos are left.

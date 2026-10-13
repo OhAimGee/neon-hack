@@ -1005,6 +1005,11 @@ fn campaign(extra: &[&str], script: &str) -> String {
     undraft(&stdout(&output))
 }
 
+/// What a player types to win the intrusion on `localhost` with the deck of the first tier: the
+/// command, its confirmation, and the best plan of the solver.
+const HACK_LOCALHOST: &str = "hack localhost\ny\nbreach 2 backdoor\nbreach 2 backdoor\nmove 2\nend\n\
+    breach 3 backdoor\nbreach 3 backdoor\nend\nmove 3\nloot\njackout\n";
+
 /// The opening of a new campaign on a pipe: the handle (the default), the two pages of the
 /// prologue, and the guided tutorial declined.
 const OPENING: &str = "\n\n\nn\n";
@@ -1196,7 +1201,7 @@ fn a_campaign_is_resumed_where_it_was_left_without_the_welcome() {
     let first = campaign_in(
         dir.path(),
         &[],
-        "Zed\n\n\nn\nquests\nhelp\nstatus\nhack localhost\ny\nquit\ny\n",
+        &format!("Zed\n\n\nn\nquests\nhelp\nstatus\n{HACK_LOCALHOST}quit\ny\n"),
     );
     assert!(first.status.success(), "{}", stderr(&first));
     assert!(dir.path().join("saves-campaign/auto.toml").exists());
@@ -1220,7 +1225,7 @@ fn a_campaign_is_resumed_where_it_was_left_without_the_welcome() {
     assert!(!text.contains("Handle ["), "{text}");
     assert!(text.contains("Handle: Zed"), "{text}");
     assert!(
-        text.contains("Notoriety: 4/100 (Discreet)"),
+        text.contains("Notoriety: 2/100 (Discreet)"),
         "the intrusion is remembered:\n{text}"
     );
     assert!(text.contains("localhost - pierced - 1"), "{text}");
@@ -1262,20 +1267,19 @@ fn campaign_saves_are_listed_apart_from_the_demos_and_a_checkpoint_comes_back() 
     assert!(dir.path().join("saves-campaign/auto.toml.bak").exists());
 }
 
+/// The first quests of the campaign, played through the intrusions of the tactical layer: the
+/// start of the walk of the first ending, up to the third completed quest.
+const FIRST_QUESTS: &str = include_str!("scripts/first-quests.txt");
+
 #[test]
 fn the_first_three_quests_play_to_the_end_through_the_real_binary() {
-    let script = "Neon\n\n\nn\nquests\nhelp\nnet\nstatus\ntalk echo7\n1\nhack localhost\ny\nlaylow\n\
-        hack corp-server-01\ny\ntalk r4z0r\n1\nshop\nbuy stealth\ny\nhack localhost\ny\n\
-        hack corp-server-01\ny\nhack underground-market\ny\narchives\ndecrypt doc_phase2\n\
-        quests\nstatus\nquit\ny\n";
-    let text = campaign(&["--seed", "9"], script);
+    let text = campaign(&[], FIRST_QUESTS);
     assert_eq!(text.matches("Quest completed: ").count(), 3, "{text}");
     assert!(text.contains("[Reward] Reached level 3."), "{text}");
     assert!(text.contains("Credits: 555"), "{text}");
-    assert!(text.contains("Notoriety: 36/100 (Watched)"), "{text}");
-    assert!(text.contains("[ALERT] Notoriety up: Watched."), "{text}");
+    assert!(text.contains("Notoriety: 26/100 (Discreet)"), "{text}");
     assert!(!text.contains("[Error]"), "{text}");
-    assert!(text.ends_with("Goodbye, Neon.\n"), "{text:?}");
+    assert!(text.ends_with("Goodbye, Walker.\n"), "{text:?}");
 }
 
 #[test]

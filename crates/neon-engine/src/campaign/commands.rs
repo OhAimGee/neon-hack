@@ -1,12 +1,14 @@
 //! The command table of the campaign (docs/spec/commands.md, sections 2.1 to 2.2).
 //!
-//! One table, read by dispatch, help, completion and the content validator. The commands of
-//! the tactical run (`deck`, `map`, `breach`...) belong to lot R4 and are not declared yet.
+//! One table, read by dispatch, help, completion and the content validator. It has the commands
+//! of the hub, then those of an intrusion (`map`, `breach`... declared by
+//! [`crate::intrusion`]); the context of the game says which of them exist at a given moment.
 
-use crate::command::{ArgKind, ArgSpec, CommandSpec, Context, HandledBy, Registry, Scope};
+use crate::command::{ArgKind, ArgSpec, CommandSpec, Context, HandledBy, Registry, Scope, concat};
+use crate::intrusion::RUN_SPECS;
 
-/// The game is at the hub: there is no run to be in until lot R4.
-pub(super) const CONTEXT: Context = Context::Hub;
+/// The context of a game at the hub.
+pub(super) const HUB: Context = Context::Hub;
 
 /// The names `help <command>` accepts: every command of the table, in table order (a test
 /// keeps it equal to [`SPECS`]).
@@ -37,6 +39,15 @@ pub(super) const NAMES: &[&str] = &[
     "hint",
     "save",
     "tutorial",
+    "map",
+    "move",
+    "breach",
+    "use",
+    "loot",
+    "end",
+    "jackout",
+    "undo",
+    "skip",
 ];
 
 const HELP_ARGS: &[ArgSpec] = &[ArgSpec::optional(ArgKind::Word(NAMES))];
@@ -98,10 +109,10 @@ const fn frontend(
 /// for the full-screen frontend only, the one they exist for (see [`Scope::TuiOnly`]).
 pub(super) const WIRED: &[&str] = &["options", "verbosity", "panel", "plain", "export", "load"];
 
-/// Every command of the campaign. Commands that only the frontend can run (`options`,
-/// `verbosity`, `load`, `panel`, `plain`, `export`) are declared here too, so that they are
-/// listed, completed and checked like the others.
-pub(super) const SPECS: &[CommandSpec] = &[
+/// Every command of the hub. Commands that only the frontend can run (`options`, `verbosity`,
+/// `load`, `panel`, `plain`, `export`) are declared here too, so that they are listed,
+/// completed and checked like the others.
+const HUB_SPECS: &[CommandSpec] = &[
     engine(
         "help",
         &["h"],
@@ -238,8 +249,11 @@ pub(super) const SPECS: &[CommandSpec] = &[
     ),
 ];
 
+/// Every command of the campaign: the hub's, then an intrusion's.
+pub(super) const SPECS: [CommandSpec; 35] = concat(HUB_SPECS, RUN_SPECS);
+
 /// The table, as the registry that dispatch, help and completion read.
-pub(super) const COMMANDS: Registry = Registry::new(SPECS);
+pub(super) const COMMANDS: Registry = Registry::new(&SPECS);
 
 /// The official names of the commands of the campaign, in table order: what the content
 /// validator checks the rules of `unlocks.toml` against.

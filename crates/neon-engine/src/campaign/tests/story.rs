@@ -79,8 +79,9 @@ fn a_greedy_player_finishes_the_first_three_quests_with_typed_lines() {
         driver.game.state.missions.reputation.get(),
         10 + 25 + 40 + 10 + 10
     );
-    // Notoriety: 4 per localhost, 8 per big server, 12 for the market.
-    assert_eq!(driver.game.notoriety(), 4 + 8 + 4 + 8 + 12);
+    // Notoriety: a quarter of the final Trace of each of the five intrusions, at least one each.
+    let notoriety = driver.game.notoriety();
+    assert!((5..36).contains(&notoriety), "{notoriety}");
     // A checkpoint when the game began, then one for each main quest that opened (M02, M03,
     // M04) and one before the purchase.
     assert_eq!(checkpoints, 3 + 1, "{:?}", driver.saves);
@@ -90,7 +91,8 @@ fn a_greedy_player_finishes_the_first_three_quests_with_typed_lines() {
             .iter()
             .filter(|s| **s == SaveRequest::Checkpoint)
             .count(),
-        1 + 3 + 1
+        // The game began, M02, M03, M04 opened, the purchase, and each of the five intrusions.
+        1 + 3 + 1 + 5
     );
 
     // The game is in a state that saves and loads back as it was.

@@ -16,8 +16,18 @@ fn the_table_is_well_formed_and_has_every_text_in_every_language() {
         let catalog = catalog(lang);
         assert_eq!(COMMANDS.catalog_issues(&catalog), [], "{lang:?}");
     }
-    // No run command: the tactical run is lot R4.
-    assert!(SPECS.iter().all(|spec| spec.context != Context::Run));
+    // The commands of an intrusion are in the table, and only open during one.
+    let run: Vec<&str> = SPECS
+        .iter()
+        .filter(|spec| spec.context == Context::Run)
+        .map(|spec| spec.name)
+        .collect();
+    assert_eq!(
+        run,
+        [
+            "map", "move", "breach", "use", "loot", "end", "jackout", "undo", "skip"
+        ]
+    );
 }
 
 #[test]
@@ -30,7 +40,7 @@ fn help_word_set_is_the_table_in_table_order() {
 #[test]
 fn no_command_name_is_a_variant_the_glossary_forbids() {
     let glossary = Glossary::embedded().unwrap();
-    for spec in SPECS {
+    for spec in &SPECS {
         for name in std::iter::once(&spec.name).chain(spec.aliases) {
             for concept in glossary.concepts() {
                 for lang in Lang::ALL {
@@ -77,11 +87,20 @@ fn every_kind_of_argument_the_table_uses_has_a_resolver_that_points_back_at_a_co
     let lists = Lists {
         c: driver.game.content,
         s: &driver.game.state,
+        run: None,
     };
     let names: BTreeSet<&str> = SPECS.iter().map(|spec| spec.name).collect();
-    for spec in SPECS {
+    for spec in &SPECS {
         for arg in spec.args {
-            if matches!(arg.kind, ArgKind::Number | ArgKind::Word(_) | ArgKind::Path) {
+            // The nodes and programs of an intrusion are listed by the intrusion.
+            if matches!(
+                arg.kind,
+                ArgKind::Number
+                    | ArgKind::Word(_)
+                    | ArgKind::Path
+                    | ArgKind::Node
+                    | ArgKind::Program
+            ) {
                 continue;
             }
             let listing = lists.list(arg.kind, spec);

@@ -202,11 +202,15 @@ relay = "Accès par {relay}."
 loot = "{loot^} : {taken}/{total} {total|fichier pris|fichiers pris}."
 
 [campaign.hack]
-confirm = "Lancer l'{run} sur le {site} {name} ? Elle est résolue aussitôt."
+confirm = "Lancer l'{run} sur le {site} {name} ? Un point de contrôle est sauvegardé d'abord."
 cancelled = "{run^} annulée."
 done = "{run^} sur {name} : {n} {n|fichier pris|fichiers pris}."
 again = "{run^} sur {name} : rien de nouveau à prendre."
 empty = "{run^} sur {name} : aucun fichier à prendre."
+retry = "{run^} sur {name} échouée. Relance : `hack {name}`."
+unavailable = "Cette {run} ne peut pas commencer : {reason}."
+lost = "{trace^} {max} : la partie est perdue, {handle}. Le point de contrôle sauvegardé au début de l'{run} permet de revenir (`--load checkpoint-1`)."
+game_lost = "Cette partie était perdue, {handle}. Reprendre d'un point de contrôle (`--load checkpoint-1`) ou d'une nouvelle partie (`--new`)."
 
 [campaign.shop]
 title = "== {shop^} =="
