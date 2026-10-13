@@ -4,14 +4,14 @@
 use crate::event::{Event, Gauge, Importance, Role, Table};
 use crate::game::GaugeReading;
 use crate::run::{
-    Family, LootKind, NodeId, Program, ProgramSpec, RunState, Status, Supply, Undo, forecast,
+    Fact, Family, LootKind, NodeId, Program, ProgramSpec, RunState, Status, Supply, Undo, forecast,
 };
 use crate::text::Text;
 
 use super::speak::Voice;
 use super::view::{
-    ActiveUtility, Charges, Cycles, DefenseView, LootState, NodeState, NodeView, PatrolView,
-    ProgramView, RunView,
+    ActiveUtility, Charges, Cycles, DefenseView, ForecastItem, LootState, NodeState, NodeView,
+    PatrolView, ProgramView, RunView,
 };
 
 fn number(value: impl Into<i64>) -> i64 {
@@ -161,6 +161,42 @@ impl Voice<'_> {
                     _ => None,
                 })
                 .collect(),
+            forecast_items: announced
+                .turns
+                .first()
+                .map(|turn| {
+                    turn.facts
+                        .iter()
+                        .filter_map(|fact| match *fact {
+                            Fact::PatrolMoved { patrol, to, .. } => {
+                                Some(ForecastItem::PatrolMoves {
+                                    patrol: patrol.saturating_add(1),
+                                    to,
+                                })
+                            }
+                            Fact::Scanned {
+                                patrol,
+                                target,
+                                added,
+                                ..
+                            } => Some(ForecastItem::Scan {
+                                patrol: patrol.saturating_add(1),
+                                target,
+                                added,
+                                cloak_usable: turn.cloak_usable,
+                            }),
+                            Fact::ScanCancelled { patrol, target, .. } => {
+                                Some(ForecastItem::ScanBlocked {
+                                    patrol: patrol.saturating_add(1),
+                                    target,
+                                })
+                            }
+                            Fact::Ambient { added } => Some(ForecastItem::Ambient { added }),
+                            _ => None,
+                        })
+                        .collect()
+                })
+                .unwrap_or_default(),
             forecast_total: i32::from(announced.total()),
             undo_left: undo,
             loot_held: self.loot_count(state),

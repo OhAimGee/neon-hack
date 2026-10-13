@@ -455,3 +455,19 @@ Le moteur de l'intrusion parle : `neon_engine::intrusion` (décision R-29). Les 
 | Intro de la prévision de Histoire | `run.forecast.next_turn` | une ligne `Normal` : « Prévision, tour suivant (2) : Trace +7 » | — |
 
 La langue française n'emploie pas d'article devant un nœud ou une patrouille (« patrouille 1 scanne Passerelle (1) ») : les noms de nœuds viennent des données et leur genre n'est pas connu du moteur.
+
+## 15. Ce que le lot R4.5 a livré, et ce qu'il a changé à ce document
+
+Le panneau du § 6 est dessiné (décision R-30) par le panneau existant de la TUI, à partir des sections que `IntrusionGame::view()` rend ; `crates/neon-cli/src/tui/app/tests/snapshots/*intrusion*` en sont les captures automatiques que le § 6.1 annonçait.
+
+| Sujet | Ce que dit le § 6 | Ce que fait R4.5 |
+|---|---|---|
+| Boîtes | Trace, Nœuds, Patrouilles, Prévision, Deck | une boîte « Panneau » : la jauge de Trace puis les sections Nœuds, Patrouilles, Prévision, Deck |
+| Cycles | `Cycles 1/3  ●○○` dans la boîte Trace | `Cycles 1/3` dans la barre d'état et dans le terminal, pas de points |
+| Barre d'état | `Trace v/100 (bande) · Cycles r/m · Tour n` au palier compact | à tous les paliers : `corp-server-01 │ Trace 5/100 (calme) │ Tour 1 │ Cycles 0/3` |
+| Deck | `1 Brute  2 Exploit (1)` | idem, deux programmes par rangée, noms courts de 8 colonnes (`program.<id>.short`) |
+| Nœuds | `▶3 Archives   ici` aligné en colonnes | `▶3 Archives ici` (les colonnes ne sont pas alignées : le moteur ne connaît pas les largeurs) |
+| Prévision | `Fin de tour : Trace +T` puis les faits qui ajoutent de la Trace | idem, plus `Cloak est actif.` en tête quand il l'est |
+| Compact | tiroir `F2` | tiroir `F2` ; chaque section est coupée à la place qui reste (`... 4 more rows`) |
+
+Reste de ce document à écrire ou à revoir : le premier palier de couleurs de ce panneau (l'ICE ouverte en vert, la patrouille qui menace en alerte) suit le `Tone` de chaque rangée ; une carte épinglée (`ScreenKind::Map`) n'est pas faite.

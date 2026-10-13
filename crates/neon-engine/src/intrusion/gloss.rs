@@ -2,6 +2,7 @@
 //! template writes `{patrol}` and never the word (same mechanism as the campaign's).
 
 use crate::event::{Event, Table};
+use crate::game::PanelSection;
 use crate::prompt::{Choice, Prompt};
 use crate::text::{Arg, Text};
 
@@ -52,6 +53,17 @@ pub(super) fn gloss_view(view: &mut RunView) {
         .iter_mut()
         .for_each(|program| gloss(&mut program.name));
     view.forecast.iter_mut().for_each(gloss);
+}
+
+/// [`gloss`] for every text of the panel sections and the status bar.
+pub(super) fn gloss_sections(sections: &mut [PanelSection], status: &mut [Text]) {
+    for section in sections {
+        gloss(&mut section.title);
+        for row in &mut section.rows {
+            gloss(&mut row.text);
+        }
+    }
+    status.iter_mut().for_each(gloss);
 }
 
 /// [`gloss`] for every text of a prompt.

@@ -8,15 +8,16 @@ use crate::campaign::{Difficulty, embedded_content};
 use crate::command::{ArgRef, Availability, Capabilities, CommandSpec, Lookup, NoLists};
 use crate::content::ids::SiteId;
 use crate::event::Event;
-use crate::game::{Game, GaugeReading, View};
+use crate::game::{Game, View};
 use crate::prompt::{Input, Prompt, Step};
 use crate::run::{Action, NodeId, Program, Utility};
 use crate::save::SaveError;
 use crate::text::Text;
 
 use super::commands::{COMMANDS, CONTEXT};
-use super::gloss::{gloss, gloss_event, gloss_prompt, gloss_view};
+use super::gloss::{gloss_event, gloss_prompt, gloss_sections, gloss_view};
 use super::lists::Lists;
+use super::panel;
 use super::session::{Intrusion, StartError};
 
 /// Why a game of one intrusion could not be started.
@@ -289,16 +290,15 @@ impl Game for IntrusionGame {
     }
 
     fn view(&self) -> View {
-        let panel = self.intrusion.view();
-        let mut band = panel.trace.band.clone();
-        gloss(&mut band);
+        let panel = self.run_view();
+        let mut sections = panel::sections(&panel);
+        let mut status = panel::status_items(&panel);
+        gloss_sections(&mut sections, &mut status);
         View {
             player: self.intrusion.site().as_str().to_owned(),
-            gauges: vec![GaugeReading {
-                band,
-                ..panel.trace
-            }],
-            sections: Vec::new(),
+            gauges: vec![panel.trace],
+            sections,
+            status,
         }
     }
 

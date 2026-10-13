@@ -1,0 +1,25 @@
+---
+source: crates/neon-cli/src/tui/app/tests/intrusion.rs
+expression: "picture(&app, 64, 20)"
+---
+64x20
+ corp-server-01 │ Trace 5/100 (calm) │ Turn 1 │ Cycles 0/3
+Forecast: Trace +7 at the end of t╭Panel───────────────────────╮
+Forecast: patrol 1 moves to Archiv│Trace 5/100                 │
+Forecast: patrol 1 scans Gateway (│[█░░░░░░░░░] calm           │
+active.                           │                            │
+Forecast: ambient Trace +2.       │▸ Nodes                     │
+> move 3                          │ 1 Gateway open             │
+Position: Archives (3).           │... 4 more rows             │
+Cycles 2/3.                       │                            │
+> breach 4 brute                  │▸ Patrols                   │
+Brute-Force on Vault (4): progress│Patrol 1: 5 then 3          │
+Trace +5 (0 → 5, calm).           │                            │
+Cycles 1/3.                       │▸ Forecast                  │
+> use cloak                       │... 4 more rows             │
+Cloak active: the scans at the end│                            │
+charge left).                     │▸ Deck                      │
+End of the turn now: Trace +2 (5 →│... 3 more rows             │
+Cycles 0/3. No cycle left: `end` e╰────────────────────────────╯
+>
+F2 panel | Tab complete | Ctrl+C quit | Up/Down history

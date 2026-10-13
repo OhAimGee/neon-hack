@@ -590,6 +590,7 @@ impl Game for DemoGame {
                     ),
                 ],
             }],
+            status: Vec::new(),
         }
     }
 

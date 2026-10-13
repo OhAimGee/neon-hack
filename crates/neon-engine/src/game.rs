@@ -76,6 +76,9 @@ pub struct View {
     /// What the side panel lists below the gauges, in order. Each row is also said by a
     /// command (`quests`, `net`, `shop`, `messages`), so the panel only repeats.
     pub sections: Vec<PanelSection>,
+    /// Further items for the status bar, after the gauges (the turn and the cycles of an
+    /// intrusion). Each is also said by a command; empty for a game that has none.
+    pub status: Vec<Text>,
 }
 
 /// A game, as seen by a frontend.

@@ -105,6 +105,7 @@ impl Game for StageGame {
             player: "Neon".to_owned(),
             gauges: Vec::new(),
             sections: Vec::new(),
+            status: Vec::new(),
         }
     }
 
