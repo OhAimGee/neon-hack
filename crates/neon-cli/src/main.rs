@@ -30,6 +30,7 @@ use clap::{Parser, ValueEnum};
 use neon_engine::campaign::{CampaignGame, Difficulty};
 use neon_engine::demo::DemoGame;
 use neon_engine::event::Event;
+use neon_engine::intrusion::IntrusionGame;
 use neon_engine::text::{Catalog, Lang, RenderMode, Text, to_ascii};
 use neon_engine::{Game, Step};
 
@@ -54,7 +55,7 @@ use crate::store::{Store, Target};
 #[derive(Debug, Parser)]
 #[command(name = "neon-hack", version)]
 // The two games exclude each other; the campaign is the one played when none is named.
-#[command(group(clap::ArgGroup::new("game").args(["demo", "campaign"]).multiple(false)))]
+#[command(group(clap::ArgGroup::new("game").args(["demo", "campaign", "intrusion"]).multiple(false)))]
 #[allow(
     clippy::struct_excessive_bools,
     reason = "independent command-line flags, not a state machine"
@@ -149,6 +150,11 @@ struct Cli {
     #[arg(long, help_heading = "Development")]
     demo: bool,
 
+    /// Play one intrusion on a site of the net, on its own: the commands of an intrusion
+    /// (`map`, `move`, `breach`...) without the campaign around it. Nothing is saved.
+    #[arg(long, value_name = "SITE", help_heading = "Development")]
+    intrusion: Option<String>,
+
     /// Seed of the random number generator (reproducible games).
     #[arg(long, help_heading = "Development")]
     seed: Option<u64>,
@@ -191,6 +197,8 @@ impl From<DifficultyChoice> for Difficulty {
 enum Kind {
     Demo,
     Campaign,
+    /// One intrusion on its own (`--intrusion <site>`): no saves.
+    Intrusion,
 }
 
 impl Kind {
@@ -200,13 +208,14 @@ impl Kind {
         match self {
             Self::Demo => "saves",
             Self::Campaign => "saves-campaign",
+            Self::Intrusion => "saves-intrusion",
         }
     }
 
     /// The other game.
     fn other(self) -> Self {
         match self {
-            Self::Demo => Self::Campaign,
+            Self::Demo | Self::Intrusion => Self::Campaign,
             Self::Campaign => Self::Demo,
         }
     }
@@ -216,6 +225,7 @@ impl Kind {
         match self {
             Self::Demo => ("ui.game.demo", "neon-hack --demo"),
             Self::Campaign => ("ui.game.campaign", "neon-hack"),
+            Self::Intrusion => ("ui.game.intrusion", "neon-hack --intrusion <site>"),
         }
     }
 }
@@ -258,6 +268,8 @@ fn main() -> ExitCode {
         print_settings(&cli, &env)
     } else if cli.demo {
         run_game(&cli, &env, Kind::Demo)
+    } else if cli.intrusion.is_some() {
+        run_game(&cli, &env, Kind::Intrusion)
     } else {
         run_game(&cli, &env, Kind::Campaign)
     };
@@ -444,7 +456,7 @@ fn run_game(cli: &Cli, env: &Env, kind: Kind) -> io::Result<()> {
         let notice = Text::new("ui.settings.damaged").with_str("reason", reason.clone());
         first.events.insert(0, Event::system(notice));
     }
-    let persistence = if cli.no_save {
+    let persistence = if cli.no_save || kind == Kind::Intrusion {
         Persistence::disabled()
     } else {
         Persistence::new(store)
@@ -560,6 +572,10 @@ fn load_game(kind: Kind, text: &str) -> Result<Box<dyn Game>, neon_engine::save:
     match kind {
         Kind::Demo => DemoGame::from_save(text).map(|game| Box::new(game) as Box<dyn Game>),
         Kind::Campaign => CampaignGame::from_save(text).map(|game| Box::new(game) as Box<dyn Game>),
+        // An intrusion on its own is never saved, so there is nothing to load.
+        Kind::Intrusion => Err(neon_engine::save::SaveError::Invalid(
+            "an intrusion played on its own has no save".to_owned(),
+        )),
     }
 }
 
@@ -588,6 +604,13 @@ fn open_game(
     store: &Store,
     renderer: &Renderer<'_>,
 ) -> io::Result<(Box<dyn Game>, Step)> {
+    if let (Kind::Intrusion, Some(site)) = (kind, cli.intrusion.as_deref()) {
+        let difficulty = cli.difficulty.map_or(Difficulty::Normal, Difficulty::from);
+        let mut game = IntrusionGame::new(site, difficulty)
+            .map_err(|error| io::Error::other(error.to_string()))?;
+        let first = game.start();
+        return Ok((Box::new(game), first));
+    }
     if !cli.new {
         let target = cli.load.unwrap_or(Target::Auto);
         if let Some(message) = foreign_save(kind, store, target) {
@@ -625,6 +648,8 @@ fn open_game(
                 .map_err(|error| io::Error::other(error.to_string()))?;
             Box::new(game)
         }
+        // Handled above: an intrusion on its own never reaches the saves.
+        Kind::Intrusion => return Err(io::Error::other("--intrusion needs a site")),
     };
     let first = game.start();
     Ok((game, first))

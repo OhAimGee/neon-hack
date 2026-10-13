@@ -212,6 +212,7 @@ list_damaged = "{save} : abîmée ({reason})"
 [ui.game]
 campaign = "la campagne"
 demo = "la démo"
+intrusion = "l'intrusion"
 
 [ui.settings]
 damaged = "settings.toml est inutilisable ({reason}) : les réglages par défaut s'appliquent. Le fichier n'a pas été modifié."

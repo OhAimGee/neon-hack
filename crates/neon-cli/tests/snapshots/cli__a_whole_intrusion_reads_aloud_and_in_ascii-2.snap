@@ -1,0 +1,119 @@
+---
+source: crates/neon-cli/tests/cli.rs
+expression: french
+---
+Intrusion : corp-server-01.
+Tour 1. Trace 0 sur 100, niveau calme. 3 sur 3 cycles.
+Prevision : Trace +7 en fin de tour.
+Prevision : patrouille 1 vers Archives, noeud 3.
+Prevision : patrouille 1 scanne Passerelle, noeud 1 : Trace +5, sauf si Cloak est actif.
+Prevision : Trace ambiante +2.
+> help
+Commandes
+1. Commande : help; Effet : Lister les commandes, ou en expliquer une
+2. Commande : status; Effet : Voir la Trace, les cycles, le deck et la prevision
+3. Commande : map; Effet : Voir les noeuds, leur ICE et le trajet des patrouilles
+4. Commande : move; Effet : Aller vers un noeud relie dont l'ICE est ouverte
+5. Commande : breach; Effet : Forcer l'ICE d'un noeud relie avec un programme
+6. Commande : use; Effet : Lancer un programme utilitaire : Cloak, Spoof, Ghost, Overclock
+7. Commande : loot; Effet : Prendre le butin du noeud ou l'on se trouve
+8. Commande : end; Effet : Terminer le tour : les patrouilles bougent et scannent, la Trace ambiante monte
+9. Commande : jackout; Effet : Deconnexion en gardant le butin pris
+10. Commande : undo; Effet : Reprendre le tour en cours
+11. Commande : quit; Effet : Quitter l'intrusion
+> map
+Carte : corp-server-01
+1. Noeud : Passerelle; Etat : ici; Defense : aucune; Liaisons : 2, 3; Butin : aucun
+2. Noeud : Pare-feu; Etat : ferme; Defense : Reseau 2, progression 0 sur 2; Liaisons : 1, 3; Butin : aucun
+3. Noeud : Archives; Etat : ouvert; Defense : aucune; Liaisons : 1, 2, 4, 5; Butin : un bonus
+4. Noeud : Coffre; Etat : ferme; Defense : Reseau 4, progression 0 sur 4; Liaisons : 3, 5; Butin : l'objectif
+5. Noeud : Cameras; Etat : ferme; Defense : Gardien IA 3, progression 0 sur 3; Liaisons : 3, 4; Butin : aucun
+Patrouille 1 : en Cameras, noeud 5, puis Archives, noeud 3.
+> status
+Trace 0 sur 100, niveau calme.
+3 sur 3 cycles.
+Deck
+1. Programme : Brute-Force; Fort contre : Reseau 2; Cout : 1 cycle; Bruit : bruit 5; Charges : illimite
+2. Programme : Exploit; Fort contre : Reseau 3; Cout : 2 cycles; Bruit : bruit 2; Charges : 2 restantes
+3. Programme : Backdoor; Fort contre : Reseau 1; Cout : 1 cycle; Bruit : bruit 1; Charges : illimite
+4. Programme : Decrypt; Fort contre : Chiffrement 2; Cout : 1 cycle; Bruit : bruit 3; Charges : illimite
+5. Programme : Spoof; Fort contre : utilitaire; Cout : 1 cycle; Bruit : bruit 0; Charges : 2 restantes
+6. Programme : Cloak; Fort contre : utilitaire; Cout : 1 cycle; Bruit : bruit 0; Charges : 2 restantes
+Butin : 0 sur 2 pris.
+Annulations restantes : 3.
+Prevision : Trace +7 en fin de tour.
+Prevision : patrouille 1 vers Archives, noeud 3.
+Prevision : patrouille 1 scanne Passerelle, noeud 1 : Trace +5, sauf si Cloak est actif.
+Prevision : Trace ambiante +2.
+> bogus
+[Erreur] Commande inconnue : bogus. Voir `help`.
+> move 2
+[Erreur] 2 est indisponible : ICE encore en place.
+> move 3
+Position : Archives, noeud 3.
+2 sur 3 cycles.
+> breach 4 brute
+Brute-Force sur Coffre, noeud 4 : progression 2 sur 4.
+Trace en hausse de 5, de 0 a 5, niveau calme.
+1 sur 3 cycles.
+> undo
+Annulation : retour au tour 1, Trace 0 sur 100, niveau calme. Annulations restantes : 2.
+Tour 1. Trace 0 sur 100, niveau calme. 3 sur 3 cycles.
+Prevision : Trace +7 en fin de tour.
+Prevision : patrouille 1 vers Archives, noeud 3.
+Prevision : patrouille 1 scanne Passerelle, noeud 1 : Trace +5, sauf si Cloak est actif.
+Prevision : Trace ambiante +2.
+> move 3
+Position : Archives, noeud 3.
+2 sur 3 cycles.
+> breach 4 brute
+Brute-Force sur Coffre, noeud 4 : progression 2 sur 4.
+Trace en hausse de 5, de 0 a 5, niveau calme.
+1 sur 3 cycles.
+> breach 4 brute
+Brute-Force sur Coffre, noeud 4 : progression 4 sur 4.
+Acces ouvert : Coffre, noeud 4.
+Trace en hausse de 5, de 5 a 10, niveau calme.
+0 sur 3 cycles. Plus de cycle : `end` termine le tour.
+> end
+Patrouille 1 se deplace vers Archives, noeud 3.
+[ALERTE] Patrouille 1 scanne Archives, noeud 3 : Trace +5.
+Trace ambiante +2.
+Trace en hausse de 7, de 10 a 17, niveau calme.
+
+Tour 2. Trace 17 sur 100, niveau calme. 3 sur 3 cycles.
+Prevision : Trace +7 en fin de tour.
+Prevision : patrouille 1 vers Pare-feu, noeud 2.
+Prevision : patrouille 1 scanne Archives, noeud 3 : Trace +5, sauf si Cloak est actif.
+Prevision : Trace ambiante +2.
+> move 4
+Position : Coffre, noeud 4.
+Fin de tour maintenant : Trace plus 2, de 17 a 19, niveau calme.
+2 sur 3 cycles.
+> loot
+[Gain] Butin pris en Coffre, noeud 4 : l'objectif.
+1 sur 3 cycles.
+> jackout
+Du butin reste (1). Deconnexion quand meme ? [o/N] n
+> status
+Trace 17 sur 100, niveau calme.
+1 sur 3 cycles.
+Deck
+1. Programme : Brute-Force; Fort contre : Reseau 2; Cout : 1 cycle; Bruit : bruit 5; Charges : illimite
+2. Programme : Exploit; Fort contre : Reseau 3; Cout : 2 cycles; Bruit : bruit 2; Charges : 2 restantes
+3. Programme : Backdoor; Fort contre : Reseau 1; Cout : 1 cycle; Bruit : bruit 1; Charges : illimite
+4. Programme : Decrypt; Fort contre : Chiffrement 2; Cout : 1 cycle; Bruit : bruit 3; Charges : illimite
+5. Programme : Spoof; Fort contre : utilitaire; Cout : 1 cycle; Bruit : bruit 0; Charges : 2 restantes
+6. Programme : Cloak; Fort contre : utilitaire; Cout : 1 cycle; Bruit : bruit 0; Charges : 2 restantes
+Butin : 1 sur 2 pris.
+Annulations restantes : 2.
+Prevision : Trace +2 en fin de tour.
+Prevision : patrouille 1 vers Pare-feu, noeud 2.
+Prevision : Trace ambiante +2.
+> jackout
+Du butin reste (1). Deconnexion quand meme ? [o/N] y
+Deconnexion de corp-server-01 avec le butin.
+Rapport d'intrusion
+1. Rapport : Tours; Valeur : 2
+2. Rapport : Trace finale; Valeur : 17 sur 100, niveau calme
+3. Rapport : Butin; Valeur : 1 sur 2 pris

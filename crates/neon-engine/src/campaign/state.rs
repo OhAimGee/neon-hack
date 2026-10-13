@@ -16,7 +16,7 @@ use crate::content::ids::{ContactId, DecisionId, ItemId, QuestId, ReadableId, Si
 use crate::content::money::Credits;
 use crate::content::schema::{ContactState, HintBudgets, QuestStatus, ReadableKind, SiteDef, Turn};
 use crate::content::state::{HEAT_MAX, State};
-use crate::run::Pace;
+use crate::run::{Pace, Undo};
 use crate::save::{SaveState, hex_u64};
 
 use super::prologue::CONTINUE_PAGES;
@@ -107,6 +107,17 @@ impl Difficulty {
                 gain_quarters: 6,
                 bonus_cycles: 0,
             },
+        }
+    }
+
+    /// How many turns of an intrusion the player can take back: as many as wanted in Story,
+    /// three in Normal, none in Expert and Hardcore (`docs/spec/commands.md` § 2.3).
+    #[must_use]
+    pub fn undo(self) -> Undo {
+        match self {
+            Self::Story => Undo::Unlimited,
+            Self::Normal => Undo::Left(3),
+            Self::Expert | Self::Hardcore => Undo::NONE,
         }
     }
 
@@ -390,7 +401,7 @@ impl CampaignState {
 
 /// The content the save is checked against: the embedded one, loaded once. A save is read
 /// before any game exists, so [`SaveState::validate`] cannot be given the content.
-pub(super) fn embedded_content() -> Result<&'static Content, String> {
+pub(crate) fn embedded_content() -> Result<&'static Content, String> {
     use std::sync::OnceLock;
     static CONTENT: OnceLock<Result<Content, String>> = OnceLock::new();
     CONTENT

@@ -1,0 +1,119 @@
+---
+source: crates/neon-cli/tests/cli.rs
+expression: text
+---
+Intrusion : corp-server-01.
+Tour 1 : Trace 0/100 (calme), cycles 3/3.
+Prévision : Trace +7 en fin de tour.
+Prévision : patrouille 1 vers Archives (3).
+Prévision : patrouille 1 scanne Passerelle (1) : Trace +5, sauf si Cloak est actif.
+Prévision : Trace ambiante +2.
+> help
+Commandes
+[1] help - Lister les commandes, ou en expliquer une
+[2] status - Voir la Trace, les cycles, le deck et la prévision
+[3] map - Voir les nœuds, leur ICE et le trajet des patrouilles
+[4] move - Aller vers un nœud relié dont l'ICE est ouverte
+[5] breach - Forcer l'ICE d'un nœud relié avec un programme
+[6] use - Lancer un programme utilitaire : Cloak, Spoof, Ghost, Overclock
+[7] loot - Prendre le butin du nœud où l'on se trouve
+[8] end - Terminer le tour : les patrouilles bougent et scannent, la Trace ambiante monte
+[9] jackout - Déconnexion en gardant le butin pris
+[10] undo - Reprendre le tour en cours
+[11] quit - Quitter l'intrusion
+> map
+Carte : corp-server-01
+[1] Passerelle - ici - aucune défense - liaisons 2, 3 - aucun butin
+[2] Pare-feu - fermé - Réseau 2, progression 0/2 - liaisons 1, 3 - aucun butin
+[3] Archives - ouvert - aucune défense - liaisons 1, 2, 4, 5 - butin : un bonus
+[4] Coffre - fermé - Réseau 4, progression 0/4 - liaisons 3, 5 - butin : l'objectif
+[5] Caméras - fermé - Gardien IA 3, progression 0/3 - liaisons 3, 4 - aucun butin
+Patrouille 1 : en Caméras (5), puis Archives (3).
+> status
+Trace 0/100 (calme).
+Cycles 3/3.
+Deck
+[1] Brute-Force - Réseau 2 - 1 cycle - bruit 5 - illimité
+[2] Exploit - Réseau 3 - 2 cycles - bruit 2 - 2 restantes
+[3] Backdoor - Réseau 1 - 1 cycle - bruit 1 - illimité
+[4] Decrypt - Chiffrement 2 - 1 cycle - bruit 3 - illimité
+[5] Spoof - utilitaire - 1 cycle - bruit 0 - 2 restantes
+[6] Cloak - utilitaire - 1 cycle - bruit 0 - 2 restantes
+Butin : 0 sur 2 pris.
+Annulations restantes : 3.
+Prévision : Trace +7 en fin de tour.
+Prévision : patrouille 1 vers Archives (3).
+Prévision : patrouille 1 scanne Passerelle (1) : Trace +5, sauf si Cloak est actif.
+Prévision : Trace ambiante +2.
+> bogus
+[Erreur] Commande inconnue : bogus. Voir `help`.
+> move 2
+[Erreur] 2 est indisponible : ICE encore en place.
+> move 3
+Position : Archives (3).
+Cycles 2/3.
+> breach 4 brute
+Brute-Force sur Coffre (4) : progression 2/4.
+Trace +5 (0 → 5, calme).
+Cycles 1/3.
+> undo
+Annulation : retour au tour 1, Trace 0/100 (calme). Annulations restantes : 2.
+Tour 1 : Trace 0/100 (calme), cycles 3/3.
+Prévision : Trace +7 en fin de tour.
+Prévision : patrouille 1 vers Archives (3).
+Prévision : patrouille 1 scanne Passerelle (1) : Trace +5, sauf si Cloak est actif.
+Prévision : Trace ambiante +2.
+> move 3
+Position : Archives (3).
+Cycles 2/3.
+> breach 4 brute
+Brute-Force sur Coffre (4) : progression 2/4.
+Trace +5 (0 → 5, calme).
+Cycles 1/3.
+> breach 4 brute
+Brute-Force sur Coffre (4) : progression 4/4.
+Accès ouvert : Coffre (4).
+Trace +5 (5 → 10, calme).
+Cycles 0/3. Plus de cycle : `end` termine le tour.
+> end
+Patrouille 1 se déplace vers Archives (3).
+[ALERTE] Patrouille 1 scanne Archives (3) : Trace +5.
+Trace ambiante +2.
+Trace +7 (10 → 17, calme).
+
+Tour 2 : Trace 17/100 (calme), cycles 3/3.
+Prévision : Trace +7 en fin de tour.
+Prévision : patrouille 1 vers Pare-feu (2).
+Prévision : patrouille 1 scanne Archives (3) : Trace +5, sauf si Cloak est actif.
+Prévision : Trace ambiante +2.
+> move 4
+Position : Coffre (4).
+Fin de tour maintenant : Trace +2 (17 → 19, calme).
+Cycles 2/3.
+> loot
+[Gain] Butin pris en Coffre (4) : l'objectif.
+Cycles 1/3.
+> jackout
+Du butin reste (1). Déconnexion quand même ? [o/N] n
+> status
+Trace 17/100 (calme).
+Cycles 1/3.
+Deck
+[1] Brute-Force - Réseau 2 - 1 cycle - bruit 5 - illimité
+[2] Exploit - Réseau 3 - 2 cycles - bruit 2 - 2 restantes
+[3] Backdoor - Réseau 1 - 1 cycle - bruit 1 - illimité
+[4] Decrypt - Chiffrement 2 - 1 cycle - bruit 3 - illimité
+[5] Spoof - utilitaire - 1 cycle - bruit 0 - 2 restantes
+[6] Cloak - utilitaire - 1 cycle - bruit 0 - 2 restantes
+Butin : 1 sur 2 pris.
+Annulations restantes : 2.
+Prévision : Trace +2 en fin de tour.
+Prévision : patrouille 1 vers Pare-feu (2).
+Prévision : Trace ambiante +2.
+> jackout
+Du butin reste (1). Déconnexion quand même ? [o/N] y
+Déconnexion de corp-server-01 avec le butin.
+Rapport d'intrusion
+[1] Tours - 2
+[2] Trace finale - 17/100 (calme)
+[3] Butin - 1 sur 2 pris

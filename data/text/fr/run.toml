@@ -1,0 +1,222 @@
+# Les mots d'une intrusion (crates/neon-engine/src/intrusion) : les lignes d'un tour, la carte,
+# la situation, le deck, le rapport, l'aide. Un fait par ligne (docs/spec/run-screen.md).
+# Les nœuds sont nommés par le contenu (site.<id>.node.<n>.name, dans runs.toml), les programmes ci-dessous.
+
+[program.brute]
+name = "Brute-Force"
+[program.exploit]
+name = "Exploit"
+[program.backdoor]
+name = "Backdoor"
+[program.decrypt]
+name = "Decrypt"
+[program.quantum]
+name = "Quantum"
+[program.social]
+name = "Social"
+[program.virus]
+name = "Virus"
+[program.spoof]
+name = "Spoof"
+[program.cloak]
+name = "Cloak"
+[program.ghost]
+name = "Ghost"
+[program.overclock]
+name = "Overclock"
+
+[run]
+start = "{run^} : {name}."
+band = "{band}"
+loot = "Butin pris en {at} : {kind}."
+move = "Position : {at}."
+breach = "{program} sur {at} : progression {to}/{strength}."
+"breach@sr" = "{program} sur {at} : progression {to} sur {strength}."
+patrol_down = "{patrol^} {id} neutralisée pour {turns} {turns|{turn}|{turn}s}."
+projection = "Fin de {turn} maintenant : {trace} +{total} ({from} → {to}, {band})."
+"projection@sr" = "Fin de {turn} maintenant : {trace} plus {total}, de {from} à {to}, niveau {band}."
+cycles = "{cycle^}s {left}/{limit}."
+"cycles@sr" = "{left} sur {limit} {cycle}s."
+"cycles.none" = "{cycle^}s {left}/{limit}. Plus de {cycle} : `end` termine le {turn}."
+"cycles.none@sr" = "{left} sur {limit} {cycle}s. Plus de {cycle} : `end` termine le {turn}."
+
+[run.alert]
+band = "Niveau de {trace} : {band}."
+
+[run.node]
+ref = "{name} ({number})"
+"ref@sr" = "{name}, nœud {number}"
+open = "Accès ouvert : {at}."
+
+[run.turn]
+start = "{turn^} {number} : {trace} {value}/{max} ({band}), {cycle}s {left}/{limit}."
+"start@sr" = "{turn^} {number}. {trace} {value} sur {max}, niveau {band}. {left} sur {limit} {cycle}s."
+
+[run.loot_kind]
+objective = "l'objectif"
+intel = "{intel}"
+extra = "un bonus"
+
+[run.use]
+cloak = "Cloak actif : les scans de fin de {turn} sont annulés."
+cloak_left = "Cloak actif : les scans de fin de {turn} sont annulés ({left} {left|charge restante|charges restantes})."
+ghost = "Ghost actif : les prochaines actions ne font aucun {noise}."
+ghost_left = "Ghost actif : les prochaines actions ne font aucun {noise} ({left} {left|charge restante|charges restantes})."
+spoof = "Spoof : la {trace} gagnée ce {turn} est effacée."
+spoof_left = "Spoof : la {trace} gagnée ce {turn} est effacée ({left} {left|charge restante|charges restantes})."
+overclock = "Overclock : +{count} {cycle}s ce {turn}."
+overclock_left = "Overclock : +{count} {cycle}s ce {turn} ({left} {left|charge restante|charges restantes})."
+
+[run.end]
+patrol_moves = "{patrol^} {id} se déplace vers {to}."
+scan = "{patrol^} {id} scanne {target} : {trace} +{added}."
+scan_blocked = "{patrol^} {id} scanne {target} : annulé par Cloak."
+ambient = "{trace^} ambiante +{added}."
+
+[run.forecast]
+total = "{forecast^} : {trace} +{total} en fin de {turn}."
+patrol_moves = "{forecast^} : {patrol} {id} vers {to}."
+scan = "{forecast^} : {patrol} {id} scanne {target} : {trace} +{added}."
+scan_cloak = "{forecast^} : {patrol} {id} scanne {target} : {trace} +{added}, sauf si Cloak est actif."
+scan_blocked = "{forecast^} : {patrol} {id} scanne {target} : annulé par Cloak."
+ambient = "{forecast^} : {trace} ambiante +{added}."
+next_turn = "{forecast^}, {turn} suivant ({number}) : {trace} +{total}."
+burn = "{forecast^} : la {trace} atteint {max}, {run} {burned}e."
+
+[run.map]
+title = "Carte : {name}"
+links = "liaisons {list}"
+"links@sr" = "{list}"
+patrol = "{patrol^} {id} : en {at}, puis {next}."
+patrol_down = "{patrol^} {id} : en {at}, puis {next} (neutralisée pour {turns} {turns|{turn}|{turn}s})."
+
+[run.map.col]
+node = "{node^}"
+state = "État"
+defense = "Défense"
+links = "Liaisons"
+loot = "{loot^}"
+
+[run.map.state]
+here = "ici"
+open = "ouvert"
+closed = "fermé"
+
+[run.map.defense]
+none = "aucune défense"
+"none@sr" = "aucune"
+ice = "{family} {strength}, progression {progress}/{strength}"
+"ice@sr" = "{family} {strength}, progression {progress} sur {strength}"
+
+[run.map.loot]
+none = "aucun butin"
+"none@sr" = "aucun"
+visible = "butin : {kind}"
+"visible@sr" = "{kind}"
+taken = "butin pris"
+"taken@sr" = "pris"
+
+[run.deck]
+title = "{deck^}"
+breach = "{family} {power}"
+utility = "utilitaire"
+unlimited = "illimité"
+left = "{count} {count|restante|restantes}"
+cycles = "{count} {count|{cycle}|{cycle}s}"
+noise = "{noise} {value}"
+
+[run.deck.col]
+program = "{program^}"
+kind = "Fort contre"
+cost = "Coût"
+noise = "{noise^}"
+charges = "Charges"
+
+[run.status]
+trace = "{trace^} {value}/{max} ({band})."
+"trace@sr" = "{trace^} {value} sur {max}, niveau {band}."
+cloak = "Cloak est actif."
+ghost = "Ghost est actif."
+loot = "{loot^} : {taken} sur {total} pris."
+undo = "Annulations restantes : {left}."
+undo_unlimited = "Annulations restantes : illimitées."
+undo_none = "Annulations restantes : aucune."
+
+[run.undo]
+done = "Annulation : retour au {turn} {number}, {trace} {value}/{max} ({band}). Annulations restantes : {left}."
+"done@sr" = "Annulation : retour au {turn} {number}, {trace} {value} sur {max}, niveau {band}. Annulations restantes : {left}."
+done_unlimited = "Annulation : retour au {turn} {number}, {trace} {value}/{max} ({band})."
+"done_unlimited@sr" = "Annulation : retour au {turn} {number}, {trace} {value} sur {max}, niveau {band}."
+none = "Plus d'annulation possible."
+nothing = "Rien à annuler pour l'instant."
+
+[run.result]
+won = "{jackout^} de {name} avec le {loot}."
+burned = "{trace^} {max} : {run} {burned}e."
+
+[run.report]
+title = "Rapport d'{run}"
+turns = "{turn^}s"
+trace = "{trace^} finale"
+loot = "{loot^}"
+trace_value = "{value}/{max} ({band})"
+"trace_value@sr" = "{value} sur {max}, niveau {band}"
+loot_value = "{taken} sur {total} pris"
+
+[run.report.col]
+what = "Rapport"
+value = "Valeur"
+
+[run.jackout]
+confirm = "Du {loot} reste ({left}). {jackout^} quand même ?"
+
+[run.quit]
+confirm = "Quitter l'{run} en cours ? Elle est perdue."
+
+[run.error]
+over = "L'{run} est terminée."
+cycles = "Pas assez de {cycle}s."
+not_linked = "Ce {node} n'est pas relié à la position actuelle."
+ice_up = "L'{ice} de ce {node} est encore en place : lancer d'abord `breach`."
+no_ice = "Ce {node} n'a plus d'{ice} à forcer."
+not_a_breach = "{program} n'est pas un programme de brèche."
+not_in_deck = "{program} n'est pas dans le {deck}."
+no_charges = "{program} n'a plus de charge."
+needs_intel = "Social demande de l'{intel} sur le {site}."
+nothing_to_loot = "Il n'y a rien à prendre ici."
+objectives = "L'objectif n'est pas pris : la {jackout} est impossible."
+already_active = "{program} est déjà actif."
+nothing_to_erase = "Aucune {trace} gagnée ce {turn} à effacer."
+
+[run.reason]
+here = "déjà sur ce {node}"
+not_linked = "non relié au {node} actuel"
+ice_up = "{ice} encore en place"
+no_ice = "plus d'{ice} à forcer"
+not_a_breach = "pas un programme de brèche"
+not_a_utility = "programme de brèche : utiliser `breach`"
+no_charges = "plus de charge"
+active = "déjà actif"
+nothing_to_erase = "aucune {trace} gagnée ce {turn}"
+needs_intel = "demande de l'{intel} sur le {site}"
+
+[run.help]
+title = "Commandes"
+col_command = "Commande"
+col_effect = "Effet"
+usage = "{usage}"
+help = "Lister les commandes, ou en expliquer une"
+"help.usage" = "Usage : `help [commande]`. Exemple : `help breach`."
+status = "Voir la {trace}, les {cycle}s, le {deck} et la {forecast}"
+map = "Voir les {node}s, leur {ice} et le trajet des {patrol}s"
+move = "Aller vers un {node} relié dont l'{ice} est ouverte"
+"move.usage" = "Usage : `move <nœud>`. Exemple : `move 2`."
+breach = "Forcer l'{ice} d'un {node} relié avec un {program}"
+"breach.usage" = "Usage : `breach <nœud> <programme>`. Exemple : `breach 2 brute`."
+use = "Lancer un {program} utilitaire : Cloak, Spoof, Ghost, Overclock"
+"use.usage" = "Usage : `use <programme>`. Exemple : `use cloak`."
+loot = "Prendre le {loot} du {node} où l'on se trouve"
+end = "Terminer le {turn} : les {patrol}s bougent et scannent, la {trace} ambiante monte"
+jackout = "{jackout^} en gardant le {loot} pris"
+undo = "Reprendre le {turn} en cours"
+quit = "Quitter l'{run}"
