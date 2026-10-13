@@ -217,6 +217,10 @@ fn suspend(terminal: &mut DefaultTerminal, mouse: bool) -> io::Result<()> {
 
 /// There is no job control to answer to: Ctrl-Z does nothing.
 #[cfg(not(unix))]
+#[allow(
+    clippy::unnecessary_wraps,
+    reason = "the same signature as the Unix one, which can fail"
+)]
 fn suspend(_terminal: &mut DefaultTerminal, _mouse: bool) -> io::Result<()> {
     Ok(())
 }
