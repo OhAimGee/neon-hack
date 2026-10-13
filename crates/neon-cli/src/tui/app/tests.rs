@@ -17,6 +17,7 @@ use crate::test_support::{catalog_en, catalog_fr};
 
 mod load;
 mod modal;
+mod mouse;
 mod options;
 mod panel;
 mod plain;
@@ -1208,29 +1209,44 @@ fn key_releases_focus_and_the_mouse_do_nothing() {
         kind: KeyEventKind::Repeat,
         ..press_event
     };
-    assert!(super::super::handle(
-        &mut app,
-        TerminalEvent::Key(press_event)
-    ));
-    assert!(!super::super::handle(&mut app, TerminalEvent::Key(release)));
-    assert!(super::super::handle(&mut app, TerminalEvent::Key(repeat)));
+    let handle = |app: &mut App<'_>, event: TerminalEvent, mouse: bool| {
+        super::super::handle(app, event, mouse)
+    };
+    assert!(handle(&mut app, TerminalEvent::Key(press_event), false));
+    assert!(!handle(&mut app, TerminalEvent::Key(release), false));
+    assert!(handle(&mut app, TerminalEvent::Key(repeat), false));
     assert_eq!(input_line(&app), "> aa", "a release is not a second key");
-    assert!(!super::super::handle(&mut app, TerminalEvent::FocusLost));
-    assert!(!super::super::handle(&mut app, TerminalEvent::FocusGained));
-    let wheel = MouseEvent {
-        kind: MouseEventKind::ScrollUp,
+    assert!(!handle(&mut app, TerminalEvent::FocusLost, false));
+    assert!(!handle(&mut app, TerminalEvent::FocusGained, false));
+    let mouse_event = |kind| MouseEvent {
+        kind,
         column: 1,
         row: 1,
         modifiers: KeyModifiers::NONE,
     };
-    assert!(!super::super::handle(&mut app, TerminalEvent::Mouse(wheel)));
-    assert!(super::super::handle(
+    // Without `--mouse` the wheel is not listened to (the terminal does not even report it).
+    let wheel = mouse_event(MouseEventKind::ScrollUp);
+    assert!(!handle(&mut app, TerminalEvent::Mouse(wheel), false));
+    // With it the wheel scrolls, and nothing else of the mouse does anything.
+    assert!(handle(&mut app, TerminalEvent::Mouse(wheel), true));
+    let down = mouse_event(MouseEventKind::ScrollDown);
+    assert!(handle(&mut app, TerminalEvent::Mouse(down), true));
+    for other in [
+        MouseEventKind::Down(ratatui::crossterm::event::MouseButton::Left),
+        MouseEventKind::Moved,
+        MouseEventKind::ScrollLeft,
+    ] {
+        assert!(!handle(
+            &mut app,
+            TerminalEvent::Mouse(mouse_event(other)),
+            true
+        ));
+    }
+    assert!(handle(&mut app, TerminalEvent::Resize(80, 24), false));
+    assert!(handle(
         &mut app,
-        TerminalEvent::Resize(80, 24)
-    ));
-    assert!(super::super::handle(
-        &mut app,
-        TerminalEvent::Paste("b".to_owned())
+        TerminalEvent::Paste("b".to_owned()),
+        false
     ));
     assert_eq!(input_line(&app), "> aab");
 }

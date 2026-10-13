@@ -112,3 +112,36 @@ fn after_the_end_every_key_leaves_for_good() {
         "the game is over: nothing to hand over"
     );
 }
+
+// ---- Suspending ------------------------------------------------------------------------------
+
+#[test]
+fn control_z_asks_the_loop_to_suspend_once_and_changes_nothing_else() {
+    let (catalog, mut game) = (catalog_en(), campaign());
+    let mut app = plain_app(&mut game, &catalog, RenderMode::FULL);
+    let _ = screen(&app, 100, 28);
+    type_text(&mut app, "sta");
+    assert_eq!(app.take_ask(), None);
+    ctrl(&mut app, 'z');
+    assert_eq!(app.take_ask(), Some(Ask::Suspend));
+    assert_eq!(app.take_ask(), None, "once");
+    assert_eq!(input_line(&app), "> sta", "what was typed is kept");
+    assert_eq!(app.exit(), None);
+}
+
+#[test]
+fn control_z_means_nothing_when_nothing_can_be_seen_or_the_game_is_over() {
+    let (catalog, mut game) = (catalog_en(), campaign());
+    let mut app = plain_app(&mut game, &catalog, RenderMode::FULL);
+    let _ = screen(&app, 50, 15);
+    ctrl(&mut app, 'z');
+    assert_eq!(app.take_ask(), None);
+    let _ = screen(&app, 100, 28);
+    ctrl(&mut app, 'd');
+    ctrl(&mut app, 'z');
+    assert_eq!(
+        app.take_ask(),
+        None,
+        "any key leaves a finished game instead"
+    );
+}

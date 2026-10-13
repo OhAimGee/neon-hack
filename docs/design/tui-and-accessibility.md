@@ -290,7 +290,7 @@ Vérifié en pseudo-terminal, en lisant l'état de l'émulateur (`alternate_scre
 | Ctrl+C (en mode brut, c'est une **touche**) ou `quit` | écran, curseur, collage, souris restaurés ; code 0 |
 | Panique (touche F12 de test) | idem, et le message de panique est lisible sur l'écran normal ; code ≠ 0 |
 | `kill -TERM` de l'extérieur | idem avant de mourir (un thread `signal-hook` restaure puis `emulate_default_handler`) ; statut de sortie non nul |
-| Ctrl+Z | rend le terminal, **s'arrête** (état `T`), puis `kill -CONT` : écran alternatif ré-entré et image redessinée |
+| Ctrl+Z | rend le terminal, **s'arrête** (état `T`), puis `kill -CONT` : écran alternatif ré-entré et image redessinée (R-25 : fait dans le binaire, `SIGSTOP` plutôt que `SIGTSTP`, test pty) |
 
 Deux preuves par **mutation** : (1) en retirant la restauration de notre hook, le test de panique **passe encore** (le `Drop` du garde s'exécute pendant le déroulement) ; (2) avec `panic = "abort"`, il **échoue** (« panic hook must disable bracketed paste ») : seul le hook s'exécute. Le garde (`Drop`) couvre le déroulement normal, le hook couvre `abort` : on garde les deux.
 
@@ -310,7 +310,7 @@ Autres constats [E] : `Terminal::clear()` (ratatui 0.30.2) lit d'abord la positi
 
 ### 4.7 Souris, collage, focus
 
-- **Souris : désactivée par défaut** (`--mouse` ou réglage). La capturer empêche la sélection/copie native du terminal (il faut Maj+glisser). Quand elle est active, seule la molette fait défiler le journal ; **rien** n'est faisable uniquement à la souris [E : molette → « ↑ historique », `Échap` revient en bas].
+- **Souris : désactivée par défaut** (`--mouse` ou réglage). La capturer empêche la sélection/copie native du terminal (il faut Maj+glisser). Quand elle est active, seule la molette fait défiler le journal ; **rien** n'est faisable uniquement à la souris [E : molette → « ↑ historique », `Échap` revient en bas]. **Réalisé (R-25)** : `--mouse` ou `mouse = true` ; la capture est prise à l'entrée, rendue à la sortie, au passage au plain et à la suspension ; un cran de molette fait défiler le journal de 3 lignes (ou une fenêtre ouverte et coupée) ; les clics et les déplacements sont ignorés.
 - **Collage bracketé : toujours activé.** Un collage multi-lignes ne s'exécute jamais : les retours à la ligne deviennent des espaces, l'utilisateur valide lui-même [E].
 - Pas d'événements de focus.
 
@@ -366,8 +366,8 @@ Deux conséquences : la palette `cvd` doit être **opaque** (sur fond blanc le j
 |---|---|---|---|
 | MOT-1 | Pas de clignotement ni de scintillement (voir COL-4) ; aucun élément ne bascule sur minuterie, hors une mise en scène bornée (MOT-7) | S | ✔ |
 | MOT-2 | En veille, la TUI n'écrit aucun octet | P | ✔ |
-| MOT-3 | Machine à écrire : `off`/`fast`/`normal`/`slow`, interruptible par toute touche, jamais bloquante pour la saisie, ne touche jamais à l'état, plafond 2 s par événement | U | ○ |
-| MOT-4 | `--reduce-motion`, `--screen-reader` et le plain imposent `off` | U | ○ |
+| MOT-3 | Machine à écrire : `off`/`fast`/`normal`/`slow`, interruptible par toute touche, jamais bloquante pour la saisie, ne touche jamais à l'état, plafond 2 s par événement | U | ✔ (R-23 : plafond de 2 s **par pas**, touche, collage ou nouveau pas montrent la suite) |
+| MOT-4 | `--reduce-motion`, `--screen-reader` et le plain imposent `off` | U | ✔ (le plain ne tape rien ; le lecteur d'écran impose le plain et `reduce_motion`) |
 | MOT-5 | Aucune pause chronométrée : toute attente est un `Prompt::Continue` ou une saisie | L | ○ (`sleep`/`Instant` interdits dans le moteur) |
 | MOT-6 | Aucun délai d'expiration sur une invite ; sauvegarde après chaque commande (déjà le cas en C) | U | ○ |
 | MOT-7 | Une mise en scène dure 2 s au plus, ne change jamais l'état du jeu, se termine seule et laisse la TUI muette (MOT-2) ; l'horloge est dans la TUI, jamais dans le moteur | U + P | ✔ |
@@ -386,7 +386,7 @@ Deux conséquences : la palette `cvd` doit être **opaque** (sur fond blanc le j
 | LEC-5 | Variantes `clé@sr` sans symbole ambigu (`→ · × ¢ ✓ ○ █ ░ ─ │ ╭ • … »`) : « de 4 à 14 », « 80 crédits », « 40 sur 100, niveau vigilance » | U | ✔ |
 | LEC-6 | Tableaux linéarisés avec le nom des colonnes : `1. Objet : Ghost Protocol ; Prix : 80 crédits ; État : disponible` | U | ✔ |
 | LEC-7 | Les changements d'état sont annoncés en texte après chaque commande (Trace, bande, gain, nouveau courrier) | U | ✔ (Trace) |
-| LEC-8 | Au premier lancement, une question en plain propose le mode d'affichage (plein écran / ligne par ligne / lecteur d'écran) et l'enregistre ; `options` la rouvre (la question du premier lancement est faite ; `options` règle déjà langue, verbosité, ASCII, palette et mouvement en cours de partie, R-20 ; changer d'interface en cours de partie attend R3.2) | P | ○ |
+| LEC-8 | Au premier lancement, une question en plain propose le mode d'affichage (plein écran / ligne par ligne / lecteur d'écran) et l'enregistre ; `options` la rouvre (la question du premier lancement est faite ; `options` règle déjà langue, verbosité, ASCII, palette et mouvement en cours de partie, R-20 ; changer d'interface en cours de partie est fait, R-22) | P | ✔ (la question du premier lancement, `options display <auto\|tui\|plain>` qui change le mode demandé au prochain lancement, `options save` qui le garde, `plain` / `Ctrl+P` qui changent d'interface tout de suite : R-25) |
 | LEC-9 | Protocole manuel avant chaque version : NVDA + Windows Terminal, Narrator, VoiceOver + Terminal.app, Orca + gnome-terminal, brltty + console Linux | M | ○ (non fait ici) |
 
 ### 5.5 Clavier
@@ -626,19 +626,19 @@ Un moteur factice (`spike-engine`, ≈ 980 lignes avec ses tests : PCG32, catalo
 
 **Mouvement et temps**
 - [ ] Veille silencieuse (MOT-2) ✔
-- [ ] Machine à écrire réglable, interruptible, plafonnée ; désactivée par `--reduce-motion` et en lecteur d'écran (MOT-3, MOT-4)
+- [x] Machine à écrire réglable, interruptible, plafonnée ; désactivée par `--reduce-motion` et en lecteur d'écran (MOT-3, MOT-4)
 - [x] Mises en scène bornées, interruptibles par toute touche sans perte de saisie, supprimées par `--reduce-motion` et en lecteur d'écran, dites en mots (MOT-7 à MOT-10)
 - [ ] Aucune pause chronométrée, aucune horloge dans le moteur, aucun délai sur les invites (MOT-5, MOT-6)
 
 **Lecteur d'écran**
 - [ ] Zéro octet ESC, aucune réécriture de ligne, sortie vidée par commande (LEC-2, LEC-3) ✔
 - [ ] Variantes sans symboles ambigus, tableaux linéarisés, annonces d'état (LEC-5, LEC-6, LEC-7) ✔
-- [ ] Question de mode au premier lancement (LEC-8)
+- [x] Question de mode au premier lancement (LEC-8)
 - [ ] Protocole manuel joué sur NVDA, Narrator, VoiceOver, Orca, brltty (LEC-9)
 
 **Clavier**
 - [ ] Tout au clavier ; `Échap` sans piège ; chaque raccourci a une commande ; AltGr (CLA-1, CLA-2, CLA-4, CLA-5, CLA-7) ✔ (sauf CLA-4 et CLA-7)
-- [ ] Ctrl+C, Ctrl+Z, panique, SIGTERM : terminal toujours rendu propre (CLA-6) ✔ ; le cas `panic = "abort"` n'a été vérifié qu'une fois, par expérience : à mettre en CI dès que le profil release le change
+- [ ] Ctrl+C, Ctrl+Z, panique, SIGTERM : terminal toujours rendu propre (CLA-6) ✔ (Ctrl+Z réel depuis R-25, testé en pseudo-terminal) ; le cas `panic = "abort"` n'a été vérifié qu'une fois, par expérience : à mettre en CI dès que le profil release le change
 
 **Texte**
 - [ ] Glossaire appliqué par lint ; un gabarit par fait ; commandes stables (VOC-1 à VOC-5)

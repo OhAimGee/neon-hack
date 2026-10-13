@@ -45,6 +45,8 @@ const PANEL_WIDTH: u16 = 30;
 const PROMPT_AREA_MAX: u16 = 10;
 /// Most rows used to list the candidates of a completion.
 const CANDIDATE_ROWS_MAX: usize = 3;
+/// Rows the log (or a cut screen) moves for one notch of the mouse wheel.
+const WHEEL_ROWS: usize = 3;
 /// Events and echoes kept in the log; the oldest go first. The transcript (`export`, R3.3)
 /// is what keeps everything.
 const LOG_CAPACITY: usize = 5000;
@@ -80,6 +82,13 @@ pub(crate) enum Exit {
     Plain,
 }
 
+/// Something the interface cannot do by itself and asks the loop for.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Ask {
+    /// Give the terminal back and stop until the shell resumes the game (`Ctrl+Z`, Unix).
+    Suspend,
+}
+
 /// What the log keeps. Events are kept as events, so that changing the language or the mode
 /// re-renders the whole history; echoes of typed lines are the text as it was typed.
 enum LogEntry {
@@ -107,6 +116,8 @@ pub(crate) struct App<'a> {
     finished: bool,
     /// Set when the interface is done, and how.
     exit: Option<Exit>,
+    /// What the loop is asked to do before it reads the next key.
+    asked: Option<Ask>,
     /// Whether scenes may be staged (`--reduce-motion` and the screen reader say no).
     motion: bool,
     /// The scene being staged over the log, if any. It ends by itself, or at the first key.
@@ -161,6 +172,7 @@ impl<'a> App<'a> {
             candidates: Vec::new(),
             finished: false,
             exit: None,
+            asked: None,
             motion: false,
             staging: None,
             held: 0,
@@ -269,6 +281,11 @@ impl<'a> App<'a> {
     /// Whether the interface is done, and how.
     pub(crate) fn exit(&self) -> Option<Exit> {
         self.exit
+    }
+
+    /// What the interface asked of the loop since the last time, once.
+    pub(crate) fn take_ask(&mut self) -> Option<Ask> {
+        self.asked.take()
     }
 
     /// What is left to the next frontend when this one gives up the game: the game itself,
@@ -388,8 +405,8 @@ impl<'a> App<'a> {
             KeyCode::Home => self.editor.home(),
             KeyCode::End => self.editor.end(),
             // A screen that is cut turns its own pages; otherwise the keys are the log's.
-            KeyCode::PageUp if self.scroll_modal(false) => {}
-            KeyCode::PageDown if self.scroll_modal(true) => {}
+            KeyCode::PageUp if self.scroll_modal(false, None) => {}
+            KeyCode::PageDown if self.scroll_modal(true, None) => {}
             KeyCode::PageUp => self.scroll_back(),
             KeyCode::PageDown => self.scroll_forward(),
             KeyCode::Tab => self.complete(),
@@ -415,6 +432,9 @@ impl<'a> App<'a> {
             'c' => self.interrupt(),
             // The line-by-line display, with the game exactly as it is.
             'p' => self.exit = Some(Exit::Plain),
+            // What a shell does with Ctrl-Z, which raw mode turned into a key: the loop gives
+            // the terminal back and stops (the shell has nothing to do on Windows).
+            'z' => self.asked = Some(Ask::Suspend),
             _ => {}
         }
     }
@@ -458,6 +478,24 @@ impl<'a> App<'a> {
     fn scroll_forward(&self) {
         self.scroll
             .set(self.scroll.get().saturating_sub(self.page.get()));
+    }
+
+    /// A notch of the mouse wheel (only heard when the mouse was asked for): up goes back in
+    /// the log, down comes forward, [`WHEEL_ROWS`] rows at a time; a cut screen takes it first,
+    /// as it takes the page keys. It changes nothing in the game.
+    pub(crate) fn on_wheel(&mut self, up: bool) {
+        if self.finished || self.shown_tier.get() == Tier::TooSmall {
+            return;
+        }
+        if self.scroll_modal(!up, Some(WHEEL_ROWS)) {
+            return;
+        }
+        let scroll = self.scroll.get();
+        self.scroll.set(if up {
+            scroll.saturating_add(WHEEL_ROWS)
+        } else {
+            scroll.saturating_sub(WHEEL_ROWS)
+        });
     }
 
     /// A paste goes into the line, where it can be read and edited: it never runs anything.

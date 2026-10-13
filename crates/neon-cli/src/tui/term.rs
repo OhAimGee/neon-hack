@@ -22,7 +22,9 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use ratatui::DefaultTerminal;
 use ratatui::backend::CrosstermBackend;
 use ratatui::crossterm::cursor::Show;
-use ratatui::crossterm::event::{DisableBracketedPaste, DisableMouseCapture, EnableBracketedPaste};
+use ratatui::crossterm::event::{
+    DisableBracketedPaste, DisableMouseCapture, EnableBracketedPaste, EnableMouseCapture,
+};
 use ratatui::crossterm::execute;
 use ratatui::crossterm::terminal::{
     EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode,
@@ -58,18 +60,37 @@ pub(crate) fn restore() {
 }
 
 /// Takes the terminal: raw mode, alternate screen, bracketed paste. The mouse is left to
-/// the terminal, so that selecting and copying keep working.
-pub(crate) fn enter() -> io::Result<(DefaultTerminal, TerminalGuard)> {
+/// the terminal, so that selecting and copying keep working, unless `mouse` asks for the wheel.
+pub(crate) fn enter(mouse: bool) -> io::Result<(DefaultTerminal, TerminalGuard)> {
+    let terminal = take(mouse)?;
+    Ok((terminal, TerminalGuard))
+}
+
+/// Takes the terminal again after it was given back for a while (the game was suspended). The
+/// guard of the first [`enter`] is still alive and gives it back at the end.
+#[cfg(unix)]
+pub(crate) fn retake(mouse: bool) -> io::Result<DefaultTerminal> {
+    take(mouse)
+}
+
+fn take(mouse: bool) -> io::Result<DefaultTerminal> {
     enable_raw_mode()?;
-    // From here on every way out, including `?`, gives the terminal back.
     ACTIVE.store(true, Ordering::SeqCst);
-    let guard = TerminalGuard;
-    install_panic_hook();
-    execute!(stdout(), EnterAlternateScreen, EnableBracketedPaste)?;
-    #[cfg(unix)]
-    unix::restore_on_signals()?;
-    let terminal = DefaultTerminal::new(CrosstermBackend::new(stdout()))?;
-    Ok((terminal, guard))
+    let taken = (|| {
+        install_panic_hook();
+        execute!(stdout(), EnterAlternateScreen, EnableBracketedPaste)?;
+        if mouse {
+            execute!(stdout(), EnableMouseCapture)?;
+        }
+        #[cfg(unix)]
+        unix::restore_on_signals()?;
+        DefaultTerminal::new(CrosstermBackend::new(stdout()))
+    })();
+    // A terminal that was half taken is given back before the error goes up.
+    if taken.is_err() {
+        restore();
+    }
+    taken
 }
 
 /// The hook restores everything, then lets the previous hook print the message, which now

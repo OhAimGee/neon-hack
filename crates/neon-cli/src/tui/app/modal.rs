@@ -88,17 +88,17 @@ impl App<'_> {
         self.modal.take().is_some()
     }
 
-    /// Turns a page of the screen when it is cut; false if there is nothing to turn, and the
-    /// key then belongs to the log.
-    pub(super) fn scroll_modal(&self, forward: bool) -> bool {
+    /// Turns the screen by `rows` (a page when none are given) when it is cut; false if there
+    /// is nothing to turn, and the key or the wheel then belongs to the log.
+    pub(super) fn scroll_modal(&self, forward: bool, rows: Option<usize>) -> bool {
         let Some(modal) = self.modal.as_ref().filter(|modal| modal.overflow.get()) else {
             return false;
         };
-        let page = modal.page.get().max(1);
+        let by = rows.unwrap_or_else(|| modal.page.get()).max(1);
         modal.scroll.set(if forward {
-            modal.scroll.get().saturating_add(page)
+            modal.scroll.get().saturating_add(by)
         } else {
-            modal.scroll.get().saturating_sub(page)
+            modal.scroll.get().saturating_sub(by)
         });
         true
     }

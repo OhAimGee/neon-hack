@@ -26,14 +26,14 @@ use neon_engine::event::Event as GameEvent;
 use neon_engine::text::Text;
 use neon_engine::{Game, Step};
 use ratatui::DefaultTerminal;
-use ratatui::crossterm::event::{self, Event, KeyEventKind};
+use ratatui::crossterm::event::{self, Event, KeyEventKind, MouseEventKind};
 
 use crate::config::TypewriterChoice;
 use crate::options::Host;
 use crate::persist::Persistence;
 use crate::plain;
 use crate::render::Renderer;
-use app::{App, Exit};
+use app::{App, Ask, Exit};
 
 pub(crate) use app::COMPACT_SIZE;
 
@@ -66,12 +66,15 @@ impl Fault {
     }
 }
 
-/// How the interface moves: whether scenes play and how fast the text is typed out.
+/// How the interface moves and what it listens to: whether scenes play, how fast the text is
+/// typed out, and whether the mouse wheel scrolls the log.
 #[derive(Debug, Clone, Copy)]
-pub(crate) struct Motion {
+pub(crate) struct Feel {
     /// `--reduce-motion`: no scene, no typing.
-    pub(crate) reduced: bool,
+    pub(crate) reduced_motion: bool,
     pub(crate) typewriter: TypewriterChoice,
+    /// `--mouse`: the terminal reports the wheel (and keeps the mouse for the game).
+    pub(crate) mouse: bool,
 }
 
 /// Runs the game in the full-screen interface until it ends. The terminal is given back
@@ -82,15 +85,15 @@ pub(crate) fn run<'a>(
     first: Step,
     renderer: Renderer<'a>,
     persistence: Persistence,
-    motion: Motion,
+    feel: Feel,
     options: Option<Host<'a>>,
     test_fault: Option<&str>,
 ) -> io::Result<()> {
     // The interface runs `panel` and `plain`: the game may now offer them.
     game.set_capabilities(Capabilities::TUI);
     let mut app = App::new(game, renderer, first, persistence)
-        .with_motion(!motion.reduced)
-        .with_typewriter(motion.typewriter);
+        .with_motion(!feel.reduced_motion)
+        .with_typewriter(feel.typewriter);
     if let Some(options) = options {
         // Only the campaign has the presentation commands, and `panel` and `plain` with them.
         app = app.with_options(options).with_frontend_commands();
@@ -98,8 +101,13 @@ pub(crate) fn run<'a>(
     {
         // The terminal goes back to the player at the end of this block, before anything else
         // is written to it.
-        let (mut terminal, _guard) = term::enter()?;
-        event_loop(&mut terminal, &mut app, test_fault.and_then(Fault::parse))?;
+        let (mut terminal, _guard) = term::enter(feel.mouse)?;
+        event_loop(
+            &mut terminal,
+            &mut app,
+            test_fault.and_then(Fault::parse),
+            feel.mouse,
+        )?;
     }
     if app.exit() == Some(Exit::Plain) {
         return hand_over(app);
@@ -136,6 +144,7 @@ fn event_loop(
     terminal: &mut DefaultTerminal,
     app: &mut App<'_>,
     mut fault: Option<Fault>,
+    mouse: bool,
 ) -> io::Result<()> {
     let mut dirty = true;
     // When the scene being staged was last moved forward; only meaningful while one plays.
@@ -176,9 +185,13 @@ fn event_loop(
             event::read()?
         };
         for _ in 0..BATCH_MAX {
-            dirty |= handle(app, next);
+            dirty |= handle(app, next, mouse);
             if app.exit().is_some() {
                 return Ok(());
+            }
+            if app.take_ask() == Some(Ask::Suspend) {
+                suspend(terminal, mouse)?;
+                dirty = true;
             }
             if event::poll(Duration::ZERO)? {
                 next = event::read()?;
@@ -189,8 +202,27 @@ fn event_loop(
     }
 }
 
+/// Ctrl-Z: gives the terminal back, stops until the shell resumes the game, takes the terminal
+/// again and draws everything anew. `SIGSTOP` is what the shell sees as a stopped job, like
+/// `SIGTSTP`, but it cannot be ignored: a terminal multiplexer or a harness can leave the
+/// game in a process group that discards `SIGTSTP`.
+#[cfg(unix)]
+fn suspend(terminal: &mut DefaultTerminal, mouse: bool) -> io::Result<()> {
+    term::restore();
+    signal_hook::low_level::raise(signal_hook::consts::SIGSTOP)?;
+    // Back from `fg`: a new terminal has no memory of what was on the screen, so it is all drawn.
+    *terminal = term::retake(mouse)?;
+    Ok(())
+}
+
+/// There is no job control to answer to: Ctrl-Z does nothing.
+#[cfg(not(unix))]
+fn suspend(_terminal: &mut DefaultTerminal, _mouse: bool) -> io::Result<()> {
+    Ok(())
+}
+
 /// Gives one terminal event to the interface; true if the screen can look different.
-fn handle(app: &mut App<'_>, event: Event) -> bool {
+fn handle(app: &mut App<'_>, event: Event, mouse: bool) -> bool {
     match event {
         // Windows also reports key releases: only presses (and auto-repeats) count.
         Event::Key(key) if key.kind != KeyEventKind::Release => {
@@ -203,7 +235,20 @@ fn handle(app: &mut App<'_>, event: Event) -> bool {
         }
         // The next drawing takes the new size.
         Event::Resize(..) => true,
-        // Nothing to do for focus, and the mouse is never captured.
+        // The wheel scrolls, when the mouse was asked for; nothing else of the mouse is used
+        // (no click does anything that a key does not), and it is not even captured otherwise.
+        Event::Mouse(mouse_event) if mouse => match mouse_event.kind {
+            MouseEventKind::ScrollUp => {
+                app.on_wheel(true);
+                true
+            }
+            MouseEventKind::ScrollDown => {
+                app.on_wheel(false);
+                true
+            }
+            _ => false,
+        },
+        // Nothing to do for focus.
         Event::Key(_) | Event::FocusGained | Event::FocusLost | Event::Mouse(_) => false,
     }
 }

@@ -238,6 +238,16 @@ pub(crate) enum DisplayChoice {
 }
 
 impl DisplayChoice {
+    /// Reads a name back: `auto`, `tui` or `plain`.
+    pub(crate) fn from_name(name: &str) -> Option<Self> {
+        match name {
+            "auto" => Some(Self::Auto),
+            "tui" => Some(Self::Tui),
+            "plain" => Some(Self::Plain),
+            _ => None,
+        }
+    }
+
     pub(crate) fn name(self) -> &'static str {
         match self {
             Self::Auto => "auto",
@@ -248,6 +258,10 @@ impl DisplayChoice {
 }
 
 /// The presentation options given on the command line.
+#[allow(
+    clippy::struct_excessive_bools,
+    reason = "independent flags of the command line (`--ascii`, `--mouse`...), not a state machine"
+)]
 #[derive(Debug, Clone, Copy, Default)]
 pub(crate) struct CliPresentation {
     /// `--plain` or `--tui`.
@@ -258,6 +272,7 @@ pub(crate) struct CliPresentation {
     pub(crate) screen_reader: bool,
     pub(crate) reduce_motion: bool,
     pub(crate) typewriter: Option<TypewriterChoice>,
+    pub(crate) mouse: bool,
     pub(crate) color: Option<ColorChoice>,
     pub(crate) palette: Option<PaletteChoice>,
 }
@@ -272,6 +287,7 @@ pub(crate) struct FileSettings {
     screen_reader: Option<bool>,
     reduce_motion: Option<bool>,
     typewriter: Option<TypewriterChoice>,
+    mouse: Option<bool>,
     color: Option<ColorChoice>,
     palette: Option<PaletteChoice>,
     display: Option<DisplayChoice>,
@@ -332,6 +348,9 @@ pub(crate) struct Presentation {
     pub(crate) reduce_motion: Sourced<bool>,
     /// How fast the text is typed out. Reduced motion stops the typing whatever this says.
     pub(crate) typewriter: Sourced<TypewriterChoice>,
+    /// The full-screen interface listens to the mouse wheel, which makes the terminal keep
+    /// the mouse to itself (selecting and copying then take Shift).
+    pub(crate) mouse: Sourced<bool>,
     /// Whether there is colour at all, and why.
     pub(crate) color: (bool, ColorSource),
     pub(crate) palette: Sourced<PaletteChoice>,
@@ -399,6 +418,13 @@ pub(crate) fn resolve(cli: CliPresentation, env: &Env, file: FileSettings) -> Pr
     } else {
         sourced(TypewriterChoice::Fast, Source::Default)
     };
+    let mouse = if cli.mouse {
+        sourced(true, Source::Cli)
+    } else if let Some(choice) = file.mouse {
+        sourced(choice, Source::File)
+    } else {
+        sourced(false, Source::Default)
+    };
     let color = decide(ColorInputs {
         cli: cli.color,
         no_color: env.no_color,
@@ -430,6 +456,7 @@ pub(crate) fn resolve(cli: CliPresentation, env: &Env, file: FileSettings) -> Pr
         display,
         reduce_motion,
         typewriter,
+        mouse,
         color,
         palette,
         truecolor: env.terminal().truecolor,
