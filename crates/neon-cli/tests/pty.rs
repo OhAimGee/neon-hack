@@ -720,6 +720,9 @@ fn the_mouse_is_given_back_when_the_game_goes_line_by_line() {
     session.send(b"\x10");
     session.wait_for("the plain display", |s| !s.screen().alternate_screen());
     assert_restored(&session);
+    // What the plain display says is written once the terminal is cooked again: only then does
+    // the end-of-input key mean the end of the input (sent earlier, it is read as a raw byte).
+    session.wait_text("Back on the net, Neon");
     session.send(CTRL_D);
     assert!(session.finish().success());
 }
