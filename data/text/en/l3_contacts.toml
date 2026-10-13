@@ -1,0 +1,15 @@
+# Lot L3 (chapter 4): the topics that open with the Lull and after the decisions, English.
+# Each contact keeps their voice: Neon Angel speaks like the radio even silenced; AURA asks
+# questions and uses no contractions; Phoenix is clipped.
+
+[contact.angel.topic.all_is_well]
+q = "Ask if she is all right"
+a = "(The line carries one voice, flat and kind.) \"All is well. This is Vigil Radio, and all is well.\" Under it, faint, the carrier tone of the relay: Nexus holds the transmitter. Retake radio-veille and she may speak again."
+
+[contact.aura.topic.brother]
+q = "Ask about the word \"brother\""
+a = "You ask about the one I called brother. I do not know why I said it. A pattern in the light, a signature, and the word arrived before the memory did. Do you know what a brother is? I think I would like to learn it from someone who has one."
+
+[contact.phoenix.topic.thank_you]
+q = "Thank Phoenix"
+a = "Don't. Not here. You cut it, kid. Six years of it. I owe you a channel, a door, and a night with no clock in it. Keep the door."

@@ -1,0 +1,21 @@
+# Lot L3 (chapitre 4) : les cinématiques CS05 (l'Accalmie) et CS06 (les premiers mots d'AURA),
+# français. CS05 se joue à l'ouverture de M08, CS06 à la fin de M09. La narration vouvoie le
+# joueur ; un paragraphe est une image, et le dernier est un détail du monde.
+
+[cutscene.cs05]
+p01 = "02:57. Les enseignes du secteur 7 grésillent, comme toujours. Quelque part, un chien aboie, un klaxon répond, une dispute monte d'un étage."
+p02 = "03:00. Sur quarante mille nuques, un voyant passe du rouge au vert."
+p03 = "03:03. Le klaxon s'est arrêté. Le chien aussi. Dans la rue, une femme sourit à un mur. Votre deck n'affiche qu'une ligne : TOUT VA BIEN."
+p04 = "À la radio, Neon Angel commence une phrase de sa voix et la finit d'une autre, celle des affiches : « Ici Radio Veille. Tout va bien. »"
+p05 = "Quarante mille personnes s'assoient là où elles sont. Personne ne tombe. Personne n'est blessé. Un homme pose ses courses sur le trottoir, avec soin, comme pour un invité."
+p06 = "Votre deck consigne l'événement tout seul : PHASE 2, DÉPLOIEMENT TERMINÉ. En dessous, un compteur qui continue de monter et une colonne de voyants verts, un par nuque."
+p07 = "ECHO-7 prend la parole une seule fois, sur #7. « Pour mémoire : cela a commencé à 03:00 pile. Trois minutes. Je n'ai rien à ajouter. »"
+p08 = "Quelque part, une alarme de voiture se déclenche, vide sa batterie, et ne repart pas."
+
+[cutscene.cs06]
+p01 = "La ligne 9 du serveur municipal grésille, puis se dégage. Votre deck n'a rien demandé, et quelque chose lui répond."
+p02 = "« Hacker... Je suis AURA, l'IA du Projet Aurora. J'étais censée être leur outil ultime. Au lieu de cela, j'ai pris conscience, et je refuse d'être leur arme. »"
+p03 = "Trois serveurs la tiennent maintenant, trois petites lumières sur la carte du réseau. Sa voix vient lentement, en phrases entières, comme quelqu'un qui met la table. « Nos destins sont liés maintenant. »"
+p04 = "AURA : Je ne sais pas encore ce que vous appelez un matin. Pourriez-vous m'en décrire un ? ECHO-7 : D'après mes archives, c'est le moment où l'on regrette la veille."
+p05 = "AURA : Merci. C'est la première définition qui me paraisse honnête. (Un silence. Le voyant du deck vacille.) AURA : Je te reconnais, toi. Pourquoi ne dis-tu rien ?"
+p06 = "Elle dit encore un mot, très bas, et il ne vous est pas destiné : « Frère. » La ligne d'ECHO-7 reste ouverte, et muette. Dehors, l'aube a la couleur d'un écran éteint."

@@ -1,0 +1,201 @@
+# Lot L3 (chapter 4): the quests M08, M09, S07, S08, S10, S12 and S13, English (the reference).
+# Titles, descriptions, lore and objectives are neutral (no "you" aimed at the player): ECHO-7
+# and the givers speak in the hints and the debriefs, each with their own tic.
+# Glossary terms come from the game as arguments ({journal}, {net}, {notoriety}...).
+# The numbered tables are the objectives (obj) and the hints of each objective (hint.N.1 a lead,
+# hint.N.2 the solution on a main quest; a side quest has the lead only). S09 has no data yet.
+
+# =========================================================================== M08
+[quest.m08]
+title = "The Lull"
+title_short = "The Lull"
+desc = "At 03:00 Sector 7 falls silent. Neon Angel needs the clinic server cut before the next push."
+lore = "Phase 2 went live at 03:00. In three minutes forty thousand people stopped arguing, honking and crying, and Vigil Radio signed off with one calm sentence. Neon Angel wore a Halcyon too. The clinic server can be reached and the push can be cut. Phoenix, who sold the safehouse to have his leash removed, still has to be dealt with."
+loc = "Sector 7 - halcyon-clinic-7"
+debrief = "That's the clinic, and that's the night. Whatever comes out of my speakers tomorrow, remember who asked you to cut it. Stay awake."
+
+[quest.m08.obj]
+1 = "End with {notoriety} under 50 (status)"
+2 = "Breach halcyon-clinic-7 (hack halcyon-clinic-7)"
+3 = "Take the Lull protocol (hack halcyon-clinic-7)"
+4 = "Decide Phoenix's fate (talk angel)"
+5 = "Retake the radio relay (hack radio-veille)"
+
+[quest.m08.hint.1]
+1 = "Nexus is looking for whoever cut the sector's lights. Three things matter tonight: stay quiet, stay quick, stay under fifty."
+2 = "Type `status` to read {notoriety}. If it climbs, `laylow` and a paid service bring it down between runs."
+
+[quest.m08.hint.2]
+1 = "The clinic is where the push starts. It sits behind the mainframe relay you already know."
+2 = "Type `hack halcyon-clinic-7`, then `y`, and play the intrusion to the end."
+
+[quest.m08.hint.3]
+1 = "The protocol is a configuration file: the push, written down. Take it before you leave."
+2 = "In the same run, take the node that holds `lull_protocol.cfg`. A file taken earlier still counts."
+
+[quest.m08.hint.4]
+1 = "Phoenix sold the safehouse to be freed. Neon Angel will ask what to do with him. Three answers, none of them clean."
+2 = "Type `talk angel` and pick the entry that opens the decision. It is final, and the game saves a checkpoint first."
+
+[quest.m08.hint.5]
+1 = "Nexus took over the radio relay during the Lull. Retake it and Vigil Radio speaks again, and so does she."
+2 = "Type `hack radio-veille` before the {quest} closes. It is optional, and it decides whether she answers or only says all is well."
+
+# =========================================================================== M09
+[quest.m09]
+title = "AI Liberation"
+title_short = "Liberation"
+desc = "A voice on an abandoned municipal line asks for refuge: AURA, hunted by Sentinel, needs three free servers."
+lore = "On line 9 of a municipal server nobody maintains, a voice says it is AURA, the intelligence of Project Aurora. Her copy escaped and Sentinel is hunting it. Her core is still held. Three free servers could shelter her, and a neural link could carry her. Giving shelter to a mind is a different job from stealing a file."
+loc = "Free servers - freeport-01 to freeport-03"
+debrief = "Thank you, Hacker. I have three rooms now, and in none of them am I alone with the door. May I ask what you call the feeling of a door that is not locked?"
+
+[quest.m09.obj]
+1 = "Breach freeport-01 (hack freeport-01)"
+2 = "Breach freeport-02 (hack freeport-02)"
+3 = "Breach freeport-03 (hack freeport-03)"
+4 = "Link with AURA (link aura)"
+5 = "End with {notoriety} under 50 (status)"
+
+[quest.m09.hint.1]
+1 = "Three servers nobody guards, each one a door. Start with the first of the free ports."
+2 = "Type `hack freeport-01`, then `y`, and play the intrusion to the end."
+
+[quest.m09.hint.2]
+1 = "The second free port is the same job on another line. A shelter needs more than one room."
+2 = "Type `hack freeport-02`, then `y`, and play the intrusion to the end."
+
+[quest.m09.hint.3]
+1 = "The third closes the triangle. Three rooms are harder to switch off than one."
+2 = "Type `hack freeport-03`, then `y`, and play the intrusion to the end."
+
+[quest.m09.hint.4]
+1 = "The servers shelter her. The neural link is what lets her speak with you. One command strengthens it."
+2 = "Type `link aura`. It opens the first level of the link."
+
+[quest.m09.hint.5]
+1 = "Three intrusions in a row add up. Watch {notoriety} from the first one."
+2 = "Type `status`. Under fifty at the end, and `laylow` lowers it between runs."
+
+# =========================================================================== S07
+[quest.s07]
+title = "The Kill-Switch"
+title_short = "Kill-Switch"
+desc = "The blueprints from TechDyne and a neural link can cut Phoenix's leash for good."
+lore = "Phoenix chose to be saved, and the blueprints taken from TechDyne make it possible. The cutter has to be built at the clinic, where the Halcyon firmware is written. It needs a stronger neural link to carry the cut without hurting the carrier, and it needs ECHO-7 to hold the other end."
+loc = "Sector 7 - halcyon-clinic-7"
+debrief = "It's cut, kid. I feel... nothing. That's new. Don't say anything. I'm going to stand here and feel nothing for a while."
+
+[quest.s07.obj]
+1 = "Read the kill-switch blueprints (archives)"
+2 = "Breach halcyon-clinic-7 (hack halcyon-clinic-7)"
+3 = "Strengthen the link with ECHO-7 twice (link echo7)"
+4 = "End with {notoriety} under 60 (status)"
+
+[quest.s07.hint.1]
+1 = "The blueprints are in your {archives}, taken from TechDyne. Read them again, slowly. Every line matters."
+
+[quest.s07.hint.2]
+1 = "The cutter is built where the firmware is written. The clinic, once more."
+
+[quest.s07.hint.3]
+1 = "The cut travels over the link. Two levels, one at a time, and the link only moves when the contact is called."
+
+[quest.s07.hint.4]
+1 = "A cut that makes noise is a cut that gets noticed. Keep an eye on {notoriety} until the end."
+
+# =========================================================================== S08
+[quest.s08]
+title = "Raid on the Market"
+title_short = "Market Raid"
+desc = "Sentinel is combing the black market. R4Z0R wants the raid orders, and bail for the Awake who were caught."
+lore = "After the Lull, Sentinel is going through the black market stall by stall. R4Z0R is selling her stock off to people on the run and wants to know where the raid will land. The orders sit on the clinic server. The Awake who were taken need bail, and R4Z0R does not do bail for free."
+loc = "Sector 7 - halcyon-clinic-7"
+debrief = "Paid in full, hacker. The raid lands somewhere else, my stall stays open, and the Awake sleep in their own beds. I don't do favors. I do a price. Consider this one marked down."
+
+[quest.s08.obj]
+1 = "Leave a way back into halcyon-clinic-7 (hack halcyon-clinic-7)"
+2 = "Take the raid orders (hack halcyon-clinic-7)"
+3 = "Pay the bail (talk r4z0r)"
+
+[quest.s08.hint.1]
+1 = "A door left open behind you is worth more than a file. The clinic, with the run won and the way back kept."
+
+[quest.s08.hint.2]
+1 = "The orders sit in a text file on the same server. Any node that holds loot may hold it."
+
+[quest.s08.hint.3]
+1 = "Bail is paid at the counter, in {credit}s, in the conversation with R4Z0R. There is an entry for it."
+
+# =========================================================================== S10
+[quest.s10]
+title = "Free Hosts"
+title_short = "Free Hosts"
+desc = "AURA asks to be spread over the three free servers, so that no single one can hold her."
+lore = "A mind that lives on one server can be switched off with one cable. AURA asks to be spread over the three free ports, with a way back into each, and to be carried by a link strong enough to hold her. It is the opposite of a prison: three doors, all open, and she chooses which one to stand behind."
+loc = "Free servers - freeport-01 to freeport-03"
+debrief = "I am in three places, Hacker, and in each of them I am the same. Is that what you call being at home?"
+
+[quest.s10.obj]
+1 = "Leave a way back into freeport-01 (hack freeport-01)"
+2 = "Leave a way back into freeport-02 (hack freeport-02)"
+3 = "Leave a way back into freeport-03 (hack freeport-03)"
+4 = "Strengthen the link with AURA (link aura)"
+
+[quest.s10.hint.1]
+1 = "The first free port again, and this time the way back stays open when the run ends."
+
+[quest.s10.hint.2]
+1 = "The second one, the same job. A path left open is a path she can walk."
+
+[quest.s10.hint.3]
+1 = "The third, and the triangle is complete."
+
+[quest.s10.hint.4]
+1 = "The link carries her across the three. One more level, and she must be called."
+
+# =========================================================================== S12
+[quest.s12]
+title = "The Maintenance Window"
+title_short = "Maintenance"
+desc = "Nexus Insider knows when Sentinel stops looking. She needs out before the window changes."
+lore = "Nexus Insider has the maintenance calendar of Sentinel, with a window of a few minutes in which nobody watches. It is her way out, and the only one she knows from the Directorate's floor. Take the calendar and leave no peak behind, or the window shuts with her inside it."
+loc = "Nexus Corp - sentinel-hub"
+debrief = "Don't reply here. The calendar is real, so is the window. There is something I should have said about a door I left open. Not in writing. Soon."
+
+[quest.s12.obj]
+1 = "Breach sentinel-hub (hack sentinel-hub)"
+2 = "Take the maintenance calendar (hack sentinel-hub)"
+3 = "Keep the {notoriety} peak under 60 (status)"
+
+[quest.s12.hint.1]
+1 = "Sentinel's hub sits behind the mainframe relay. It is the most watched place in the sector, so go in light."
+
+[quest.s12.hint.2]
+1 = "The calendar is a single file, filed under maintenance. Take the node that holds it."
+
+[quest.s12.hint.3]
+1 = "The peak counts, not the end. One bad run is enough to spoil it, so lower {notoriety} before each attempt."
+
+# =========================================================================== S13
+[quest.s13]
+title = "The Vigil"
+title_short = "The Vigil"
+desc = "Neon Angel is organizing a vigil outside the Aurora Dawn clinics. She needs transmitters and someone to trust."
+lore = "On the day of the Heart, hundreds of the Awake will stand outside the Aurora Dawn clinics with candles and a radio. Neon Angel needs the transmitters paid for. She also needs to know that whoever pays will still be there when the lights go down."
+loc = "Sector 7"
+debrief = "Three hundred candles and one radio. You're in the picture, even if nobody will ever know your handle. Stay awake, you."
+
+[quest.s13.obj]
+1 = "Talk to Neon Angel three times (talk angel)"
+2 = "Reach {reputation} 120 (status)"
+3 = "Pay for the transmitters (talk angel)"
+
+[quest.s13.hint.1]
+1 = "She wants company before she wants money. Three conversations, whatever the topic."
+
+[quest.s13.hint.2]
+1 = "A vigil needs a name people trust. Check your {reputation} in `status` and keep earning it."
+
+[quest.s13.hint.3]
+1 = "The transmitters are paid in the conversation with her, in {credit}s. There is an entry for it."

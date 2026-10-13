@@ -1,0 +1,26 @@
+# Lot L3 (chapitre 4) : les sites et les fichiers du quatrième chapitre, français.
+# Une ligne de nœud s'affiche avec la fiche d'un site (`net <site>`), une ligne de fichier dans les listes.
+
+[node.halcyon_clinic_7]
+desc = "Clinique Aurora Dawn 7 : d'où part la poussée."
+
+[node.sentinel_hub]
+desc = "Hub Sentinel : patrouilles, avis, traces."
+
+[node.freeport_01]
+desc = "Serveur libre : une ligne municipale abandonnée."
+
+[node.freeport_02]
+desc = "Serveur libre : l'annexe d'un centre de données mort."
+
+[node.freeport_03]
+desc = "Serveur libre : un relais pirate, trois étages plus bas."
+
+[file.halcyon_clinic_7.lull_protocol]
+desc = "Protocole Accalmie : la poussée Phase 2"
+
+[file.halcyon_clinic_7.raid_orders]
+desc = "Ordres Sentinel : descente au marché"
+
+[file.sentinel_hub.maintenance_schedule]
+desc = "Calendrier de maintenance de Sentinel"

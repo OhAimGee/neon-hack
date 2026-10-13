@@ -1,0 +1,26 @@
+# Lot L3 (chapter 4): the sites and the files of the fourth chapter, English.
+# A node line is shown with the file of a site (`net <site>`), a file line in lists.
+
+[node.halcyon_clinic_7]
+desc = "Aurora Dawn clinic 7: where the push starts."
+
+[node.sentinel_hub]
+desc = "Sentinel hub: patrols, notices, traces."
+
+[node.freeport_01]
+desc = "Free server: an abandoned municipal line."
+
+[node.freeport_02]
+desc = "Free server: the annex of a dead data center."
+
+[node.freeport_03]
+desc = "Free server: a pirate relay, three floors down."
+
+[file.halcyon_clinic_7.lull_protocol]
+desc = "Lull protocol: the Phase 2 push"
+
+[file.halcyon_clinic_7.raid_orders]
+desc = "Sentinel orders: raid on the market"
+
+[file.sentinel_hub.maintenance_schedule]
+desc = "Sentinel maintenance calendar"

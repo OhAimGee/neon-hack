@@ -1,0 +1,14 @@
+# Lot L3 (chapter 4): the decision D2, the fate of Phoenix, English. The prompt is what the
+# donor says before the choice, a label is one entry of the menu. The choice is final.
+
+[decision.d2]
+prompt = "Phoenix is on the line, and the choice is yours alone. The channel can be cut, the leash can be cut, or the leash can be used."
+
+[decision.d2.choice.save]
+label = "Save him: cut his leash (needs the blueprints)"
+
+[decision.d2.choice.abandon]
+label = "Abandon him: close the channel"
+
+[decision.d2.choice.turn]
+label = "Turn him: feed Nexus false intel"
