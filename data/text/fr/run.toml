@@ -4,26 +4,37 @@
 
 [program.brute]
 name = "Brute-Force"
+short = "Brute"
 [program.exploit]
 name = "Exploit"
+short = "Exploit"
 [program.backdoor]
 name = "Backdoor"
+short = "Backdoor"
 [program.decrypt]
 name = "Decrypt"
+short = "Decrypt"
 [program.quantum]
 name = "Quantum"
+short = "Quantum"
 [program.social]
 name = "Social"
+short = "Social"
 [program.virus]
 name = "Virus"
+short = "Virus"
 [program.spoof]
 name = "Spoof"
+short = "Spoof"
 [program.cloak]
 name = "Cloak"
+short = "Cloak"
 [program.ghost]
 name = "Ghost"
+short = "Ghost"
 [program.overclock]
 name = "Overclock"
+short = "Overclk"
 
 [run]
 start = "{run^} : {name}."
@@ -220,3 +231,30 @@ end = "Terminer le {turn} : les {patrol}s bougent et scannent, la {trace} ambian
 jackout = "{jackout^} en gardant le {loot} pris"
 undo = "Reprendre le {turn} en cours"
 quit = "Quitter l'{run}"
+
+[run.bar]
+turn = "{turn^} {number}"
+cycles = "{cycle^}s {left}/{limit}"
+
+[run.panel]
+nodes = "{node^}s"
+patrols = "{patrol^}s"
+forecast = "{forecast^}"
+deck = "{deck^}"
+node_here = "▶{number} {name} {state}"
+"node_here@ascii" = ">{number} {name} {state}"
+node = " {number} {name} {state}"
+defense = "{family} {progress}/{strength}"
+patrol = "{patrol^} {id} : {at} puis {next}"
+patrol_down = "{patrol^} {id} : {at} puis {next} (neutralisée, {turns} {turns|{turn}|{turn}s})"
+forecast_total = "Fin de {turn} : {trace} +{total}"
+scan = "{patrol^} {id} : +{added}"
+scan_blocked = "{patrol^} {id} : annulé"
+ambient = "Ambiante : +{added}"
+program = "{number} {name}"
+program_left = "{number} {name} ({left})"
+pair = "{first}  {second}"
+
+[run.panel.state]
+here = "ici"
+open = "ouvert"

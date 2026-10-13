@@ -195,7 +195,8 @@ impl App<'_> {
             .gauges
             .iter()
             .map(|reading| self.gauge_summary(reading));
-        let parts: Vec<String> = name.into_iter().chain(gauges).collect();
+        let items = view.status.iter().map(|item| self.renderer.text(item));
+        let parts: Vec<String> = name.into_iter().chain(gauges).chain(items).collect();
         format!(" {}", parts.join(&format!(" {separator} ")))
     }
 

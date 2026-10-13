@@ -12,7 +12,8 @@ use crate::prompt::{Input, Prompt, Step};
 use crate::run::solve::{PROOF_EXPANSIONS, Proof, prove_solvable};
 use crate::run::tests::{Dice, payroll, random_mission};
 use crate::run::{Action, Program, Status, forecast, legal_actions};
-use crate::text::{Arg, Catalog, Lang, Text};
+use crate::text::{Arg, Catalog, Lang, RenderMode, Text, render};
+use unicode_width::UnicodeWidthStr;
 
 use super::commands::{COMMANDS, NAMES, SPECS};
 use super::lists::Lists;
@@ -784,4 +785,132 @@ fn the_payroll_run_of_the_spec_keeps_its_numbers_through_the_lists() {
         crate::command::Resolver::list(&lists, crate::command::ArgKind::Node, &SPECS[3]).rows;
     assert_eq!(rows.len(), mission.node_count());
     assert_eq!(rows[0].display(), "1");
+}
+
+// -- The panel (RUN-7) -------------------------------------------------------------------
+
+/// The panel is 30 columns wide: a row longer than that is cut or wrapped, and the rows that
+/// matter most (a node, its state, its defense) must not need it.
+const PANEL_COLUMNS: usize = 30;
+
+#[test]
+fn every_row_of_the_panel_fits_the_columns_of_the_panel_in_both_languages() {
+    let catalogs: Vec<Catalog> = Lang::ALL
+        .into_iter()
+        .map(|lang| Catalog::embedded(lang).unwrap())
+        .collect();
+    let content = embedded_content().unwrap();
+    for (index, site) in content.sites.iter().enumerate() {
+        for game in states_to_check(u64::try_from(index).unwrap(), site.id.as_str()) {
+            if game.prompt() == Prompt::End {
+                continue;
+            }
+            let view = game.view();
+            for catalog in &catalogs {
+                for mode in [
+                    RenderMode::FULL,
+                    RenderMode::ASCII,
+                    RenderMode::SCREEN_READER,
+                ] {
+                    let mut said: Vec<(String, usize)> = vec![];
+                    for section in &view.sections {
+                        said.push((render(&section.title, catalog, mode), PANEL_COLUMNS));
+                        for row in &section.rows {
+                            // A patrol that is down says why, and is allowed to wrap.
+                            let limit = if row.text.key == "run.panel.patrol_down" {
+                                PANEL_COLUMNS * 2
+                            } else {
+                                PANEL_COLUMNS
+                            };
+                            said.push((render(&row.text, catalog, mode), limit));
+                        }
+                    }
+                    said.extend(
+                        view.status
+                            .iter()
+                            .map(|text| (render(text, catalog, mode), PANEL_COLUMNS)),
+                    );
+                    for (row, limit) in said {
+                        assert!(
+                            row.width() <= limit,
+                            "{} {:?}: `{row}` is {} columns",
+                            site.id,
+                            catalog.lang(),
+                            row.width()
+                        );
+                    }
+                    // The rows a node needs are the ones that must never wrap.
+                    let nodes = &view.sections[0];
+                    for row in &nodes.rows {
+                        let line = render(&row.text, catalog, mode);
+                        assert!(
+                            line.width() <= PANEL_COLUMNS || mode == RenderMode::SCREEN_READER,
+                            "{} {:?}: `{line}` is {} columns",
+                            site.id,
+                            catalog.lang(),
+                            line.width()
+                        );
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn the_panel_says_what_the_view_says() {
+    let content = embedded_content().unwrap();
+    for (index, site) in content.sites.iter().enumerate() {
+        for game in states_to_check(u64::try_from(index).unwrap(), site.id.as_str()) {
+            if game.prompt() == Prompt::End {
+                continue;
+            }
+            let (view, run) = (game.view(), game.run_view());
+            let titles: Vec<&str> = view.sections.iter().map(|s| &*s.title.key).collect();
+            assert_eq!(titles[0], "run.panel.nodes");
+            assert_eq!(view.sections[0].rows.len(), run.nodes.len());
+            let patrols = view
+                .sections
+                .iter()
+                .find(|s| s.title.key == "run.panel.patrols");
+            assert_eq!(patrols.map_or(0, |s| s.rows.len()), run.patrols.len());
+            let deck = view
+                .sections
+                .iter()
+                .find(|s| s.title.key == "run.panel.deck")
+                .unwrap();
+            let programs: usize = deck
+                .rows
+                .iter()
+                .map(|row| {
+                    if row.text.key == "run.panel.pair" {
+                        2
+                    } else {
+                        1
+                    }
+                })
+                .sum();
+            assert_eq!(programs, run.deck.len());
+            let forecast = view
+                .sections
+                .iter()
+                .find(|s| s.title.key == "run.panel.forecast")
+                .unwrap();
+            let total = forecast
+                .rows
+                .iter()
+                .find(|row| row.text.key == "run.panel.forecast_total")
+                .unwrap();
+            assert_eq!(
+                int(&total.text, "total"),
+                Some(i64::from(run.forecast_total))
+            );
+            assert_eq!(view.status.len(), 2);
+            assert_eq!(int(&view.status[0], "number"), Some(i64::from(run.turn)));
+            assert_eq!(
+                int(&view.status[1], "left"),
+                Some(i64::from(run.cycles.left))
+            );
+        }
+    }
 }

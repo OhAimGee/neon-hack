@@ -117,6 +117,42 @@ pub enum ActiveUtility {
     Ghost,
 }
 
+/// One thing the end of the turn will do, as data (the panel writes it short; the terminal says
+/// it in a sentence).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ForecastItem {
+    /// A patrol moves.
+    PatrolMoves {
+        /// Its number, from 1.
+        patrol: u8,
+        /// Where to.
+        to: NodeId,
+    },
+    /// A patrol scans the player and adds Trace.
+    Scan {
+        /// Its number, from 1.
+        patrol: u8,
+        /// The node scanned.
+        target: NodeId,
+        /// The Trace it adds.
+        added: u8,
+        /// A Cloak can still cancel it.
+        cloak_usable: bool,
+    },
+    /// A patrol scans and Cloak cancels it.
+    ScanBlocked {
+        /// Its number, from 1.
+        patrol: u8,
+        /// The node scanned.
+        target: NodeId,
+    },
+    /// The ambient Trace rises.
+    Ambient {
+        /// By how much.
+        added: u8,
+    },
+}
+
 /// An intrusion, as the interface shows it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RunView {
@@ -138,6 +174,8 @@ pub struct RunView {
     pub active: Vec<ActiveUtility>,
     /// What ending the turn would do, as lines (the same ones the terminal says).
     pub forecast: Vec<Text>,
+    /// The same, as data, in the order the terminal says it.
+    pub forecast_items: Vec<ForecastItem>,
     /// The Trace ending the turn would add.
     pub forecast_total: i32,
     /// The undos left.

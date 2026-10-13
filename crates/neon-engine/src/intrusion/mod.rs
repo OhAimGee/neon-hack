@@ -15,6 +15,7 @@ mod commands;
 mod game;
 mod gloss;
 mod lists;
+mod panel;
 mod screens;
 mod session;
 mod speak;
@@ -26,8 +27,8 @@ mod tests;
 pub use game::{IntrusionError, IntrusionGame};
 pub use session::{Intrusion, StartError};
 pub use view::{
-    ActiveUtility, Charges, Cycles, DefenseView, LootState, NodeState, NodeView, PatrolView,
-    ProgramView, RunView,
+    ActiveUtility, Charges, Cycles, DefenseView, ForecastItem, LootState, NodeState, NodeView,
+    PatrolView, ProgramView, RunView,
 };
 
 /// The names of the commands of an intrusion, in table order.

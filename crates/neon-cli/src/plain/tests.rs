@@ -191,6 +191,7 @@ impl Game for Stubborn {
             player: String::new(),
             gauges: Vec::new(),
             sections: Vec::new(),
+            status: Vec::new(),
         }
     }
     fn complete(&self, _line: &str) -> Vec<String> {

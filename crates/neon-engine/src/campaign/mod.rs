@@ -234,6 +234,7 @@ impl Game for CampaignGame {
                 band,
             }],
             sections: self.panel_sections(),
+            status: Vec::new(),
         }
     }
 
