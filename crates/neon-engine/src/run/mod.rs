@@ -13,7 +13,7 @@
 //! * [`RunState`] is everything that changes; it is small, `Copy` and hashable.
 //! * [`apply`] is the one rules function: a legal action turns a state into the next one and
 //!   says what happened as [`Fact`]s, in the order a player reads them.
-//! * [`forecast`] resolves the end of the turn through that same function (invariant I10),
+//! * [`forecast()`] resolves the end of the turn through that same function (invariant I10),
 //!   so what is announced is what happens, to the digit.
 //! * [`Run`] is a session: a state, the whole-turn undo, and the counters around them.
 //!
