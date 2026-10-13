@@ -3,11 +3,14 @@
 //! The values are those of `docs/design/game-systems-audit.md` § 3.3; they are the starting
 //! point of the balance (`neon-sim`, lot R6), not its end.
 
+use serde::{Deserialize, Deserializer, de};
+
 /// How many programs there are.
 pub const PROGRAM_COUNT: usize = 11;
 
 /// A family of ICE, which decides what is strong against it.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum Family {
     /// Firewalls and routers.
     Network,
@@ -65,6 +68,14 @@ pub enum Program {
     Ghost,
     /// Gives cycles for a little noise.
     Overclock,
+}
+
+impl<'de> Deserialize<'de> for Program {
+    /// A program is written by its [`Program::id`] in the data.
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let id = String::deserialize(deserializer)?;
+        Self::from_id(&id).ok_or_else(|| de::Error::custom(format!("unknown program `{id}`")))
+    }
 }
 
 /// How many uses of a program a run holds.

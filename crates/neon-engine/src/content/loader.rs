@@ -14,9 +14,9 @@ use crate::content::ids::{ContactId, DecisionId, FlagId, ItemId, QuestId, Readab
 use crate::content::money::{Credits, Reputation};
 use crate::content::schema::{
     AutoResolveRules, CatalogFile, CommandDef, ContactDef, DecisionDef, DecisionsFile, EndingDef,
-    EpilogueDef, FlagDef, FlagsFile, HintBudgets, ItemDef, QuestDef, QuestsFile, ReadableDef,
-    RewardsFile, Rules, ServiceDef, SiteDef, Size, SizeDef, TextsFile, TierDef, TopicDef,
-    TopicsFile, UnlockDef, UnlocksFile,
+    EpilogueDef, FlagDef, FlagsFile, HintBudgets, ItemDef, KitDef, QuestDef, QuestsFile,
+    ReadableDef, RewardsFile, Rules, RunDef, RunsFile, ServiceDef, SiteDef, Size, SizeDef,
+    TextsFile, TierDef, TopicDef, TopicsFile, UnlockDef, UnlocksFile,
 };
 use crate::content::validate;
 
@@ -41,6 +41,8 @@ pub enum File {
     Texts,
     /// `unlocks.toml`: when the commands of the game open.
     Unlocks,
+    /// `runs.toml`: the tactical intrusion of each site, and the deck of each tier.
+    Runs,
 }
 
 impl File {
@@ -56,6 +58,7 @@ impl File {
             File::Topics => "data/world/topics.toml",
             File::Texts => "data/world/texts.toml",
             File::Unlocks => "data/world/unlocks.toml",
+            File::Runs => "data/world/runs.toml",
         }
     }
 }
@@ -79,6 +82,8 @@ pub struct Sources {
     pub texts: String,
     /// `unlocks.toml`.
     pub unlocks: String,
+    /// `runs.toml`.
+    pub runs: String,
     /// The official names of the commands of the game (its command table), which the rules of
     /// `unlocks.toml` may name. Empty means "not checked": the tests that load a broken copy of
     /// the data without a game around it leave it empty.
@@ -98,6 +103,7 @@ impl Sources {
             topics: WORLD_TOPICS.to_owned(),
             texts: WORLD_TEXTS.to_owned(),
             unlocks: WORLD_UNLOCKS.to_owned(),
+            runs: WORLD_RUNS.to_owned(),
             game_commands: crate::campaign::command_names()
                 .map(str::to_owned)
                 .collect(),
@@ -116,6 +122,7 @@ impl Sources {
             File::Topics => &self.topics,
             File::Texts => &self.texts,
             File::Unlocks => &self.unlocks,
+            File::Runs => &self.runs,
         }
     }
 }
@@ -170,6 +177,8 @@ macro_rules! positioned {
 }
 positioned!(
     SiteDef,
+    RunDef,
+    KitDef,
     ItemDef,
     ContactDef,
     ReadableDef,
@@ -251,6 +260,10 @@ pub struct Content {
     pub hints: HintBudgets,
     /// When the commands of the game open.
     pub unlocks: Vec<UnlockDef>,
+    /// The tactical intrusion of each site.
+    pub runs: Vec<RunDef>,
+    /// The deck of each tier.
+    pub kits: Vec<KitDef>,
     /// The quests, in file order (the order they are evaluated in).
     pub quests: Vec<QuestDef>,
     /// The decisions.
@@ -265,6 +278,7 @@ pub struct Content {
     pub texts: BTreeSet<String>,
     pub(crate) sources: Sources,
     site_ix: Index,
+    run_ix: Index,
     item_ix: Index,
     contact_ix: Index,
     readable_ix: Index,
@@ -315,6 +329,7 @@ impl Content {
         let topics = parse::<TopicsFile>(File::Topics, &src.topics, &mut diags);
         let texts = parse::<TextsFile>(File::Texts, &src.texts, &mut diags);
         let unlocks = parse::<UnlocksFile>(File::Unlocks, &src.unlocks, &mut diags);
+        let runs = parse::<RunsFile>(File::Runs, &src.runs, &mut diags);
         let (
             Some(catalog),
             Some(flags),
@@ -324,8 +339,9 @@ impl Content {
             Some(topics),
             Some(texts),
             Some(unlocks),
+            Some(runs),
         ) = (
-            catalog, flags, rewards, quests, decisions, topics, texts, unlocks,
+            catalog, flags, rewards, quests, decisions, topics, texts, unlocks, runs,
         )
         else {
             return Err(LoadError(diags));
@@ -338,8 +354,10 @@ impl Content {
         let flags = unspan(flags.flag);
         let quests = unspan(quests.quest);
         let decisions_defs = unspan(decisions.decision);
+        let run_defs = unspan(runs.run);
         let content = Self {
             site_ix: index(&sites, |x| x.id.as_str()),
+            run_ix: index(&run_defs, |x| x.site.as_str()),
             item_ix: index(&items, |x| x.id.as_str()),
             contact_ix: index(&contacts, |x| x.id.as_str()),
             readable_ix: index(&readables, |x| x.id.as_str()),
@@ -360,6 +378,8 @@ impl Content {
             auto_resolve: rewards.auto_resolve,
             hints: rewards.hints,
             unlocks: unspan(unlocks.unlock),
+            runs: run_defs,
+            kits: unspan(runs.kit),
             quests,
             decisions: decisions_defs,
             topics: unspan(topics.topic),
@@ -393,6 +413,20 @@ impl Content {
         self.site_ix
             .get(id.as_str())
             .and_then(|i| self.sites.get(*i))
+    }
+
+    /// The tactical intrusion of a site.
+    #[must_use]
+    pub fn run(&self, site: &SiteId) -> Option<&RunDef> {
+        self.run_ix
+            .get(site.as_str())
+            .and_then(|i| self.runs.get(*i))
+    }
+
+    /// The deck of a tier.
+    #[must_use]
+    pub fn kit(&self, tier: u8) -> Option<&KitDef> {
+        self.kits.iter().find(|kit| kit.tier == tier)
     }
 
     /// The item with this id.

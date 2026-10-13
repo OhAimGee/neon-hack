@@ -1,0 +1,189 @@
+# Names of the nodes of each intrusion (data/world/runs.toml), at most 10 columns.
+
+[site.localhost.node.1]
+name = "Passerelle"
+[site.localhost.node.2]
+name = "Pare-feu"
+[site.localhost.node.3]
+name = "Archives"
+
+[site.corp_server_01.node.1]
+name = "Passerelle"
+[site.corp_server_01.node.2]
+name = "Pare-feu"
+[site.corp_server_01.node.3]
+name = "Archives"
+[site.corp_server_01.node.4]
+name = "Coffre"
+[site.corp_server_01.node.5]
+name = "Caméras"
+
+[site.nexus_mainframe.node.1]
+name = "Passerelle"
+[site.nexus_mainframe.node.2]
+name = "Pare-feu"
+[site.nexus_mainframe.node.3]
+name = "Relais"
+[site.nexus_mainframe.node.4]
+name = "Archives"
+[site.nexus_mainframe.node.5]
+name = "Support"
+[site.nexus_mainframe.node.6]
+name = "Noyau"
+
+[site.underground_market.node.1]
+name = "Passerelle"
+[site.underground_market.node.2]
+name = "Proxy"
+[site.underground_market.node.3]
+name = "Étals"
+[site.underground_market.node.4]
+name = "Cave"
+[site.underground_market.node.5]
+name = "Registre"
+
+[site.research_lab.node.1]
+name = "Passerelle"
+[site.research_lab.node.2]
+name = "Badge"
+[site.research_lab.node.3]
+name = "Labo"
+[site.research_lab.node.4]
+name = "Serveurs"
+[site.research_lab.node.5]
+name = "Gardien"
+[site.research_lab.node.6]
+name = "Coffre"
+
+[site.banking_network.node.1]
+name = "Passerelle"
+[site.banking_network.node.2]
+name = "Routeur"
+[site.banking_network.node.3]
+name = "Guichet"
+[site.banking_network.node.4]
+name = "Compta"
+[site.banking_network.node.5]
+name = "Grappe"
+[site.banking_network.node.6]
+name = "Chambre"
+
+[site.radio_veille.node.1]
+name = "Passerelle"
+[site.radio_veille.node.2]
+name = "Antenne"
+[site.radio_veille.node.3]
+name = "Console"
+[site.radio_veille.node.4]
+name = "Bandes"
+[site.radio_veille.node.5]
+name = "Veilleur"
+
+[site.station_7.node.1]
+name = "Passerelle"
+[site.station_7.node.2]
+name = "Tourniquet"
+[site.station_7.node.3]
+name = "Contrôle"
+[site.station_7.node.4]
+name = "Caméras"
+[site.station_7.node.5]
+name = "Planning"
+
+[site.gov_database.node.1]
+name = "Passerelle"
+[site.gov_database.node.2]
+name = "Pare-feu"
+[site.gov_database.node.3]
+name = "Greffe"
+[site.gov_database.node.4]
+name = "Central"
+[site.gov_database.node.5]
+name = "Gardien"
+[site.gov_database.node.6]
+name = "Registre"
+
+[site.halcyon_clinic_7.node.1]
+name = "Passerelle"
+[site.halcyon_clinic_7.node.2]
+name = "Accueil"
+[site.halcyon_clinic_7.node.3]
+name = "Service"
+[site.halcyon_clinic_7.node.4]
+name = "Dossiers"
+[site.halcyon_clinic_7.node.5]
+name = "Moniteur"
+[site.halcyon_clinic_7.node.6]
+name = "Labo"
+
+[site.sentinel_hub.node.1]
+name = "Passerelle"
+[site.sentinel_hub.node.2]
+name = "Pare-feu"
+[site.sentinel_hub.node.3]
+name = "Console"
+[site.sentinel_hub.node.4]
+name = "Journaux"
+[site.sentinel_hub.node.5]
+name = "Horaires"
+[site.sentinel_hub.node.6]
+name = "Guetteur"
+[site.sentinel_hub.node.7]
+name = "Jeton"
+
+[site.freeport_01.node.1]
+name = "Passerelle"
+[site.freeport_01.node.2]
+name = "Balise"
+[site.freeport_01.node.3]
+name = "Console"
+[site.freeport_01.node.4]
+name = "Noyau"
+
+[site.freeport_02.node.1]
+name = "Passerelle"
+[site.freeport_02.node.2]
+name = "Bouée"
+[site.freeport_02.node.3]
+name = "Relais"
+[site.freeport_02.node.4]
+name = "Noyau"
+
+[site.freeport_03.node.1]
+name = "Passerelle"
+[site.freeport_03.node.2]
+name = "Mât"
+[site.freeport_03.node.3]
+name = "Quai"
+[site.freeport_03.node.4]
+name = "Noyau"
+
+[site.shadow_exchange.node.1]
+name = "Passerelle"
+[site.shadow_exchange.node.2]
+name = "Proxy"
+[site.shadow_exchange.node.3]
+name = "Enchères"
+[site.shadow_exchange.node.4]
+name = "Contrats"
+[site.shadow_exchange.node.5]
+name = "Oracle"
+[site.shadow_exchange.node.6]
+name = "Veilleur"
+
+[site.aurora_core.node.1]
+name = "Passerelle"
+[site.aurora_core.node.2]
+name = "Pare-feu"
+[site.aurora_core.node.3]
+name = "Relais"
+[site.aurora_core.node.4]
+name = "Manuel"
+[site.aurora_core.node.5]
+name = "Garde"
+[site.aurora_core.node.6]
+name = "Détente"
+[site.aurora_core.node.7]
+name = "Cœur"
+[site.aurora_core.node.8]
+name = "Guetteur"

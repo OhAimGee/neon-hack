@@ -14,6 +14,7 @@ use crate::content::ids::{
     ReadableId, ServiceId, SiteId, TopicId,
 };
 use crate::content::money::{Credits, Reputation};
+use crate::run::{Ice, LootKind, Program};
 
 /// Highest tier of the campaign. Tiers go from 1 to this value.
 pub const MAX_TIER: u8 = 6;
@@ -718,6 +719,83 @@ pub struct SiteDef {
     pub at: usize,
 }
 
+/// A node of the graph of a run. Nodes are numbered from 1 in the order they are written.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RunNodeDef {
+    /// What guards the node, if anything.
+    pub ice: Option<Ice>,
+    /// What the node holds to be taken, if anything.
+    pub loot: Option<LootKind>,
+    /// The files of the site that taking the loot extracts.
+    #[serde(default)]
+    pub files: Vec<FileId>,
+}
+
+/// A patrol of a run: a route walked one node per turn.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct PatrolDef {
+    /// The node numbers it stands on, turn after turn, starting from the first turn.
+    pub route: Vec<u8>,
+    /// The node whose ICE it is the guardian process of: it stops when that ICE is open.
+    pub anchor: Option<u8>,
+}
+
+fn default_ambient() -> u8 {
+    2
+}
+
+fn first_node() -> u8 {
+    1
+}
+
+/// The tactical intrusion of a site: its graph, its patrols and its pace.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RunDef {
+    /// The site it is the intrusion of.
+    pub site: SiteId,
+    /// The raw Trace every end of turn adds.
+    #[serde(default = "default_ambient")]
+    pub ambient: u8,
+    /// Whether the briefing already gives the intel that social engineering needs.
+    #[serde(default)]
+    pub intel_known: bool,
+    /// The node the player starts on.
+    #[serde(default = "first_node")]
+    pub start: u8,
+    /// The nodes.
+    #[serde(default)]
+    pub node: Vec<RunNodeDef>,
+    /// The links between nodes, as pairs of node numbers.
+    #[serde(default)]
+    pub link: Vec<[u8; 2]>,
+    /// The patrols.
+    #[serde(default)]
+    pub patrol: Vec<PatrolDef>,
+    /// Byte offset of the entry in its file, for line numbers.
+    #[serde(skip)]
+    pub at: usize,
+}
+
+/// The deck the player holds at a tier, and the cycles a turn gives there.
+///
+/// Programs come from the shop in a later lot; until then the deck of a tier is data.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct KitDef {
+    /// The tier, 1 to [`MAX_TIER`].
+    pub tier: u8,
+    /// Cycles a turn gives, before the bonus of the difficulty.
+    pub cycles: u8,
+    /// The programs, each with the charges it has by default.
+    pub programs: Vec<Program>,
+    /// Byte offset of the entry in its file, for line numbers.
+    #[serde(skip)]
+    pub at: usize,
+}
+
 /// A buyable or quest item.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -1113,4 +1191,13 @@ pub(crate) struct TopicsFile {
 pub(crate) struct TextsFile {
     #[serde(default)]
     pub keys: Vec<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct RunsFile {
+    #[serde(default)]
+    pub kit: Vec<Spanned<KitDef>>,
+    #[serde(default)]
+    pub run: Vec<Spanned<RunDef>>,
 }

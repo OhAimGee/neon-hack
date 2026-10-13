@@ -1,0 +1,503 @@
+# The tactical intrusion of each site, and the deck of each tier (docs/spec/run-screen.md,
+# docs/spec/solver.md). The rules are in `neon_engine::run`; this file is only the graphs.
+#
+# A node is numbered from 1 in the order it is written; `link` and `patrol` name nodes by number.
+# `ice` = { family = network|encryption|human|ai_guardian, strength = 1..6 }; `loot` is
+# `objective` (taking all of them opens `jackout`), `intel` (what social engineering needs) or
+# `extra`; `files` are the files of the site that taking the loot extracts. A patrol walks its
+# `route` one node per turn; with an `anchor` it is the guardian process of that node and stops
+# once its ICE is open. The names of the nodes are texts: `site.<id>.node.<n>.name`.
+
+# The deck of each tier. Programs come from the shop later; until then the tier decides.
+
+[[kit]]
+tier = 1
+cycles = 3
+programs = ["brute", "backdoor", "cloak"]
+
+[[kit]]
+tier = 2
+cycles = 3
+programs = ["brute", "backdoor", "cloak", "exploit", "decrypt", "spoof"]
+
+[[kit]]
+tier = 3
+cycles = 4
+programs = ["brute", "backdoor", "cloak", "exploit", "decrypt", "spoof", "quantum", "social"]
+
+[[kit]]
+tier = 4
+cycles = 4
+programs = ["brute", "backdoor", "cloak", "exploit", "decrypt", "spoof", "quantum", "social", "virus", "ghost"]
+
+[[kit]]
+tier = 5
+cycles = 5
+programs = ["brute", "backdoor", "cloak", "exploit", "decrypt", "spoof", "quantum", "social", "virus", "ghost", "overclock"]
+
+[[kit]]
+tier = 6
+cycles = 5
+programs = ["brute", "backdoor", "cloak", "exploit", "decrypt", "spoof", "quantum", "social", "virus", "ghost", "overclock"]
+
+# ----------------------------------------------------------------------------
+[[run]]
+site = "localhost"
+link = [[1, 2], [2, 3]]
+
+[[run.node]] # 1 Gateway
+
+[[run.node]] # 2 Firewall
+ice = { family = "network", strength = 2 }
+
+[[run.node]] # 3 Archives
+ice = { family = "network", strength = 2 }
+loot = "objective"
+files = ["user_data"]
+
+# ----------------------------------------------------------------------------
+[[run]]
+site = "corp-server-01"
+link = [[1, 2], [1, 3], [2, 3], [3, 4], [3, 5], [4, 5]]
+
+[[run.node]] # 1 Gateway
+
+[[run.node]] # 2 Firewall
+ice = { family = "network", strength = 2 }
+
+[[run.node]] # 3 Archives
+loot = "extra"
+files = ["financial_data"]
+
+[[run.node]] # 4 Vault
+ice = { family = "network", strength = 4 }
+loot = "objective"
+files = ["employee_records"]
+
+[[run.node]] # 5 Cameras
+ice = { family = "ai_guardian", strength = 3 }
+
+[[run.patrol]]
+route = [5, 3, 2, 3]
+
+# ----------------------------------------------------------------------------
+[[run]]
+site = "nexus-mainframe"
+link = [[1, 2], [2, 3], [2, 4], [3, 5], [4, 6], [5, 6]]
+
+[[run.node]] # 1 Gateway
+
+[[run.node]] # 2 Firewall
+ice = { family = "network", strength = 3 }
+
+[[run.node]] # 3 Relay
+ice = { family = "network", strength = 3 }
+loot = "intel"
+
+[[run.node]] # 4 Archives
+ice = { family = "encryption", strength = 3 }
+loot = "extra"
+files = ["project_ghost"]
+
+[[run.node]] # 5 Helpdesk
+ice = { family = "human", strength = 4 }
+loot = "extra"
+files = ["neural_maps"]
+
+[[run.node]] # 6 Core
+ice = { family = "encryption", strength = 5 }
+loot = "objective"
+files = ["quantum_keys"]
+
+[[run.patrol]]
+route = [3, 2, 4, 2]
+
+[[run.patrol]]
+route = [6]
+anchor = 6
+
+# ----------------------------------------------------------------------------
+[[run]]
+site = "underground-market"
+link = [[1, 2], [2, 3], [2, 4], [3, 5], [4, 5]]
+
+[[run.node]] # 1 Gateway
+
+[[run.node]] # 2 Proxy
+ice = { family = "network", strength = 2 }
+
+[[run.node]] # 3 Stalls
+ice = { family = "human", strength = 2 }
+loot = "intel"
+
+[[run.node]] # 4 Cellar
+ice = { family = "encryption", strength = 3 }
+
+[[run.node]] # 5 Ledger
+ice = { family = "encryption", strength = 4 }
+loot = "objective"
+files = ["black_ledger"]
+
+[[run.patrol]]
+route = [3, 2]
+
+# ----------------------------------------------------------------------------
+[[run]]
+site = "research-lab"
+link = [[1, 2], [1, 3], [2, 4], [3, 4], [3, 5], [4, 6], [5, 6]]
+
+[[run.node]] # 1 Gateway
+
+[[run.node]] # 2 Badge
+ice = { family = "human", strength = 3 }
+
+[[run.node]] # 3 Lab
+ice = { family = "network", strength = 3 }
+
+[[run.node]] # 4 Servers
+ice = { family = "encryption", strength = 4 }
+
+[[run.node]] # 5 Guardian
+ice = { family = "ai_guardian", strength = 4 }
+
+[[run.node]] # 6 Safe
+ice = { family = "encryption", strength = 5 }
+loot = "objective"
+files = ["prototype_specs"]
+
+[[run.patrol]]
+route = [5]
+anchor = 5
+
+[[run.patrol]]
+route = [3, 1, 2, 4]
+
+# ----------------------------------------------------------------------------
+[[run]]
+site = "banking-network"
+link = [[1, 2], [1, 3], [2, 4], [3, 4], [4, 5], [4, 6], [5, 6]]
+
+[[run.node]] # 1 Gateway
+
+[[run.node]] # 2 Router
+ice = { family = "network", strength = 3 }
+
+[[run.node]] # 3 Teller
+ice = { family = "human", strength = 3 }
+
+[[run.node]] # 4 Ledger
+ice = { family = "encryption", strength = 3 }
+loot = "intel"
+
+[[run.node]] # 5 Cluster
+ice = { family = "network", strength = 4 }
+
+[[run.node]] # 6 Vault
+ice = { family = "encryption", strength = 5 }
+loot = "objective"
+files = ["vault_keys"]
+
+[[run.patrol]]
+route = [6]
+anchor = 6
+
+[[run.patrol]]
+route = [2, 4, 5, 4]
+
+# ----------------------------------------------------------------------------
+[[run]]
+site = "radio-veille"
+link = [[1, 2], [2, 3], [2, 5], [3, 4], [5, 4]]
+
+[[run.node]] # 1 Gateway
+
+[[run.node]] # 2 Antenna
+ice = { family = "network", strength = 3 }
+
+[[run.node]] # 3 Console
+ice = { family = "human", strength = 3 }
+
+[[run.node]] # 4 Tapes
+ice = { family = "encryption", strength = 4 }
+loot = "objective"
+files = ["listener_map"]
+
+[[run.node]] # 5 Watcher
+ice = { family = "ai_guardian", strength = 4 }
+
+[[run.patrol]]
+route = [3, 2, 5, 2]
+
+# ----------------------------------------------------------------------------
+[[run]]
+site = "station-7"
+link = [[1, 2], [1, 3], [2, 4], [3, 4], [3, 5], [4, 5]]
+
+[[run.node]] # 1 Gateway
+
+[[run.node]] # 2 Turnstile
+ice = { family = "human", strength = 3 }
+
+[[run.node]] # 3 Control
+ice = { family = "network", strength = 4 }
+
+[[run.node]] # 4 Cameras
+ice = { family = "ai_guardian", strength = 3 }
+
+[[run.node]] # 5 Roster
+ice = { family = "encryption", strength = 4 }
+loot = "objective"
+files = ["shift_roster"]
+
+[[run.patrol]]
+route = [4, 3, 2, 3]
+
+# ----------------------------------------------------------------------------
+[[run]]
+site = "gov-database"
+link = [[1, 2], [1, 3], [2, 4], [3, 4], [4, 5], [4, 6], [5, 6]]
+
+[[run.node]] # 1 Gateway
+
+[[run.node]] # 2 Firewall
+ice = { family = "network", strength = 4 }
+
+[[run.node]] # 3 Clerk
+ice = { family = "human", strength = 4 }
+
+[[run.node]] # 4 Mainframe
+ice = { family = "encryption", strength = 4 }
+loot = "intel"
+
+[[run.node]] # 5 Warden
+ice = { family = "ai_guardian", strength = 4 }
+
+[[run.node]] # 6 Registry
+ice = { family = "encryption", strength = 5 }
+loot = "objective"
+files = ["citizen_registry"]
+
+[[run.patrol]]
+route = [5]
+anchor = 5
+
+[[run.patrol]]
+route = [2, 4, 6, 4]
+
+[[run.patrol]]
+route = [3, 1, 2, 1]
+
+# ----------------------------------------------------------------------------
+[[run]]
+site = "halcyon-clinic-7"
+link = [[1, 2], [1, 3], [2, 4], [3, 4], [3, 5], [4, 6], [5, 6]]
+
+[[run.node]] # 1 Gateway
+
+[[run.node]] # 2 Reception
+ice = { family = "human", strength = 3 }
+
+[[run.node]] # 3 Ward
+ice = { family = "network", strength = 4 }
+
+[[run.node]] # 4 Records
+ice = { family = "encryption", strength = 4 }
+loot = "extra"
+files = ["raid_orders"]
+
+[[run.node]] # 5 Monitor
+ice = { family = "ai_guardian", strength = 4 }
+
+[[run.node]] # 6 Lab
+ice = { family = "encryption", strength = 5 }
+loot = "objective"
+files = ["lull_protocol"]
+
+[[run.patrol]]
+route = [3, 4, 6, 4]
+
+[[run.patrol]]
+route = [5]
+anchor = 5
+
+# ----------------------------------------------------------------------------
+[[run]]
+site = "sentinel-hub"
+link = [[1, 2], [1, 3], [2, 4], [3, 4], [4, 5], [4, 6], [5, 7], [6, 7]]
+
+[[run.node]] # 1 Gateway
+
+[[run.node]] # 2 Firewall
+ice = { family = "network", strength = 4 }
+
+[[run.node]] # 3 Console
+ice = { family = "human", strength = 4 }
+loot = "intel"
+
+[[run.node]] # 4 Logs
+ice = { family = "encryption", strength = 4 }
+loot = "extra"
+files = ["trace_orders"]
+
+[[run.node]] # 5 Schedule
+ice = { family = "network", strength = 5 }
+loot = "extra"
+files = ["maintenance_schedule"]
+
+[[run.node]] # 6 Sentinel
+ice = { family = "ai_guardian", strength = 5 }
+
+[[run.node]] # 7 Token
+ice = { family = "encryption", strength = 5 }
+loot = "objective"
+files = ["sentinel_token"]
+
+[[run.patrol]]
+route = [6]
+anchor = 6
+
+[[run.patrol]]
+route = [2, 4, 5, 4]
+
+[[run.patrol]]
+route = [3, 1]
+
+# ----------------------------------------------------------------------------
+[[run]]
+site = "freeport-01"
+link = [[1, 2], [1, 3], [2, 4], [3, 4]]
+
+[[run.node]] # 1 Gateway
+
+[[run.node]] # 2 Beacon
+ice = { family = "network", strength = 4 }
+
+[[run.node]] # 3 Console
+ice = { family = "human", strength = 4 }
+
+[[run.node]] # 4 Core
+ice = { family = "encryption", strength = 4 }
+loot = "objective"
+
+[[run.patrol]]
+route = [2, 4]
+
+# ----------------------------------------------------------------------------
+[[run]]
+site = "freeport-02"
+link = [[1, 2], [1, 3], [2, 4], [3, 4]]
+
+[[run.node]] # 1 Gateway
+
+[[run.node]] # 2 Buoy
+ice = { family = "encryption", strength = 4 }
+
+[[run.node]] # 3 Relay
+ice = { family = "network", strength = 4 }
+
+[[run.node]] # 4 Core
+ice = { family = "ai_guardian", strength = 4 }
+loot = "objective"
+
+[[run.patrol]]
+route = [2, 3]
+
+# ----------------------------------------------------------------------------
+[[run]]
+site = "freeport-03"
+link = [[1, 2], [1, 3], [2, 4], [3, 4]]
+
+[[run.node]] # 1 Gateway
+
+[[run.node]] # 2 Mast
+ice = { family = "network", strength = 5 }
+
+[[run.node]] # 3 Quay
+ice = { family = "human", strength = 4 }
+
+[[run.node]] # 4 Core
+ice = { family = "encryption", strength = 5 }
+loot = "objective"
+
+[[run.patrol]]
+route = [2, 4, 3, 4]
+
+# ----------------------------------------------------------------------------
+[[run]]
+site = "shadow-exchange"
+link = [[1, 2], [2, 3], [2, 4], [3, 5], [4, 5], [4, 6]]
+
+[[run.node]] # 1 Gateway
+
+[[run.node]] # 2 Proxy
+ice = { family = "network", strength = 4 }
+
+[[run.node]] # 3 Auctions
+ice = { family = "human", strength = 4 }
+loot = "intel"
+
+[[run.node]] # 4 Contracts
+ice = { family = "encryption", strength = 4 }
+loot = "extra"
+files = ["broker_contract"]
+
+[[run.node]] # 5 Oracle
+ice = { family = "encryption", strength = 5 }
+loot = "objective"
+files = ["price_oracle"]
+
+[[run.node]] # 6 Watcher
+ice = { family = "ai_guardian", strength = 4 }
+
+[[run.patrol]]
+route = [6]
+anchor = 6
+
+[[run.patrol]]
+route = [3, 2, 4, 2]
+
+# ----------------------------------------------------------------------------
+[[run]]
+site = "aurora-core"
+link = [[1, 2], [1, 3], [2, 4], [3, 4], [3, 5], [4, 6], [5, 7], [6, 7], [7, 8]]
+
+[[run.node]] # 1 Gateway
+
+[[run.node]] # 2 Firewall
+ice = { family = "network", strength = 5 }
+
+[[run.node]] # 3 Relay
+ice = { family = "human", strength = 5 }
+loot = "intel"
+
+[[run.node]] # 4 Manual
+ice = { family = "encryption", strength = 4 }
+loot = "extra"
+files = ["core_manual"]
+
+[[run.node]] # 5 Guard
+ice = { family = "ai_guardian", strength = 5 }
+
+[[run.node]] # 6 Trigger
+ice = { family = "encryption", strength = 5 }
+loot = "extra"
+files = ["phase3_trigger"]
+
+[[run.node]] # 7 Heart
+ice = { family = "encryption", strength = 6 }
+loot = "objective"
+files = ["aura_core"]
+
+[[run.node]] # 8 Sentinel
+ice = { family = "ai_guardian", strength = 5 }
+
+[[run.patrol]]
+route = [5]
+anchor = 5
+
+[[run.patrol]]
+route = [8]
+anchor = 8
+
+[[run.patrol]]
+route = [2, 4, 6, 4]

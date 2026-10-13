@@ -21,12 +21,15 @@ data/world/
   texts.toml        clés de texte déclarées (dérivées, voir § 6.8)
   unlocks.toml      ouverture des commandes du jeu : `command`, `when` (une condition), `reason` (clé `unlock.<nom>`),
                     validée contre la table de commandes (R2.2b, docs/spec/commands.md § 6)
+  runs.toml         [[kit]] (le deck et les cycles de chaque palier) et [[run]] (le graphe, les patrouilles et
+                    les fichiers de chaque site), voir docs/spec/run-screen.md § 13 (R4.2)
 crates/neon-engine/src/content/
   ids.rs            ids textuels typés (un type par espace de noms, validés à la création)
   money.rs          Credits et Reputation, saturants (plafonds 10^9 et ±10^6, invariant I11)
   schema.rs         ce que le TOML peut dire (serde, deny_unknown_fields)
   loader.rs         chargeur, index, erreurs « fichier:ligne » ; données embarquées par build.rs
   validate.rs       toutes les règles de validation
+  runs.rs           une intrusion de site devenue une `run::Mission` (deck du palier, rythme de la difficulté)
   state.rs          État, Fact (entrée du bus), registre idempotent
   eval.rs           conditions, mesure des objectifs, journal et progression (fonctions pures)
   engine.rs         refresh (point fixe), effets, Outcome (sortie)

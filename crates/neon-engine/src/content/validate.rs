@@ -7,6 +7,7 @@ use crate::content::engine::ENDING_FLAG;
 use crate::content::eval::find_objective;
 use crate::content::ids::{FlagId, QuestId, valid_id};
 use crate::content::money::Credits;
+use crate::content::runs::site_tier;
 use crate::content::schema::{
     Block, Cond, Effect, FlagDef, FlagKind, FlagValue, Goal, MAX_TIER, Objective, QuestDef,
     QuestKind, ReadableKind, Size,
@@ -14,6 +15,7 @@ use crate::content::schema::{
 use crate::content::state::HEAT_MAX;
 use crate::content::texts::required_keys;
 use crate::content::{Content, Diagnostic, File};
+use crate::run::{MAX_CYCLES, Pace, Supply};
 
 /// Most objectives in a quest. The bible has M01 with 7 and M12 with 6; the journal shows one
 /// line each and the 64x20 layout leaves about 12 lines for it, so 8 is the ceiling. A quest
@@ -33,6 +35,7 @@ pub(crate) fn validate(c: &Content, check_texts: bool) -> Vec<Diagnostic> {
     v.flags();
     v.rewards();
     v.unlocks();
+    v.runs();
     v.quests();
     v.decisions();
     v.topics();
@@ -93,6 +96,132 @@ impl V<'_> {
     }
 
     // ------------------------------------------------------------- catalog
+
+    /// The decks of the tiers and the intrusion of each site.
+    fn runs(&mut self) {
+        let c = self.c;
+        let f = File::Runs;
+        for tier in 1..=MAX_TIER {
+            let kits: Vec<_> = c.kits.iter().filter(|k| k.tier == tier).collect();
+            if kits.is_empty() {
+                self.err(f, 0, format!("tier {tier} has no deck: add a `[[kit]]`"));
+            }
+            for extra in kits.iter().skip(1) {
+                self.err(f, extra.at, format!("tier {tier} has more than one deck"));
+            }
+        }
+        for kit in &c.kits {
+            let ctx = format!("deck of tier {}", kit.tier);
+            if !(1..=MAX_TIER).contains(&kit.tier) {
+                self.err(f, kit.at, format!("{ctx}: the tier is 1 to {MAX_TIER}"));
+            }
+            // One cycle is kept free for the bonus of the easiest difficulty.
+            if !(1..MAX_CYCLES).contains(&kit.cycles) {
+                self.err(
+                    f,
+                    kit.at,
+                    format!("{ctx}: a turn gives 1 to {} cycles", MAX_CYCLES - 1),
+                );
+            }
+            let mut seen = BTreeSet::new();
+            for program in &kit.programs {
+                if !seen.insert(*program) {
+                    self.err(f, kit.at, format!("{ctx}: `{}` twice", program.id()));
+                }
+            }
+            if !kit
+                .programs
+                .iter()
+                .any(|p| p.is_breach() && p.spec().supply == Supply::Unlimited)
+            {
+                self.err(
+                    f,
+                    kit.at,
+                    format!("{ctx}: needs a breach program with no charge limit, or some ICE could not be opened"),
+                );
+            }
+            if let Some(previous) = c.kit(kit.tier.saturating_sub(1)) {
+                for program in &previous.programs {
+                    if !kit.programs.contains(program) {
+                        self.err(
+                            f,
+                            kit.at,
+                            format!("{ctx}: `{}` of the tier before is missing", program.id()),
+                        );
+                    }
+                }
+            }
+        }
+        self.unique(
+            f,
+            "intrusion",
+            c.runs.iter().map(|r| (r.site.as_str(), r.at)),
+        );
+        for site in &c.sites {
+            if c.run(&site.id).is_none() {
+                self.err(
+                    File::Catalog,
+                    site.at,
+                    format!("site `{}` has no intrusion in runs.toml", site.id),
+                );
+            }
+        }
+        for run in &c.runs {
+            let ctx = format!("intrusion of `{}`", run.site);
+            let Some(site) = c.site(&run.site) else {
+                self.err(f, run.at, format!("{ctx}: unknown site"));
+                continue;
+            };
+            let tier = site_tier(site);
+            let Some(kit) = c.kit(tier) else {
+                continue;
+            };
+            if let Err(error) = run.mission(kit, Pace::NORMAL) {
+                self.err(f, run.at, format!("{ctx}: {error}"));
+            }
+            let mut linked = BTreeSet::new();
+            for [a, b] in &run.link {
+                if !linked.insert((*a.min(b), *a.max(b))) {
+                    self.err(f, run.at, format!("{ctx}: link {a}-{b} written twice"));
+                }
+            }
+            let mut taken: BTreeMap<&str, usize> = BTreeMap::new();
+            for (index, node) in run.node.iter().enumerate() {
+                if !node.files.is_empty() && node.loot.is_none() {
+                    self.err(
+                        f,
+                        run.at,
+                        format!("{ctx}: node {} lists files but holds no loot", index + 1),
+                    );
+                }
+                for file in &node.files {
+                    if site.file.iter().all(|x| x.id != *file) {
+                        self.err(
+                            f,
+                            run.at,
+                            format!("{ctx}: node {} names the unknown file `{file}`", index + 1),
+                        );
+                    }
+                    *taken.entry(file.as_str()).or_default() += 1;
+                }
+            }
+            for file in &site.file {
+                match taken.get(file.id.as_str()) {
+                    Some(1) => {}
+                    Some(_) => self.err(
+                        f,
+                        run.at,
+                        format!("{ctx}: the file `{}` is on several nodes", file.id),
+                    ),
+                    None => self.err(
+                        f,
+                        run.at,
+                        format!("{ctx}: the file `{}` is on no node", file.id),
+                    ),
+                }
+            }
+        }
+    }
 
     fn catalog(&mut self) {
         let c = self.c;

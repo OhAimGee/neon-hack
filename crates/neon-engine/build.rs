@@ -29,6 +29,7 @@ const WORLD_FILES: &[(&str, &str)] = &[
     ("topics", "WORLD_TOPICS"),
     ("texts", "WORLD_TEXTS"),
     ("unlocks", "WORLD_UNLOCKS"),
+    ("runs", "WORLD_RUNS"),
 ];
 
 fn main() -> Result<(), Box<dyn Error>> {

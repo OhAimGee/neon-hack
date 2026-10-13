@@ -16,6 +16,7 @@ use crate::content::ids::{ContactId, DecisionId, ItemId, QuestId, ReadableId, Si
 use crate::content::money::Credits;
 use crate::content::schema::{ContactState, HintBudgets, QuestStatus, ReadableKind, SiteDef, Turn};
 use crate::content::state::{HEAT_MAX, State};
+use crate::run::Pace;
 use crate::save::{SaveState, hex_u64};
 
 use super::prologue::CONTINUE_PAGES;
@@ -85,6 +86,27 @@ impl Difficulty {
             Self::Normal => budgets.normal,
             Self::Expert => budgets.expert,
             Self::Hardcore => budgets.hardcore,
+        }
+    }
+
+    /// How hard the preset makes the rules of a run bite (audit 3.8): the Trace gain, in
+    /// quarters, and the cycles added to every turn.
+    #[must_use]
+    pub fn pace(self) -> Pace {
+        match self {
+            Self::Story => Pace {
+                gain_quarters: 2,
+                bonus_cycles: 1,
+            },
+            Self::Normal => Pace::NORMAL,
+            Self::Expert => Pace {
+                gain_quarters: 5,
+                bonus_cycles: 0,
+            },
+            Self::Hardcore => Pace {
+                gain_quarters: 6,
+                bonus_cycles: 0,
+            },
         }
     }
 

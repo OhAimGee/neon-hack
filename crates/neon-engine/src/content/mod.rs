@@ -27,6 +27,7 @@ pub mod ids;
 pub mod loader;
 pub mod money;
 pub mod persist;
+pub mod runs;
 pub mod schema;
 pub mod state;
 pub mod texts;
