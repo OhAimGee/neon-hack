@@ -73,7 +73,7 @@ debrief = "It's done, kid. The blueprints are ours. Don't go back to the studio 
 
 [quest.m07.obj]
 1 = "Upload the virus to banking-network (hack banking-network)"
-2 = "Plant a {backdoor} in research-lab (hack research-lab)"
+2 = "Leave a way back into research-lab (hack research-lab)"
 3 = "Take the prototype blueprints (hack research-lab)"
 4 = "End with {notoriety} under 60 (status)"
 5 = "Spot the DecoyNet honeypot (hack research-lab)"
@@ -84,7 +84,7 @@ debrief = "It's done, kid. The blueprints are ours. Don't go back to the studio 
 
 [quest.m07.hint.2]
 1 = "TechDyne's lab next. Phoenix wants a way back in, kept open after you leave."
-2 = "Type `hack research-lab` and win the run: the site keeps its {backdoor}."
+2 = "Type `hack research-lab` and win the run: the site stays open behind you."
 
 [quest.m07.hint.3]
 1 = "The blueprints are the point. They sit in a file at the lab, filed under prototype specs."
