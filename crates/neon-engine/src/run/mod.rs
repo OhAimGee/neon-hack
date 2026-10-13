@@ -30,7 +30,7 @@ pub mod solve;
 mod state;
 
 #[cfg(test)]
-mod tests;
+pub(crate) mod tests;
 
 pub use action::{Action, ActionError, Fact, Sink, Utility};
 pub use forecast::{Forecast, ForecastTurn, forecast};

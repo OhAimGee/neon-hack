@@ -15,7 +15,7 @@ fn node(mission: &Mission, number: u8) -> NodeId {
 }
 
 /// The sample mission of `docs/spec/run-screen.md` § 5: five nodes, one patrol.
-pub(super) fn payroll() -> Mission {
+pub(crate) fn payroll() -> Mission {
     let mut builder = MissionBuilder::new();
     let gateway = builder.node(None, None);
     let firewall = builder.node(
@@ -898,26 +898,26 @@ fn unlimited_undo_is_never_spent() {
 // -- Properties on random missions ------------------------------------------------------
 
 /// A small dice over the engine generator, so a seed makes the same mission everywhere.
-pub(super) struct Dice(Pcg32);
+pub(crate) struct Dice(Pcg32);
 
 impl Dice {
-    pub(super) fn new(seed: u64, stream: u64) -> Self {
+    pub(crate) fn new(seed: u64, stream: u64) -> Self {
         Self(Pcg32::new(seed, stream))
     }
 
     /// A number in `0..bound` (`0` when `bound` is `0`).
-    pub(super) fn below(&mut self, bound: usize) -> usize {
+    pub(crate) fn below(&mut self, bound: usize) -> usize {
         let bound = u32::try_from(bound).unwrap_or(u32::MAX);
         self.0.next_below(bound).unwrap_or(0) as usize
     }
 
-    pub(super) fn byte(&mut self, bound: u8) -> u8 {
+    pub(crate) fn byte(&mut self, bound: u8) -> u8 {
         u8::try_from(self.below(usize::from(bound))).unwrap_or(0)
     }
 }
 
 /// A random valid mission made from a seed: same seed, same mission.
-pub(super) fn random_mission(seed: u64) -> Mission {
+pub(crate) fn random_mission(seed: u64) -> Mission {
     let mut dice = Dice::new(seed, 7);
     let count = 1 + dice.below(7);
     let mut builder = MissionBuilder::new();
@@ -971,7 +971,7 @@ pub(super) fn random_mission(seed: u64) -> Mission {
 }
 
 /// Every action that exists, to check `legal_actions` against the rules.
-pub(super) fn every_action(mission: &Mission) -> Vec<Action> {
+pub(crate) fn every_action(mission: &Mission) -> Vec<Action> {
     let mut all = vec![Action::Loot, Action::End, Action::Jackout];
     all.extend(Utility::ALL.map(Action::Use));
     for node in mission.nodes() {
@@ -982,7 +982,7 @@ pub(super) fn every_action(mission: &Mission) -> Vec<Action> {
 }
 
 /// Plays up to `steps` random legal actions, calling `check` on every state reached.
-pub(super) fn random_play(
+pub(crate) fn random_play(
     mission: &Mission,
     seed: u64,
     steps: usize,

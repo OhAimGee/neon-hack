@@ -30,6 +30,7 @@ mod trade;
 mod tutorial;
 
 pub use commands::command_names;
+pub(crate) use state::embedded_content;
 pub use state::{Band, CampaignState, Difficulty, SiteStatus};
 
 use thiserror::Error;
@@ -43,7 +44,6 @@ use crate::prompt::{Input, Prompt, Step};
 use crate::save::{self, SaveError, SaveMeta, SaveRequest};
 use crate::text::Text;
 
-use state::embedded_content;
 
 const BANNER: &[&str] = &["== N E O N   H A C K =="];
 
