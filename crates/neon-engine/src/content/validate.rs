@@ -504,13 +504,13 @@ impl V<'_> {
                 );
             }
         }
-        let heat = &c.auto_resolve.nominal_heat;
-        if heat.len() != usize::from(MAX_TIER) || heat.iter().any(|h| *h > HEAT_MAX) {
+        let nominal = &c.auto_resolve.nominal_trace;
+        if nominal.len() != usize::from(MAX_TIER) || nominal.iter().any(|t| !(1..=99).contains(t)) {
             self.err(
                 f,
                 0,
                 format!(
-                    "`[auto_resolve] nominal_heat` needs {MAX_TIER} values (one per tier), each at most {HEAT_MAX}"
+                    "`[auto_resolve] nominal_trace` needs {MAX_TIER} values (one per tier), each between 1 and 99"
                 ),
             );
         }

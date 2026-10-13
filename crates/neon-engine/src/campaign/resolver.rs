@@ -10,6 +10,7 @@ use crate::content::Content;
 use crate::content::ids::ItemId;
 use crate::content::money::Credits;
 use crate::content::schema::{ContactState, QuestStatus, ReadableKind};
+use crate::intrusion::Intrusion;
 use crate::save::SLOT_COUNT;
 use crate::text::Text;
 
@@ -23,6 +24,8 @@ pub(super) const UNKNOWN_NAME: &str = "???";
 pub(super) struct Lists<'a> {
     pub(super) c: &'a Content,
     pub(super) s: &'a CampaignState,
+    /// The intrusion under way, whose nodes and programs the commands of an intrusion name.
+    pub(super) run: Option<&'a Intrusion>,
 }
 
 impl Resolver for Lists<'_> {
@@ -36,11 +39,16 @@ impl Resolver for Lists<'_> {
             ArgKind::Item => ("shop", self.items()),
             ArgKind::Service => ("laylow", self.services()),
             ArgKind::Slot => ("help save", Self::slots()),
-            ArgKind::Number
-            | ArgKind::Node
-            | ArgKind::Program
-            | ArgKind::Word(_)
-            | ArgKind::Path => ("help", Vec::new()),
+            ArgKind::Node | ArgKind::Program => {
+                return self.run.map_or_else(
+                    || Listing {
+                        see: "help",
+                        rows: Vec::new(),
+                    },
+                    |run| run.listing(kind, command),
+                );
+            }
+            ArgKind::Number | ArgKind::Word(_) | ArgKind::Path => ("help", Vec::new()),
         };
         Listing { see, rows }
     }

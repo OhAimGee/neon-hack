@@ -2,7 +2,9 @@
 
 use std::str::FromStr;
 
-use crate::command::{ArgError, ArgRef, Availability, CommandSpec, HandledBy, Lookup, fold};
+use crate::command::{
+    ArgError, ArgRef, Availability, CommandSpec, Context, HandledBy, Lookup, fold,
+};
 use crate::content::{Content, Fact};
 use crate::event::Event;
 use crate::game::Game;
@@ -11,9 +13,9 @@ use crate::save::SaveRequest;
 use crate::text::Text;
 
 use super::CampaignGame;
-use super::commands::{COMMANDS, CONTEXT, WIRED};
+use super::commands::{COMMANDS, HUB, WIRED};
 use super::resolver::Lists;
-use super::state::{CampaignState, DEFAULT_HANDLE, Flow, HANDLE_MAX_CHARS};
+use super::state::{CampaignState, DEFAULT_HANDLE, Difficulty, Flow, HANDLE_MAX_CHARS};
 use super::tutorial::Completion;
 
 /// Whether a command is open, or why not: the rules of `unlocks.toml`, and the commands that
@@ -25,6 +27,10 @@ pub(super) fn availability(c: &Content, s: &CampaignState, spec: &CommandSpec) -
         } else {
             Availability::Locked(Text::new("campaign.unlock.frontend"))
         };
+    }
+    // Automatic resolution is for the story difficulty only.
+    if spec.name == "skip" && s.difficulty != Difficulty::Story {
+        return Availability::Locked(Text::new("run.unlock.skip"));
     }
     match c.unlocks.iter().find(|rule| rule.command == spec.name) {
         Some(rule) if !rule.when.eval(c, &s.missions) => {
@@ -53,6 +59,9 @@ impl CampaignGame {
         input: &Input,
         events: &mut Vec<Event>,
     ) -> Option<SaveRequest> {
+        if let Some(question) = self.question {
+            return self.answer_question(question, input, events);
+        }
         match self.state.flows.last().cloned() {
             None => self.command(input, events),
             Some(Flow::AskHandle) => {
@@ -89,6 +98,9 @@ impl CampaignGame {
 
     /// What the game is waiting for, derived from the state.
     pub(super) fn flow_prompt(&self) -> Prompt {
+        if let Some(question) = self.question {
+            return question.prompt();
+        }
         match self.state.flows.last() {
             None => Prompt::Command,
             Some(Flow::AskHandle) => Prompt::Text {
@@ -120,19 +132,29 @@ impl CampaignGame {
         }
     }
 
+    /// Where the game is: in an intrusion, or at the hub.
+    pub(super) fn context(&self) -> Context {
+        if self.intrusion.is_some() {
+            Context::Run
+        } else {
+            HUB
+        }
+    }
+
     /// The completions of what is typed, without spoilers: only what could be used now.
     pub(super) fn complete_line(&self, line: &str) -> Vec<String> {
         let open = |spec: &CommandSpec| self.availability(spec);
         match self.prompt() {
             Prompt::Command if !line.contains(char::is_whitespace) => {
-                COMMANDS.complete(line, CONTEXT, self.frontend, open)
+                COMMANDS.complete(line, self.context(), self.frontend, open)
             }
             Prompt::Command => {
                 let lists = Lists {
                     c: self.content,
                     s: &self.state,
+                    run: self.intrusion.as_ref(),
                 };
-                COMMANDS.complete_args(line, CONTEXT, self.frontend, open, &lists)
+                COMMANDS.complete_args(line, self.context(), self.frontend, open, &lists)
             }
             Prompt::Choice(choice) => {
                 let prefix = line.to_ascii_lowercase();
@@ -164,10 +186,11 @@ impl CampaignGame {
             let lists = Lists {
                 c: self.content,
                 s: &self.state,
+                run: self.intrusion.as_ref(),
             };
             COMMANDS.parse(
                 line,
-                CONTEXT,
+                self.context(),
                 self.frontend,
                 |spec| self.availability(spec),
                 &lists,
@@ -234,6 +257,9 @@ impl CampaignGame {
             "help" => self.cmd_help(args, events),
             "status" => self.cmd_status(events),
             "quit" => self.cmd_quit(),
+            "map" | "move" | "breach" | "use" | "loot" | "end" | "jackout" | "undo" | "skip" => {
+                self.cmd_run(spec.name, args, events);
+            }
             "quests" => self.cmd_quests(args, events),
             "accept" => self.cmd_accept(args, events),
             "contacts" => self.cmd_contacts(events),

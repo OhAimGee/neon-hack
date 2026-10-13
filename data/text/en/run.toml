@@ -162,6 +162,8 @@ none = "No undo left."
 nothing = "Nothing to take back yet."
 
 [run.result]
+automatic = "Automatic: the best plan the solver found was played."
+approximate = "Automatic: no plan was found, the result is approximate (the {trace} is nominal)."
 won = "You {jackout} of {name} with the {loot}."
 burned = "{trace^} {max}: {run} {burned}."
 
@@ -185,6 +187,7 @@ confirm = "Some {loot} is left ({left}). {jackout^} anyway?"
 confirm = "Leave the {run} under way? It is lost."
 
 [run.error]
+skip = "Automatic resolution is only open in {difficulty_story} difficulty."
 over = "The {run} is over."
 cycles = "Not enough {cycle}s left."
 not_linked = "That {node} is not linked to yours."
@@ -230,6 +233,7 @@ loot = "Take the {loot} of the {node} you are on"
 end = "End the {turn}: the {patrol}s move and scan, the ambient {trace} rises"
 jackout = "{jackout^} with the {loot} you took"
 undo = "Take back the {turn} under way"
+skip = "Play the {run} automatically (only in {difficulty_story} difficulty)"
 quit = "Leave the {run}"
 
 [run.bar]
@@ -258,3 +262,9 @@ pair = "{first}  {second}"
 [run.panel.state]
 here = "here"
 open = "open"
+
+[run.skip]
+confirm = "Play the {run} automatically? It ends with the best plan found, which is not always the best there is."
+
+[run.unlock]
+skip = "only in {difficulty_story} difficulty"

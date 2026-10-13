@@ -24,8 +24,9 @@ mod view;
 #[cfg(test)]
 mod tests;
 
+pub(crate) use commands::RUN_SPECS;
 pub use game::{IntrusionError, IntrusionGame};
-pub use session::{Intrusion, StartError};
+pub use session::{Automatic, Intrusion, Question, Reply, StartError};
 pub use view::{
     ActiveUtility, Charges, Cycles, DefenseView, ForecastItem, LootState, NodeState, NodeView,
     PatrolView, ProgramView, RunView,

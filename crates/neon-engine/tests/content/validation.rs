@@ -344,14 +344,14 @@ fn the_unlock_file_is_read_with_the_other_files() {
 
 #[test]
 fn the_hub_constants_of_rewards_are_checked() {
-    let heat = "nominal_heat = [4, 8, 12, 16, 20, 24]";
-    let errors = broken(|s| replace_once(&mut s.rewards, heat, "nominal_heat = [4, 8]"));
+    let heat = "nominal_trace = [16, 32, 48, 64, 80, 96]";
+    let errors = broken(|s| replace_once(&mut s.rewards, heat, "nominal_trace = [16, 32]"));
     assert!(has(&errors, File::Rewards, "needs 6 values"));
     let errors = broken(|s| {
         replace_once(
             &mut s.rewards,
             heat,
-            "nominal_heat = [4, 8, 12, 16, 20, 240]",
+            "nominal_trace = [16, 32, 48, 64, 80, 240]",
         );
     });
     assert!(has(&errors, File::Rewards, "needs 6 values"));

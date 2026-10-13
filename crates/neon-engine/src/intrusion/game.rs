@@ -1,6 +1,6 @@
 //! A game that is one intrusion on one site: how the plain and the full-screen interfaces play
-//! the intrusion before the campaign hands it over (lot R4.6). The campaign will drive the same
-//! [`Intrusion`].
+//! the intrusion on its own (`neon-hack --intrusion <site>`). The campaign drives the same
+//! [`Intrusion`] with its own table of commands.
 
 use thiserror::Error;
 
@@ -10,15 +10,13 @@ use crate::content::ids::SiteId;
 use crate::event::Event;
 use crate::game::{Game, View};
 use crate::prompt::{Input, Prompt, Step};
-use crate::run::{Action, NodeId, Program, Utility};
 use crate::save::SaveError;
 use crate::text::Text;
 
 use super::commands::{COMMANDS, CONTEXT};
-use super::gloss::{gloss_event, gloss_prompt, gloss_sections, gloss_view};
+use super::gloss::{gloss_event, gloss_prompt, gloss_view};
 use super::lists::Lists;
-use super::panel;
-use super::session::{Intrusion, StartError};
+use super::session::{Intrusion, Question, Reply, StartError};
 
 /// Why a game of one intrusion could not be started.
 #[derive(Debug, Clone, PartialEq, Eq, Error)]
@@ -35,20 +33,12 @@ pub enum IntrusionError {
     Start(#[from] StartError),
 }
 
-/// What the game waits for besides a command.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Flow {
-    /// `jackout` with loot still there.
-    ConfirmJackout { left: u8 },
-    /// `quit`.
-    ConfirmQuit,
-}
-
 /// One intrusion, as a frontend plays it.
 #[derive(Debug, Clone)]
 pub struct IntrusionGame {
     intrusion: Intrusion,
-    flow: Option<Flow>,
+    /// What the game waits for besides a command.
+    question: Option<Question>,
     /// The game is over: the run ended, or the player left.
     over: bool,
     frontend: Capabilities,
@@ -68,7 +58,7 @@ impl IntrusionGame {
             .map_err(|_| IntrusionError::BadSite(site.to_owned()))?;
         Ok(Self {
             intrusion: Intrusion::new(content, &id, difficulty)?,
-            flow: None,
+            question: None,
             over: false,
             frontend: Capabilities::PLAIN,
         })
@@ -97,8 +87,13 @@ impl IntrusionGame {
         }
     }
 
-    fn open(_spec: &CommandSpec) -> Availability {
-        Availability::Open
+    /// `skip` is closed outside Story difficulty; the rest is open.
+    fn open(&self, spec: &CommandSpec) -> Availability {
+        if spec.name == "skip" && !self.intrusion.can_skip() {
+            Availability::Locked(Text::new("run.unlock.skip"))
+        } else {
+            Availability::Open
+        }
     }
 
     fn lists(&self) -> Lists<'_> {
@@ -116,13 +111,14 @@ impl IntrusionGame {
         }
     }
 
-    fn do_action(&mut self, action: Action, events: &mut Vec<Event>) {
-        self.intrusion.act(action, events);
-        self.settle(events);
-    }
-
     fn command(&mut self, line: &str, events: &mut Vec<Event>) {
-        let lookup = COMMANDS.parse(line, CONTEXT, self.frontend, Self::open, &self.lists());
+        let lookup = COMMANDS.parse(
+            line,
+            CONTEXT,
+            self.frontend,
+            |spec| self.open(spec),
+            &self.lists(),
+        );
         match lookup {
             Lookup::Empty => {}
             Lookup::Unknown(word) => events.push(Event::error(
@@ -137,56 +133,17 @@ impl IntrusionGame {
         }
     }
 
-    fn node_arg(args: &[ArgRef], position: usize) -> Option<NodeId> {
-        let number: u8 = args.get(position)?.id()?.parse().ok()?;
-        NodeId::from_number(number)
-    }
-
-    fn program_arg(args: &[ArgRef], position: usize) -> Option<Program> {
-        Program::from_id(args.get(position)?.id()?)
-    }
-
     fn execute(&mut self, spec: &CommandSpec, args: &[ArgRef], events: &mut Vec<Event>) {
         match spec.name {
             "help" => self.help(args, events),
             "status" => events.extend(self.intrusion.status()),
-            "map" => events.extend(self.intrusion.map()),
-            "quit" => self.flow = Some(Flow::ConfirmQuit),
-            "move" => {
-                if let Some(node) = Self::node_arg(args, 0) {
-                    self.do_action(Action::Move(node), events);
+            "quit" => self.question = Some(Question::Quit),
+            name => {
+                if let Reply::Ask(question) = self.intrusion.execute(name, args, events) {
+                    self.question = Some(question);
                 }
+                self.settle(events);
             }
-            "breach" => {
-                if let (Some(node), Some(program)) =
-                    (Self::node_arg(args, 0), Self::program_arg(args, 1))
-                {
-                    self.do_action(Action::Breach { node, program }, events);
-                }
-            }
-            "use" => {
-                if let Some(utility) = Self::program_arg(args, 0).and_then(Utility::of) {
-                    self.do_action(Action::Use(utility), events);
-                }
-            }
-            "loot" => self.do_action(Action::Loot, events),
-            "end" => self.do_action(Action::End, events),
-            "jackout" => {
-                let left = self.intrusion.loot_left();
-                let ready = self
-                    .intrusion
-                    .state()
-                    .objectives_done(self.intrusion.run().mission());
-                if ready && left > 0 {
-                    self.flow = Some(Flow::ConfirmJackout { left });
-                } else {
-                    self.do_action(Action::Jackout, events);
-                }
-            }
-            "undo" => self.intrusion.undo(events),
-            other => events.push(Event::error(
-                Text::new("campaign.frontend.unhandled").with_str("command", other),
-            )),
         }
     }
 
@@ -200,17 +157,22 @@ impl IntrusionGame {
                 ],
                 CONTEXT,
                 self.frontend,
-                Self::open,
+                |spec| self.open(spec),
             ));
             return;
         };
-        if let Lookup::Found { spec, .. } | Lookup::BadArg { spec, .. } =
-            COMMANDS.parse(name, CONTEXT, self.frontend, Self::open, &NoLists)
-        {
+        if let Lookup::Found { spec, .. } | Lookup::BadArg { spec, .. } = COMMANDS.parse(
+            name,
+            CONTEXT,
+            self.frontend,
+            |spec| self.open(spec),
+            &NoLists,
+        ) {
             events.push(Event::system(Text::dynamic(spec.help.to_owned())));
             if !spec.args.is_empty() {
                 events.push(Event::system(
-                    Text::new("run.help.usage").with_text("usage", Text::dynamic(spec.usage_key())),
+                    Text::new("run.help.usage")
+                        .with_text("usage", Text::dynamic(spec.usage_key())),
                 ));
             }
         } else {
@@ -218,19 +180,18 @@ impl IntrusionGame {
         }
     }
 
-    fn confirm(&mut self, flow: Flow, input: &Input, events: &mut Vec<Event>) {
+    fn answer(&mut self, question: Question, input: &Input, events: &mut Vec<Event>) {
         match input {
             Input::Confirm(yes) => {
-                self.flow = None;
-                match (flow, yes) {
-                    (Flow::ConfirmJackout { .. }, true) => {
-                        self.do_action(Action::Jackout, events);
-                    }
-                    (Flow::ConfirmQuit, true) => self.over = true,
-                    (_, false) => {}
+                self.question = None;
+                if question == Question::Quit {
+                    self.over = *yes;
+                } else {
+                    self.intrusion.answer(question, *yes, events);
+                    self.settle(events);
                 }
             }
-            Input::Cancel => self.flow = None,
+            Input::Cancel => self.question = None,
             _ => events.push(Event::error(Text::new("ui.invalid_input"))),
         }
     }
@@ -250,8 +211,8 @@ impl Game for IntrusionGame {
             return self.step(vec![Event::system(Text::new("ui.eof"))]);
         }
         let mut events = Vec::new();
-        match (self.flow, &input) {
-            (Some(flow), _) => self.confirm(flow, &input, &mut events),
+        match (self.question, &input) {
+            (Some(question), _) => self.answer(question, &input, &mut events),
             (None, Input::Line(line)) => self.command(line.trim(), &mut events),
             (None, Input::Cancel) => {}
             (None, _) => events.push(Event::error(Text::new("ui.invalid_input"))),
@@ -263,17 +224,7 @@ impl Game for IntrusionGame {
         if self.over {
             return Prompt::End;
         }
-        let mut prompt = match self.flow {
-            None => Prompt::Command,
-            Some(Flow::ConfirmJackout { left }) => Prompt::Confirm {
-                question: Text::new("run.jackout.confirm").with_int("left", i64::from(left)),
-                default: false,
-            },
-            Some(Flow::ConfirmQuit) => Prompt::Confirm {
-                question: Text::new("run.quit.confirm"),
-                default: false,
-            },
-        };
+        let mut prompt = self.question.map_or(Prompt::Command, Question::prompt);
         gloss_prompt(&mut prompt);
         prompt
     }
@@ -290,16 +241,8 @@ impl Game for IntrusionGame {
     }
 
     fn view(&self) -> View {
-        let panel = self.run_view();
-        let mut sections = panel::sections(&panel);
-        let mut status = panel::status_items(&panel);
-        gloss_sections(&mut sections, &mut status);
-        View {
-            player: self.intrusion.site().as_str().to_owned(),
-            gauges: vec![panel.trace],
-            sections,
-            status,
-        }
+        self.intrusion
+            .panel_view(self.intrusion.site().as_str().to_owned())
     }
 
     fn set_capabilities(&mut self, capabilities: Capabilities) {
@@ -307,13 +250,19 @@ impl Game for IntrusionGame {
     }
 
     fn complete(&self, line: &str) -> Vec<String> {
-        if self.flow.is_some() || self.over {
+        if self.question.is_some() || self.over {
             return Vec::new();
         }
         if line.contains(char::is_whitespace) {
-            COMMANDS.complete_args(line, CONTEXT, self.frontend, Self::open, &self.lists())
+            COMMANDS.complete_args(
+                line,
+                CONTEXT,
+                self.frontend,
+                |spec| self.open(spec),
+                &self.lists(),
+            )
         } else {
-            COMMANDS.complete(line, CONTEXT, self.frontend, Self::open)
+            COMMANDS.complete(line, CONTEXT, self.frontend, |spec| self.open(spec))
         }
     }
 }

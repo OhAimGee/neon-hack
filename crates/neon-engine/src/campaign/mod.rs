@@ -7,8 +7,10 @@
 //! command changes is a [`Fact`] given to the content language, which answers with
 //! [`Outcome`](crate::content::Outcome)s that `play` turns into events with derived text keys.
 //!
-//! Intrusions are resolved by rule, instantly (`hack`): the tactical run replaces them in lot
-//! R4 without changing the campaign.
+//! An intrusion (`hack`) is the tactical run of [`crate::intrusion`], played turn by turn in the
+//! same game: while it lasts the context is the run's, the hub's commands answer that they are
+//! not open, and the save keeps the start of the turn under way. Its end settles into the same
+//! facts the hub reads (the site compromised, the files taken, the marks left).
 //!
 //! The game clock is the clock of the mission state: it advances by one turn at every command
 //! that changes the world, which then emits [`Fact::Tick`] so that quests opened in a turn can
@@ -38,8 +40,9 @@ use thiserror::Error;
 use crate::command::{Availability, Capabilities};
 use crate::content::schema::QuestStatus;
 use crate::content::{Content, Fact};
-use crate::event::{Event, Gauge, ScreenKind, Table};
+use crate::event::{Event, Gauge, ScreenKind, Severity, Table};
 use crate::game::{Game, GaugeReading, View};
+use crate::intrusion::{Intrusion, Question};
 use crate::prompt::{Input, Prompt, Step};
 use crate::save::{self, SaveError, SaveMeta, SaveRequest};
 use crate::text::Text;
@@ -68,6 +71,11 @@ pub struct CampaignGame {
     /// What the frontend that runs the game can do. Not saved: it belongs to the session, and
     /// a game answers as a plain frontend would until it is told otherwise.
     frontend: Capabilities,
+    /// The intrusion under way, rebuilt from the save (`state.run`) when a game is loaded. It is
+    /// ahead of the save by the actions of the turn under way.
+    intrusion: Option<Intrusion>,
+    /// A question the intrusion asked and waits for the answer of. Not saved.
+    question: Option<Question>,
 }
 
 impl CampaignGame {
@@ -85,6 +93,8 @@ impl CampaignGame {
             over: false,
             checkpoint: false,
             frontend: Capabilities::PLAIN,
+            intrusion: None,
+            question: None,
         })
     }
 
@@ -98,13 +108,34 @@ impl CampaignGame {
         let (_, mut state) = save::decode::<CampaignState>(text)?;
         let content = embedded_content().map_err(SaveError::Invalid)?;
         state.sync_lists(content);
+        let intrusion = state
+            .run
+            .as_ref()
+            .map(|run| {
+                Intrusion::resume(content, &run.site, state.difficulty, run.turn_start, run.undo)
+            })
+            .transpose()
+            .map_err(|error| SaveError::Invalid(error.to_string()))?;
         Ok(Self {
             content,
             state,
             over: false,
             checkpoint: false,
             frontend: Capabilities::PLAIN,
+            intrusion,
+            question: None,
         })
+    }
+
+    /// The intrusion under way, if there is one.
+    #[must_use]
+    pub fn intrusion(&self) -> Option<&Intrusion> {
+        self.intrusion.as_ref()
+    }
+
+    /// Whether the game is over: the player left, or the game was lost in Hardcore.
+    fn is_over(&self) -> bool {
+        self.over || self.state.lost
     }
 
     /// The state, for the tests and tools that read a game.
@@ -170,7 +201,7 @@ impl Game for CampaignGame {
     }
 
     fn handle(&mut self, input: Input) -> Step {
-        if self.over {
+        if self.is_over() {
             return self.step(Vec::new(), None);
         }
         if input == Input::Eof {
@@ -193,7 +224,7 @@ impl Game for CampaignGame {
     }
 
     fn prompt(&self) -> Prompt {
-        if self.over {
+        if self.is_over() {
             return Prompt::End;
         }
         let mut prompt = self.flow_prompt();
@@ -222,6 +253,9 @@ impl Game for CampaignGame {
     }
 
     fn view(&self) -> View {
+        if let Some(intrusion) = &self.intrusion {
+            return intrusion.panel_view(self.state.handle.clone());
+        }
         let notoriety = self.state.notoriety();
         let mut band = play::band_text(Band::of(notoriety));
         keys::gloss(&mut band);
@@ -244,7 +278,7 @@ impl Game for CampaignGame {
 
     fn screen(&self, kind: ScreenKind) -> Option<Table> {
         // Before the handle is known there is no hub to show: the opening is a story.
-        if self.state.handle.is_empty() || self.over {
+        if self.state.handle.is_empty() || self.is_over() || self.intrusion.is_some() {
             return None;
         }
         Some(self.screen_of(kind))
@@ -260,6 +294,18 @@ impl CampaignGame {
     fn situation(&self) -> Vec<Event> {
         if self.state.handle.is_empty() {
             return Vec::new();
+        }
+        if self.state.lost {
+            return vec![Event::alert(
+                Severity::Danger,
+                Text::new("campaign.hack.game_lost").with_str("handle", self.state.handle.clone()),
+            )];
+        }
+        // In the middle of an intrusion: the start of the turn, never the opening of the site.
+        if let Some(intrusion) = &self.intrusion {
+            let mut events = intrusion.situation();
+            Intrusion::gloss(&mut events);
+            return events;
         }
         // In the middle of the opening: the page it was on, nothing else yet.
         if let Some(page) = self.prologue_resume() {
