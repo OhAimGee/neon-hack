@@ -534,7 +534,10 @@ fn the_real_campaign_stages_its_first_intrusion() {
     );
     type_line(&mut app, "y");
     // The scene is for the end of the intrusion, which is played turn by turn.
-    assert!(!app.is_animating(), "nothing is staged while the intrusion is played");
+    assert!(
+        !app.is_animating(),
+        "nothing is staged while the intrusion is played"
+    );
     for line in LOCALHOST_RUN {
         type_line(&mut app, line);
     }

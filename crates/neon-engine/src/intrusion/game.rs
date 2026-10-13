@@ -171,8 +171,7 @@ impl IntrusionGame {
             events.push(Event::system(Text::dynamic(spec.help.to_owned())));
             if !spec.args.is_empty() {
                 events.push(Event::system(
-                    Text::new("run.help.usage")
-                        .with_text("usage", Text::dynamic(spec.usage_key())),
+                    Text::new("run.help.usage").with_text("usage", Text::dynamic(spec.usage_key())),
                 ));
             }
         } else {

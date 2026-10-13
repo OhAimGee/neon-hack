@@ -56,7 +56,13 @@ pub(crate) const RUN_SPECS: &[CommandSpec] = &[
 ];
 
 const HEAD: &[CommandSpec] = &[
-    engine("help", &["h"], "run.help.help", Context::Anywhere, HELP_ARGS),
+    engine(
+        "help",
+        &["h"],
+        "run.help.help",
+        Context::Anywhere,
+        HELP_ARGS,
+    ),
     engine("status", &["st"], "run.help.status", Context::Anywhere, &[]),
 ];
 

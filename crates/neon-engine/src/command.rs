@@ -286,12 +286,19 @@ pub enum CatalogIssue {
     clippy::indexing_slicing,
     reason = "a constant function: slices cannot be read any other way in it, and the lengths are checked first"
 )]
-pub const fn concat<const N: usize>(first: &[CommandSpec], second: &[CommandSpec]) -> [CommandSpec; N] {
+pub const fn concat<const N: usize>(
+    first: &[CommandSpec],
+    second: &[CommandSpec],
+) -> [CommandSpec; N] {
     assert!(
         first.len() + second.len() == N && N > 0,
         "the length of a table is the sum of the lengths of its parts"
     );
-    let mut out = [if first.is_empty() { second[0] } else { first[0] }; N];
+    let mut out = [if first.is_empty() {
+        second[0]
+    } else {
+        first[0]
+    }; N];
     let mut index = 0;
     while index < first.len() {
         out[index] = first[index];

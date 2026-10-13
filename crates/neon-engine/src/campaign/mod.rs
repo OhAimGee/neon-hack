@@ -112,7 +112,13 @@ impl CampaignGame {
             .run
             .as_ref()
             .map(|run| {
-                Intrusion::resume(content, &run.site, state.difficulty, run.turn_start, run.undo)
+                Intrusion::resume(
+                    content,
+                    &run.site,
+                    state.difficulty,
+                    run.turn_start,
+                    run.undo,
+                )
             })
             .transpose()
             .map_err(|error| SaveError::Invalid(error.to_string()))?;

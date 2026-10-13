@@ -4,9 +4,7 @@
 //! of the hub, then those of an intrusion (`map`, `breach`... declared by
 //! [`crate::intrusion`]); the context of the game says which of them exist at a given moment.
 
-use crate::command::{
-    ArgKind, ArgSpec, CommandSpec, Context, HandledBy, Registry, Scope, concat,
-};
+use crate::command::{ArgKind, ArgSpec, CommandSpec, Context, HandledBy, Registry, Scope, concat};
 use crate::intrusion::RUN_SPECS;
 
 /// The context of a game at the hub.

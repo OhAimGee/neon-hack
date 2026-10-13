@@ -1183,19 +1183,31 @@ fn only_the_start_of_a_turn_of_this_mission_is_accepted() {
     let start = mission.initial_state();
     let mut broken = start;
     broken.trace = 40;
-    assert!(mission.turn_start_error(&broken).is_some(), "a Trace that is not the floor");
+    assert!(
+        mission.turn_start_error(&broken).is_some(),
+        "a Trace that is not the floor"
+    );
     let mut broken = start;
     broken.cloak = true;
     assert!(mission.turn_start_error(&broken).is_some());
     let mut broken = start;
     broken.progress[0] = 5;
-    assert!(mission.turn_start_error(&broken).is_some(), "progress where there is no ICE");
+    assert!(
+        mission.turn_start_error(&broken).is_some(),
+        "progress where there is no ICE"
+    );
     let mut broken = start;
     broken.loot_taken = 0b1;
-    assert!(mission.turn_start_error(&broken).is_some(), "loot where there is none");
+    assert!(
+        mission.turn_start_error(&broken).is_some(),
+        "loot where there is none"
+    );
     let mut broken = start;
     broken.charges[Program::Cloak.index()] = 9;
-    assert!(mission.turn_start_error(&broken).is_some(), "more charges than the deck gave");
+    assert!(
+        mission.turn_start_error(&broken).is_some(),
+        "more charges than the deck gave"
+    );
     let mut broken = start;
     broken.status = Status::Won;
     assert!(mission.turn_start_error(&broken).is_some());

@@ -11,7 +11,9 @@ use crate::event::{Event, Severity};
 use crate::game::View;
 use crate::prompt::Prompt;
 use crate::run::solve::{Resolution, auto_resolve};
-use crate::run::{Action, Mission, NodeId, Program, Run, RunState, Status, Undo, UndoError, Utility};
+use crate::run::{
+    Action, Mission, NodeId, Program, Run, RunState, Status, Undo, UndoError, Utility,
+};
 use crate::text::Text;
 
 use super::gloss::{gloss_event, gloss_sections, gloss_view};
@@ -88,7 +90,6 @@ pub enum Automatic {
     /// No plan was found: the intrusion ended at the Trace its tier calls nominal.
     Nominal,
 }
-
 
 /// An intrusion on a site.
 #[derive(Debug, Clone)]
@@ -386,7 +387,9 @@ impl Intrusion {
         let start = *self.run.state();
         let played = match auto_resolve(self.run.mission(), &start) {
             Resolution::Optimal(plan) | Resolution::Best(plan) => {
-                plan.actions.iter().all(|action| self.run.act(*action).is_ok())
+                plan.actions
+                    .iter()
+                    .all(|action| self.run.act(*action).is_ok())
                     && self.run.status() == Status::Won
             }
             Resolution::Nominal => false,

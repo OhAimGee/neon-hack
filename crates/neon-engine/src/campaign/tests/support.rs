@@ -122,15 +122,17 @@ impl Driver {
     /// from where it stands, typing the commands as a player does. The last step is the one
     /// that ended it, which holds the result and the report.
     pub(super) fn play_intrusion(&mut self) {
-        use crate::run::solve::{PROOF_EXPANSIONS, Resolution, auto_resolve, Goal, solve};
+        use crate::run::solve::{Goal, PROOF_EXPANSIONS, Resolution, auto_resolve, solve};
         while let Some(intrusion) = self.game.intrusion() {
             let (mission, state) = (intrusion.run().mission().clone(), *intrusion.state());
             let plan = match auto_resolve(&mission, &state) {
                 Resolution::Optimal(plan) | Resolution::Best(plan) => plan,
-                Resolution::Nominal => solve(&mission, &state, Goal::Feasible, PROOF_EXPANSIONS, u8::MAX)
-                    .plan()
-                    .cloned()
-                    .expect("every intrusion of the content has a plan"),
+                Resolution::Nominal => {
+                    solve(&mission, &state, Goal::Feasible, PROOF_EXPANSIONS, u8::MAX)
+                        .plan()
+                        .cloned()
+                        .expect("every intrusion of the content has a plan")
+                }
             };
             for action in &plan.actions {
                 if self.game.intrusion().is_none() {

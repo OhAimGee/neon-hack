@@ -24,7 +24,9 @@ fn the_table_is_well_formed_and_has_every_text_in_every_language() {
         .collect();
     assert_eq!(
         run,
-        ["map", "move", "breach", "use", "loot", "end", "jackout", "undo", "skip"]
+        [
+            "map", "move", "breach", "use", "loot", "end", "jackout", "undo", "skip"
+        ]
     );
 }
 
@@ -93,7 +95,11 @@ fn every_kind_of_argument_the_table_uses_has_a_resolver_that_points_back_at_a_co
             // The nodes and programs of an intrusion are listed by the intrusion.
             if matches!(
                 arg.kind,
-                ArgKind::Number | ArgKind::Word(_) | ArgKind::Path | ArgKind::Node | ArgKind::Program
+                ArgKind::Number
+                    | ArgKind::Word(_)
+                    | ArgKind::Path
+                    | ArgKind::Node
+                    | ArgKind::Program
             ) {
                 continue;
             }

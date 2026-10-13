@@ -710,9 +710,15 @@ fn the_campaign_shows_the_notoriety_and_the_quest_in_the_status_bar_and_the_pane
     assert!(notoriety >= 1, "{rows:#?}");
     // The status bar says it in words and numbers, never by colour alone.
     assert!(has(&rows[..1], "Neon"), "{rows:#?}");
-    assert!(has(&rows[..1], &format!("Notoriety {notoriety}/100 (Discreet)")), "{rows:#?}");
+    assert!(
+        has(&rows[..1], &format!("Notoriety {notoriety}/100 (Discreet)")),
+        "{rows:#?}"
+    );
     // The panel repeats it with a bar, and lists what is left to do in the quest.
-    assert!(has(&rows, &format!("Notoriety {notoriety}/100")), "{rows:#?}");
+    assert!(
+        has(&rows, &format!("Notoriety {notoriety}/100")),
+        "{rows:#?}"
+    );
     assert!(has(&rows, "[█░░░░░░░░░] Discreet"), "{rows:#?}");
     assert!(has(&rows, "First Steps"), "{rows:#?}");
     // The log carries the line of the gauge that moved.
@@ -720,7 +726,10 @@ fn the_campaign_shows_the_notoriety_and_the_quest_in_the_status_bar_and_the_pane
     // The compact layout keeps the figure in the status bar.
     let compact = screen(&app, 80, 24);
     assert!(
-        has(&compact[..1], &format!("Notoriety {notoriety}/100 (Discreet)")),
+        has(
+            &compact[..1],
+            &format!("Notoriety {notoriety}/100 (Discreet)")
+        ),
         "{compact:#?}"
     );
 }

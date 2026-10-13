@@ -914,7 +914,10 @@ fn an_intrusion_takes_the_files_costs_notoriety_and_pays_the_first_breach_once()
     assert!(!said.contains("[Reward]"), "{said}");
     assert_eq!(driver.credits(), credits);
     assert_eq!(driver.game.state.missions.reputation.get(), reputation);
-    assert_eq!(driver.game.notoriety(), notoriety + heat + (final_trace(&said) / 4).max(1));
+    assert_eq!(
+        driver.game.notoriety(),
+        notoriety + heat + (final_trace(&said) / 4).max(1)
+    );
 }
 
 /// The final Trace a report says: `Final Trace - 6/100 (calm)`.
