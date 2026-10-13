@@ -1137,7 +1137,9 @@ fn options_open_in_the_log_and_the_language_changes_the_whole_screen() {
     let mut session = at_command_line(28, 100);
     session.type_line("options");
     session.wait_text("== Settings ==");
-    assert!(session.contains("reduce_motion"));
+    // The rows come after the title, maybe in another read of the terminal: wait for them.
+    session.wait_text("reduce_motion");
+    session.wait_text("typewriter");
     assert!(
         session.rows()[27].starts_with("F2 panel"),
         "{:#?}",
