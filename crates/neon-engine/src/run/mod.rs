@@ -26,6 +26,7 @@ mod mission;
 mod program;
 mod rules;
 mod session;
+pub mod solve;
 mod state;
 
 #[cfg(test)]

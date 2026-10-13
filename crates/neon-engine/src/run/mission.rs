@@ -506,6 +506,19 @@ fn distances(count: usize, links: [u8; MAX_NODES]) -> [[u8; MAX_NODES]; MAX_NODE
 }
 
 impl Mission {
+    /// The same mission with only the programs that never run out: the *minimal deck* of the
+    /// difficulty margin (decision S-10). Everything with a limited supply is left out.
+    #[must_use]
+    pub fn unlimited_only(&self) -> Self {
+        let mut mission = self.clone();
+        for slot in &mut mission.deck {
+            if matches!(slot, Some(Supply::Limited(_))) {
+                *slot = None;
+            }
+        }
+        mission
+    }
+
     /// How many nodes there are.
     #[must_use]
     pub fn node_count(&self) -> usize {

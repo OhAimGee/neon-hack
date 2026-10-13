@@ -4,6 +4,9 @@
 use neon_engine::campaign::Difficulty;
 use neon_engine::content::runs::site_tier;
 use neon_engine::content::{Content, File, Sources};
+use neon_engine::run::solve::{
+    Outcome, PROOF_EXPANSIONS, Proof, Resolution, auto_resolve, optimum, prove_solvable,
+};
 use neon_engine::run::{
     Action, ActionError, Fact, Mission, NodeId, Pace, Program, Run, Status, Undo, Utility,
 };
@@ -327,4 +330,88 @@ fn a_broken_deck_is_reported() {
             .any(|d| d.file == File::Runs && d.message.contains("unknown program `hack`")),
         "{errors:?}"
     );
+}
+
+/// Plays a plan from the start and returns where it ends.
+fn replay(mission: &Mission, plan: &neon_engine::run::solve::Plan) -> neon_engine::run::RunState {
+    let mut state = mission.initial_state();
+    for action in &plan.actions {
+        state = neon_engine::run::apply(mission, &state, *action, &mut ()).unwrap();
+    }
+    state
+}
+
+#[test]
+fn every_intrusion_is_provably_solvable_with_the_deck_every_player_has() {
+    // Decision S-10: the minimal deck is what never runs out. The proof is the search itself:
+    // it finds a plan that plays and ends under the cap, at every difficulty.
+    let c = shipped();
+    for s in &c.sites {
+        for difficulty in Difficulty::ALL {
+            let mission = c
+                .mission(&s.id, difficulty.pace())
+                .unwrap()
+                .unlimited_only();
+            match prove_solvable(&mission, PROOF_EXPANSIONS) {
+                Proof::Solvable(plan) => {
+                    let end = replay(&mission, &plan);
+                    assert_eq!(end.status(), Status::Won, "{} {difficulty:?}", s.id);
+                    assert_eq!(end.trace(), plan.trace, "{} {difficulty:?}", s.id);
+                    assert!(plan.trace < mission.trace_cap());
+                }
+                other => panic!("{} {difficulty:?}: {other:?}", s.id),
+            }
+        }
+    }
+}
+
+#[test]
+fn the_margin_of_difficulty_is_exact_and_grows_with_the_difficulty() {
+    // The margin is the cap minus the lowest Trace the minimal deck can reach. It is computed
+    // exactly (the search finishes), and a harder difficulty never makes the run easier.
+    let c = shipped();
+    for s in &c.sites {
+        let mut previous = 0u8;
+        for difficulty in Difficulty::ALL {
+            let mission = c
+                .mission(&s.id, difficulty.pace())
+                .unwrap()
+                .unlimited_only();
+            let report = optimum(&mission, PROOF_EXPANSIONS);
+            let Outcome::Solved { plan, optimal } = report.outcome else {
+                panic!("{} {difficulty:?}: {:?}", s.id, report.outcome);
+            };
+            assert!(optimal, "{} {difficulty:?}", s.id);
+            assert_eq!(replay(&mission, &plan).trace(), plan.trace);
+            assert!(
+                plan.trace >= previous,
+                "{} {difficulty:?}: {} after {previous}",
+                s.id,
+                plan.trace
+            );
+            previous = plan.trace;
+        }
+    }
+}
+
+#[test]
+fn an_automatic_intrusion_always_finds_a_plan_and_never_beats_the_exact_one() {
+    // The bounded chain of story mode, on the full deck of each tier: a plan that plays, and
+    // when it is proven optimal, no worse than the simple player.
+    let c = shipped();
+    for s in &c.sites {
+        for difficulty in [Difficulty::Story, Difficulty::Normal] {
+            let mission = c.mission(&s.id, difficulty.pace()).unwrap();
+            let resolution = auto_resolve(&mission, &mission.initial_state());
+            let (Resolution::Optimal(plan) | Resolution::Best(plan)) = &resolution else {
+                panic!("{} {difficulty:?}: {resolution:?}", s.id);
+            };
+            let end = replay(&mission, plan);
+            assert_eq!((end.status(), end.trace()), (Status::Won, plan.trace));
+            if matches!(resolution, Resolution::Optimal(_)) {
+                let simple = simple_player(&mission).unwrap();
+                assert!(plan.trace <= simple, "{} {difficulty:?}", s.id);
+            }
+        }
+    }
 }
