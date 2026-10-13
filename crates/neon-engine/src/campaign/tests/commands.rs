@@ -121,6 +121,7 @@ fn help_lists_exactly_the_commands_that_are_open_and_each_one_runs() {
             "options",
             "verbosity",
             "quit",
+            "load",
             "export",
             "quests",
             "contacts",
@@ -245,13 +246,13 @@ fn commands_of_the_interface_are_declared_but_answer_for_it() {
     let mut driver = Driver::new();
     assert!(driver.line("panel").contains("Only in full screen."));
     assert!(driver.line("plain").contains("Only in full screen."));
-    // `load` is the only one no interface runs yet; `export` is run by both (R3.3b).
-    let said = driver.line("load");
-    assert!(driver.errored(), "load: {said}");
-    assert!(
-        said.contains("interface does not offer it yet"),
-        "load: {said}"
-    );
+    // `load` and `export` are run by the interfaces; one that does not (here, none at all)
+    // is told so by the game instead of being met with silence.
+    for name in ["load", "export"] {
+        let said = driver.line(name);
+        assert!(driver.errored(), "{name}: {said}");
+        assert!(said.contains("belongs to the interface"), "{name}: {said}");
+    }
     // They are declared in the table all the same.
     let names: Vec<&str> = crate::campaign::command_names().collect();
     for name in ["load", "panel", "plain", "export"] {

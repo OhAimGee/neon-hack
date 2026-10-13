@@ -370,6 +370,64 @@ fn saves_can_be_listed_and_loaded_by_name() {
     assert!(text.contains("R4Z0R's stall"), "{text}");
 }
 
+/// The opening of a campaign, up to the command line: the handle, two pages, no tutorial.
+const CAMPAIGN_OPENING: &str = "Neon\n\n\nn\n";
+
+#[test]
+fn load_in_the_game_lists_asks_and_replaces_the_game_on_a_pipe() {
+    let dir = tempfile::tempdir().unwrap();
+    let data = dir.path().to_str().unwrap();
+    let played = run_with_input(
+        &["--data-dir", data, "--seed", "7"],
+        &format!(
+            "{CAMPAIGN_OPENING}save 3\nquests\nload\nload slot-3\nn\nload slot-3\nwhat\ny\nstatus\nquit\ny\n"
+        ),
+    );
+    assert!(played.status.success(), "{}", stderr(&played));
+    let text = stdout(&played);
+    // The list, then the question with its warning; a no leaves everything as it was.
+    assert!(text.contains("== Saves =="), "{text}");
+    assert!(text.contains("slot-3 - Neon - "), "{text}");
+    assert!(text.contains("is lost."), "{text}");
+    assert!(text.contains("Load slot-3 (Neon, "), "{text}");
+    assert!(text.contains("Nothing was loaded."), "{text}");
+    // A line that is not an answer asks again; the yes loads it.
+    assert!(text.contains("Please answer yes or no."), "{text}");
+    assert!(text.contains("Loaded slot-3."), "{text}");
+    assert!(text.contains("Back on the net, Neon"), "{text}");
+    assert!(
+        text.contains("Handle: Neon"),
+        "the game answers after the load: {text}"
+    );
+}
+
+#[test]
+fn load_of_a_save_that_is_not_there_or_not_a_name_changes_nothing_on_a_pipe() {
+    let dir = tempfile::tempdir().unwrap();
+    let data = dir.path().to_str().unwrap();
+    let output = run_with_input(
+        &["--data-dir", data, "--seed", "7"],
+        &format!("{CAMPAIGN_OPENING}load slot-4\nload nowhere\nload a b\nstatus\nquit\ny\n"),
+    );
+    let text = stdout(&output);
+    assert!(text.contains("There is no save called slot-4."), "{text}");
+    assert!(
+        text.contains("There is no save called nowhere: use auto"),
+        "{text}"
+    );
+    assert!(text.contains("Usage: `load` lists the saves"), "{text}");
+    assert!(text.contains("Handle: Neon"), "{text}");
+}
+
+#[test]
+fn load_is_not_a_command_of_the_demo() {
+    let output = run_with_input(&["--demo", "--no-save"], "\nNeon\ny\nload\nquit\ny\n");
+    assert!(
+        stdout(&output).contains("load"),
+        "the demo does not know it"
+    );
+}
+
 #[test]
 fn asking_for_a_save_that_does_not_exist_is_an_error_that_changes_nothing() {
     let dir = tempfile::tempdir().unwrap();

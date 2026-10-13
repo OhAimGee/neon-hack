@@ -151,6 +151,22 @@ need_name = "Rien n'est écrit tout seul avec --no-save : donnez un nom de fichi
 exists = "{file} existe déjà : choisissez un autre nom, rien n'a été écrit."
 failed = "Impossible d'écrire le transcript : {reason}"
 
+[ui.load]
+title = "== Sauvegardes =="
+col_save = "sauvegarde"
+col_player = "joueur"
+col_turn = "actions"
+damaged = "abîmée ({reason})"
+hint = "`load <sauvegarde>` remplace la partie en cours par l'une d'elles (il demande d'abord)."
+usage = "Usage : `load` liste les sauvegardes, `load <sauvegarde>` en charge une."
+unknown = "Il n'y a pas de sauvegarde nommée {save} : utilisez auto, checkpoint-1 à checkpoint-{checkpoints}, ou slot-1 à slot-{slots}."
+unreadable = "Cette sauvegarde est abîmée et aucune copie précédente ne marche ({details}). Rien n'a été changé."
+confirm = "Charger {save} ({player}, {turn} {turn|action|actions}) ?"
+warning = "Charger remplace la partie en cours : ce que vous avez joué depuis votre dernière sauvegarde est perdu."
+done = "{save} chargée."
+cancelled = "Rien n'a été chargé."
+failed = "Impossible de charger cette sauvegarde : {reason}. Rien n'a été changé."
+
 [ui.fallback]
 too_small = "Le terminal est trop petit ({width}x{height}, {min_width}x{min_height} au minimum) : affichage ligne par ligne."
 no_terminal = "L'interface plein écran demande un terminal : affichage ligne par ligne."

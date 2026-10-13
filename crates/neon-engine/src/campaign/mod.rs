@@ -206,6 +206,14 @@ impl Game for CampaignGame {
         self.step(self.situation(), None)
     }
 
+    fn load(&mut self, save: &str) -> Result<Step, SaveError> {
+        let mut loaded = Self::from_save(save)?;
+        // The interface is the same one: it keeps the commands it runs.
+        loaded.frontend = self.frontend;
+        *self = loaded;
+        Ok(self.resume())
+    }
+
     fn snapshot(&self) -> Result<String, SaveError> {
         let meta = SaveMeta {
             player: self.state.handle.clone(),

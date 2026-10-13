@@ -29,16 +29,17 @@ Commandes
 3. Commande : options; Effet : Voir ou changer les reglages de presentation
 4. Commande : verbosity; Effet : Voir ou regler la quantite d'ambiance affichee
 5. Commande : quit; Effet : Sauvegarder et quitter le reseau
-6. Commande : export; Effet : Ecrire le transcript de la session dans un fichier
-7. Commande : quests; Effet : Voir le journal, ou les objectifs d'une quete
-8. Commande : contacts; Effet : Lister les contacts connus
-9. Commande : talk; Effet : Parler a un contact
-10. Commande : net; Effet : Cartographier le reseau, ou detailler un site
-11. Commande : hack; Effet : Lancer une intrusion sur un site connu
-12. Commande : laylow; Effet : Baisser la Notoriete avec un service
-13. Commande : hint; Effet : Demander un indice a ECHO-7
-14. Commande : save; Effet : Sauvegarder la partie dans un emplacement
-15. Commande : tutorial; Effet : Afficher, ignorer ou relancer le tutoriel guide
+6. Commande : load; Effet : Charger une partie sauvegardee
+7. Commande : export; Effet : Ecrire le transcript de la session dans un fichier
+8. Commande : quests; Effet : Voir le journal, ou les objectifs d'une quete
+9. Commande : contacts; Effet : Lister les contacts connus
+10. Commande : talk; Effet : Parler a un contact
+11. Commande : net; Effet : Cartographier le reseau, ou detailler un site
+12. Commande : hack; Effet : Lancer une intrusion sur un site connu
+13. Commande : laylow; Effet : Baisser la Notoriete avec un service
+14. Commande : hint; Effet : Demander un indice a ECHO-7
+15. Commande : save; Effet : Sauvegarder la partie dans un emplacement
+16. Commande : tutorial; Effet : Afficher, ignorer ou relancer le tutoriel guide
 Objectif atteint : Lire l'aide (help)
 ECHO-7: Ensuite, ton propre dossier : handle, argent, Notoriete. J'ai les memes trois sur toi.
 Tutoriel, etape 2 sur 10 : Taper `status` pour voir la situation.

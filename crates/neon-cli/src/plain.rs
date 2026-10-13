@@ -11,9 +11,10 @@ use neon_engine::text::Text;
 use neon_engine::{Game, Input, Prompt, Step};
 
 use crate::input::{InputError, to_input};
+use crate::loading::{self, Answer, Loading};
 use crate::options::Host;
 use crate::persist::Persistence;
-use crate::render::Renderer;
+use crate::render::{Line, Renderer};
 use crate::transcript::Transcript;
 
 /// [`run_with_options`] with no presentation commands, as the tests play it.
@@ -67,9 +68,14 @@ pub(crate) fn run_with_options<'a>(
     let mut step = first;
     let mut closed = false;
     // What is said and typed, for `export`.
-    let mut transcript = Transcript::new();
+    let mut output = Output {
+        out,
+        transcript: Transcript::new(),
+    };
+    // `load` belongs to the campaign, like the other commands of the interface.
+    let mut loading = Loading::new();
     loop {
-        write_step(out, renderer, &step, &mut transcript)?;
+        write_step(&mut output, renderer, &step)?;
         if step.prompt == Prompt::End {
             return Ok(());
         }
@@ -79,100 +85,167 @@ pub(crate) fn run_with_options<'a>(
                 "the game did not end after the input was closed",
             ));
         }
-        let engine_input = if let Some(typed) = read_input(
+        let load = host.is_some().then_some(LoadContext {
+            loading: &mut loading,
+            game: &mut *game,
+            persistence: &*persistence,
+        });
+        let read = read_input(
             input,
-            out,
+            &mut output,
             renderer,
             host.as_deref_mut(),
             &step.prompt,
             echo_input,
-            &mut transcript,
-        )? {
-            typed
-        } else {
-            closed = true;
-            writeln!(out)?;
-            Input::Eof
+            load,
+        )?;
+        let engine_input = match read {
+            Read::Input(typed) => typed,
+            Read::Loaded(loaded) => {
+                // A different game, told and shown from where it is.
+                step = loaded;
+                continue;
+            }
+            Read::Closed => {
+                closed = true;
+                writeln!(output.out)?;
+                Input::Eof
+            }
         };
         step = game.handle(engine_input);
         persistence.after_step(&*game, &mut step);
     }
 }
 
-fn write_step(
-    out: &mut dyn Write,
-    renderer: &Renderer<'_>,
-    step: &Step,
-    transcript: &mut Transcript,
-) -> io::Result<()> {
-    for event in &step.events {
-        for line in renderer.event(event) {
-            writeln!(out, "{}", renderer.paint(&line))?;
-            transcript.record([line.text]);
-        }
-    }
-    let view = renderer.prompt(&step.prompt);
-    for line in &view.header {
-        writeln!(out, "{}", renderer.paint(line))?;
-        transcript.record([line.text.clone()]);
-    }
-    write!(out, "{}", view.marker)?;
-    out.flush()
+/// Where the lines go: the output, and the transcript that keeps them.
+struct Output<'o> {
+    out: &'o mut dyn Write,
+    transcript: Transcript,
 }
 
-/// Reads until a line makes sense for the prompt. `None` means the input is closed.
+impl Output<'_> {
+    /// Writes the lines of events, painted, and keeps their text.
+    fn events(&mut self, renderer: &Renderer<'_>, events: &[Event]) -> io::Result<()> {
+        for event in events {
+            self.lines(renderer, &renderer.event(event))?;
+        }
+        Ok(())
+    }
+
+    fn lines(&mut self, renderer: &Renderer<'_>, lines: &[Line]) -> io::Result<()> {
+        for line in lines {
+            writeln!(self.out, "{}", renderer.paint(line))?;
+            self.transcript.record([line.text.clone()]);
+        }
+        Ok(())
+    }
+
+    /// The marker that asks for a line, left at the end of the row.
+    fn ask(&mut self, marker: &str) -> io::Result<()> {
+        write!(self.out, "{marker}")?;
+        self.out.flush()
+    }
+}
+
+fn write_step(output: &mut Output<'_>, renderer: &Renderer<'_>, step: &Step) -> io::Result<()> {
+    output.events(renderer, &step.events)?;
+    let view = renderer.prompt(&step.prompt);
+    output.lines(renderer, &view.header)?;
+    output.ask(&view.marker)
+}
+
+/// What the game and the saves lend to the reading of a line, for `load`.
+struct LoadContext<'g> {
+    loading: &'g mut Loading,
+    game: &'g mut dyn Game,
+    persistence: &'g Persistence,
+}
+
+/// What came of reading.
+enum Read {
+    /// A line the game is to hear.
+    Input(Input),
+    /// A save was loaded: the step to carry on from.
+    Loaded(Step),
+    /// The input is closed.
+    Closed,
+}
+
+/// Reads until a line makes sense for the prompt, or means a game loaded.
 fn read_input<'a>(
     input: &mut dyn BufRead,
-    out: &mut dyn Write,
+    output: &mut Output<'_>,
     renderer: &mut Renderer<'a>,
     mut host: Option<&mut Host<'a>>,
     prompt: &Prompt,
     echo_input: bool,
-    transcript: &mut Transcript,
-) -> io::Result<Option<Input>> {
+    mut load: Option<LoadContext<'_>>,
+) -> io::Result<Read> {
     loop {
+        // While `load` waits for its yes, that is the question being asked.
+        let question = load.as_ref().and_then(|load| load.loading.question());
+        let asking = question.as_ref().unwrap_or(prompt);
         let mut bytes = Vec::new();
         if input.read_until(b'\n', &mut bytes)? == 0 {
-            return Ok(None);
+            return Ok(Read::Closed);
         }
         // Invalid UTF-8 becomes U+FFFD rather than an error: a stray byte must not end a game.
         let text = String::from_utf8_lossy(&bytes);
         let line = text.trim_end_matches(['\n', '\r']);
         if echo_input {
-            writeln!(out, "{}", renderer.verbatim(line))?;
+            writeln!(output.out, "{}", renderer.verbatim(line))?;
         }
         // The line as typed, after the marker that asked for it: what a transcript reads.
-        transcript.record([format!(
+        output.transcript.record([format!(
             "{}{}",
-            renderer.prompt(prompt).marker,
+            renderer.prompt(asking).marker,
             renderer.verbatim(line)
         )]);
         // The commands of the interface are its own: the game never hears of them.
-        if *prompt == Prompt::Command
+        if *asking == Prompt::Command
             && let Some(host) = host.as_deref_mut()
-            && let Some(events) = host.run(line, transcript)
+            && let Some(events) = host.run(line, &output.transcript)
         {
             host.apply(renderer);
-            for event in &events {
-                for rendered in renderer.event(event) {
-                    writeln!(out, "{}", renderer.paint(&rendered))?;
-                    transcript.record([rendered.text]);
-                }
-            }
-            write!(out, "{}", renderer.prompt(prompt).marker)?;
-            out.flush()?;
+            output.events(renderer, &events)?;
+            output.ask(&renderer.prompt(prompt).marker)?;
             continue;
         }
-        match to_input(prompt, line) {
-            Ok(engine_input) => return Ok(Some(engine_input)),
-            Err(InputError::NotYesOrNo) => {
-                let error = Event::error(Text::new("ui.invalid_confirm"));
-                for rendered in renderer.event(&error) {
-                    writeln!(out, "{}", renderer.paint(&rendered))?;
-                    transcript.record([rendered.text]);
+        if let Some(load) = load.as_mut() {
+            if *asking == Prompt::Command
+                && let Some(request) = loading::request(line)
+            {
+                let events = load.loading.run(request, load.persistence);
+                output.events(renderer, &events)?;
+                let next = load.loading.question();
+                output.ask(&renderer.prompt(next.as_ref().unwrap_or(prompt)).marker)?;
+                continue;
+            }
+            if question.is_some() {
+                match to_input(asking, line) {
+                    Ok(answer) => match load.loading.answer(&answer, &mut *load.game) {
+                        Answer::Said(events) => {
+                            output.events(renderer, &events)?;
+                            let next = load.loading.question();
+                            output.ask(&renderer.prompt(next.as_ref().unwrap_or(prompt)).marker)?;
+                        }
+                        Answer::Loaded(step) => return Ok(Read::Loaded(step)),
+                        Answer::Closed => return Ok(Read::Input(Input::Eof)),
+                    },
+                    Err(InputError::NotYesOrNo) => {
+                        output
+                            .events(renderer, &[Event::error(Text::new("ui.invalid_confirm"))])?;
+                        output.ask(&renderer.prompt(asking).marker)?;
+                    }
                 }
-                write!(out, "{}", renderer.prompt(prompt).marker)?;
-                out.flush()?;
+                continue;
+            }
+        }
+        match to_input(prompt, line) {
+            Ok(engine_input) => return Ok(Read::Input(engine_input)),
+            Err(InputError::NotYesOrNo) => {
+                output.events(renderer, &[Event::error(Text::new("ui.invalid_confirm"))])?;
+                output.ask(&renderer.prompt(prompt).marker)?;
             }
         }
     }

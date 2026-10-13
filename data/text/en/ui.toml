@@ -151,6 +151,22 @@ need_name = "Nothing is written by itself with --no-save: give a file name, `exp
 exists = "{file} already exists: pick another name, nothing was written."
 failed = "Could not write the transcript: {reason}"
 
+[ui.load]
+title = "== Saves =="
+col_save = "save"
+col_player = "player"
+col_turn = "actions"
+damaged = "damaged ({reason})"
+hint = "`load <save>` replaces the game under way by one of these (it asks first)."
+usage = "Usage: `load` lists the saves, `load <save>` loads one."
+unknown = "There is no save called {save}: use auto, checkpoint-1 to checkpoint-{checkpoints}, or slot-1 to slot-{slots}."
+unreadable = "That save is damaged and no previous copy works ({details}). Nothing was changed."
+confirm = "Load {save} ({player}, {turn} {turn|action|actions})?"
+warning = "Loading replaces the game under way: what you played since your last save is lost."
+done = "Loaded {save}."
+cancelled = "Nothing was loaded."
+failed = "Could not load that save: {reason}. Nothing was changed."
+
 [ui.fallback]
 too_small = "The terminal is too small ({width}x{height}, at least {min_width}x{min_height} needed): using the line-by-line interface."
 no_terminal = "The full-screen interface needs a terminal: using the line-by-line interface."

@@ -29,6 +29,7 @@ use super::text::width;
 use super::typing::Typing;
 use crate::config::TypewriterChoice;
 use crate::input::{InputError, to_input};
+use crate::loading::{self, Answer, Loading};
 use crate::options::Host;
 use crate::persist::Persistence;
 use crate::render::Renderer;
@@ -129,6 +130,10 @@ pub(crate) struct App<'a> {
     panel: PanelState,
     /// The list kept open beside the log, if any (see `modal`).
     modal: Option<Modal>,
+    /// The `load` command: a save waiting for its yes.
+    loading: Loading,
+    /// The game's own prompt, set aside while the question of `load` stands in its place.
+    set_aside: Option<Prompt>,
     /// Everything said and typed, as text, for `export`. The log keeps the most recent
     /// events; this keeps the lines.
     transcript: Transcript,
@@ -166,6 +171,8 @@ impl<'a> App<'a> {
             frontend_commands: false,
             panel: PanelState::default(),
             modal: None,
+            loading: Loading::new(),
+            set_aside: None,
             transcript: Transcript::new(),
         };
         app.apply(first);
@@ -321,6 +328,10 @@ impl<'a> App<'a> {
     fn submit(&mut self, input: Input) {
         // The player acted: whatever was staged is over.
         self.end_staging();
+        if self.loading.is_pending() {
+            self.answer_load(&input);
+            return;
+        }
         let mut step = self.game.handle(input);
         self.persistence.after_step(&*self.game, &mut step);
         // The player acted: show what came of it.
@@ -472,7 +483,9 @@ impl<'a> App<'a> {
         self.editor.clear();
         self.echo(&line);
         if self.prompt == Prompt::Command
-            && (self.run_frontend_command(&line) || self.run_presentation(&line))
+            && (self.run_frontend_command(&line)
+                || self.run_presentation(&line)
+                || self.run_load(&line))
         {
             return;
         }
@@ -536,6 +549,57 @@ impl<'a> App<'a> {
             self.push(LogEntry::Event(event));
         }
         true
+    }
+
+    /// Runs `load`, if that is the line and the game has it: the saves are listed, or the
+    /// question of loading one is asked, in the place of the game's prompt.
+    fn run_load(&mut self, line: &str) -> bool {
+        if self.options.is_none() {
+            return false;
+        }
+        let Some(request) = loading::request(line) else {
+            return false;
+        };
+        let events = self.loading.run(request, &self.persistence);
+        self.scroll.set(0);
+        for event in events {
+            self.push(LogEntry::Event(event));
+        }
+        if let Some(question) = self.loading.question() {
+            self.set_aside = Some(std::mem::replace(&mut self.prompt, question));
+        }
+        true
+    }
+
+    /// The answer to the question of `load`: the game is replaced if it was a yes and the save
+    /// loads, and the game's own prompt comes back.
+    fn answer_load(&mut self, input: &Input) {
+        let own = self.set_aside.take();
+        match self.loading.answer(input, &mut *self.game) {
+            Answer::Said(events) => {
+                for event in events {
+                    self.push(LogEntry::Event(event));
+                }
+                if self.loading.is_pending() {
+                    // Not an answer: the question stands.
+                    self.set_aside = own;
+                } else if let Some(own) = own {
+                    self.prompt = own;
+                }
+            }
+            Answer::Loaded(step) => {
+                // The lists that were open were the old game's.
+                self.modal = None;
+                self.scroll.set(0);
+                self.apply(step);
+            }
+            Answer::Closed => {
+                if let Some(own) = own {
+                    self.prompt = own;
+                }
+                self.submit(Input::Eof);
+            }
+        }
     }
 
     /// Submits a line the player did not type (the `quit` of Ctrl-C).

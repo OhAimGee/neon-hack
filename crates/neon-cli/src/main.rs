@@ -8,6 +8,7 @@
 mod config;
 mod frontend;
 mod input;
+mod loading;
 mod options;
 mod palette;
 mod persist;
