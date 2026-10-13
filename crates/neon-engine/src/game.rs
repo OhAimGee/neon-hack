@@ -112,6 +112,22 @@ pub trait Game {
     /// [`SaveError`] if the state cannot be written (a programming error).
     fn snapshot(&self) -> Result<String, SaveError>;
 
+    /// Replaces the game under way by the one in `save`, and gives the step to carry on from
+    /// (the same as [`Game::resume`] on the loaded game). Loading is the constructor of the
+    /// concrete game, so a save that does not load changes nothing: the game is only
+    /// replaced once the new one exists. What the frontend told the game about itself
+    /// ([`Game::set_capabilities`]) is kept.
+    ///
+    /// # Errors
+    ///
+    /// [`SaveError`] if the text is damaged, from a newer game, from another game, or not a
+    /// state this game can be in, or if the game cannot be replaced now (the default).
+    fn load(&mut self, _save: &str) -> Result<Step, SaveError> {
+        Err(SaveError::Invalid(
+            "this game cannot load a save while it runs".to_owned(),
+        ))
+    }
+
     /// A read-only snapshot for the interface.
     fn view(&self) -> View;
 

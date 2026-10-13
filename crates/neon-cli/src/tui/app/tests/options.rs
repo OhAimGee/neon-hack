@@ -8,7 +8,7 @@ use super::*;
 use crate::config::{LangChoice, TypewriterChoice, VerbosityChoice};
 use crate::options::{Catalogs, Fixed, Host, Live, Target};
 
-fn host<'a>(en: &'a Catalog, fr: &'a Catalog, target: Target) -> Host<'a> {
+pub(super) fn host<'a>(en: &'a Catalog, fr: &'a Catalog, target: Target) -> Host<'a> {
     Host {
         catalogs: Catalogs { en, fr },
         live: Live {

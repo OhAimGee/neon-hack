@@ -93,10 +93,10 @@ const fn frontend(
     }
 }
 
-/// The commands the frontend runs that frontends do take in charge today. The others (`load`,
-/// `plain`, `export`) stay closed until a frontend wires them. `panel` is wired for the
-/// full-screen frontend, the only one it exists for (see [`Scope::TuiOnly`]).
-pub(super) const WIRED: &[&str] = &["options", "verbosity", "panel", "plain", "export"];
+/// The commands the frontends take in charge. A command of the interface that is not listed
+/// here stays closed until one of them runs it; today all of them are, `panel` and `plain`
+/// for the full-screen frontend only, the one they exist for (see [`Scope::TuiOnly`]).
+pub(super) const WIRED: &[&str] = &["options", "verbosity", "panel", "plain", "export", "load"];
 
 /// Every command of the campaign. Commands that only the frontend can run (`options`,
 /// `verbosity`, `load`, `panel`, `plain`, `export`) are declared here too, so that they are

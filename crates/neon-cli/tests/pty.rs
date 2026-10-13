@@ -657,6 +657,35 @@ fn the_text_is_typed_out_and_a_key_shows_the_rest() {
 }
 
 #[test]
+fn load_asks_a_question_that_escape_answers_and_a_yes_replaces_the_game() {
+    let mut session = at_command_line(28, 100);
+    session.type_line("save 1");
+    session.wait_text("Game saved in slot 1.");
+    session.type_line("load");
+    session.wait_text("== Saves ==");
+    session.wait_text("slot-1 - Neon - ");
+    // The question is on the input line, with the safe answer; Escape is a no.
+    session.type_line("load slot-1");
+    session.wait_for("the question", |s| s.input_row().contains("[y/N]"));
+    assert!(session.contains("is lost."), "{:#?}", session.rows());
+    session.send(ESCAPE);
+    session.wait_text("Nothing was loaded.");
+    session.wait_input(">");
+    // A yes loads it, and the game goes on from the save.
+    session.type_line("load slot-1");
+    session.wait_for("the question", |s| s.input_row().contains("[y/N]"));
+    session.type_line("y");
+    session.wait_text("Loaded slot-1.");
+    session.wait_text("Back on the net, Neon");
+    session.wait_input(">");
+    session.type_line("status");
+    session.wait_text("Handle: Neon");
+    let status = quit_with_control_c(&mut session);
+    assert!(status.success());
+    assert_restored(&session);
+}
+
+#[test]
 fn resizing_redraws_every_tier_and_loses_nothing() {
     let mut session = at_command_line(28, 100);
     assert!(session.contains("Panel"));

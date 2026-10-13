@@ -5,6 +5,7 @@
 //! the saves, and properties over random lines.
 
 mod commands;
+mod load;
 mod panel;
 mod props;
 mod saves;

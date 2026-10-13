@@ -35,6 +35,11 @@ impl Persistence {
         }
     }
 
+    /// The saves folder, unless saving is off (`--no-save`).
+    pub(crate) fn store(&self) -> Option<&Store> {
+        self.store.as_ref()
+    }
+
     /// Honours the save the step asks for, if any, and adds to the step the line the
     /// player should read about it.
     pub(crate) fn after_step(&mut self, game: &dyn Game, step: &mut Step) {

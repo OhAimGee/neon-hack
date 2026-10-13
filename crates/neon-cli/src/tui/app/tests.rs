@@ -15,6 +15,7 @@ use crate::persist::Persistence;
 use crate::render::{LineKind, Verbosity};
 use crate::test_support::{catalog_en, catalog_fr};
 
+mod load;
 mod modal;
 mod options;
 mod panel;
