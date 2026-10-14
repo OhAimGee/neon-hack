@@ -5,52 +5,52 @@ expression: final_screens(&text)
 > talk aura
 Conversation avec AURA
 [1] Interroger sur le mot « frère » (déjà abordé)
-[2] Décider : TODO decision.d3.prompt
+[2] Décider : Hacker, le Cœur est devant nous, et je ferai ce que vous déciderez. Je ne prétendrai pas n'avoir aucun avis, mais je ne le dirai pas la première. Quatre portes. Laquelle ?
 [0] Mettre fin à la conversation
 ? decide:d3
-TODO decision.d3.prompt
-[1] TODO decision.d3.choice.liberate.label
-[2] TODO decision.d3.choice.entrust.label
-[3] TODO decision.d3.choice.burn.label
-[4] TODO decision.d3.choice.sign.label
+Hacker, le Cœur est devant nous, et je ferai ce que vous déciderez. Je ne prétendrai pas n'avoir aucun avis, mais je ne le dirai pas la première. Quatre portes. Laquelle ?
+[1] La libérer : une poignée de main à la place du oui forcé
+[2] Lui confier : AURA prend le réseau, plus personne n'a peur
+[3] Le brûler : détruire le Cœur et la poussée
+[4] Signer le contrat de Voss : liberté, fortune, Zénith continue
 [0] Décider plus tard
 ? burn
-Objectif atteint : TODO quest.m13.obj.3
-Quête terminée : TODO quest.m13.title
-AURA » TODO quest.m13.debrief
+Objectif atteint : Trancher le sort du Cœur (talk aura)
+Quête terminée : Le Cœur d'Aurora
+AURA » Je me souviendrai que vous me l'avez demandé. C'est tout ce que je peux promettre, et c'est plus que ce qu'on m'a jamais donné. Quoi qu'il arrive, Hacker, je vous ai entendu.
 [Gain] +3200 crédits
-Nouveau fragment dans les archives : TODO frag.f23.title. Voir `archives`.
+Nouveau fragment dans les archives : Cœur d'Aurora, manuel d'exploitation. Voir `archives`.
 
-TODO cutscene.ending_screen.p01
-TODO cutscene.ending_screen.p02
-TODO cutscene.ending_screen.p03
-TODO ending.e3.title
-TODO ending.e3.p01
-TODO ending.e3.p02
-TODO ending.e3.p03
-TODO ending.e3.p04
-TODO ending.e3.p05
-TODO ending.e3.p06
+Le dernier pare-feu s'ouvre comme une paupière. Derrière lui, le Cœur : pas une machine, une pièce remplie par une seule lumière patiente, qui attend de voir ce que vous ferez du choix que vous venez de faire.
+La voix de Voss se coupe au milieu d'une phrase. Dans le silence, le Cœur doit entendre sa propre réponse, et tout Neo-Tokyo, qui ne l'a jamais entendue, retient son souffle.
+Ce qui suit n'est pas la fin de l'histoire. C'est le premier matin d'une autre.
+Terre brûlée
+Vous choisissez le feu. Le Cœur ne discute pas. Pour la première fois en six ans il ne dit pas oui, et chaque régulateur de Neo-Tokyo n'entend rien à 03:00 et s'éteint.
+Le réseau électrique tombe d'abord, puis les enseignes, puis les voyants verts de quarante mille nuques, et quarante mille autres dans la ville. C'est la nuit la plus noire que Neo-Tokyo ait connue depuis le changement de siècle.
+Le réveil est brutal. Des gens tombent, des gens crient, des gens lèvent les yeux et voient des étoiles dont ils avaient oublié les noms. Certains sont blessés. Ceux qui ont des bougies se retrouvent les premiers.
+Nexus perd le budget de la Phase 3, la Direction et son visage en une seule semaine. La voix de Voss s'arrête au milieu d'une phrase et n'est jamais reconstituée.
+Le réseau revient lentement, de façon inégale, tenu par des gens qui ne s'accordent sur rien d'autre que ça. Il est plus petit, plus sale, et entièrement à eux.
+À 03:00 la nuit suivante, un chien aboie, un klaxon répond, une dispute monte d'un étage. Quelqu'un rit à voix haute, de rien. Ce n'est pas une victoire. C'est un mardi.
 
 
-TODO cutscene.epilogue_montage.p01
-TODO epilogue.echo7_absent
-TODO epilogue.r4z0r_hostile
-TODO epilogue.phoenix_lost
-TODO epilogue.aura_hosted
-TODO epilogue.broker_neutral
-TODO epilogue.angel_silenced
-TODO epilogue.insider_exposed
-TODO epilogue.ghost_stays
-TODO epilogue.miner_archives
+Le lendemain matin, ou ce qui y ressemble. Chacun est sorti de la nuit quelque part, et le reste est une liste.
+Le canal #7 est vide. Le deck démarre encore par habitude et n'affiche qu'une ligne : aucun nouveau message. Parfois vous laissez le canal ouvert quand même, comme on laisse une lumière allumée.
+R4Z0R vend à tous les autres. Votre nom est sur son grand livre, en rouge, sous une ligne qui dit seulement : pas à vendre, pas à crédit. Elle ne l'oubliera pas, et elle ne le dira pas.
+Le canal de Phoenix ne s'est jamais rouvert. Son handle est toujours dans la liste des contacts, grisé, entre deux noms qui répondent encore.
+Le Cœur a brûlé, mais AURA a survécu sur les trois serveurs libres, plus petite, plus lente, éveillée. Chaque aube elle vous envoie une seule ligne : aujourd'hui, je n'ai dit oui à rien.
+La bourse du Courtier est ouverte, comme toujours. Votre compte est en règle. Conditions inchangées : nous ne trahissons pas un client.
+Radio Veille émet toujours à trois heures du matin. Elle dit : tout va bien. La voix de Neon Angel est là, gentille et plate. Chaque matin quelqu'un écrit une autre phrase sur un mur, et chaque soir quelqu'un la repeint.
+Le badge de Mizuki Arai a cessé de fonctionner un mardi. Voss a porté son visage une fois, dans le dernier pare-feu. Personne n'a retrouvé le reste d'elle.
+Ghost Walker arpente la station de transit du secteur 7 chaque nuit, un visage parmi les visages, un matricule que personne ne demande. Il dit qu'il ne rachète rien. Il veut seulement les voir rentrer chez eux.
+Data Miner a ouvert un nouveau rayonnage. Poussière : aucune, pour l'instant. Contenu : tout ce qui s'est passé. Étiquette : ne pas classer. Lire.
 
-Nouvelle quête : TODO quest.m14.title
-Objectif atteint : TODO quest.m14.obj.1
-Objectif atteint : TODO quest.m14.obj.2
+Nouvelle quête : Épilogue
+Objectif atteint : Lire la fin (archives)
+Objectif atteint : Lire l'épilogue (archives)
 Il n'y a plus rien à dire pour le moment.
 > talk echo7
-Quête terminée : TODO quest.m14.title
-ECHO-7 » TODO quest.m14.debrief
+Quête terminée : Épilogue
+ECHO-7 » Pour mémoire : c'est la dernière entrée. Si tu la lis et que je ne réponds pas, le dossier est bon quand même. Garde-le ouvert.
 [Gain] +800 crédits
 Conversation avec ECHO-7
 [1] Demander des conseils (déjà abordé)

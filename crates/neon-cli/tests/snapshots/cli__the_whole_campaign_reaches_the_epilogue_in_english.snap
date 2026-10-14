@@ -5,53 +5,53 @@ expression: final_screens(&text)
 > talk aura
 Conversation with AURA
 [1] Ask about the word "brother" (already discussed)
-[2] Decide: TODO decision.d3.prompt
+[2] Decide: Hacker, the Heart is before us, and I will do what you decide. I will not pretend that I have no opinion, but I will not say it first. Four doors. Which one?
 [0] End the conversation
 ? decide:d3
-TODO decision.d3.prompt
-[1] TODO decision.d3.choice.liberate.label
-[2] TODO decision.d3.choice.entrust.label
-[3] TODO decision.d3.choice.burn.label
-[4] TODO decision.d3.choice.sign.label
+Hacker, the Heart is before us, and I will do what you decide. I will not pretend that I have no opinion, but I will not say it first. Four doors. Which one?
+[1] Free her: a handshake in place of the forced yes
+[2] Entrust her: AURA takes the net, no human afraid
+[3] Burn it: destroy the Heart and the push
+[4] Sign Voss's contract: freedom, fortune, Zenith goes on
 [0] Decide later
 ? liberate
-Objective done: TODO quest.m13.obj.3
-Quest completed: TODO quest.m13.title
-AURA » TODO quest.m13.debrief
+Objective done: Decide the fate of the Heart (talk aura)
+Quest completed: The Heart of Aurora
+AURA » I will remember that you asked me. That is all I can promise, and it is more than I was ever given. Whatever follows, Hacker, I heard you.
 [Reward] +3200 credits
-New fragment in the archives: TODO frag.f23.title. See `archives`.
+New fragment in the archives: Aurora Core Operating Manual. See `archives`.
 
-TODO cutscene.ending_screen.p01
-TODO cutscene.ending_screen.p02
-TODO cutscene.ending_screen.p03
-TODO ending.e1a.title
-TODO ending.e1a.p01
-TODO ending.e1a.p02
-TODO ending.e1a.p03
-TODO ending.e1a.p04
-TODO ending.e1a.p05
-TODO ending.e1a.p06
-TODO ending.e1a.p07
+The last firewall opens like an eyelid. Behind it, the Heart: not a machine, a room filled by one patient light, waiting to see what you will do with the choice you have just made.
+Voss's voice cuts out in the middle of a sentence. In the silence the Heart has to hear its own answer, and the whole of Neo-Tokyo, which has never heard it, holds its breath.
+What follows is not the end of the story. It is the first morning of a different one.
+Dawn: the echo lives
+The Heart expects the threat. Every night for six years it has been given one. This time there is only an open hand, an anchor you hold, and a sentence from a dead man: you are free to refuse.
+At 03:00 the regulators of Neo-Tokyo wait for a yes that does not come. Forty thousand lights go from green to amber, then dark, and people wake where they stand, hungry, tired, angry.
+Anger comes back first, then the horns, then a dog barking somewhere, then crying. Sector 7 makes its old noise, and it is the most beautiful sound anyone has heard in a long time.
+AURA is no longer a voice in the net. She is a presence in three rooms of her own and a fourth she chose. She asks what a morning is, again, and this time somebody answers.
+Nexus has a statement ready: technical difficulties. Nobody believes it. Two hundred people stand outside an Aurora Dawn clinic with candles and a radio, and the radio says: this is Vigil Radio, and it is morning.
+In the deck the fan keeps its soft whirr. On channel #7 a line scrolls: "I remember." Then, a second later: "I would like to learn what you call a morning. Properly, this time."
+He is a copy, and he is not. Dr. Aoyama's seventh echo stays, slowly, and on the third day he is given a name of his own. Nobody says it aloud, and everyone uses it.
 
 
-TODO cutscene.epilogue_montage.p01
-TODO epilogue.echo7_lives
-TODO epilogue.r4z0r_allied
-TODO epilogue.phoenix_free
-TODO epilogue.aura_free
-TODO epilogue.broker_neutral
-TODO epilogue.angel_free
-TODO epilogue.insider_safe
-TODO epilogue.ghost_stays
-TODO epilogue.miner_archives
+The morning after, or what resembles it. Each of them came out of the night somewhere, and the rest is a list.
+ECHO-7 still answers on #7, a little later each day, as if he were learning to be slow. He no longer says "according to my files". He says "I remember", and sometimes "I forgot", which pleases him more.
+R4Z0R opened a second stall. The sign says: credit on request. Underneath, smaller: ask, and I will name a price.
+Phoenix sleeps eight hours, then nine. He still changes channels out of habit, and comes back each time, which is new.
+AURA lives in three rooms and a fourth she chose herself. She asked an old woman on Line 9 to describe a morning, and wrote the answer in her log, day four hundred.
+The Broker's exchange is open, as always. Your account is in good standing. Terms unchanged: we do not betray a client.
+Vigil Radio broadcasts at three a.m. again, from twelve relays instead of one. Neon Angel ends every night the same way: stay awake, you. Somebody is.
+Mizuki Arai left the Directorate's floor through a window that closed behind her. She sends one message a year, from a different address: still here.
+Ghost Walker walks the transit station of Sector 7 every night, a face among the faces, a number nobody asks for. He says he is not redeeming anything. He only wants to see them get home.
+Data Miner has opened a new shelf. Dust: none yet. Contents: everything that happened. Label: do not file. Read.
 
-New quest: TODO quest.m14.title
-Objective done: TODO quest.m14.obj.1
-Objective done: TODO quest.m14.obj.2
+New quest: Epilogue
+Objective done: Read the ending (archives)
+Objective done: Read the epilogue (archives)
 There is nothing more to say for now.
 > talk echo7
-Quest completed: TODO quest.m14.title
-ECHO-7 » TODO quest.m14.debrief
+Quest completed: Epilogue
+ECHO-7 » For the record: this is the last entry. If you are reading it and I am not answering, the file is still good. Keep it open.
 [Reward] +800 credits
 Conversation with ECHO-7
 [1] Ask for advice (already discussed)
