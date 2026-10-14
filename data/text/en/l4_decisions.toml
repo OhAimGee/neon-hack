@@ -1,0 +1,27 @@
+# Lot L4 (chapter 5): the decision D1, the price of the Broker, and the choice about ECHO-7,
+# English. The prompt is what the donor says before the choice, a label is one entry of the menu.
+# D1 is final. The ECHO-7 choice has no screen of its own: it is read in the replies chosen.
+
+[decision.d1]
+prompt = "We have three currencies. Credits, a betrayal, or a theft. Choose the one you used, and be aware that we keep accounts."
+
+[decision.d1.choice.pay]
+label = "Pay the price in credits"
+
+[decision.d1.choice.betray]
+label = "Betray R4Z0R: hand over the black ledger"
+
+[decision.d1.choice.steal]
+label = "Steal it: raid the exchange"
+
+[decision.echo]
+prompt = "ECHO-7 has said everything he remembers. He does not ask to be believed. What do you do with it?"
+
+[decision.echo.choice.believe]
+label = "Believe him: he is who he says he is"
+
+[decision.echo.choice.wait]
+label = "Wait: keep listening, decide later"
+
+[decision.echo.choice.doubt]
+label = "Doubt him: a copy can be wrong about itself"

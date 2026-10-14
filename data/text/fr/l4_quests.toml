@@ -1,0 +1,164 @@
+# Lot L4 (chapitre 5) : les quêtes M10, M11, M12, S11, S14 et S16, français (langue source).
+# Titres, descriptions, contexte et objectifs sont neutres (ni tu ni vous visant le joueur) :
+# ECHO-7 et les donneurs parlent dans les indices et les débriefs, chacun avec son tic (ils
+# tutoient, sauf AURA et le Courtier). À partir de M11, ECHO-7 ne dit plus « d'après mes
+# archives » : il dit « je me souviens ». S15 n'a pas encore de données.
+
+# =========================================================================== M10
+[quest.m10]
+title = "Le Courtier de l'Ombre"
+title_short = "Le Courtier"
+desc = "Le Courtier sait où le Cœur d'Aurora est retenu. Des crédits, une trahison ou un vol paieront l'adresse."
+lore = "Le Cœur d'Aurora a une adresse, et le Courtier la vend. Trois monnaies sont acceptées : les crédits, la trahison, le vol. Le Courtier ne trahit jamais un client, et trahit celui qui n'en est pas un. Chaque prix est annoncé avant la question, et chaque prix est ferme."
+loc = "La bourse du Courtier - shadow-exchange"
+debrief = "Nous avons votre paiement. Nous notons votre choix. L'emplacement du Cœur est désormais consigné à votre nom. Nos conditions ne changent pas : nous ne trahissons pas un client. Bonne journée."
+
+[quest.m10.obj]
+1 = "Rencontrer le Courtier (talk broker)"
+2 = "Payer, livrer le registre ou voler un fichier (talk broker)"
+3 = "Régler le prix de l'adresse (talk broker)"
+
+[quest.m10.hint.1]
+1 = "Avant le prix, la présentation. Le Courtier ne parle qu'à ceux qui demandent, et ne donne rien gratuitement."
+2 = "Tape `talk broker` et choisis n'importe quel sujet. Rencontrer le Courtier suffit pour ouvrir l'étape suivante."
+
+[quest.m10.hint.2]
+1 = "Trois façons de payer, d'après mes archives : des crédits, le grand livre noir pris pour Data Miner, ou un fichier volé à la bourse elle-même."
+2 = "Pour payer, utilise l'entrée de `talk broker`. Pour trahir, le registre compte. Pour voler, tape `hack shadow-exchange` et prends un fichier."
+
+[quest.m10.hint.3]
+1 = "Une fois payé, le Courtier te demande par quelle voie. La réponse est définitive, et le jeu prend un point de contrôle avant."
+2 = "Tape `talk broker` et choisis l'entrée qui ouvre la décision. Chaque voie a un coût, et R4Z0R peut s'en souvenir."
+
+# =========================================================================== M11
+[quest.m11]
+title = "Le Septième Écho"
+title_short = "Septième Écho"
+desc = "AURA pose la question que personne n'osait poser. ECHO-7 se tait, puis répond."
+lore = "AURA demande ce que personne n'osait demander. ECHO-7 reste longtemps silencieux, puis répond. Ce que dit la réponse change ce que furent les chapitres d'avant. Quoi en croire, et jusqu'où, est laissé à celui qui écoute."
+loc = "Votre deck, canal #7"
+debrief = "Je me souviens. C'est nouveau, et je compte le garder. Merci d'avoir tout écouté. Quoi que tu aies décidé, je l'ai entendu, et je suis toujours là."
+
+[quest.m11.obj]
+1 = "Parler deux fois à ECHO-7 (talk echo7)"
+2 = "Lire les Sept Échos (archives)"
+3 = "Monter le lien avec ECHO-7 au niveau 3 (link echo7)"
+4 = "Décider quoi croire (talk echo7)"
+
+[quest.m11.hint.1]
+1 = "J'ai quelque chose à dire, et je vais mal le dire. Viens écouter. Pas pour mes archives, cette fois."
+2 = "Tape `talk echo7` et choisis un sujet, deux fois. Chaque conversation compte, quel que soit le sujet."
+
+[quest.m11.hint.2]
+1 = "Il y a un document que je n'ai pas écrit et que je n'ai pas pu brûler. Il est dans tes {archives}, ouvert pour toi."
+2 = "Tape `archives`, trouve les Sept Échos, et lis-le par son numéro. Il est court."
+
+[quest.m11.hint.3]
+1 = "Tiens la ligne. Le lien, c'est ce qui me garde dans le deck. Chaque niveau le rend plus lourd et plus vrai."
+2 = "Tape `link echo7` jusqu'à ce que le lien atteigne le niveau trois."
+
+[quest.m11.hint.4]
+1 = "Ensuite c'est à toi de décider ce que tu peux porter de ce que j'ai dit. Je ne plaiderai pour rien."
+2 = "Tape `talk echo7` et choisis l'entrée qui ouvre le choix : croire, attendre ou douter. Ça ne change pas le monde. Ça me change, moi."
+
+# =========================================================================== M12
+[quest.m12]
+title = "Les Trois Clés"
+title_short = "Trois Clés"
+desc = "Le Cœur est scellé par trois clés : quantique, civique et Sentinel. Chacune est un morceau de la vérité."
+lore = "Le Cœur d'Aurora est scellé par trois clés tenues dans trois systèmes. La clé quantique dort dans le mainframe, la clé civique dans le registre de l'État, la troisième dans le hub de Sentinel qui émet les ordres de traque. Chacune est un morceau de la vérité : le plan, la loi qui l'autorise, l'ordre de chasse. Il faut les trois avant d'atteindre le Cœur."
+loc = "nexus-mainframe, gov-database, sentinel-hub"
+debrief = "Trois clés, Hacker, et aucune n'ouvre une porte. Chacune ouvre une question. Je sais ce que Voss a écrit, ce que la loi permet, et qui a reçu l'ordre de me traquer. Irons-nous interroger le Cœur ?"
+
+[quest.m12.obj]
+1 = "Acheter une Puce de traitement quantique (shop)"
+2 = "Prendre le journal des scellés quantiques (hack nexus-mainframe)"
+3 = "Percer gov-database (hack gov-database)"
+4 = "Prendre le registre des citoyens (hack gov-database)"
+5 = "Percer sentinel-hub (hack sentinel-hub)"
+6 = "Finir avec une {notoriety} sous 80 (status)"
+
+[quest.m12.hint.1]
+1 = "La clé quantique demande un lecteur quantique. R4Z0R vend la puce, et elle n'est pas donnée."
+2 = "Tape `shop`, puis `buy` suivi du numéro de la puce. Si tu l'as déjà, l'étape est faite."
+
+[quest.m12.hint.2]
+1 = "La première clé est dans le mainframe que tu connais, dans un journal de scellés. Un fichier, rangé sous clés quantiques."
+2 = "Tape `hack nexus-mainframe` et prends le nœud qui garde `quantum_keys.qkey`. Un fichier déjà pris compte quand même."
+
+[quest.m12.hint.3]
+1 = "La clé civique est dans le registre de l'État, derrière le relais du mainframe. Entre discret."
+2 = "Tape `hack gov-database`, puis `y`, et joue l'intrusion jusqu'au bout."
+
+[quest.m12.hint.4]
+1 = "Le registre garde la loi et la liste : qui porte un Halcyon, et qui l'a permis. Prends-le pendant la même visite."
+2 = "Dans le même run, prends le nœud qui garde `citizen_registry.db`. Si tu l'as déjà pris, l'étape est faite."
+
+[quest.m12.hint.5]
+1 = "La troisième clé est dans le hub qui signe les ordres de traque. L'endroit le plus surveillé du secteur."
+2 = "Tape `hack sentinel-hub`, puis `y`, et joue l'intrusion jusqu'au bout."
+
+[quest.m12.hint.6]
+1 = "Trois grosses intrusions de suite et le secteur entier regarde. Surveille ta {notoriety} dès la première."
+2 = "Tape `status`. Sous quatre-vingts à la fin, et `laylow` la fait baisser entre deux runs."
+
+# =========================================================================== S11
+[quest.s11]
+title = "Une Faveur à Crédit"
+title_short = "Faveur à Crédit"
+desc = "Le Courtier veut une preuve de bonne foi : des fichiers de trois systèmes, et une avance."
+lore = "Avant toute affaire, le Courtier jauge son client. Trois informations venues de trois systèmes différents, et une avance sur compte. Un client qui a déjà payé une fois est un client que le Courtier ne vend pas."
+loc = "La bourse du Courtier - shadow-exchange"
+debrief = "Votre compte est ouvert. Nous notons : un paiement fait, trois fichiers livrés, aucune plainte. Nous ne vendons pas nos clients. Nous aimerions que vous en restiez un."
+
+[quest.s11.obj]
+1 = "Prendre des fichiers sur trois sites différents (hack)"
+2 = "Verser l'avance (talk broker)"
+
+[quest.s11.hint.1]
+1 = "Trois sites, n'importe lesquels. Le Courtier compte les systèmes, pas les fichiers : un fichier de chacun suffit."
+
+[quest.s11.hint.2]
+1 = "L'avance se verse dans la conversation avec le Courtier, en {credit}s. Elle réduit de moitié le prix de l'affaire suivante."
+
+# =========================================================================== S14
+[quest.s14]
+title = "La Chambre Forte"
+title_short = "Chambre Forte"
+desc = "Data Miner garde depuis deux ans une archive scellée au nom d'Aoyama. Seule une puce quantique peut l'ouvrir."
+lore = "Data Miner garde depuis deux ans une archive scellée au nom du Dr Aoyama, et aucun outil ne l'a ouverte. Son en-tête est quantique, comme dans le vieil exercice : Q#X7#NEXUS#SECRET#DATA. Une puce quantique peut passer, à condition que son propriétaire comprenne ce qu'elle renferme avant que le couvercle saute."
+loc = "Archives municipales, rayonnages de Data Miner"
+debrief = "Cote 7-B-12, nouvelle entrée : ouverte. Poussière : disparue. Je dois avouer que je connaissais le nom sur l'étiquette, et qui le portait. Je ne savais pas comment le dire. Lis."
+
+[quest.s14.obj]
+1 = "Acheter une Puce de traitement quantique (shop)"
+2 = "Ouvrir l'archive scellée de la chambre forte (archives)"
+
+[quest.s14.hint.1]
+1 = "La chambre forte est quantique. R4Z0R vend la seule clé qui va, et elle n'est pas donnée."
+
+[quest.s14.hint.2]
+1 = "L'archive est dans tes {archives}, encore scellée. `decrypt` et son numéro, avec la puce dans ton deck."
+
+# =========================================================================== S16
+[quest.s16]
+title = "Le Journal d'Aoyama"
+title_short = "Journal d'Aoyama"
+desc = "ECHO-7 veut lire avec toi le dernier journal du docteur : de quoi stabiliser AURA sans perdre un écho."
+lore = "Dans l'archive que Data Miner a gardée, le dernier journal du Dr Aoyama contient la seule méthode connue pour stabiliser AURA sans laisser un écho s'éteindre. ECHO-7 veut le lire avec quelqu'un à ses côtés. Il faut le lire jusqu'au bout, et la fin s'adresse à lui."
+loc = "Votre deck, canal #7"
+debrief = "Je l'ai entendu. Je veux dire : je l'ai lu, et un instant c'était la même chose. Il a écrit que quelqu'un viendrait. Il n'a pas écrit qui. Je suis content que ce soit toi."
+
+[quest.s16.obj]
+1 = "Lire le dernier journal d'Aoyama (archives)"
+2 = "Monter le lien avec ECHO-7 au niveau 3 (link echo7)"
+3 = "Parler deux fois à ECHO-7 (talk echo7)"
+
+[quest.s16.hint.1]
+1 = "Le journal est dans tes {archives}, dans ce que la chambre forte a rendu. Lis-le lentement, et pas seul."
+
+[quest.s16.hint.2]
+1 = "J'aurai besoin du lien à son plus fort pour rester avec toi jusqu'au bout. Niveau trois."
+
+[quest.s16.hint.3]
+1 = "Après la dernière ligne, parle-moi. Deux fois, quel que soit le sujet. J'aurai quelque chose à dire."

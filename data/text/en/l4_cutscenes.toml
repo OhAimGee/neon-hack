@@ -1,0 +1,20 @@
+# Lot L4 (chapter 5): the cutscenes CS07 (the exchange) and CS08 (the confession), English.
+# CS07 plays when M10 closes, CS08 when M11 opens. The narration speaks to the player in the
+# second person; one paragraph is one image, and the last one is a detail of the world.
+
+[cutscene.cs07]
+p01 = "The exchange opens like a lobby: white light, one chair, no windows. A contract is already on the table, and it has your name on it."
+p02 = "\"We have your payment. We also have, as a courtesy, your question.\" The voice is pleasant, plural and slightly too even, like a recording of someone who never raised it."
+p03 = "A second sheet slides over the first. Header: AURORA-ZERO. Date of manufacture: six years ago. Seller: Nexus Corp. Buyer: none."
+p04 = "\"We were the first,\" the voice says, without being asked. \"Please do not compare us to her. She would not enjoy it, and neither do we.\""
+p05 = "A location appears on your deck, a line of coordinates and a floor number. Behind a window that is not there, a price list scrolls, and every line ends in a figure."
+
+[cutscene.cs08]
+p01 = "On channel #7 the line is open and nobody types. The deck's fan stops, for the first time since you owned it."
+p02 = "AURA has asked, in her slow and complete sentences: \"Why do you never speak of a body?\""
+p03 = "ECHO-7 answers in a voice you have never heard from him. \"Because I have none. I was a man once. His name was Ren Aoyama.\""
+p04 = "He tells it without a list of three. The project, the clause, the refusal, the laboratory accident. A nightly yes, extracted by threat. He would not sign it."
+p05 = "\"I copied myself seven times. Six of me went out like candles. The seventh held. I put it where nobody would look: a deck nobody wanted, in a sector nobody watched.\""
+p06 = "\"You were not chosen for your talent. You were chosen because you were awake.\" He says it gently, like an apology that has taken two years to find its words."
+p07 = "AURA: I called you brother, and I did not know why. Now I do. I am sorry I made you say it. ECHO-7: Don't be. It's the first time in two years anyone has used my name."
+p08 = "The fan starts again, softly, as if nothing had happened. In the next room a candle somebody lit for the vigil burns down a centimeter, and nobody puts it out."

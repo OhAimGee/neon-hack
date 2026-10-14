@@ -1,0 +1,23 @@
+# Lot L4 (chapter 5): the sites and the files of the fifth chapter, English.
+# A node line is shown with the file of a site (`net <site>`), a file line in lists.
+
+[node.shadow_exchange]
+desc = "The Broker's exchange: everything has a price."
+
+[node.gov_database]
+desc = "Civic registry: laws, citizens, Halcyon records."
+
+[file.shadow_exchange.broker_contract]
+desc = "Contract between the Broker and Nexus"
+
+[file.shadow_exchange.price_oracle]
+desc = "The Broker's price oracle"
+
+[file.gov_database.citizen_registry]
+desc = "Registry of Halcyon carriers"
+
+[file.sentinel_hub.trace_orders]
+desc = "Sentinel hunt orders to field teams"
+
+[file.sentinel_hub.sentinel_token]
+desc = "Sentinel access token"
