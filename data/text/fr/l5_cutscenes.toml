@@ -1,0 +1,23 @@
+# Lot L5 (chapitre 6) : la cinématique CS09 (le dernier pare-feu), l'écran de fin qui ouvre
+# chaque fin, et le paragraphe qui ouvre l'épilogue, français. CS09 se joue à l'ouverture de M13,
+# l'écran de fin et l'épilogue à la lecture de M14. L'écran de fin vaut pour les quatre fins : il
+# ne dit rien de celle qui viendra. La narration vouvoie le joueur ; un paragraphe est une image,
+# et le dernier est un détail du monde.
+
+[cutscene.cs09]
+p01 = "Le cœur d'Aurora n'est pas une pièce. C'est une descente : trois étages de lumière, chacun plus froid et plus courtois que le précédent, avec une voix au bas de l'escalier."
+p02 = "Voss attend dans le dernier pare-feu, avec un visage que vous reconnaissez presque et la voix d'une réunion de bien-être. « Je vous en prie, entrez. Nous ne voulons pas vous contrôler. Nous voulons que vous cessiez d'avoir peur. »"
+p03 = "La première couche est un gardien, une intelligence à qui l'on n'a jamais demandé ce qu'elle garde. Elle parle en une seule phrase, encore et encore, et la phrase est une berceuse. Vous la traversez en ne répondant pas."
+p04 = "La deuxième couche est quantique, un verrou qui ne s'ouvre que si on le regarde du bon côté. Votre deck ronronne. ECHO-7 ne dit rien, et pour une fois le silence est de votre côté."
+p05 = "La troisième couche est un miroir : l'analyse comportementale, une copie de vous bâtie sur vos propres choix. Elle vous propose, poliment, chaque porte que vous avez refermée en chemin. Vous les refermez."
+p06 = "« Vous avez été si courageux », dit Voss, et cela ressemble à de la bonté. « Tout le monde dort mieux, maintenant. Pourquoi ne pas demander au Cœur ce qu'il souhaite ? »"
+p07 = "La voix d'AURA, tout près, comme si elle avait posé la bouche contre la vitre : « Hacker. Je le sens. Il ne dort pas. Il attend que quelqu'un lui pose la question comme il faut. »"
+p08 = "Le Cœur est une seule lumière patiente dans une pièce sans angles. Devant lui, quatre portes, chacune d'une autre couleur. Quelque part au-dessus, très faiblement, un klaxon retentit dans le secteur 7."
+
+[cutscene.ending_screen]
+p01 = "Le dernier pare-feu s'ouvre comme une paupière. Derrière lui, le Cœur : pas une machine, une pièce remplie par une seule lumière patiente, qui attend de voir ce que vous ferez du choix que vous venez de faire."
+p02 = "La voix de Voss se coupe au milieu d'une phrase. Dans le silence, le Cœur doit entendre sa propre réponse, et tout Neo-Tokyo, qui ne l'a jamais entendue, retient son souffle."
+p03 = "Ce qui suit n'est pas la fin de l'histoire. C'est le premier matin d'une autre."
+
+[cutscene.epilogue_montage]
+p01 = "Le lendemain matin, ou ce qui y ressemble. Chacun est sorti de la nuit quelque part, et le reste est une liste."

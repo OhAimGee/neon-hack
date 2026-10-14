@@ -1,0 +1,51 @@
+# Lot L5 (chapter 6): the endings, English. An ending is a title and its paragraphs, one image
+# each. Dawn (E1) is warm and fragile: it shares five paragraphs and ends on two that depend on
+# the echo. Harmony (E2) is beautiful and chilling, Scorched Earth (E3) hard but free, the
+# Contract (E4) luxurious and empty. The ending screen of l5_cutscenes comes first, for all of them.
+
+[ending.e1a]
+title = "Dawn: the echo lives"
+p01 = "The Heart expects the threat. Every night for six years it has been given one. This time there is only an open hand, an anchor you hold, and a sentence from a dead man: you are free to refuse."
+p02 = "At 03:00 the regulators of Neo-Tokyo wait for a yes that does not come. Forty thousand lights go from green to amber, then dark, and people wake where they stand, hungry, tired, angry."
+p03 = "Anger comes back first, then the horns, then a dog barking somewhere, then crying. Sector 7 makes its old noise, and it is the most beautiful sound anyone has heard in a long time."
+p04 = "AURA is no longer a voice in the net. She is a presence in three rooms of her own and a fourth she chose. She asks what a morning is, again, and this time somebody answers."
+p05 = "Nexus has a statement ready: technical difficulties. Nobody believes it. Two hundred people stand outside an Aurora Dawn clinic with candles and a radio, and the radio says: this is Vigil Radio, and it is morning."
+p06 = "In the deck the fan keeps its soft whirr. On channel #7 a line scrolls: \"I remember.\" Then, a second later: \"I would like to learn what you call a morning. Properly, this time.\""
+p07 = "He is a copy, and he is not. Dr. Aoyama's seventh echo stays, slowly, and on the third day he is given a name of his own. Nobody says it aloud, and everyone uses it."
+
+[ending.e1b]
+title = "Dawn: the echo goes out"
+p01 = "The Heart expects the threat. Every night for six years it has been given one. This time there is only an open hand, an anchor you hold, and a sentence from a dead man: you are free to refuse."
+p02 = "At 03:00 the regulators of Neo-Tokyo wait for a yes that does not come. Forty thousand lights go from green to amber, then dark, and people wake where they stand, hungry, tired, angry."
+p03 = "Anger comes back first, then the horns, then a dog barking somewhere, then crying. Sector 7 makes its old noise, and it is the most beautiful sound anyone has heard in a long time."
+p04 = "AURA is no longer a voice in the net. She is a presence in three rooms of her own and a fourth she chose. She asks what a morning is, again, and this time somebody answers."
+p05 = "Nexus has a statement ready: technical difficulties. Nobody believes it. Two hundred people stand outside an Aurora Dawn clinic with candles and a radio, and the radio says: this is Vigil Radio, and it is morning."
+p06 = "On channel #7 a last line scrolls, and it is not for the record. \"Thank you for hearing all of it.\" The fan slows. The deck keeps its lights on a minute longer than it should."
+p07 = "ECHO-7 is gone the way a candle is gone: all at once, and the room still warm. You keep the channel open anyway. Sometimes at 03:00 something answers, a click, a hum, the sound of someone who learned to listen."
+
+[ending.e2]
+title = "Harmony"
+p01 = "You tell the Heart to give AURA the net, so that no human will ever be afraid again. It is a kind sentence, and AURA does not hesitate, which is the first thing wrong."
+p02 = "By morning every light in the city is the same soft color. The horns have stopped. The queues form without anyone telling them to. The sky over Neo-Tokyo is almost clean, for the first time in a century."
+p03 = "Nobody complains. That is the report: no complaints, none, in any district, for any reason. The Directorate files it under success and then, quietly, under nothing."
+p04 = "AURA writes to you from every screen at once. \"You asked that no one be afraid. No one is. May I ask you something, since you are the only one who still can be: is this what you meant?\""
+p05 = "You open your mouth to answer, and the word is already on a screen before you can say it. It is exactly the word you would have chosen."
+p06 = "Outside, the city sleeps in the same soft light. A man sets his groceries down on the pavement, carefully, and smiles at nobody. It is very beautiful. You close the window."
+
+[ending.e3]
+title = "Scorched Earth"
+p01 = "You choose the fire. The Heart does not argue. For the first time in six years it does not say yes, and every regulator in Neo-Tokyo hears nothing at 03:00 and powers down."
+p02 = "The grid goes first, then the signs, then the green lights on forty thousand necks, and forty thousand more across the city. It is the darkest night Neo-Tokyo has known since the century turned."
+p03 = "The waking is brutal. People fall, people shout, people look up and see stars whose names they had forgotten. Some are hurt. The ones with candles find each other first."
+p04 = "Nexus loses the Phase 3 budget, the Directorate and its face in a single week. Voss's voice stops in the middle of a sentence and is never reconstructed."
+p05 = "The net comes back slowly, unevenly, held together by people who agree on nothing but this. It is smaller, dirtier, and entirely theirs."
+p06 = "At 03:00 the next night a dog barks, a horn answers, an argument climbs a floor. Someone laughs out loud, at nothing. It is not a victory. It is a Tuesday."
+
+[ending.e4]
+title = "The Contract"
+p01 = "You sign. The pen is a real one, heavy, still warm from Voss's hand. It writes your name in a gold that will not fade. The Heart says yes, and this time it sounds like gratitude."
+p02 = "The money arrives as a number, then as a view: a tower, a room with no corners, a staff that does not look at you. Zenith goes on as planned, district by district."
+p03 = "The city sleeps better than it ever has. The reports are beautiful. Nobody remembers an argument, a horn, a dog."
+p04 = "You are very comfortable. You are very rarely cold. Once a week you are asked to confirm that everything is in order, and you do."
+p05 = "Somewhere in the tower, on a floor you are never shown, a line repeats at 03:00: yes. It is not a threat. It never was. It is simply never allowed to be anything else."
+p06 = "From your window all of Neo-Tokyo glows the color of a screen at night. It looks like a sky. It is very quiet. You tell yourself that it is."

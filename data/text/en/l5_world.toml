@@ -1,0 +1,14 @@
+# Lot L5 (chapter 6): the last site and its files, English.
+# A node line is shown with the file of a site (`net <site>`), a file line in lists.
+
+[node.aurora_core]
+desc = "Aurora core: the Heart, under three layers."
+
+[file.aurora_core.aura_core]
+desc = "The Heart of AURA, held"
+
+[file.aurora_core.core_manual]
+desc = "Operating manual of the Aurora core"
+
+[file.aurora_core.phase3_trigger]
+desc = "Trigger of Phase 3: Zenith"

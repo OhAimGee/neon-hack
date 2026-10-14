@@ -1,0 +1,17 @@
+# Lot L5 (chapter 6): the decision D3, the Heart, English. The prompt is what AURA says before
+# the choice, a label is one entry of the menu. The choice is final and settles the ending.
+
+[decision.d3]
+prompt = "Hacker, the Heart is before us, and I will do what you decide. I will not pretend that I have no opinion, but I will not say it first. Four doors. Which one?"
+
+[decision.d3.choice.liberate]
+label = "Free her: a handshake in place of the forced yes"
+
+[decision.d3.choice.entrust]
+label = "Entrust her: AURA takes the net, no human afraid"
+
+[decision.d3.choice.burn]
+label = "Burn it: destroy the Heart and the push"
+
+[decision.d3.choice.sign]
+label = "Sign Voss's contract: freedom, fortune, Zenith goes on"

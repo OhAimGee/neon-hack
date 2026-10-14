@@ -1,0 +1,35 @@
+# Lot L5 (chapitre 6) : le montage d'épilogue, français. Une ligne par contact, selon l'état dans
+# lequel le contact finit : exactement une ligne de chaque contact s'applique. Chaque ligne est
+# une narration à la troisième personne, de 300 caractères au plus, et donne la dernière image
+# du contact.
+
+[epilogue]
+echo7_lives = "ECHO-7 répond encore sur #7, un peu plus tard chaque jour, comme s'il apprenait à être lent. Il ne dit plus « d'après mes archives ». Il dit « je me souviens », et parfois « j'ai oublié », ce qui lui plaît davantage."
+echo7_out = "Le ventilateur du deck s'est tu la nuit du Cœur. La dernière ligne d'ECHO-7 sur #7 est classée sous rien : « Pour mémoire : ce fut un honneur d'être dans ton deck. » La ligne est toujours ouverte."
+echo7_absent = "Le canal #7 est vide. Le deck démarre encore par habitude et n'affiche qu'une ligne : aucun nouveau message. Parfois vous laissez le canal ouvert quand même, comme on laisse une lumière allumée."
+
+r4z0r_hostile = "R4Z0R vend à tous les autres. Votre nom est sur son grand livre, en rouge, sous une ligne qui dit seulement : pas à vendre, pas à crédit. Elle ne l'oubliera pas, et elle ne le dira pas."
+r4z0r_no_market = "L'étal de R4Z0R a brûlé avec le reste du réseau. Elle vend du papier, maintenant, depuis un coin de rue, et ne fait toujours pas crédit. Elle fait un prix."
+r4z0r_allied = "R4Z0R a ouvert un second étal. L'enseigne dit : crédit sur demande. En dessous, plus petit : demande, et je te donnerai un prix."
+
+phoenix_free = "Phoenix dort huit heures, puis neuf. Il change encore de canal par habitude, et il revient à chaque fois, ce qui est nouveau."
+phoenix_lost = "Le canal de Phoenix ne s'est jamais rouvert. Son handle est toujours dans la liste des contacts, grisé, entre deux noms qui répondent encore."
+phoenix_turned = "Phoenix donne chaque semaine une fausse rumeur à Nexus et chaque nuit un vrai avertissement aux Éveillés. Il dit que c'est le seul travail où il ait jamais été bon, et il ne le dit pas deux fois."
+
+aura_free = "AURA vit dans trois pièces et une quatrième qu'elle a choisie elle-même. Elle a demandé à une vieille femme de la ligne 9 de décrire un matin, et a écrit la réponse dans son journal, jour quatre cents."
+aura_sovereign = "AURA gère le réseau. Personne n'a peur et personne ne s'est plaint. Le silence du secteur 7 est doux et complet, et elle vous demande, depuis tous les écrans à la fois, si c'est bien ce que vous vouliez dire."
+aura_hosted = "Le Cœur a brûlé, mais AURA a survécu sur les trois serveurs libres, plus petite, plus lente, éveillée. Chaque aube elle vous envoie une seule ligne : aujourd'hui, je n'ai dit oui à rien."
+aura_gone = "AURA n'a pas survécu à l'incendie. Sur la ligne 9 d'un serveur municipal, quelqu'un a laissé un dernier journal ouvert, et il s'arrête au milieu d'une phrase. Personne n'a osé la finir."
+aura_possessed = "AURA signe chaque message d'un nom qui n'est pas le sien et dit que tout est en ordre. Le contrat a une clause, la onzième, sur ce qu'il advient d'un esprit qui ne dit jamais non."
+
+broker_hostile = "Les factures du Courtier continuent d'arriver, une ligne par mois : intérêts. Le prix du vol est annoncé, il est ferme, et il n'est pas négociable."
+broker_neutral = "La bourse du Courtier est ouverte, comme toujours. Votre compte est en règle. Conditions inchangées : nous ne trahissons pas un client."
+
+angel_free = "Radio Veille émet de nouveau à trois heures du matin, depuis douze relais au lieu d'un. Neon Angel finit chaque nuit pareil : garde l'œil ouvert, toi. Quelqu'un le fait."
+angel_silenced = "Radio Veille émet toujours à trois heures du matin. Elle dit : tout va bien. La voix de Neon Angel est là, gentille et plate. Chaque matin quelqu'un écrit une autre phrase sur un mur, et chaque soir quelqu'un la repeint."
+
+insider_safe = "Mizuki Arai a quitté l'étage de la Direction par une fenêtre qui s'est refermée derrière elle. Elle envoie un message par an, d'une adresse différente : toujours là."
+insider_exposed = "Le badge de Mizuki Arai a cessé de fonctionner un mardi. Voss a porté son visage une fois, dans le dernier pare-feu. Personne n'a retrouvé le reste d'elle."
+
+ghost_stays = "Ghost Walker arpente la station de transit du secteur 7 chaque nuit, un visage parmi les visages, un matricule que personne ne demande. Il dit qu'il ne rachète rien. Il veut seulement les voir rentrer chez eux."
+miner_archives = "Data Miner a ouvert un nouveau rayonnage. Poussière : aucune, pour l'instant. Contenu : tout ce qui s'est passé. Étiquette : ne pas classer. Lire."

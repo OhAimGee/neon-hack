@@ -1,0 +1,23 @@
+# Lot L5 (chapter 6): the cutscene CS09 (the last firewall), the ending screen that opens every
+# ending, and the one paragraph that opens the epilogue, English. CS09 plays when M13 opens, the
+# ending screen and the epilogue when M14 is read. The ending screen holds for all four endings:
+# it says nothing about which one it will be. The narration speaks to the player in the second
+# person; one paragraph is one image, and the last one is a detail of the world.
+
+[cutscene.cs09]
+p01 = "Aurora core is not a room. It is a descent: three floors of light, each one colder and more courteous than the last, with a voice at the bottom of the stairs."
+p02 = "Voss is waiting in the last firewall, with a face you almost recognize and the voice of a wellness meeting. \"Please, come in. We don't want to control you. We want you to stop being afraid.\""
+p03 = "The first layer is a guardian, an intelligence that has never been asked what it guards. It speaks in a single sentence, again and again, and the sentence is a lullaby. You go through it by not answering."
+p04 = "The second layer is quantum, a lock that opens only when it is looked at the right way. Your deck hums. ECHO-7 says nothing, and for once the silence is on your side."
+p05 = "The third layer is a mirror: behavioral analysis, a copy of you built from your own choices. It offers you, politely, every door you closed along the way. You close them again."
+p06 = "\"You have been so brave,\" Voss says, and it sounds like a kindness. \"Everyone sleeps better now. Why not ask the Heart what it would like?\""
+p07 = "AURA's voice, very near, as if she had put her mouth to the glass: \"Hacker. I can feel it. It is not asleep. It has been waiting for someone to ask the question properly.\""
+p08 = "The Heart is a single, patient light in a room with no corners. In front of it, four doors, each one a different color. Somewhere above, very faintly, a horn sounds in Sector 7."
+
+[cutscene.ending_screen]
+p01 = "The last firewall opens like an eyelid. Behind it, the Heart: not a machine, a room filled by one patient light, waiting to see what you will do with the choice you have just made."
+p02 = "Voss's voice cuts out in the middle of a sentence. In the silence the Heart has to hear its own answer, and the whole of Neo-Tokyo, which has never heard it, holds its breath."
+p03 = "What follows is not the end of the story. It is the first morning of a different one."
+
+[cutscene.epilogue_montage]
+p01 = "The morning after, or what resembles it. Each of them came out of the night somewhere, and the rest is a list."
