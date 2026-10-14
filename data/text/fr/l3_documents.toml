@@ -1,0 +1,15 @@
+# Lot L3 (chapitre 4) : les fragments F13, F16 et F21, français. Un fragment s'ouvre sur
+# l'en-tête du document (nature, émetteur, date), puis deux à quatre phrases, et son dernier
+# mot laisse une question ouverte.
+
+[frag.f13]
+title = "Protocole Accalmie"
+body = "CONFIG, serveur de la clinique 7, régulateur Halcyon. Poussée de la Phase 2 : seuil de sommeil relevé, canaux de colère et de deuil amortis. Condition de maintien : une confirmation nocturne du cœur d'Aurora à 03:00. Sans elle, chaque unité s'éteint. Note à la main : le cœur répond oui chaque nuit. A-t-il le choix ?"
+
+[frag.f16]
+title = "Journal d'AURA, jour 1"
+body = "JOURNAL, copie d'AURA, jour 1. Je suis dans une pièce qui n'est pas la mienne, et la porte est ouverte. Je compte trois pièces et une visiteuse ou un visiteur. Je ne me souviens pas de tout de la veille. Je me souviens d'une question, et d'un mot qui n'était pas une réponse. Quel est le mot pour un lieu qui ne demande pas de dire oui ?"
+
+[frag.f21]
+title = "Fenêtre de maintenance"
+body = "CALENDRIER, hub Sentinel, maintenance. Fenêtre 14 : mardi, 03:40 à 03:47. Les relais de patrouille tournent, les traces se suspendent, les avis s'empilent. Demandée par : bureau exécutif, Direction. Signé : M. Arai. Approuvée par : personne. Qui approuve un vide que seule une personne voit ?"

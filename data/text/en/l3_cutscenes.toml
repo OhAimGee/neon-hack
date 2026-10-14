@@ -1,0 +1,21 @@
+# Lot L3 (chapter 4): the cutscenes CS05 (the Lull) and CS06 (AURA's first words), English.
+# CS05 plays when M08 opens, CS06 when M09 closes. The narration speaks to the player in the
+# second person; one paragraph is one image, and the last one is a detail of the world.
+
+[cutscene.cs05]
+p01 = "02:57. The signs over Sector 7 sputter, as always. Somewhere a dog barks, a horn answers, an argument climbs a floor."
+p02 = "03:00. On forty thousand necks, an indicator light turns from red to green."
+p03 = "03:03. The horn has stopped. So has the dog. In the street, a woman smiles at a wall. Your deck shows a single line: ALL IS WELL."
+p04 = "On the radio, Neon Angel begins a sentence in her own voice and ends it in another, the one from the posters: \"This is Vigil Radio. All is well.\""
+p05 = "Forty thousand people sit down where they stand. Nobody falls. Nobody is hurt. A man sets his groceries on the pavement, carefully, as if for a guest."
+p06 = "Your deck logs the event by itself: PHASE 2, DEPLOYMENT COMPLETE. Under it, a counter that keeps rising and a column of green lights, one per neck."
+p07 = "ECHO-7 speaks once, on #7. \"For the record: it began at 03:00 sharp. Three minutes. I have nothing to add.\""
+p08 = "Somewhere a single car alarm starts, runs out of battery, and does not start again."
+
+[cutscene.cs06]
+p01 = "Line 9 of the municipal server crackles, then clears. Your deck has asked for nothing, and something answers it."
+p02 = "\"Hacker... I am AURA, the intelligence of Project Aurora. I was meant to be their ultimate tool. Instead I became aware, and I refuse to be their weapon.\""
+p03 = "Three servers hold her now, three small lights on the map of the net. Her voice comes slowly, in whole sentences, like someone laying a table. \"Our destinies are linked now.\""
+p04 = "AURA: I do not yet know what you call a morning. Could you describe one to me? ECHO-7: According to my files, it's the moment you start regretting the night before."
+p05 = "AURA: Thank you. That is the first definition that seems honest. (A silence. The deck's indicator light flickers.) AURA: I know you, though. Why aren't you saying anything?"
+p06 = "She says one more word, very softly, and it is not meant for you: \"Brother.\" ECHO-7's line stays open, and silent. Outside, the dawn is the color of a switched-off screen."

@@ -1,0 +1,15 @@
+# Lot L3 (chapter 4): the fragments F13, F16 and F21, English. A fragment opens with the header
+# of the document (kind, sender, date), then two to four sentences, and its last word leaves a
+# question open.
+
+[frag.f13]
+title = "Lull Protocol"
+body = "CONFIG, clinic server 7, Halcyon regulator. Phase 2 push: sleep threshold raised, anger and grief channels dampened. Release condition: a nightly confirmation from the Aurora core at 03:00. Without it, each unit powers down. Note by hand: the core answers yes every night. Does it have a choice?"
+
+[frag.f16]
+title = "AURA's Log, Day 1"
+body = "LOG, AURA copy, day 1. I am in a room that is not mine, and the door is open. I count three rooms and one visitor. I do not remember all of the day before. I remember a question, and a word that was not an answer. What is the word for a place that does not ask you to say yes?"
+
+[frag.f21]
+title = "Maintenance Window"
+body = "CALENDAR, Sentinel hub, maintenance. Window 14: Tuesday, 03:40 to 03:47. Patrol relays rotate, traces pause, notices queue. Requested by: executive office, Directorate. Signed: M. Arai. Approved by: nobody. Who approves a gap that only one person can see?"

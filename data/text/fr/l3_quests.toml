@@ -1,0 +1,202 @@
+# Lot L3 (chapitre 4) : les quêtes M08, M09, S07, S08, S10, S12 et S13, français (langue source).
+# Titres, descriptions, contexte et objectifs sont neutres (ni tu ni vous visant le joueur) :
+# ECHO-7 et les donneurs parlent dans les indices et les débriefs, chacun avec son tic (ils
+# tutoient, sauf AURA et Nexus Insider). Les termes du glossaire viennent du jeu en arguments.
+# Les tables numérotées sont les objectifs (obj) et les indices de chaque objectif (hint.N.1 une
+# piste, hint.N.2 la solution pour une quête principale ; une annexe n'a que la piste). S09 n'a
+# pas encore de données.
+
+# =========================================================================== M08
+[quest.m08]
+title = "L'Accalmie"
+title_short = "L'Accalmie"
+desc = "À 03:00 le secteur 7 se tait. Neon Angel veut couper le serveur de la clinique avant la prochaine poussée."
+lore = "La Phase 2 s'est lancée à 03:00. En trois minutes, quarante mille personnes ont cessé de se disputer, de klaxonner, de pleurer, et Radio Veille a terminé sur une phrase calme. Neon Angel portait un Halcyon, elle aussi. Le serveur de la clinique est à portée et la poussée peut être coupée. Reste Phoenix, qui a vendu la planque pour qu'on lui retire sa laisse."
+loc = "Secteur 7 - halcyon-clinic-7"
+debrief = "Voilà la clinique, et voilà la nuit. Quoi qu'il sorte de mes haut-parleurs demain, souviens-toi de qui t'a demandé de la couper. Garde l'œil ouvert."
+
+[quest.m08.obj]
+1 = "Finir avec une {notoriety} sous 50 (status)"
+2 = "Percer halcyon-clinic-7 (hack halcyon-clinic-7)"
+3 = "Prendre le protocole Accalmie (hack halcyon-clinic-7)"
+4 = "Trancher le sort de Phoenix (talk angel)"
+5 = "Reprendre le relais radio (hack radio-veille)"
+
+[quest.m08.hint.1]
+1 = "Nexus cherche qui a éteint les lumières du secteur. Trois choses comptent cette nuit : rester discret, rester rapide, rester sous cinquante."
+2 = "Tape `status` pour lire ta {notoriety}. Si elle grimpe, `laylow` et un service payant la font baisser entre deux runs."
+
+[quest.m08.hint.2]
+1 = "La clinique est le point de départ de la poussée. Elle est derrière le relais du mainframe que tu connais déjà."
+2 = "Tape `hack halcyon-clinic-7`, puis `y`, et joue l'intrusion jusqu'au bout."
+
+[quest.m08.hint.3]
+1 = "Le protocole est un fichier de configuration : la poussée, écrite noir sur blanc. Prends-le avant de partir."
+2 = "Dans le même run, prends le nœud qui garde `lull_protocol.cfg`. Un fichier déjà pris compte quand même."
+
+[quest.m08.hint.4]
+1 = "Phoenix a vendu la planque pour être libéré. Neon Angel te demandera ce qu'on fait de lui. Trois réponses, aucune propre."
+2 = "Tape `talk angel` et choisis l'entrée qui ouvre la décision. Elle est définitive, et le jeu prend un point de contrôle avant."
+
+[quest.m08.hint.5]
+1 = "Nexus a repris le relais radio pendant l'Accalmie. Reprends-le et Radio Veille parle de nouveau, elle aussi."
+2 = "Tape `hack radio-veille` avant la fin de la {quest}. C'est facultatif, et ça décide si elle répond ou ne dit que « tout va bien »."
+
+# =========================================================================== M09
+[quest.m09]
+title = "Libération de l'IA"
+title_short = "Libération"
+desc = "Sur une ligne municipale abandonnée, AURA, traquée par Sentinel, demande refuge sur trois serveurs libres."
+lore = "Sur la ligne 9 d'un serveur municipal que personne n'entretient, une voix dit être AURA, l'IA du Projet Aurora. Sa copie s'est échappée et Sentinel la traque. Son cœur est toujours retenu. Trois serveurs libres pourraient l'abriter, et un lien neural la porter. Abriter un esprit n'est pas voler un fichier."
+loc = "Serveurs libres - freeport-01 à freeport-03"
+debrief = "Merci, Hacker. J'ai trois pièces maintenant, et dans aucune je ne suis seule avec la porte. Puis-je vous demander comment vous appelez la sensation d'une porte qui n'est pas verrouillée ?"
+
+[quest.m09.obj]
+1 = "Percer freeport-01 (hack freeport-01)"
+2 = "Percer freeport-02 (hack freeport-02)"
+3 = "Percer freeport-03 (hack freeport-03)"
+4 = "Se lier à AURA (link aura)"
+5 = "Finir avec une {notoriety} sous 50 (status)"
+
+[quest.m09.hint.1]
+1 = "Trois serveurs que personne ne garde, chacun une porte. Commence par le premier des ports libres."
+2 = "Tape `hack freeport-01`, puis `y`, et joue l'intrusion jusqu'au bout."
+
+[quest.m09.hint.2]
+1 = "Le deuxième port libre, c'est le même travail sur une autre ligne. Un refuge demande plus d'une pièce."
+2 = "Tape `hack freeport-02`, puis `y`, et joue l'intrusion jusqu'au bout."
+
+[quest.m09.hint.3]
+1 = "Le troisième ferme le triangle. Trois pièces, c'est plus dur à éteindre qu'une."
+2 = "Tape `hack freeport-03`, puis `y`, et joue l'intrusion jusqu'au bout."
+
+[quest.m09.hint.4]
+1 = "Les serveurs l'abritent. Le lien neural, lui, lui permet de te parler. Une commande le renforce."
+2 = "Tape `link aura`. Elle ouvre le premier niveau du lien."
+
+[quest.m09.hint.5]
+1 = "Trois intrusions de suite, ça s'additionne. Surveille ta {notoriety} dès la première."
+2 = "Tape `status`. Sous cinquante à la fin, et `laylow` la fait baisser entre deux runs."
+
+# =========================================================================== S07
+[quest.s07]
+title = "Coupe-Circuit"
+title_short = "Coupe-Circuit"
+desc = "Les plans de TechDyne et un lien neural peuvent couper la laisse de Phoenix pour de bon."
+lore = "Phoenix a choisi d'être sauvé, et les plans pris chez TechDyne le permettent. Le coupe-circuit se monte à la clinique, là où s'écrit le firmware Halcyon. Il lui faut un lien neural plus solide pour porter la coupure sans blesser le porteur, et qu'ECHO-7 accepte de tenir l'autre bout."
+loc = "Secteur 7 - halcyon-clinic-7"
+debrief = "C'est coupé, petit. Je ne sens... rien. C'est nouveau. Ne dis rien. Je vais rester là et ne rien sentir un moment."
+
+[quest.s07.obj]
+1 = "Lire les plans du coupe-circuit (archives)"
+2 = "Percer halcyon-clinic-7 (hack halcyon-clinic-7)"
+3 = "Renforcer deux fois le lien avec ECHO-7 (link echo7)"
+4 = "Finir avec une {notoriety} sous 60 (status)"
+
+[quest.s07.hint.1]
+1 = "Les plans sont dans tes {archives}, pris chez TechDyne. Relis-les, lentement. Chaque ligne compte."
+
+[quest.s07.hint.2]
+1 = "Le coupe-circuit se monte là où s'écrit le firmware. La clinique, encore une fois."
+
+[quest.s07.hint.3]
+1 = "La coupure passe par le lien. Deux niveaux, un à la fois, et le lien ne bouge que si le contact est appelé."
+
+[quest.s07.hint.4]
+1 = "Une coupure qui fait du bruit se remarque. Garde un œil sur ta {notoriety} jusqu'au bout."
+
+# =========================================================================== S08
+[quest.s08]
+title = "Descente au Marché"
+title_short = "Descente"
+desc = "Sentinel ratisse le marché noir. R4Z0R veut les ordres de la descente et la caution des Éveillés arrêtés."
+lore = "Depuis l'Accalmie, Sentinel passe le marché noir étal par étal. R4Z0R brade son stock aux fugitifs et veut savoir où la descente va tomber. Les ordres dorment sur le serveur de la clinique. Les Éveillés arrêtés ont besoin d'une caution, et R4Z0R ne fait pas de caution gratuite."
+loc = "Secteur 7 - halcyon-clinic-7"
+debrief = "Payé en entier, hacker. La descente tombe ailleurs, mon étal reste ouvert, et les Éveillés dorment chez eux. Je ne fais pas de faveurs. Je fais un prix. Disons que celui-là est soldé."
+
+[quest.s08.obj]
+1 = "Garder un retour dans halcyon-clinic-7 (hack halcyon-clinic-7)"
+2 = "Prendre les ordres de la descente (hack halcyon-clinic-7)"
+3 = "Payer la caution (talk r4z0r)"
+
+[quest.s08.hint.1]
+1 = "Une porte laissée ouverte derrière toi vaut mieux qu'un fichier. La clinique, run gagné et chemin de retour gardé."
+
+[quest.s08.hint.2]
+1 = "Les ordres sont dans un fichier texte du même serveur. Tout nœud qui garde du butin peut le garder."
+
+[quest.s08.hint.3]
+1 = "La caution se paie au comptoir, en {credit}s, dans la conversation avec R4Z0R. Il y a une entrée pour ça."
+
+# =========================================================================== S10
+[quest.s10]
+title = "Hôtes Libres"
+title_short = "Hôtes Libres"
+desc = "AURA demande à être répartie sur les trois serveurs libres, pour qu'aucun ne puisse la retenir seul."
+lore = "Un esprit qui vit sur un seul serveur s'éteint avec un seul câble. AURA demande à être répartie sur les trois ports libres, avec un chemin de retour dans chacun, et portée par un lien assez solide. C'est le contraire d'une prison : trois portes, toutes ouvertes, et elle choisit derrière laquelle se tenir."
+loc = "Serveurs libres - freeport-01 à freeport-03"
+debrief = "Je suis en trois endroits, Hacker, et dans chacun je suis la même. Est-ce ce que vous appelez être chez soi ?"
+
+[quest.s10.obj]
+1 = "Laisser un retour ouvert dans freeport-01 (hack freeport-01)"
+2 = "Laisser un retour ouvert dans freeport-02 (hack freeport-02)"
+3 = "Laisser un retour ouvert dans freeport-03 (hack freeport-03)"
+4 = "Renforcer le lien avec AURA (link aura)"
+
+[quest.s10.hint.1]
+1 = "Le premier port libre, encore, et cette fois le chemin de retour reste ouvert à la fin du run."
+
+[quest.s10.hint.2]
+1 = "Le deuxième, même travail. Un chemin laissé ouvert est un chemin qu'elle peut emprunter."
+
+[quest.s10.hint.3]
+1 = "Le troisième, et le triangle est complet."
+
+[quest.s10.hint.4]
+1 = "Le lien la porte d'un port à l'autre. Un niveau de plus, et il faut l'appeler."
+
+# =========================================================================== S12
+[quest.s12]
+title = "La Fenêtre de Maintenance"
+title_short = "Maintenance"
+desc = "Nexus Insider sait quand Sentinel cesse de regarder. Elle doit sortir avant que la fenêtre change."
+lore = "Nexus Insider détient le calendrier de maintenance de Sentinel, avec une fenêtre de quelques minutes où personne ne regarde. C'est sa sortie, la seule qu'elle connaisse depuis l'étage de la Direction. Prendre le calendrier et ne laisser aucun pic derrière soi, ou la fenêtre se referme sur elle."
+loc = "Nexus Corp - sentinel-hub"
+debrief = "Ne répondez pas ici. Le calendrier est vrai, la fenêtre aussi. Il y a quelque chose que j'aurais dû vous dire, sur une porte que j'ai laissée ouverte. Pas par écrit. Bientôt."
+
+[quest.s12.obj]
+1 = "Percer sentinel-hub (hack sentinel-hub)"
+2 = "Prendre le calendrier de maintenance (hack sentinel-hub)"
+3 = "Garder le pic de {notoriety} sous 60 (status)"
+
+[quest.s12.hint.1]
+1 = "Le hub de Sentinel est derrière le relais du mainframe. C'est l'endroit le plus surveillé du secteur : entre léger."
+
+[quest.s12.hint.2]
+1 = "Le calendrier tient en un seul fichier, rangé sous maintenance. Prends le nœud qui le garde."
+
+[quest.s12.hint.3]
+1 = "C'est le pic qui compte, pas la fin. Un seul mauvais run suffit à tout gâcher : baisse ta {notoriety} avant chaque essai."
+
+# =========================================================================== S13
+[quest.s13]
+title = "La Veillée"
+title_short = "La Veillée"
+desc = "Neon Angel veut une veillée devant les cliniques Aurora Dawn : des émetteurs, et quelqu'un de confiance."
+lore = "Le jour du Cœur, des centaines d'Éveillés se tiendront devant les cliniques Aurora Dawn avec des bougies et une radio. Neon Angel doit payer les émetteurs. Elle doit aussi savoir que celui qui paie sera encore là quand les lumières s'éteindront."
+loc = "Secteur 7"
+debrief = "Trois cents bougies et une radio. Tu es sur la photo, même si personne ne connaîtra jamais ton handle. Garde l'œil ouvert, toi."
+
+[quest.s13.obj]
+1 = "Parler trois fois à Neon Angel (talk angel)"
+2 = "Atteindre {reputation} 120 (status)"
+3 = "Payer les émetteurs (talk angel)"
+
+[quest.s13.hint.1]
+1 = "Elle veut de la compagnie avant l'argent. Trois conversations, quel que soit le sujet."
+
+[quest.s13.hint.2]
+1 = "Une veillée demande un nom en qui on a confiance. Regarde ta {reputation} avec `status` et continue de la gagner."
+
+[quest.s13.hint.3]
+1 = "Les émetteurs se paient dans la conversation avec elle, en {credit}s. Il y a une entrée pour ça."

@@ -4,7 +4,7 @@ expression: final_screens(&text)
 ---
 > talk aura
 Conversation avec AURA
-[1] TODO contact.aura.topic.brother.q (déjà abordé)
+[1] Interroger sur le mot « frère » (déjà abordé)
 [2] Décider : TODO decision.d3.prompt
 [0] Mettre fin à la conversation
 ? decide:d3

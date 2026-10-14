@@ -1,0 +1,14 @@
+# Lot L3 (chapitre 4) : la décision D2, le sort de Phoenix, français. L'invite est ce que le
+# donneur dit avant le choix, un libellé est une entrée du menu. Le choix est définitif.
+
+[decision.d2]
+prompt = "Phoenix est en ligne, et le choix n'appartient qu'à toi. On peut couper le canal, couper la laisse, ou se servir de la laisse."
+
+[decision.d2.choice.save]
+label = "Le sauver : couper sa laisse (exige les plans)"
+
+[decision.d2.choice.abandon]
+label = "L'abandonner : fermer le canal"
+
+[decision.d2.choice.turn]
+label = "Le retourner : nourrir Nexus de faux renseignements"

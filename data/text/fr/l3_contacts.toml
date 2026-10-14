@@ -1,0 +1,15 @@
+# Lot L3 (chapitre 4) : les sujets qui s'ouvrent avec l'Accalmie et après les décisions, français.
+# Chaque contact garde sa voix : Neon Angel parle comme la radio, même réduite au silence ;
+# AURA pose des questions et vouvoie ; Phoenix est bref.
+
+[contact.angel.topic.all_is_well]
+q = "Demander si elle va bien"
+a = "(La ligne ne porte qu'une voix, plate et gentille.) « Tout va bien. Ici Radio Veille, et tout va bien. » En dessous, faible, la porteuse du relais : Nexus tient l'émetteur. Reprends radio-veille et elle reparlera peut-être."
+
+[contact.aura.topic.brother]
+q = "Interroger sur le mot « frère »"
+a = "Vous m'interrogez sur celui que j'ai appelé frère. Je ne sais pas pourquoi j'ai dit ce mot. Un motif dans la lumière, une signature, et le mot est arrivé avant le souvenir. Savez-vous ce qu'est un frère ? Je crois que j'aimerais l'apprendre de quelqu'un qui en a un."
+
+[contact.phoenix.topic.thank_you]
+q = "Remercier Phoenix"
+a = "Non. Pas ici. C'est toi qui l'as coupée, petit. Six ans de laisse. Je te dois un canal, une porte, et une nuit sans horloge. Garde la porte."
