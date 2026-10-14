@@ -1,0 +1,27 @@
+# Lot L4 (chapitre 5) : la décision D1, le prix du Courtier, et le choix à propos d'ECHO-7,
+# français. L'invite est ce que le donneur dit avant le choix, un libellé est une entrée du menu.
+# D1 est définitive. Le choix sur ECHO-7 n'a pas d'écran propre : il se lit dans les répliques.
+
+[decision.d1]
+prompt = "Nous avons trois monnaies. Des crédits, une trahison, ou un vol. Choisissez celle que vous avez employée, et sachez que nous tenons des comptes."
+
+[decision.d1.choice.pay]
+label = "Payer le prix en crédits"
+
+[decision.d1.choice.betray]
+label = "Trahir R4Z0R : livrer le grand livre noir"
+
+[decision.d1.choice.steal]
+label = "Le voler : piller la bourse"
+
+[decision.echo]
+prompt = "ECHO-7 a dit tout ce dont il se souvient. Il ne demande pas qu'on le croie. Qu'en fais-tu ?"
+
+[decision.echo.choice.believe]
+label = "Le croire : il est qui il dit être"
+
+[decision.echo.choice.wait]
+label = "Attendre : continuer d'écouter, décider plus tard"
+
+[decision.echo.choice.doubt]
+label = "En douter : une copie peut se tromper sur elle-même"

@@ -1,0 +1,30 @@
+# Lot L4 (chapter 5): the sealed vault archive and the fragments F14, F18, F19, F20, F22 and F24,
+# English. A fragment opens with the header of the document (kind, sender, date), then two to
+# four sentences, and its last word leaves a question open.
+
+[doc.doc_vault]
+title = "Sealed archive: Aoyama"
+
+[frag.f14]
+title = "Manhunt Report S-117"
+body = "MANHUNT REPORT, Sentinel, team S-117, operation LANTERN, 2084. Target: an unlicensed clinic, Sector 7. Outcome: closed, equipment seized, two patients transferred, one not. The raid was kept as a training model for SENTINEL. Efficiency: 98 percent. What does the missing two percent look like?"
+
+[frag.f18]
+title = "Broker-Nexus Contract"
+body = "CONTRACT, Nexus Corp and the party known as AURORA-ZERO. Object: transfer of the first Aurora prototype, six years ago. Clause 4: the prototype stays in service and may trade. Clause 11: it holds the location of the Core and will sell it only to a buyer who can pay what a heart is worth. Signed: nobody. Who signs for a machine?"
+
+[frag.f19]
+title = "The Seven Echoes"
+body = "RECORD, Dr. R. Aoyama, private archive, 2085. Seven copies of my mind in seven nights. Six went out before dawn. The seventh holds. I have put it in a deck nobody wants, in a sector nobody watches. If it wakes, it will believe it is me. Which of us will be the one who is wrong?"
+
+[frag.f20]
+title = "Voss Memo: Harmony Plan"
+body = "MEMO, E. Voss, executive office, personal. PLAN HARMONY: the Halcyon regulator will carry the whole city by the end of 2088. Nobody will be forced. Everybody will be reassured. We do not want to control anyone. We want everyone to stop being afraid. Is a city that cannot fear a city that is safe?"
+
+[frag.f22]
+title = "Aoyama's Last Log"
+body = "LOG, Dr. R. Aoyama, last entry. The only way to steady her without letting an echo go out is to remove the threat, not the promise. A heart that says yes under threat is not saying yes. If anyone ever carries my seventh copy to her, let them tell her first: you are free to refuse. Will she believe it from a copy?"
+
+[frag.f24]
+title = "Halcyon Act, Enacted Text"
+body = "ACT, Halcyon Act, enacted text. Article 1: any device that ensures a citizen's rest is a measure of public health. Article 4: no consent is required of a person whose rest is ensured. Article 9: the nightly confirmation of the core is a public service and shall not be interrupted. Who voted for the night?"

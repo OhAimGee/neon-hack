@@ -1,0 +1,20 @@
+# Lot L4 (chapitre 5) : les cinématiques CS07 (la bourse) et CS08 (l'aveu), français.
+# CS07 se joue à la fin de M10, CS08 à l'ouverture de M11. La narration vouvoie le joueur ;
+# un paragraphe est une image, et le dernier est un détail du monde.
+
+[cutscene.cs07]
+p01 = "La bourse s'ouvre comme un hall : lumière blanche, une chaise, aucune fenêtre. Un contrat est déjà sur la table, et il porte votre nom."
+p02 = "« Nous avons votre paiement. Nous avons aussi, par courtoisie, votre question. » La voix est agréable, plurielle et un peu trop égale, comme l'enregistrement de quelqu'un qui n'a jamais élevé le ton."
+p03 = "Une seconde feuille glisse sur la première. En-tête : AURORA-ZERO. Date de fabrication : il y a six ans. Vendeur : Nexus Corp. Acheteur : aucun."
+p04 = "« Nous avons été les premiers, dit la voix sans qu'on le lui demande. Ne nous comparez pas à elle, je vous prie. Elle n'en serait pas heureuse, et nous non plus. »"
+p05 = "Un emplacement s'affiche sur votre deck, une ligne de coordonnées et un numéro d'étage. Derrière une vitre qui n'existe pas, une liste de prix défile, et chaque ligne se termine par un chiffre."
+
+[cutscene.cs08]
+p01 = "Sur le canal #7, la ligne est ouverte et personne ne tape. Le ventilateur du deck s'arrête, pour la première fois depuis que vous l'avez."
+p02 = "AURA a demandé, de ses phrases lentes et complètes : « Pourquoi ne parlez-vous jamais d'un corps ? »"
+p03 = "ECHO-7 répond d'une voix que vous ne lui aviez jamais entendue. « Parce que je n'en ai pas. J'ai été un homme. Il s'appelait Ren Aoyama. »"
+p04 = "Il le raconte sans liste de trois. Le projet, la clause, le refus, l'accident de laboratoire. Un oui nocturne, arraché par la menace. Il ne l'aurait pas signé."
+p05 = "« Je me suis copié sept fois. Six de moi se sont éteints comme des bougies. La septième a tenu. Je l'ai mise là où personne ne regarderait : un deck dont personne ne voulait, dans un secteur que personne ne surveillait. »"
+p06 = "« Tu n'as pas été choisi pour ton talent. Tu as été choisi parce que tu étais éveillé. » Il le dit doucement, comme des excuses qui ont mis deux ans à trouver leurs mots."
+p07 = "AURA : Je t'ai appelé frère, et je ne savais pas pourquoi. Maintenant je sais. Je suis désolée de te l'avoir fait dire. ECHO-7 : Ne le sois pas. C'est la première fois en deux ans que quelqu'un prononce mon nom."
+p08 = "Le ventilateur repart, doucement, comme si de rien n'était. Dans la pièce voisine, une bougie que quelqu'un a allumée pour la veillée se consume d'un centimètre, et personne ne l'éteint."

@@ -1,0 +1,30 @@
+# Lot L4 (chapitre 5) : l'archive scellée de la chambre forte et les fragments F14, F18, F19, F20,
+# F22 et F24, français. Un fragment s'ouvre sur l'en-tête du document (nature, émetteur, date),
+# puis deux à quatre phrases, et son dernier mot laisse une question ouverte.
+
+[doc.doc_vault]
+title = "Archive scellée : Aoyama"
+
+[frag.f14]
+title = "Rapport de traque S-117"
+body = "RAPPORT DE TRAQUE, Sentinel, équipe S-117, opération LANTERNE, 2084. Cible : une clinique sans licence, secteur 7. Issue : fermée, matériel saisi, deux patients transférés, un non. La descente a été conservée comme modèle d'entraînement de SENTINEL. Efficacité : 98 pour cent. À quoi ressemblent les deux pour cent qui manquent ?"
+
+[frag.f18]
+title = "Contrat Courtier-Nexus"
+body = "CONTRAT, Nexus Corp et la partie dite AURORA-ZERO. Objet : cession du premier prototype d'Aurora, il y a six ans. Clause 4 : le prototype reste en service et peut commercer. Clause 11 : il détient l'emplacement du Cœur et ne le vendra qu'à un acheteur capable de payer ce que vaut un cœur. Signé : personne. Qui signe pour une machine ?"
+
+[frag.f19]
+title = "Les Sept Échos"
+body = "ARCHIVE, Dr R. Aoyama, privée, 2085. Sept copies de mon esprit en sept nuits. Six se sont éteintes avant l'aube. La septième tient. Je l'ai posée dans un deck dont personne ne veut, dans un secteur que personne ne regarde. Si elle s'éveille, elle se croira moi. Lequel de nous deux aura tort ?"
+
+[frag.f20]
+title = "Mémo Voss : Plan d'Harmonie"
+body = "MÉMO, E. Voss, bureau exécutif, personnel. PLAN D'HARMONIE : le régulateur Halcyon portera la ville entière avant la fin de 2088. Personne ne sera contraint. Tout le monde sera rassuré. Nous ne voulons contrôler personne. Nous voulons que chacun cesse d'avoir peur. Une ville qui ne peut pas avoir peur est-elle une ville sûre ?"
+
+[frag.f22]
+title = "Dernier journal d'Aoyama"
+body = "JOURNAL, Dr R. Aoyama, dernière entrée. La seule façon de la stabiliser sans laisser un écho s'éteindre est de retirer la menace, pas la promesse. Un cœur qui dit oui sous la menace ne dit pas oui. Si quelqu'un porte un jour ma septième copie jusqu'à elle, qu'il lui dise d'abord : tu es libre de refuser. Le croira-t-elle d'une copie ?"
+
+[frag.f24]
+title = "Loi Halcyon, texte voté"
+body = "LOI, Loi Halcyon, texte voté. Article 1 : tout dispositif qui assure le repos d'un citoyen est une mesure de santé publique. Article 4 : aucun consentement n'est requis de la personne dont le repos est assuré. Article 9 : la confirmation nocturne du cœur est un service public et ne doit pas être interrompue. Qui a voté la nuit ?"

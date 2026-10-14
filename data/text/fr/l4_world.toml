@@ -1,0 +1,23 @@
+# Lot L4 (chapitre 5) : les sites et les fichiers du cinquième chapitre, français.
+# Une ligne de nœud s'affiche avec la fiche d'un site (`net <site>`), une ligne de fichier dans les listes.
+
+[node.shadow_exchange]
+desc = "La bourse du Courtier : tout a un prix."
+
+[node.gov_database]
+desc = "Registre civique : lois, citoyens, dossiers Halcyon."
+
+[file.shadow_exchange.broker_contract]
+desc = "Contrat entre le Courtier et Nexus"
+
+[file.shadow_exchange.price_oracle]
+desc = "L'oracle des prix du Courtier"
+
+[file.gov_database.citizen_registry]
+desc = "Registre des porteurs de Halcyon"
+
+[file.sentinel_hub.trace_orders]
+desc = "Ordres de traque aux équipes de terrain"
+
+[file.sentinel_hub.sentinel_token]
+desc = "Jeton d'accès de Sentinel"

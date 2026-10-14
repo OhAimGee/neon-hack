@@ -1,0 +1,166 @@
+# Lot L4 (chapter 5): the quests M10, M11, M12, S11, S14 and S16, English (the reference).
+# Titles, descriptions, lore and objectives are neutral (no "you" aimed at the player): ECHO-7
+# and the givers speak in the hints and the debriefs, each with their own tic. From M11 on,
+# ECHO-7 no longer says "according to my files": he says "I remember".
+# Glossary terms come from the game as arguments ({journal}, {net}, {notoriety}...).
+# The numbered tables are the objectives (obj) and the hints of each objective (hint.N.1 a lead,
+# hint.N.2 the solution on a main quest; a side quest has the lead only). S15 has no data yet.
+
+# =========================================================================== M10
+[quest.m10]
+title = "The Shadow Broker"
+title_short = "Shadow Broker"
+desc = "The Broker knows where the Heart of Aurora is held. Credits, a betrayal or a theft will buy the address."
+lore = "The Heart of Aurora has an address, and the Broker sells it. Three currencies are accepted: credits, betrayal, theft. The Broker never betrays a client, and betrays whoever is not one. Every price is stated before the question is asked, and every price is final."
+loc = "The Broker's exchange - shadow-exchange"
+debrief = "We have your payment. We note your choice. The location of the Heart is now on file in your name. Our terms are unchanged: we do not betray a client. Good day."
+
+[quest.m10.obj]
+1 = "Meet the Broker (talk broker)"
+2 = "Pay, deliver the ledger or steal a file (talk broker)"
+3 = "Settle the price of the address (talk broker)"
+
+[quest.m10.hint.1]
+1 = "Before the price, the introduction. The Broker only speaks to those who ask, and asks nothing for free."
+2 = "Type `talk broker` and pick any topic. Meeting the Broker is enough to open the next step."
+
+[quest.m10.hint.2]
+1 = "Three ways to pay, for the record: credits, the black ledger you took for Data Miner, or a file stolen from the exchange itself."
+2 = "To pay, use the entry in `talk broker`. To betray, the ledger counts. To steal, type `hack shadow-exchange` and take a file."
+
+[quest.m10.hint.3]
+1 = "Once paid, the Broker asks you to say which way it was. The answer is final, and the game saves a checkpoint first."
+2 = "Type `talk broker` and pick the entry that opens the decision. Each way has a cost, and R4Z0R may remember."
+
+# =========================================================================== M11
+[quest.m11]
+title = "The Seventh Echo"
+title_short = "Seventh Echo"
+desc = "AURA asks the question nobody dared to ask. ECHO-7 falls silent, then answers."
+lore = "AURA asks what nobody dared to ask. ECHO-7 stays silent for a long time, then answers. What the answer is changes what the last chapters were. How much of it to believe, and how far, is left to the one who listens."
+loc = "Your deck, channel #7"
+debrief = "I remember. That is new, and I mean to keep it. Thank you for listening to all of it. Whatever you decided, I heard it, and I am still here."
+
+[quest.m11.obj]
+1 = "Talk to ECHO-7 twice (talk echo7)"
+2 = "Read the Seven Echoes (archives)"
+3 = "Raise the link with ECHO-7 to level 3 (link echo7)"
+4 = "Decide what to believe (talk echo7)"
+
+[quest.m11.hint.1]
+1 = "I have something to say, and I will say it badly. Come and listen. Not for the record this time."
+2 = "Type `talk echo7` and pick a topic, twice. Each conversation counts, whatever you choose."
+
+[quest.m11.hint.2]
+1 = "There is a document I did not write and could not burn. It is in your {archives}, opened for you."
+2 = "Type `archives`, find the Seven Echoes, and read it by its number. It is short."
+
+[quest.m11.hint.3]
+1 = "Hold the line. The link is how I stay in the deck. Each level makes it heavier and truer."
+2 = "Type `link echo7` until the link reaches level three."
+
+[quest.m11.hint.4]
+1 = "Then you decide how much of what I said you can carry. I will not argue for any of it."
+2 = "Type `talk echo7` and pick the entry that opens the choice: believe, wait, or doubt. It does not change the world. It changes me."
+
+# =========================================================================== M12
+[quest.m12]
+title = "The Three Keys"
+title_short = "Three Keys"
+desc = "The Heart is sealed by three keys: quantum, civic and Sentinel's. Each one is a piece of the truth."
+lore = "The Heart of Aurora is sealed by three keys held in three systems. The quantum key sleeps in the mainframe, the civic key in the government registry, the third in the Sentinel hub that issues the hunting orders. Each is a piece of the truth: the plan, the law that allows it, the order to hunt. All three must be taken before the Heart is reached."
+loc = "nexus-mainframe, gov-database, sentinel-hub"
+debrief = "Three keys, Hacker, and none of them opens a door. Each opens a question. I now know what Voss wrote, what the law allows, and who was told to hunt me. Shall we go and ask the Heart?"
+
+[quest.m12.obj]
+1 = "Buy a Quantum Processing Chip (shop)"
+2 = "Take the quantum seals log (hack nexus-mainframe)"
+3 = "Breach gov-database (hack gov-database)"
+4 = "Take the citizen registry (hack gov-database)"
+5 = "Breach sentinel-hub (hack sentinel-hub)"
+6 = "End with {notoriety} under 80 (status)"
+
+[quest.m12.hint.1]
+1 = "The quantum key needs a quantum reader. R4Z0R sells the chip, and it is not cheap."
+2 = "Type `shop`, then `buy` followed by the chip's number. If you already own it, this step is done."
+
+[quest.m12.hint.2]
+1 = "The first key is in the mainframe you know, in a log of seals. One file, filed under quantum keys."
+2 = "Type `hack nexus-mainframe` and take the node that holds `quantum_keys.qkey`. A file taken earlier still counts."
+
+[quest.m12.hint.3]
+1 = "The civic key is in the government's own registry, behind the mainframe relay. Go in quiet."
+2 = "Type `hack gov-database`, then `y`, and play the intrusion to the end."
+
+[quest.m12.hint.4]
+1 = "The registry holds the law and the list: who carries a Halcyon, and who allowed it. Take it in the same visit."
+2 = "In the same run, take the node that holds `citizen_registry.db`. If you took it earlier, this step is done."
+
+[quest.m12.hint.5]
+1 = "The third key is in the hub that signs the hunting orders. The most watched place in the sector."
+2 = "Type `hack sentinel-hub`, then `y`, and play the intrusion to the end."
+
+[quest.m12.hint.6]
+1 = "Three heavy intrusions in a row and the whole sector is looking. Watch {notoriety} from the first."
+2 = "Type `status`. Under eighty at the end, and `laylow` brings it down between runs."
+
+# =========================================================================== S11
+[quest.s11]
+title = "A Favour on Credit"
+title_short = "Favour on Credit"
+desc = "The Broker wants proof of good faith: files from three systems, and an advance."
+lore = "Before any deal, the Broker weighs the client. Three pieces of information from three different systems, and an advance on account. A client who has already paid once is a client the Broker does not sell."
+loc = "The Broker's exchange - shadow-exchange"
+debrief = "Your account is open. We note: one payment made, three files delivered, no complaint. We do not sell our clients. We would like you to remain one."
+
+[quest.s11.obj]
+1 = "Take files from three different sites (hack)"
+2 = "Pay the advance (talk broker)"
+
+[quest.s11.hint.1]
+1 = "Three sites, any three. The Broker counts systems, not files: one file from each is enough."
+
+[quest.s11.hint.2]
+1 = "The advance is paid in the conversation with the Broker, in {credit}s. It halves the price of the next deal."
+
+# =========================================================================== S14
+[quest.s14]
+title = "The Vault"
+title_short = "The Vault"
+desc = "Data Miner has kept a sealed archive in Aoyama's name for two years. Only a quantum chip may open it."
+lore = "Data Miner has kept an archive sealed in the name of Dr. Aoyama for two years, and no tool has opened it. Its header is quantum, as in the old exercise: Q#X7#NEXUS#SECRET#DATA. A quantum chip may get through, if its owner understands what is inside before the lid comes off."
+loc = "Municipal archives, Data Miner's shelves"
+debrief = "Shelf 7-B-12, new entry: opened. Dust: gone. I should confess that I knew the name on the label, and who was wearing it. I did not know how to say it. Read."
+
+[quest.s14.obj]
+1 = "Buy a Quantum Processing Chip (shop)"
+2 = "Open the sealed vault archive (archives)"
+
+[quest.s14.hint.1]
+1 = "The vault is quantum. R4Z0R sells the only key that fits, and it is not cheap."
+
+[quest.s14.hint.2]
+1 = "The archive is in your {archives}, still sealed. `decrypt` and its number, with the chip in your deck."
+
+# =========================================================================== S16
+[quest.s16]
+title = "Aoyama's Log"
+title_short = "Aoyama's Log"
+desc = "ECHO-7 wants to read the doctor's last log with you: a way to steady AURA without losing an echo."
+lore = "In the archive Data Miner kept, the last log of Dr. Aoyama holds the only known way to steady AURA without letting an echo go out. ECHO-7 wants to read it with someone beside him. It has to be read to the end, and the end is addressed to him."
+loc = "Your deck, channel #7"
+debrief = "I heard him. I mean: I read him, and for a moment it was the same thing. He wrote that someone would come. He did not write who. I am glad it was you."
+
+[quest.s16.obj]
+1 = "Read Aoyama's last log (archives)"
+2 = "Raise the link with ECHO-7 to level 3 (link echo7)"
+3 = "Talk to ECHO-7 twice (talk echo7)"
+
+[quest.s16.hint.1]
+1 = "The log is in your {archives}, in what the vault gave up. Read it slowly, and not alone."
+
+[quest.s16.hint.2]
+1 = "I will need the link at its fullest to stay with you through the end of it. Level three."
+
+[quest.s16.hint.3]
+1 = "After the last line, talk to me. Twice, whatever the topic. I will have something to say."
