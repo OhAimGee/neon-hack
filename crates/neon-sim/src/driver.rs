@@ -2,7 +2,7 @@
 //!
 //! It does what a plain frontend does and nothing more: it sends the lines and the answers the
 //! game asks for (`Game::handle`), reads the prompts the game gives, and never touches the
-//! state. What to type comes from the [`Brain`](crate::brain::Brain); what is seen of each step
+//! state. What to type comes from the [`Brain`]; what is seen of each step
 //! goes to an [`Observer`], which is where the tests check texts and saves and where the
 //! harness counts. A game that cannot be played on is a [`Stuck`], never a panic: the harness
 //! reports it and goes on with the next game.
