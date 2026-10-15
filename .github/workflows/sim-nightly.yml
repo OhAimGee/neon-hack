@@ -1,0 +1,54 @@
+name: Balancing (nightly)
+
+on:
+  schedule:
+    # Every night at 02:43 UTC.
+    - cron: "43 2 * * *"
+  workflow_dispatch:
+    inputs:
+      seeds:
+        description: "Seeds of the games: a number or a range such as 1..=20"
+        default: "1"
+      plans:
+        description: "Which decisions the optimist takes: all or representative"
+        default: "all"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sim-nightly-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: "0"
+
+jobs:
+  sim-nightly:
+    name: every bot, every threshold
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install the toolchain from rust-toolchain.toml
+        run: rustup toolchain install
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - name: Play every bot and check every threshold
+        env:
+          SEEDS: ${{ inputs.seeds || '1' }}
+          PLANS: ${{ inputs.plans || 'all' }}
+        run: |
+          set -o pipefail
+          scripts/sim-nightly.sh target/sim-nightly 2>&1 | tee target/sim-nightly.log
+      - name: Sum up the thresholds
+        if: always()
+        run: |
+          {
+            echo '### Balancing thresholds'
+            echo '```'
+            grep -E '^\[(ok  |FAIL|warn)' target/sim-nightly.log || tail -n 40 target/sim-nightly.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
