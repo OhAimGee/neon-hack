@@ -11,8 +11,9 @@
 use neon_engine::campaign::Difficulty;
 use neon_engine::content::Content;
 use neon_sim::campaign::{Bot, PlanSet, plans, run_bot};
+use neon_sim::monkey::play_monkey;
 use neon_sim::record::Outcome;
-use neon_sim::report::{Report, SCHEMA_VERSION, SitesReport};
+use neon_sim::report::{MonkeyReport, Report, SCHEMA_VERSION, SitesReport};
 use neon_sim::sites::{Loot, SiteResult, measure};
 use neon_sim::targets::{Level, Targets, check};
 
@@ -223,4 +224,61 @@ fn the_bots_are_checked_against_the_thresholds_of_the_spec() {
     assert!(t6.iter().all(|f| f.ok), "{t6:?}");
     // None of them is a barrier yet: the numbers are the owner's to validate.
     assert!(findings.iter().all(|f| f.id == "T1" || !f.fails()));
+}
+
+#[test]
+fn the_story_bot_skips_what_lasts_and_still_finishes_the_campaign() {
+    let plans = plans(PlanSet::Representative).unwrap();
+    let (report, records) = run_bot(Bot::Story, &plans[..1], Difficulty::Story, &(1..=1));
+    assert_eq!(report.bot, "story");
+    assert_eq!(
+        (report.finished, report.gave_up, report.stuck),
+        (1, 0, 0),
+        "{:?}",
+        report.worst
+    );
+    // Some intrusions are played by the game (`skip`), the ones that cost a single turn and the
+    // visits back to a site `skip` left something at are played by the bot.
+    let record = &records[0];
+    assert!(record.intrusions.iter().any(|i| i.automatic));
+    assert!(record.intrusions.iter().any(|i| !i.automatic));
+    assert!(report.intrusions.automatic_per_mille > 0);
+    assert_eq!(Bot::Story.only_difficulty(), Some(Difficulty::Story));
+    let findings = check(&Targets::embedded().unwrap(), &[Report::Campaign(report)]);
+    let t14 = findings.iter().find(|f| f.id == "T14").unwrap();
+    assert!(t14.ok && !t14.fails(), "{}", t14.detail);
+}
+
+#[test]
+fn the_monkey_breaks_nothing_and_is_the_same_game_every_time() {
+    let games = |seeds: std::ops::RangeInclusive<u64>| {
+        seeds
+            .map(|seed| {
+                let difficulty = Difficulty::ALL[usize::try_from(seed % 4).unwrap()];
+                play_monkey(seed, difficulty, 120)
+            })
+            .collect::<Vec<_>>()
+    };
+    let records = games(1..=8);
+    let report = MonkeyReport::of([1, 8], 120, &records);
+    assert_eq!(
+        (
+            report.panics,
+            report.not_quittable,
+            report.save_faults,
+            report.contract_faults
+        ),
+        (0, 0, 0, 0),
+        "{:?}",
+        report.worst
+    );
+    assert!(report.inputs > 8 * 20, "{}", report.inputs);
+    // Damaged saves are tried, and nearly all of them are refused.
+    assert!(report.damaged_refused > 0);
+    let again = MonkeyReport::of([1, 8], 120, &games(1..=8));
+    assert_eq!(
+        Report::Monkey(report).to_json().unwrap(),
+        Report::Monkey(again).to_json().unwrap(),
+        "the same seeds give the same bytes"
+    );
 }

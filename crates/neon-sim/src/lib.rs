@@ -16,6 +16,7 @@
 pub mod brain;
 pub mod campaign;
 pub mod driver;
+pub mod monkey;
 pub mod record;
 pub mod report;
 pub mod sites;

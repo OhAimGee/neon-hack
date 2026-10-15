@@ -139,3 +139,62 @@ fn a_bot_that_plays_by_hand_is_named_in_its_summary_and_checked_against_its_thre
         out(&checked)
     );
 }
+
+#[test]
+fn the_story_bot_plays_story_and_is_checked_against_t14() {
+    let dir = tempfile::tempdir().unwrap();
+    let file = path(dir.path(), "story.json");
+    let ran = sim(&[
+        "run", "--bot", "story", "--seeds", "1", "--limit", "1", "--out", &file,
+    ]);
+    assert!(ran.status.success(), "{}", out(&ran));
+    assert!(
+        out(&ran).contains("story story: 1 games, 1 finished"),
+        "{}",
+        out(&ran)
+    );
+    let checked = sim(&["check", &file]);
+    assert!(checked.status.success(), "{}", out(&checked));
+    assert!(
+        out(&checked).contains("[ok  ] T14 (O): story finishes 1000 per mille"),
+        "{}",
+        out(&checked)
+    );
+    // It plays one difficulty only.
+    let wrong = sim(&[
+        "run",
+        "--bot",
+        "story",
+        "--difficulty",
+        "normal",
+        "--limit",
+        "1",
+    ]);
+    assert_eq!(wrong.status.code(), Some(2), "{}", out(&wrong));
+    assert!(String::from_utf8_lossy(&wrong.stderr).contains("only plays story"));
+}
+
+#[test]
+fn the_monkey_writes_its_report_and_a_short_one_does_not_pass_t12() {
+    let dir = tempfile::tempdir().unwrap();
+    let file = path(dir.path(), "monkey.json");
+    let ran = sim(&[
+        "run", "--bot", "monkey", "--seeds", "1..=6", "--steps", "60", "--out", &file,
+    ]);
+    assert!(ran.status.success(), "{}", out(&ran));
+    assert!(out(&ran).contains("monkey: 6 games"), "{}", out(&ran));
+    let json = std::fs::read_to_string(&file).unwrap();
+    assert!(json.contains("\"kind\": \"monkey\""), "{json}");
+    // Nothing broke, but six games say nothing: T12 is a barrier and wants more.
+    let checked = sim(&["check", &file]);
+    assert_eq!(checked.status.code(), Some(1), "{}", out(&checked));
+    let text = out(&checked);
+    assert!(
+        text.contains("[FAIL] T12 (P): the monkey played 6 games"),
+        "{text}"
+    );
+    assert!(
+        text.contains("[ok  ] T12 (P): the monkey found 0 panics"),
+        "{text}"
+    );
+}

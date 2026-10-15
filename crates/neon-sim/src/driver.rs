@@ -7,7 +7,7 @@
 //! harness counts. A game that cannot be played on is a [`Stuck`], never a panic: the harness
 //! reports it and goes on with the next game.
 
-use std::collections::VecDeque;
+use std::collections::{BTreeSet, VecDeque};
 use std::fmt;
 
 use neon_engine::Game;
@@ -53,6 +53,10 @@ pub enum Tactic {
     Solver,
     /// By hand, one action at a time, as a heuristic player does ([`tactics`]): it can burn.
     Hand(Style),
+    /// By hand with the quiet style, until an intrusion costs more than one turn: then `skip`,
+    /// which the Story difficulty offers, plays the rest of it. A site `skip` left something
+    /// at is played by hand the second time: the player has learned what `skip` leaves.
+    Story,
 }
 
 /// What a driver is told to do besides playing the plan.
@@ -189,6 +193,8 @@ pub struct Driver<O> {
     last_save: Option<SaveRequest>,
     /// The site of the last `hack`, for the report of a game lost on it.
     last_site: String,
+    /// The sites the player has entered, for the one that skips only the first time.
+    skipped_sites: BTreeSet<String>,
 }
 
 impl<O: Observer> Driver<O> {
@@ -207,6 +213,7 @@ impl<O: Observer> Driver<O> {
             saved_slot: false,
             last_save: None,
             last_site: String::new(),
+            skipped_sites: BTreeSet::new(),
         }
     }
 
@@ -283,7 +290,9 @@ impl<O: Observer> Driver<O> {
             if repeats >= MAX_REPEATS {
                 // A player who plays by hand and burns the same intrusion again and again
                 // gives up; for the solver, which cannot burn, it is a bug of the walk.
-                if let (Tactic::Hand(_), Move::Hack(site)) = (self.config.tactic, &mv) {
+                if let (Tactic::Hand(_) | Tactic::Story, Move::Hack(site)) =
+                    (self.config.tactic, &mv)
+                {
                     return Ok(self.ended(Fate::GaveUp {
                         site: site.to_string(),
                     }));
@@ -372,7 +381,11 @@ impl<O: Observer> Driver<O> {
             self.last_site = site.to_string();
             match self.config.tactic {
                 Tactic::Solver => self.play_intrusion(mv)?,
-                Tactic::Hand(style) => self.play_by_hand(mv, style)?,
+                Tactic::Hand(style) => self.play_by_hand(mv, style, false)?,
+                Tactic::Story => {
+                    let first_visit = self.skipped_sites.insert(site.to_string());
+                    self.play_by_hand(mv, Style::Prudent, first_visit)?;
+                }
             }
         }
         Ok(())
@@ -425,10 +438,19 @@ impl<O: Observer> Driver<O> {
     }
 
     /// Plays the intrusion that `hack` opened by hand, one action at a time, as the style
-    /// would: the state is read again after every command. The run ends won, or burned.
-    fn play_by_hand(&mut self, mv: &Move, style: Style) -> Result<(), Stuck> {
+    /// would: the state is read again after every command. The run ends won, or burned. With
+    /// `skip`, the player gives up playing it once the first turn is over and has the game
+    /// play the rest.
+    fn play_by_hand(&mut self, mv: &Move, style: Style, skip: bool) -> Result<(), Stuck> {
+        let mut skipped = false;
         for _ in 0..MAX_ACTIONS {
             let action = match self.game.intrusion() {
+                Some(intrusion) if skip && !skipped && intrusion.state().turn() > 1 => {
+                    skipped = true;
+                    self.type_line("skip")?;
+                    self.settle(mv)?;
+                    continue;
+                }
                 Some(intrusion) => {
                     tactics::choose(style, intrusion.run().mission(), intrusion.state())
                 }

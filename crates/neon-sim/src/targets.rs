@@ -6,9 +6,9 @@
 
 use serde::Deserialize;
 
-use crate::campaign::{OPTIMIST, PRUDENT, RECKLESS};
+use crate::campaign::{OPTIMIST, PRUDENT, RECKLESS, STORY};
 use crate::record::difficulty_name;
-use crate::report::{CampaignReport, Report, SitesReport};
+use crate::report::{CampaignReport, MonkeyReport, Report, SitesReport};
 use crate::sites::{Loot, SiteResult, SiteRow};
 use neon_engine::campaign::Difficulty;
 
@@ -131,6 +131,24 @@ pub struct Heat {
     pub reckless_hunted_per_mille_min: u64,
 }
 
+/// T12: the monkey breaks nothing.
+#[derive(Debug, Clone, Deserialize)]
+pub struct Robustness {
+    /// P or O.
+    pub level: Level,
+    /// The fewest games a report must hold to say anything (the quick check of the spec).
+    pub min_games: u64,
+}
+
+/// T14: the Story difficulty is played to its end by a player who only skips what lasts.
+#[derive(Debug, Clone, Deserialize)]
+pub struct StoryMode {
+    /// P or O.
+    pub level: Level,
+    /// The share of campaigns the story bot finishes, per mille, at least.
+    pub finished_per_mille_min: u64,
+}
+
 /// All the thresholds.
 #[derive(Debug, Clone, Deserialize)]
 pub struct Targets {
@@ -150,6 +168,10 @@ pub struct Targets {
     pub t10: Duration,
     /// T11.
     pub t11: Heat,
+    /// T12.
+    pub t12: Robustness,
+    /// T14.
+    pub t14: StoryMode,
 }
 
 impl Targets {
@@ -201,21 +223,28 @@ pub fn check(targets: &Targets, reports: &[Report]) -> Vec<Finding> {
         .iter()
         .filter_map(|r| match r {
             Report::Campaign(c) if c.bot == OPTIMIST => Some(c),
-            _ => None,
+            Report::Campaign(_) | Report::Sites(_) | Report::Monkey(_) => None,
         })
         .collect();
     let all_campaigns: Vec<&CampaignReport> = reports
         .iter()
         .filter_map(|r| match r {
             Report::Campaign(c) => Some(c),
-            Report::Sites(_) => None,
+            Report::Sites(_) | Report::Monkey(_) => None,
         })
         .collect();
     let sites: Vec<&SitesReport> = reports
         .iter()
         .filter_map(|r| match r {
             Report::Sites(s) => Some(s),
-            Report::Campaign(_) => None,
+            Report::Campaign(_) | Report::Monkey(_) => None,
+        })
+        .collect();
+    let monkeys: Vec<&MonkeyReport> = reports
+        .iter()
+        .filter_map(|r| match r {
+            Report::Monkey(m) => Some(m),
+            Report::Campaign(_) | Report::Sites(_) => None,
         })
         .collect();
     let mut findings = Vec::new();
@@ -223,6 +252,7 @@ pub fn check(targets: &Targets, reports: &[Report]) -> Vec<Finding> {
         findings.extend(t1(&targets.t1, &campaigns));
     }
     findings.extend(bots(targets, &all_campaigns));
+    findings.extend(t12(&targets.t12, &monkeys));
     let all_rows: Vec<&SiteRow> = sites.iter().flat_map(|s| &s.rows).collect();
     let (rows, full): (Vec<&SiteRow>, Vec<&SiteRow>) = all_rows
         .into_iter()
@@ -267,7 +297,7 @@ fn claim(id: &'static str, level: Level, ok: bool, detail: String) -> Finding {
     }
 }
 
-/// T5, T6, T10 and T11: what the prudent and the reckless bot go through.
+/// T5, T6, T10, T11 and T14: what the prudent, the reckless and the story bot go through.
 fn bots(targets: &Targets, campaigns: &[&CampaignReport]) -> Vec<Finding> {
     let mut findings = Vec::new();
     let prudent = report_of(campaigns, PRUDENT, "normal");
@@ -361,6 +391,21 @@ fn bots(targets: &Targets, campaigns: &[&CampaignReport]) -> Vec<Finding> {
             ),
         ));
     }
+    if let Some(report) = report_of(campaigns, STORY, "story") {
+        let t = &targets.t14;
+        let finished = finished_per_mille(report);
+        findings.push(claim(
+            "T14",
+            t.level,
+            finished >= t.finished_per_mille_min,
+            format!(
+                "story finishes {finished} per mille of its campaigns, skipping {} per mille of its {} intrusions ({} wanted)",
+                report.intrusions.automatic_per_mille,
+                report.intrusions.total,
+                t.finished_per_mille_min
+            ),
+        ));
+    }
     let t = &targets.t6;
     if let Some(report) = report_of(campaigns, RECKLESS, "expert") {
         let finished = finished_per_mille(report);
@@ -387,6 +432,40 @@ fn bots(targets: &Targets, campaigns: &[&CampaignReport]) -> Vec<Finding> {
         ));
     }
     findings
+}
+
+/// T12: no panic, no game that cannot be left, no save that does not round trip, in enough games.
+fn t12(target: &Robustness, reports: &[&MonkeyReport]) -> Vec<Finding> {
+    if reports.is_empty() {
+        return Vec::new();
+    }
+    let games: u64 = reports.iter().map(|r| r.games).sum();
+    let sum = |wanted: fn(&MonkeyReport) -> u64| reports.iter().map(|r| wanted(r)).sum::<u64>();
+    let (panics, stuck, saves, contract) = (
+        sum(|r| r.panics),
+        sum(|r| r.not_quittable),
+        sum(|r| r.save_faults),
+        sum(|r| r.contract_faults),
+    );
+    vec![
+        claim(
+            "T12",
+            target.level,
+            games >= target.min_games,
+            format!(
+                "the monkey played {games} games ({} wanted to say anything)",
+                target.min_games
+            ),
+        ),
+        claim(
+            "T12",
+            target.level,
+            panics + stuck + saves + contract == 0,
+            format!(
+                "the monkey found {panics} panics, {stuck} games that cannot be left, {saves} saves that do not round trip and {contract} steps at odds with the game"
+            ),
+        ),
+    ]
 }
 
 fn t1(target: &Completion, reports: &[&CampaignReport]) -> Vec<Finding> {
@@ -775,6 +854,7 @@ mod tests {
                 turns: 4,
                 trace: 50,
                 burned: n < burned_per_ten,
+                automatic: false,
             })
             .collect::<Vec<_>>();
         let game = |outcome| GameRecord {
@@ -858,6 +938,100 @@ mod tests {
             );
         }
         assert!(findings.iter().all(|f| !f.fails()), "they are objectives");
+    }
+
+    #[test]
+    fn the_story_bot_is_read_at_story_only_and_says_how_much_it_skipped() {
+        let reports = [
+            campaign("story", "story", 20, 0, 0, 600, 20),
+            campaign("story", "story", 10, 10, 0, 600, 20),
+        ];
+        let findings = check(&targets(), &reports[..1]);
+        assert_eq!(findings.len(), 1);
+        let finding = findings.first().unwrap();
+        assert_eq!((finding.id, finding.ok), ("T14", true));
+        assert!(
+            finding.detail.contains("1000 per mille"),
+            "{}",
+            finding.detail
+        );
+        assert!(
+            finding.detail.contains("skipping 0 per mille"),
+            "{}",
+            finding.detail
+        );
+        // Half of the games lost: the objective is not met, and it stays an objective.
+        let findings = check(&targets(), &reports[1..]);
+        assert!(
+            findings
+                .iter()
+                .all(|f| f.id == "T14" && !f.ok && !f.fails())
+        );
+        // The story bot at another difficulty is read by nothing.
+        assert!(
+            check(
+                &targets(),
+                &[campaign("story", "normal", 20, 0, 0, 600, 20)]
+            )
+            .is_empty()
+        );
+    }
+
+    // ------------------------------------------------------------------ the monkey
+
+    use crate::monkey::{Fault, MonkeyRecord};
+
+    fn monkey(games: u64, fault: Option<&Fault>) -> Report {
+        let records: Vec<MonkeyRecord> = (0..games)
+            .map(|seed| MonkeyRecord {
+                seed,
+                difficulty: "normal".to_owned(),
+                inputs: 300,
+                intrusion_inputs: 150,
+                damaged_refused: 6,
+                damaged_accepted: 0,
+                fault: if seed == 0 { fault.cloned() } else { None },
+                trail: Vec::new(),
+            })
+            .collect();
+        Report::Monkey(MonkeyReport::of([0, games], 300, &records))
+    }
+
+    #[test]
+    fn a_monkey_that_found_nothing_in_enough_games_passes_t12() {
+        let findings = check(&targets(), &[monkey(100, None)]);
+        assert_eq!(findings.len(), 2);
+        assert!(
+            findings.iter().all(|f| f.id == "T12" && f.ok),
+            "{findings:?}"
+        );
+        assert_eq!(targets().t12.level, Level::P);
+    }
+
+    #[test]
+    fn too_few_games_or_one_fault_fails_the_barrier() {
+        let few = check(&targets(), &[monkey(99, None)]);
+        assert!(
+            few.iter()
+                .any(|f| !f.ok && f.fails() && f.detail.contains("99 games"))
+        );
+        for fault in [
+            Fault::Panic {
+                message: "boom".to_owned(),
+            },
+            Fault::NotQuittable {
+                why: "stuck".to_owned(),
+            },
+            Fault::Save {
+                why: "differs".to_owned(),
+            },
+            Fault::Contract {
+                why: "differs".to_owned(),
+            },
+        ] {
+            let findings = check(&targets(), &[monkey(100, Some(&fault))]);
+            assert!(findings.iter().any(Finding::fails), "{findings:?}");
+        }
     }
 
     #[test]

@@ -7,11 +7,12 @@ use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
 
+use crate::monkey::{Fault, MonkeyRecord};
 use crate::record::{GameRecord, Outcome};
 use crate::sites::SiteRow;
 
 /// The version of the report format.
-pub const SCHEMA_VERSION: u32 = 2;
+pub const SCHEMA_VERSION: u32 = 3;
 /// The games of a campaign report that are listed by name when they went wrong.
 const WORST: usize = 20;
 
@@ -68,6 +69,8 @@ pub struct IntrusionStats {
     pub per_game: Option<Spread>,
     /// The share of intrusions that burned out, per mille.
     pub burned_per_mille: u64,
+    /// The share of intrusions the game played (`skip`), per mille.
+    pub automatic_per_mille: u64,
     /// The turns of an intrusion.
     pub turns: Option<Spread>,
     /// The most burned runs in a row on the same site, in any game.
@@ -168,6 +171,7 @@ impl CampaignReport {
         // whatever its end: a bot that burns out is what these numbers are about.
         let intrusions: Vec<_> = records.iter().flat_map(|r| &r.intrusions).collect();
         let burned = intrusions.iter().filter(|i| i.burned).count() as u64;
+        let automatic = intrusions.iter().filter(|i| i.automatic).count() as u64;
         let total = intrusions.len() as u64;
         let hunted = records
             .iter()
@@ -218,6 +222,7 @@ impl CampaignReport {
                 total,
                 per_game: Spread::of(records.iter().map(|r| r.intrusions.len() as u64).collect()),
                 burned_per_mille: (burned * 1000).checked_div(total).unwrap_or(0),
+                automatic_per_mille: (automatic * 1000).checked_div(total).unwrap_or(0),
                 turns: Spread::of(intrusions.iter().map(|i| u64::from(i.turns)).collect()),
                 longest_burn_streak: records.iter().map(burn_streak).max().unwrap_or(0),
             },
@@ -237,6 +242,92 @@ pub struct SitesReport {
     pub rows: Vec<SiteRow>,
 }
 
+/// A game of the monkey that went wrong.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct MonkeyWorst {
+    /// The seed, to replay it.
+    pub seed: u64,
+    /// The difficulty, by its name.
+    pub difficulty: String,
+    /// What went wrong.
+    pub fault: Fault,
+    /// The last inputs before it, the oldest first.
+    pub trail: Vec<String>,
+}
+
+/// The report of a batch of games of the monkey.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct MonkeyReport {
+    /// The version of the format.
+    pub schema_version: u32,
+    /// The first and last seeds.
+    pub seeds: [u64; 2],
+    /// The most inputs a game was given before the monkey left it.
+    pub steps: u64,
+    /// The games played.
+    pub games: u64,
+    /// The inputs sent in all of them.
+    pub inputs: u64,
+    /// The inputs typed inside an intrusion, per mille of all of them.
+    pub intrusion_per_mille: u64,
+    /// The games the engine panicked in.
+    pub panics: u64,
+    /// The games that could not be left.
+    pub not_quittable: u64,
+    /// The games where a save did not round trip, or a damaged one changed the game.
+    pub save_faults: u64,
+    /// The games where a step did not say what the game waited for.
+    pub contract_faults: u64,
+    /// The damaged saves that were refused.
+    pub damaged_refused: u64,
+    /// The damaged saves that were taken for valid ones.
+    pub damaged_accepted: u64,
+    /// The games that went wrong, the first ones.
+    pub worst: Vec<MonkeyWorst>,
+}
+
+impl MonkeyReport {
+    /// Sums up the games of a batch.
+    #[must_use]
+    pub fn of(seeds: [u64; 2], steps: u64, records: &[MonkeyRecord]) -> Self {
+        let count = |wanted: fn(&Fault) -> bool| {
+            records
+                .iter()
+                .filter(|r| r.fault.as_ref().is_some_and(wanted))
+                .count() as u64
+        };
+        let inputs: u64 = records.iter().map(|r| r.inputs).sum();
+        let in_intrusion: u64 = records.iter().map(|r| r.intrusion_inputs).sum();
+        let mut worst: Vec<MonkeyWorst> = records
+            .iter()
+            .filter_map(|r| {
+                Some(MonkeyWorst {
+                    seed: r.seed,
+                    difficulty: r.difficulty.clone(),
+                    fault: r.fault.clone()?,
+                    trail: r.trail.clone(),
+                })
+            })
+            .collect();
+        worst.truncate(WORST);
+        Self {
+            schema_version: SCHEMA_VERSION,
+            seeds,
+            steps,
+            games: records.len() as u64,
+            inputs,
+            intrusion_per_mille: (in_intrusion * 1000).checked_div(inputs).unwrap_or(0),
+            panics: count(|f| matches!(f, Fault::Panic { .. })),
+            not_quittable: count(|f| matches!(f, Fault::NotQuittable { .. })),
+            save_faults: count(|f| matches!(f, Fault::Save { .. })),
+            contract_faults: count(|f| matches!(f, Fault::Contract { .. })),
+            damaged_refused: records.iter().map(|r| r.damaged_refused).sum(),
+            damaged_accepted: records.iter().map(|r| r.damaged_accepted).sum(),
+            worst,
+        }
+    }
+}
+
 /// A report, whichever kind.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
@@ -249,6 +340,8 @@ pub enum Report {
     Campaign(CampaignReport),
     /// The sites measured.
     Sites(SitesReport),
+    /// A batch of games of the monkey.
+    Monkey(MonkeyReport),
 }
 
 impl Report {
@@ -289,6 +382,7 @@ mod tests {
             turns: 3,
             trace: 40,
             burned,
+            automatic: false,
         }
     }
 
