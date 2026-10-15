@@ -61,7 +61,7 @@ Les nombres sont des **hypothèses de départ** `[H]`, issues de l'audit et de l
 |---|---|---|---|
 | T1 | `optimist` termine la campagne sur 100 % des graines, dans les 4 difficultés et pour les 216 combinaisons de décisions ; les 5 fins sont atteintes | I2 | P |
 | T2 | chaque site est **prouvé soluble** par le solveur avec le **kit minimal** du palier où il apparaît, en Normal (preuve en ≤ 56 ms au pire sur le spike) ; aucun résultat « inconnu » sur le contenu livré | I2, cross-check 11, [solver.md](solver.md) | P |
-| T3 | toute intrusion se termine en au plus **50 tours** sans action du joueur (Trace ambiante ≥ +2 par tour, 100 ÷ 2) ; la solution optimale d'un site fait entre 3 et 12 tours | I17 | P |
+| T3 | toute intrusion se termine en au plus **50 tours** sans action du joueur (Trace ambiante ≥ +2 par tour, 100 ÷ 2) ; la solution optimale d'un site fait entre 3 et 12 tours, **en Normal, à partir du palier 3** (R-32) | I17 | P |
 | T4 | **marge** du solveur (plafond − Trace minimale) : Normal entre 25 et 70 sur les quêtes principales (ni couteau, ni cadeau), **calculée sur le kit minimal** ([solver.md](solver.md) § 5 : le spike mesure 6 à 58) ; Histoire ≥ Normal + 10 ; Normal ≥ Expert ≥ Hardcore, pour chaque site | I21 | P (ordre), O (bornes) |
 | T5 | `prudent` en Normal : campagne terminée ≥ 95 % ; intrusions « grillées » entre 10 et 25 % ; au plus 4 « grillé » consécutifs sur un site | — | O |
 | T6 | `reckless` en Expert : campagne terminée ≤ 10 % ; en Histoire : ≥ 80 % | — | O |
@@ -100,7 +100,7 @@ Livré : `neon-sim run`, `solve` et `check`, avec le seul bot `optimist` ; les a
 - `solve [--site ID] --difficulty D [--expansions N] --out FICHIER` mesure chaque site avec `optimum` sur le kit illimité du palier : plan, marge, tours, états explorés.
 - `check [--targets FICHIER] RAPPORT...` lit les rapports et les seuils (par défaut ceux de `data/sim/targets.toml`, embarqués) ; code de sortie 0 (rien d'échoué), 1 (une barrière P échoue), 2 (arguments ou fichiers invalides).
 - **Rapport canonique** : JSON `kind = campaign | sites`, `schema = 1`, sans horloge ni flottant (les rapports se comparent octet à octet) ; les répartitions sont des rangs au plus proche (`Spread`).
-- **Seuils livrés** : T1 et T2 en P. T3 et T4 sont mesurés sur le contenu livré et ne le satisfont pas encore : les meilleurs plans prennent 1 à 4 tours (spec : 3 à 12) et la marge au kit minimal dépasse les bornes de Normal (spec : 25 à 70). Ils sont déclarés en **O** dans `targets.toml` (sauf l'ordre des difficultés, en P) en attendant la décision du propriétaire : changer les bornes ou changer les sites.
+- **Seuils livrés** : T1 à T4 en **P**, tous tenus par le contenu livré. T3 se lit en Normal seulement (les autres difficultés en découlent) et, comme les bornes de T4 (écart Histoire/Normal, marge en Normal), commence au palier 3 : les deux premiers sites sont le tutoriel. L'ordre des difficultés vaut pour tous les sites. Lot R6.3 : le contenu a été retouché pour les atteindre ([`DECISIONS.md`](../design/DECISIONS.md) R-32).
 
 ## 8. Procédure de réglage (R6)
 
