@@ -16,6 +16,9 @@ unicode-width = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }
+# The harness holds the optimistic player's brain and driver; the campaign tests use them.
+# A dev-dependency cycle is allowed: only the integration tests link the harness.
+neon-sim = { workspace = true }
 
 [lints]
 workspace = true

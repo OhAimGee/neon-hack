@@ -15,6 +15,7 @@ publish = false
 # are declared for the phases that need them (docs/ROADMAP.md).
 [workspace.dependencies]
 neon-engine = { path = "crates/neon-engine" }
+neon-sim = { path = "crates/neon-sim" }
 
 serde = { version = "1.0.229", features = ["derive"] }
 thiserror = "2.0.21"

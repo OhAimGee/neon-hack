@@ -26,14 +26,15 @@ use neon_engine::content::{Content, State};
 /// How the optimistic player behaves: the option of each decision, and whether it also does
 /// the optional objectives.
 #[derive(Debug, Clone, Default)]
-pub(crate) struct Plan {
-    pub(crate) choices: BTreeMap<DecisionId, ChoiceId>,
-    pub(crate) optional: bool,
+pub struct Plan {
+    pub choices: BTreeMap<DecisionId, ChoiceId>,
+    pub optional: bool,
 }
 
 impl Plan {
     /// A short name for a failure message.
-    pub(crate) fn name(&self) -> String {
+    #[must_use]
+    pub fn name(&self) -> String {
         let choices: Vec<String> = self
             .choices
             .iter()
@@ -49,7 +50,8 @@ impl Plan {
 
 /// Every combination of the options of every decision, with and without the optional
 /// objectives: the 216 plans of the content-level player.
-pub(crate) fn all_plans(c: &Content) -> Vec<Plan> {
+#[must_use]
+pub fn all_plans(c: &Content) -> Vec<Plan> {
     let mut plans: Vec<BTreeMap<DecisionId, ChoiceId>> = vec![BTreeMap::new()];
     for decision in &c.decisions {
         plans = plans
@@ -76,7 +78,7 @@ pub(crate) fn all_plans(c: &Content) -> Vec<Plan> {
 
 /// One thing the player does at the command prompt.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub(crate) enum Move {
+pub enum Move {
     Accept(QuestId),
     /// A conversation, and what to do in its menu besides taking the topics offered: pay for
     /// a quest, or decide.
@@ -98,7 +100,7 @@ pub(crate) enum Move {
     Tick,
 }
 
-pub(crate) struct Brain<'a> {
+pub struct Brain<'a> {
     game: &'a CampaignGame,
     c: &'a Content,
     s: &'a State,
@@ -121,7 +123,8 @@ fn game_command(content_command: &str) -> Option<&'static str> {
 }
 
 impl<'a> Brain<'a> {
-    pub(crate) fn new(game: &'a CampaignGame, plan: &'a Plan) -> Self {
+    #[must_use]
+    pub fn new(game: &'a CampaignGame, plan: &'a Plan) -> Self {
         Self {
             game,
             c: game.content(),
@@ -147,7 +150,8 @@ impl<'a> Brain<'a> {
     }
 
     /// The next thing to do, or `None` when nothing is left.
-    pub(crate) fn next_move(&self) -> Option<Move> {
+    #[must_use]
+    pub fn next_move(&self) -> Option<Move> {
         self.free()
             .or_else(|| self.work(|q| q.kind != QuestKind::Main))
             .or_else(|| self.work(|q| q.kind == QuestKind::Main))
@@ -511,7 +515,8 @@ impl<'a> Brain<'a> {
     }
 
     /// What the walk could not do, for the failure message: the quests still open and why.
-    pub(crate) fn describe_pending(&self) -> String {
+    #[must_use]
+    pub fn describe_pending(&self) -> String {
         let mut out = String::new();
         for q in &self.c.quests {
             let status = self.s.status(&q.id);
