@@ -94,18 +94,14 @@ fn push_template(
                 Some(arg) => push_arg(arg, catalog, mode, out),
                 None => push_missing(name, catalog, mode, out),
             },
-            Part::Capitalized(name) => match find(name) {
-                Some(arg) => {
-                    let mut word = String::new();
-                    push_arg(arg, catalog, mode, &mut word);
-                    push_capitalized(&word, out);
+            Part::Capitalized(name) => {
+                let mut word = String::new();
+                match find(name) {
+                    Some(arg) => push_arg(arg, catalog, mode, &mut word),
+                    None => push_missing(name, catalog, mode, &mut word),
                 }
-                None => {
-                    let mut word = String::new();
-                    push_missing(name, catalog, mode, &mut word);
-                    push_capitalized(&word, out);
-                }
-            },
+                push_capitalized(&word, out);
+            }
             Part::Plural {
                 selector,
                 one,
