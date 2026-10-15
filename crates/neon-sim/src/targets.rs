@@ -438,7 +438,12 @@ mod tests {
             .collect();
         let findings = check(&targets(), &reports);
         let flat = find(&findings, "T4", 1);
-        assert_eq!(flat.detail.matches("a (95 against 92)").count(), 1, "{}", flat.detail);
+        assert_eq!(
+            flat.detail.matches("a (95 against 92)").count(),
+            1,
+            "{}",
+            flat.detail
+        );
     }
 
     #[test]

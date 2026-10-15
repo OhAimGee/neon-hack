@@ -1,6 +1,6 @@
 //! What one game leaves: the record of a campaign played by a bot.
 //!
-//! The [`Tally`] is the observer the harness gives the driver. It reads only what a player
+//! The `Tally` is the observer the harness gives the driver. It reads only what a player
 //! could read (the events of each step, the public view of the game and the intrusion under
 //! way), counts it, and never changes the game.
 
