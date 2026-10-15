@@ -18,6 +18,7 @@ pub mod campaign;
 pub mod driver;
 pub mod economy;
 pub mod monkey;
+pub mod programs;
 pub mod record;
 pub mod report;
 pub mod sites;

@@ -18,6 +18,7 @@ use neon_engine::content::Content;
 use neon_sim::campaign::{Bot, PlanSet, plans, run_bot};
 use neon_sim::economy::measure as measure_economy;
 use neon_sim::monkey::{DEFAULT_STEPS, play_monkey};
+use neon_sim::programs::analyse as analyse_programs;
 use neon_sim::record::difficulty_name;
 use neon_sim::report::{CampaignReport, MonkeyReport, Report, SCHEMA_VERSION, SitesReport};
 use neon_sim::sites::{DEFAULT_EXPANSIONS, Loot, SiteResult, measure};
@@ -38,8 +39,23 @@ enum Command {
     Solve(SolveArgs),
     /// What the stall sells and the quests pay: the economy of the content.
     Economy(EconomyArgs),
+    /// What each program is worth: the margin of every site with and without each program.
+    Programs(ProgramsArgs),
     /// Check reports against the thresholds; exits with 1 when a barrier fails.
     Check(CheckArgs),
+}
+
+#[derive(Args)]
+struct ProgramsArgs {
+    /// Only this site.
+    #[arg(long)]
+    site: Option<String>,
+    /// The expansions the solver may spend on each measure.
+    #[arg(long, default_value_t = DEFAULT_EXPANSIONS)]
+    expansions: u64,
+    /// Where to write the report.
+    #[arg(long)]
+    out: Option<PathBuf>,
 }
 
 #[derive(Args)]
@@ -190,6 +206,7 @@ fn main() -> ExitCode {
         Command::Run(args) => run(&args),
         Command::Solve(args) => solve(&args),
         Command::Economy(args) => economy(&args),
+        Command::Programs(args) => programs(&args),
         Command::Check(args) => check_reports(&args),
     };
     match result {
@@ -373,6 +390,29 @@ fn economy(args: &EconomyArgs) -> Result<ExitCode, String> {
     }
     if let Some(out) = &args.out {
         write(out, &Report::Economy(report))?;
+    }
+    Ok(ExitCode::SUCCESS)
+}
+
+fn programs(args: &ProgramsArgs) -> Result<ExitCode, String> {
+    let content =
+        Content::embedded().map_err(|e| format!("the game content does not load: {e}"))?;
+    let report = analyse_programs(&content, args.expansions, args.site.as_deref());
+    for row in &report.programs {
+        console::line(&format!(
+            "{}{}: needed at {}, more margin at {} (+{} in all), idle at {}{}",
+            row.program,
+            row.price
+                .map_or_else(String::new, |p| format!(" ({p} credits)")),
+            row.needed_at.len(),
+            row.lowers.len(),
+            row.total_gain,
+            row.idle_at.len(),
+            if row.dominated { ", DOMINATED" } else { "" }
+        ));
+    }
+    if let Some(out) = &args.out {
+        write(out, &Report::Programs(report))?;
     }
     Ok(ExitCode::SUCCESS)
 }

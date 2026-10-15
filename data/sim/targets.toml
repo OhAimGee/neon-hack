@@ -105,3 +105,9 @@ level = "O"
 catalogue_percent_min = 120
 catalogue_percent_max = 150
 hoarder_finished_per_mille_max = 0
+
+# T9: no program is dominated. Each program of the decks lowers the margin of some site when it
+# is taken out (or a site cannot be won without it). Objective: the spec makes it a barrier, the
+# owner decides what to do with the programs that are worth nothing (a gain, a price, a removal).
+[t9]
+level = "O"

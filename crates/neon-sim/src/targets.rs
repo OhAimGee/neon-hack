@@ -8,6 +8,7 @@ use serde::Deserialize;
 
 use crate::campaign::{FARMER, HOARDER, OPTIMIST, PRUDENT, RECKLESS, STORY};
 use crate::economy::EconomyReport;
+use crate::programs::ProgramsReport;
 use crate::record::difficulty_name;
 use crate::report::{CampaignReport, MonkeyReport, Report, SitesReport, Spread};
 use crate::sites::{Loot, SiteResult, SiteRow};
@@ -146,6 +147,13 @@ pub struct Economy {
     pub hoarder_finished_per_mille_max: u64,
 }
 
+/// T9: no program is dominated.
+#[derive(Debug, Clone, Deserialize)]
+pub struct Programs {
+    /// P or O.
+    pub level: Level,
+}
+
 /// T8: repeating things earns nothing.
 #[derive(Debug, Clone, Deserialize)]
 pub struct AntiFarm {
@@ -192,6 +200,8 @@ pub struct Targets {
     pub t7: Economy,
     /// T8.
     pub t8: AntiFarm,
+    /// T9.
+    pub t9: Programs,
     /// T10.
     pub t10: Duration,
     /// T11.
@@ -251,35 +261,52 @@ pub fn check(targets: &Targets, reports: &[Report]) -> Vec<Finding> {
         .iter()
         .filter_map(|r| match r {
             Report::Campaign(c) if c.bot == OPTIMIST => Some(c),
-            Report::Campaign(_) | Report::Sites(_) | Report::Monkey(_) | Report::Economy(_) => None,
+            Report::Campaign(_)
+            | Report::Sites(_)
+            | Report::Monkey(_)
+            | Report::Economy(_)
+            | Report::Programs(_) => None,
         })
         .collect();
     let all_campaigns: Vec<&CampaignReport> = reports
         .iter()
         .filter_map(|r| match r {
             Report::Campaign(c) => Some(c),
-            Report::Sites(_) | Report::Monkey(_) | Report::Economy(_) => None,
+            Report::Sites(_) | Report::Monkey(_) | Report::Economy(_) | Report::Programs(_) => None,
         })
         .collect();
     let sites: Vec<&SitesReport> = reports
         .iter()
         .filter_map(|r| match r {
             Report::Sites(s) => Some(s),
-            Report::Campaign(_) | Report::Monkey(_) | Report::Economy(_) => None,
+            Report::Campaign(_) | Report::Monkey(_) | Report::Economy(_) | Report::Programs(_) => {
+                None
+            }
         })
         .collect();
     let monkeys: Vec<&MonkeyReport> = reports
         .iter()
         .filter_map(|r| match r {
             Report::Monkey(m) => Some(m),
-            Report::Campaign(_) | Report::Sites(_) | Report::Economy(_) => None,
+            Report::Campaign(_) | Report::Sites(_) | Report::Economy(_) | Report::Programs(_) => {
+                None
+            }
         })
         .collect();
     let economies: Vec<&EconomyReport> = reports
         .iter()
         .filter_map(|r| match r {
             Report::Economy(e) => Some(e),
-            Report::Campaign(_) | Report::Sites(_) | Report::Monkey(_) => None,
+            Report::Campaign(_) | Report::Sites(_) | Report::Monkey(_) | Report::Programs(_) => {
+                None
+            }
+        })
+        .collect();
+    let analyses: Vec<&ProgramsReport> = reports
+        .iter()
+        .filter_map(|r| match r {
+            Report::Programs(p) => Some(p),
+            Report::Campaign(_) | Report::Sites(_) | Report::Monkey(_) | Report::Economy(_) => None,
         })
         .collect();
     let mut findings = Vec::new();
@@ -290,6 +317,7 @@ pub fn check(targets: &Targets, reports: &[Report]) -> Vec<Finding> {
     findings.extend(t8(&targets.t8, &all_campaigns));
     findings.extend(t12(&targets.t12, &monkeys));
     findings.extend(t7(&targets.t7, &economies, &all_campaigns));
+    findings.extend(t9(&targets.t9, &analyses));
     let all_rows: Vec<&SiteRow> = sites.iter().flat_map(|s| &s.rows).collect();
     let (rows, full): (Vec<&SiteRow>, Vec<&SiteRow>) = all_rows
         .into_iter()
@@ -559,6 +587,39 @@ fn t7(
         ));
     }
     findings
+}
+
+/// T9: every program lowers the margin of some site, or a site cannot be won without it.
+fn t9(target: &Programs, analyses: &[&ProgramsReport]) -> Vec<Finding> {
+    analyses
+        .iter()
+        .map(|analysis| {
+            let dominated: Vec<&str> = analysis
+                .programs
+                .iter()
+                .filter(|row| row.dominated)
+                .map(|row| row.program.as_str())
+                .collect();
+            claim(
+                "T9",
+                target.level,
+                dominated.is_empty(),
+                if dominated.is_empty() {
+                    format!(
+                        "each of the {} programs lowers the margin of a site, or a site needs it",
+                        analysis.programs.len()
+                    )
+                } else {
+                    format!(
+                        "{} of {} programs lower the margin of no site and no site needs them: {}",
+                        dominated.len(),
+                        analysis.programs.len(),
+                        dominated.join(", ")
+                    )
+                },
+            )
+        })
+        .collect()
 }
 
 /// Whether a spread is nowhere above another, rank by rank.
@@ -1302,6 +1363,61 @@ mod tests {
         let claims = t7_claims(&reports);
         assert_eq!(claims.len(), 1);
         assert!(!claims[0].ok, "{}", claims[0].detail);
+    }
+
+    // ------------------------------------------------------------------ the programs
+
+    use crate::programs::ProgramRow;
+
+    fn analysis(rows: &[(&str, bool)]) -> Report {
+        Report::Programs(ProgramsReport {
+            schema_version: SCHEMA_VERSION,
+            difficulty: "normal".to_owned(),
+            expansions: 1,
+            sites: Vec::new(),
+            programs: rows
+                .iter()
+                .map(|(program, dominated)| ProgramRow {
+                    program: (*program).to_owned(),
+                    price: None,
+                    needed_at: Vec::new(),
+                    lowers: if *dominated {
+                        Vec::new()
+                    } else {
+                        vec![("localhost".to_owned(), 2)]
+                    },
+                    idle_at: Vec::new(),
+                    total_gain: if *dominated { 0 } else { 2 },
+                    dominated: *dominated,
+                })
+                .collect(),
+        })
+    }
+
+    #[test]
+    fn programs_that_all_lower_a_margin_pass_t9_and_the_dominated_ones_are_named() {
+        let good = check(
+            &targets(),
+            &[analysis(&[("spoof", false), ("cloak", false)])],
+        );
+        assert_eq!(good.len(), 1);
+        assert!(good[0].ok && good[0].id == "T9", "{}", good[0].detail);
+        assert!(good[0].detail.contains("each of the 2 programs"));
+        let bad = check(
+            &targets(),
+            &[analysis(&[
+                ("spoof", false),
+                ("exploit", true),
+                ("social", true),
+            ])],
+        );
+        assert!(!bad[0].ok && !bad[0].fails(), "an objective");
+        assert!(
+            bad[0].detail.contains("2 of 3 programs") && bad[0].detail.contains("exploit, social"),
+            "{}",
+            bad[0].detail
+        );
+        assert_eq!(targets().t9.level, Level::O);
     }
 
     // ------------------------------------------------------------------ the monkey
