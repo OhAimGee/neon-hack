@@ -111,3 +111,13 @@ hoarder_finished_per_mille_max = 0
 # owner decides what to do with the programs that are worth nothing (a gain, a price, a removal).
 [t9]
 level = "O"
+
+# T13: performance, read from the timings of `neon-sim bench` (not from a canonical report: the
+# timings vary from one machine to the next). A thousand campaigns in a minute at most, the
+# bounded resolution of a site in fifty milliseconds at most, and the same bytes from one run
+# to the next.
+[t13]
+level = "O"
+thousand_campaigns_millis_max = 60000
+resolution_micros_max = 50000
+deterministic = true

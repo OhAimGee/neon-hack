@@ -6,6 +6,7 @@
 
 use serde::Deserialize;
 
+use crate::bench::BenchReport;
 use crate::campaign::{FARMER, HOARDER, OPTIMIST, PRUDENT, RECKLESS, STORY};
 use crate::economy::EconomyReport;
 use crate::programs::ProgramsReport;
@@ -172,6 +173,19 @@ pub struct Robustness {
     pub min_games: u64,
 }
 
+/// T13: the harness is fast enough to be run often, and deterministic.
+#[derive(Debug, Clone, Deserialize)]
+pub struct Performance {
+    /// P or O.
+    pub level: Level,
+    /// What a thousand campaigns may take, in milliseconds.
+    pub thousand_campaigns_millis_max: u64,
+    /// What the bounded resolution of a site may take, in microseconds, in the worst case.
+    pub resolution_micros_max: u64,
+    /// Whether two runs must give the same bytes.
+    pub deterministic: bool,
+}
+
 /// T14: the Story difficulty is played to its end by a player who only skips what lasts.
 #[derive(Debug, Clone, Deserialize)]
 pub struct StoryMode {
@@ -208,6 +222,8 @@ pub struct Targets {
     pub t11: Heat,
     /// T12.
     pub t12: Robustness,
+    /// T13.
+    pub t13: Performance,
     /// T14.
     pub t14: StoryMode,
 }
@@ -350,6 +366,52 @@ fn finished_per_mille(report: &CampaignReport) -> u64 {
     (report.finished * 1000)
         .checked_div(report.games)
         .unwrap_or(0)
+}
+
+/// T13: what the timings of `neon-sim bench` say.
+#[must_use]
+pub fn judge_bench(target: &Performance, report: &BenchReport) -> Vec<Finding> {
+    let mut findings = vec![
+        claim(
+            "T13",
+            target.level,
+            report.thousand_campaigns_millis <= target.thousand_campaigns_millis_max,
+            format!(
+                "a thousand campaigns would take {} ms (mean of {} games, {} ms allowed)",
+                report.thousand_campaigns_millis,
+                report.games,
+                target.thousand_campaigns_millis_max
+            ),
+        ),
+        claim(
+            "T13",
+            target.level,
+            report.resolution_worst_micros <= target.resolution_micros_max,
+            format!(
+                "the bounded resolution of a site takes {} us at the worst, at {} ({} us allowed, {} measures)",
+                report.resolution_worst_micros,
+                report.resolution_worst_at,
+                target.resolution_micros_max,
+                report.resolutions
+            ),
+        ),
+    ];
+    if target.deterministic {
+        findings.push(claim(
+            "T13",
+            target.level,
+            report.deterministic,
+            format!(
+                "two runs of the same games give {} bytes",
+                if report.deterministic {
+                    "the same"
+                } else {
+                    "different"
+                }
+            ),
+        ));
+    }
+    findings
 }
 
 /// A verdict on one claim.
@@ -1482,5 +1544,46 @@ mod tests {
         // Prudent at Expert: no threshold reads it.
         let reports = [campaign("prudent", "expert", 0, 5, 8, 0, 100)];
         assert!(check(&targets(), &reports).is_empty());
+    }
+    fn timings(thousand_millis: u64, worst_micros: u64, deterministic: bool) -> BenchReport {
+        BenchReport {
+            games: 8,
+            campaigns_total_micros: thousand_millis * 8,
+            campaign_median_micros: thousand_millis,
+            campaign_worst_micros: thousand_millis,
+            thousand_campaigns_millis: thousand_millis,
+            resolutions: 64,
+            resolution_worst_micros: worst_micros,
+            resolution_worst_at: "corp-server-01 at normal".to_owned(),
+            deterministic,
+        }
+    }
+
+    #[test]
+    fn fast_and_deterministic_timings_pass_t13() {
+        let target = targets().t13;
+        let findings = judge_bench(&target, &timings(59_999, 50_000, true));
+        assert_eq!(findings.len(), 3);
+        assert!(
+            findings.iter().all(|f| f.id == "T13" && f.ok),
+            "{findings:?}"
+        );
+    }
+
+    #[test]
+    fn slow_timings_or_different_bytes_fail_t13() {
+        let target = targets().t13;
+        let slow = judge_bench(&target, &timings(60_001, 50_001, true));
+        assert_eq!(slow.iter().filter(|f| !f.ok).count(), 2, "{slow:?}");
+        let drifting = judge_bench(&target, &timings(1, 1, false));
+        assert!(
+            drifting
+                .iter()
+                .any(|f| !f.ok && f.detail.contains("different")),
+            "{drifting:?}"
+        );
+        // An objective warns, a barrier would fail: the level is the data's.
+        assert_eq!(target.level, Level::O);
+        assert!(slow.iter().all(|f| !f.fails()));
     }
 }
