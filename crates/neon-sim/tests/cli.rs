@@ -278,3 +278,21 @@ fn the_economy_and_the_hoarder_are_reported_and_read_by_t7() {
         "{text}"
     );
 }
+
+#[test]
+fn the_programs_of_a_site_are_measured_and_read_by_t9() {
+    let dir = tempfile::tempdir().unwrap();
+    let file = path(dir.path(), "programs.json");
+    let told = sim(&["programs", "--site", "corp-server-01", "--out", &file]);
+    assert!(told.status.success(), "{}", out(&told));
+    assert!(out(&told).contains("spoof (80 credits)"), "{}", out(&told));
+    assert!(
+        std::fs::read_to_string(&file)
+            .unwrap()
+            .contains("\"kind\": \"programs\"")
+    );
+    // One site is not the campaign: most programs lower no margin there, and it is only said.
+    let checked = sim(&["check", &file]);
+    assert!(checked.status.success(), "{}", out(&checked));
+    assert!(out(&checked).contains("T9 (O)"), "{}", out(&checked));
+}

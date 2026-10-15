@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::economy::EconomyReport;
 use crate::monkey::{Fault, MonkeyRecord};
+use crate::programs::ProgramsReport;
 use crate::record::{GameRecord, Outcome};
 use crate::sites::SiteRow;
 
@@ -363,6 +364,8 @@ pub enum Report {
     Monkey(MonkeyReport),
     /// The economy of the content.
     Economy(EconomyReport),
+    /// What each program is worth.
+    Programs(ProgramsReport),
 }
 
 impl Report {
