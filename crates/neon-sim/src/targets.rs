@@ -6,7 +6,8 @@
 
 use serde::Deserialize;
 
-use crate::campaign::{FARMER, OPTIMIST, PRUDENT, RECKLESS, STORY};
+use crate::campaign::{FARMER, HOARDER, OPTIMIST, PRUDENT, RECKLESS, STORY};
+use crate::economy::EconomyReport;
 use crate::record::difficulty_name;
 use crate::report::{CampaignReport, MonkeyReport, Report, SitesReport, Spread};
 use crate::sites::{Loot, SiteResult, SiteRow};
@@ -131,6 +132,20 @@ pub struct Heat {
     pub reckless_hunted_per_mille_min: u64,
 }
 
+/// T7: the economy: what the stall costs against what a campaign pays, what a tier pays against
+/// the next item, and what cannot be done without.
+#[derive(Debug, Clone, Deserialize)]
+pub struct Economy {
+    /// P or O.
+    pub level: Level,
+    /// The stall, as a percentage of the most a campaign pays, at least.
+    pub catalogue_percent_min: u64,
+    /// The stall, as a percentage of the most a campaign pays, at most.
+    pub catalogue_percent_max: u64,
+    /// The share of campaigns the hoarder (who buys nothing) finishes, per mille, at most.
+    pub hoarder_finished_per_mille_max: u64,
+}
+
 /// T8: repeating things earns nothing.
 #[derive(Debug, Clone, Deserialize)]
 pub struct AntiFarm {
@@ -173,6 +188,8 @@ pub struct Targets {
     pub t5: Reasonable,
     /// T6.
     pub t6: Floor,
+    /// T7.
+    pub t7: Economy,
     /// T8.
     pub t8: AntiFarm,
     /// T10.
@@ -234,28 +251,35 @@ pub fn check(targets: &Targets, reports: &[Report]) -> Vec<Finding> {
         .iter()
         .filter_map(|r| match r {
             Report::Campaign(c) if c.bot == OPTIMIST => Some(c),
-            Report::Campaign(_) | Report::Sites(_) | Report::Monkey(_) => None,
+            Report::Campaign(_) | Report::Sites(_) | Report::Monkey(_) | Report::Economy(_) => None,
         })
         .collect();
     let all_campaigns: Vec<&CampaignReport> = reports
         .iter()
         .filter_map(|r| match r {
             Report::Campaign(c) => Some(c),
-            Report::Sites(_) | Report::Monkey(_) => None,
+            Report::Sites(_) | Report::Monkey(_) | Report::Economy(_) => None,
         })
         .collect();
     let sites: Vec<&SitesReport> = reports
         .iter()
         .filter_map(|r| match r {
             Report::Sites(s) => Some(s),
-            Report::Campaign(_) | Report::Monkey(_) => None,
+            Report::Campaign(_) | Report::Monkey(_) | Report::Economy(_) => None,
         })
         .collect();
     let monkeys: Vec<&MonkeyReport> = reports
         .iter()
         .filter_map(|r| match r {
             Report::Monkey(m) => Some(m),
-            Report::Campaign(_) | Report::Sites(_) => None,
+            Report::Campaign(_) | Report::Sites(_) | Report::Economy(_) => None,
+        })
+        .collect();
+    let economies: Vec<&EconomyReport> = reports
+        .iter()
+        .filter_map(|r| match r {
+            Report::Economy(e) => Some(e),
+            Report::Campaign(_) | Report::Sites(_) | Report::Monkey(_) => None,
         })
         .collect();
     let mut findings = Vec::new();
@@ -265,6 +289,7 @@ pub fn check(targets: &Targets, reports: &[Report]) -> Vec<Finding> {
     findings.extend(bots(targets, &all_campaigns));
     findings.extend(t8(&targets.t8, &all_campaigns));
     findings.extend(t12(&targets.t12, &monkeys));
+    findings.extend(t7(&targets.t7, &economies, &all_campaigns));
     let all_rows: Vec<&SiteRow> = sites.iter().flat_map(|s| &s.rows).collect();
     let (rows, full): (Vec<&SiteRow>, Vec<&SiteRow>) = all_rows
         .into_iter()
@@ -440,6 +465,96 @@ fn bots(targets: &Targets, campaigns: &[&CampaignReport]) -> Vec<Finding> {
             format!(
                 "reckless in Story finishes {finished} per mille of its campaigns ({} wanted)",
                 t.story_finished_per_mille_min
+            ),
+        ));
+    }
+    findings
+}
+
+/// T7, read in four ways: the stall against the revenues of the campaign, each tier against
+/// the next item, whether everything can be bought, and whether the hoarder can do without.
+fn t7(
+    target: &Economy,
+    economies: &[&EconomyReport],
+    campaigns: &[&CampaignReport],
+) -> Vec<Finding> {
+    let mut findings = Vec::new();
+    // The revenues of a campaign do not depend on the difficulty: the optimist's tell them.
+    let optimist: Vec<&&CampaignReport> = campaigns.iter().filter(|c| c.bot == OPTIMIST).collect();
+    let most = optimist
+        .iter()
+        .filter_map(|c| c.credits.map(|s| s.max))
+        .max();
+    let least = optimist
+        .iter()
+        .filter_map(|c| c.credits.map(|s| s.min))
+        .min();
+    for economy in economies {
+        let total = u64::from(economy.catalogue_total);
+        if let Some(most) = most.filter(|most| *most > 0) {
+            let percent = total * 100 / most;
+            findings.push(claim(
+                "T7",
+                target.level,
+                (target.catalogue_percent_min..=target.catalogue_percent_max).contains(&percent),
+                format!(
+                    "the stall costs {total} credits, {percent} % of the {most} a campaign pays at most ({} to {} % wanted)",
+                    target.catalogue_percent_min, target.catalogue_percent_max
+                ),
+            ));
+        }
+        if let Some(least) = least {
+            findings.push(claim(
+                "T7",
+                target.level,
+                total > least,
+                format!(
+                    "the stall costs {total} credits and a campaign pays {least} at the least: {}",
+                    if total > least {
+                        "not everything can be bought"
+                    } else {
+                        "everything can be bought"
+                    }
+                ),
+            ));
+        }
+        let short: Vec<String> = economy
+            .tiers
+            .iter()
+            .filter_map(|tier| {
+                let next = economy
+                    .items
+                    .iter()
+                    .filter(|item| item.tier == tier.tier + 1)
+                    .map(|item| item.price)
+                    .max()?;
+                (tier.main_credits < next)
+                    .then(|| format!("tier {} pays {} for {next}", tier.tier, tier.main_credits))
+            })
+            .collect();
+        findings.push(claim(
+            "T7",
+            target.level,
+            short.is_empty(),
+            if short.is_empty() {
+                "the main quests of every tier pay for the item of the next".to_owned()
+            } else {
+                format!(
+                    "the main quests of a tier do not pay for the item of the next: {}",
+                    short.join(", ")
+                )
+            },
+        ));
+    }
+    for hoarder in campaigns.iter().filter(|c| c.bot == HOARDER) {
+        let finished = finished_per_mille(hoarder);
+        findings.push(claim(
+            "T7",
+            target.level,
+            finished <= target.hoarder_finished_per_mille_max,
+            format!(
+                "the hoarder finishes {finished} per mille of its campaigns at {} and is blocked in {} ({} allowed)",
+                hoarder.difficulty, hoarder.blocked, target.hoarder_finished_per_mille_max
             ),
         ));
     }
@@ -1105,6 +1220,88 @@ mod tests {
     fn a_farmer_without_an_optimist_to_compare_with_gives_no_finding() {
         let reports = [rewarded("farmer", 18_000, 500, Some(1_200))];
         assert!(check(&targets(), &reports).iter().all(|f| f.id != "T8"));
+    }
+
+    // ------------------------------------------------------------------ the economy
+
+    use crate::economy::{ItemRow, TierRow};
+
+    /// An economy of two tiers: the stall sells one item at each.
+    fn economy_of(prices: [u32; 2], main_credits: [u32; 2]) -> Report {
+        let item = |tier: u8, price: u32| ItemRow {
+            id: format!("item{tier}"),
+            tier,
+            price,
+            required_by: vec!["m01".to_owned()],
+        };
+        let tier = |tier: u8, main: u32| TierRow {
+            tier,
+            flagship_price: 100,
+            main_credits: main,
+            all_credits: main,
+        };
+        Report::Economy(EconomyReport {
+            schema_version: SCHEMA_VERSION,
+            start_credits: 100,
+            catalogue_total: prices[0] + prices[1],
+            items: vec![item(1, prices[0]), item(2, prices[1])],
+            services: Vec::new(),
+            tiers: vec![tier(1, main_credits[0]), tier(2, main_credits[1])],
+        })
+    }
+
+    fn t7_claims(reports: &[Report]) -> Vec<Finding> {
+        check(&targets(), reports)
+            .into_iter()
+            .filter(|f| f.id == "T7")
+            .collect()
+    }
+
+    #[test]
+    fn an_economy_inside_every_bound_passes_t7() {
+        // Revenues of 1000; a stall of 1250 (125 %), more than anyone earns; tier 1 pays 800
+        // for the item of 750 at tier 2.
+        let reports = [
+            economy_of([500, 750], [800, 600]),
+            rewarded("optimist", 1_000, 0, None),
+            campaign("hoarder", "normal", 0, 0, 0, 0, 0),
+        ];
+        let claims = t7_claims(&reports);
+        assert!(claims.iter().all(|f| f.ok), "{claims:?}");
+        assert_eq!(targets().t7.level, Level::O);
+    }
+
+    #[test]
+    fn a_thin_stall_and_a_tier_that_cannot_pay_the_next_item_are_told_apart() {
+        let reports = [
+            // 100 + 200 against a campaign of 1000: 30 %, and everything is affordable;
+            // tier 1 pays 50 for an item of 200.
+            economy_of([100, 200], [50, 600]),
+            rewarded("optimist", 1_000, 0, None),
+        ];
+        let claims = t7_claims(&reports);
+        let failed: Vec<&str> = claims
+            .iter()
+            .filter(|f| !f.ok)
+            .map(|f| f.detail.as_str())
+            .collect();
+        assert_eq!(failed.len(), 3, "{failed:?}");
+        assert!(failed.iter().any(|d| d.contains("30 % of the 1000")));
+        assert!(
+            failed
+                .iter()
+                .any(|d| d.contains("everything can be bought"))
+        );
+        assert!(failed.iter().any(|d| d.contains("tier 1 pays 50 for 200")));
+        assert!(claims.iter().all(|f| !f.fails()), "they are objectives");
+    }
+
+    #[test]
+    fn a_hoarder_that_finishes_the_campaign_fails_the_claim_that_it_cannot() {
+        let reports = [campaign("hoarder", "normal", 5, 0, 0, 500, 20)];
+        let claims = t7_claims(&reports);
+        assert_eq!(claims.len(), 1);
+        assert!(!claims[0].ok, "{}", claims[0].detail);
     }
 
     // ------------------------------------------------------------------ the monkey

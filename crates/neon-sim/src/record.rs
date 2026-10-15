@@ -47,6 +47,11 @@ pub enum Outcome {
         /// The site it could not get through.
         site: String,
     },
+    /// A hoarder held up by an item a quest asks to own.
+    Blocked {
+        /// The item.
+        by: String,
+    },
     /// The harness could not go on: a bug of the walk, never a result.
     Stuck {
         /// Why.
@@ -183,6 +188,7 @@ pub fn play_game(
     tactic: Tactic,
     cool_from: Option<u8>,
     farm: Option<usize>,
+    hoard: bool,
 ) -> GameRecord {
     let mut record = GameRecord {
         plan: plan.name(),
@@ -212,6 +218,7 @@ pub fn play_game(
         tactic,
         cool_from,
         farm,
+        hoard,
         // The repetitions of a farmer are many more than the moves of a campaign.
         max_steps: if farm.is_some() { 200_000 } else { 2_500 },
         ..Config::default()
@@ -237,6 +244,7 @@ pub fn play_game(
                 },
                 Fate::Lost { site } => Outcome::Lost { site },
                 Fate::GaveUp { site } => Outcome::GaveUp { site },
+                Fate::Blocked { by } => Outcome::Blocked { by },
             };
         }
         Err(stuck) => {

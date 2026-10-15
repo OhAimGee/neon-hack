@@ -11,6 +11,7 @@
 use neon_engine::campaign::Difficulty;
 use neon_engine::content::Content;
 use neon_sim::campaign::{Bot, PlanSet, plans, run_bot};
+use neon_sim::economy;
 use neon_sim::monkey::play_monkey;
 use neon_sim::record::Outcome;
 use neon_sim::report::{MonkeyReport, Report, SCHEMA_VERSION, SitesReport};
@@ -307,4 +308,41 @@ fn the_farmer_repeats_what_it_did_and_earns_what_the_optimist_earns() {
     assert_eq!(t8.len(), 1);
     assert!(t8[0].ok, "{}", t8[0].detail);
     assert_eq!(Bot::Farmer.farm(), Some(2));
+}
+
+#[test]
+fn the_hoarder_is_blocked_by_the_first_item_a_quest_asks_it_to_own() {
+    let plans = plans(PlanSet::Representative).unwrap();
+    let (report, records) = run_bot(Bot::Hoarder, &plans[..1], Difficulty::Normal, &(1..=1));
+    assert_eq!(report.bot, "hoarder");
+    assert_eq!(
+        (report.finished, report.blocked, report.stuck),
+        (0, 1, 0),
+        "{:?}",
+        report.worst
+    );
+    let Outcome::Blocked { by } = &records[0].outcome else {
+        panic!("{:?}", records[0].outcome);
+    };
+    // It plays the first quests (cover is not an item) and stops at the stall.
+    assert_eq!(by, "stealth_module");
+    assert!(report.worst[0].why.starts_with("blocked by "));
+    assert!(Bot::Hoarder.hoards() && !Bot::Optimist.hoards());
+}
+
+#[test]
+fn the_economy_of_the_shipped_content_is_told_by_t7_and_none_of_it_is_a_barrier() {
+    let content = Content::embedded().unwrap();
+    let plans = plans(PlanSet::Representative).unwrap();
+    let mut reports = vec![Report::Economy(economy::measure(&content))];
+    for bot in [Bot::Optimist, Bot::Hoarder] {
+        let (report, _) = run_bot(bot, &plans[..1], Difficulty::Normal, &(1..=1));
+        reports.push(Report::Campaign(report));
+    }
+    let findings = check(&Targets::embedded().unwrap(), &reports);
+    let t7: Vec<_> = findings.iter().filter(|f| f.id == "T7").collect();
+    assert_eq!(t7.len(), 4, "{t7:?}");
+    assert!(t7.iter().all(|f| !f.fails()));
+    // The hoarder cannot do without the stall.
+    assert!(t7.iter().any(|f| f.ok && f.detail.contains("hoarder")));
 }

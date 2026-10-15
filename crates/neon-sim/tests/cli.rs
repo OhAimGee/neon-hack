@@ -64,7 +64,7 @@ fn run_plays_a_game_and_writes_a_report_per_difficulty() {
     ]);
     assert!(ran.status.success(), "{}", out(&ran));
     assert!(
-        out(&ran).contains("1 games, 1 finished, 0 lost, 0 gave up, 0 stuck"),
+        out(&ran).contains("1 games, 1 finished, 0 lost, 0 gave up, 0 blocked, 0 stuck"),
         "{}",
         out(&ran)
     );
@@ -229,6 +229,52 @@ fn the_farmer_is_checked_against_the_optimist_by_t8() {
     let text = out(&checked);
     assert!(
         text.contains("[ok  ] T8 (P): at story the farmer sent again"),
+        "{text}"
+    );
+}
+
+#[test]
+fn the_economy_and_the_hoarder_are_reported_and_read_by_t7() {
+    let dir = tempfile::tempdir().unwrap();
+    let economy = path(dir.path(), "economy.json");
+    let hoarder = path(dir.path(), "hoarder.json");
+    let told = sim(&["economy", "--out", &economy]);
+    assert!(told.status.success(), "{}", out(&told));
+    assert!(
+        out(&told).contains("the stall: 5 items for 1730 credits"),
+        "{}",
+        out(&told)
+    );
+    assert!(
+        std::fs::read_to_string(&economy)
+            .unwrap()
+            .contains("\"kind\": \"economy\"")
+    );
+    let ran = sim(&[
+        "run",
+        "--bot",
+        "hoarder",
+        "--difficulty",
+        "normal",
+        "--seeds",
+        "1",
+        "--limit",
+        "1",
+        "--out",
+        &hoarder,
+    ]);
+    assert!(ran.status.success(), "{}", out(&ran));
+    assert!(out(&ran).contains("1 blocked"), "{}", out(&ran));
+    // Only objectives: the check goes on, and says what it found.
+    let checked = sim(&["check", &economy, &hoarder]);
+    assert!(checked.status.success(), "{}", out(&checked));
+    let text = out(&checked);
+    assert!(
+        text.contains("[warn] T7 (O): the main quests of a tier do not pay for the item of the next: tier 1 pays 80 for 150"),
+        "{text}"
+    );
+    assert!(
+        text.contains("[ok  ] T7 (O): the hoarder finishes 0 per mille"),
         "{text}"
     );
 }

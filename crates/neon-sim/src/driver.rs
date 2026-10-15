@@ -81,6 +81,8 @@ pub struct Config {
     /// A farmer: each command it repeats, it repeats this many times, at every quest done and
     /// once more when the campaign is over.
     pub farm: Option<usize>,
+    /// A hoarder: it buys nothing from the stall, only cover.
+    pub hoard: bool,
 }
 
 impl Default for Config {
@@ -92,6 +94,7 @@ impl Default for Config {
             tactic: Tactic::Solver,
             cool_from: None,
             farm: None,
+            hoard: false,
         }
     }
 }
@@ -166,6 +169,11 @@ pub enum Fate {
     GaveUp {
         /// The site.
         site: String,
+    },
+    /// A hoarder that nothing is left to do for without buying: a quest asks for the item.
+    Blocked {
+        /// The item a quest asks to own.
+        by: String,
     },
 }
 
@@ -260,6 +268,7 @@ impl<O: Observer> Driver<O> {
             recent: self.recent.iter().cloned().collect(),
             pending: Brain::new(&self.game, &self.plan)
                 .cooling_from(self.config.cool_from)
+                .hoarding(self.config.hoard)
                 .describe_pending(),
             context: self.observer.context(),
         }
@@ -299,10 +308,17 @@ impl<O: Observer> Driver<O> {
                 let site = self.last_site.clone();
                 return Ok(self.ended(Fate::Lost { site }));
             }
-            let next = Brain::new(&self.game, &self.plan)
+            let brain = Brain::new(&self.game, &self.plan)
                 .cooling_from(self.config.cool_from)
-                .next_move();
+                .hoarding(self.config.hoard);
+            let next = brain.next_move();
             let Some(mv) = next else {
+                // A hoarder that nothing else is left for is held up by what it will not buy.
+                if self.config.hoard
+                    && let Some(by) = brain.missing_purchase()
+                {
+                    return Ok(self.ended(Fate::Blocked { by }));
+                }
                 self.farm_round(true)?;
                 break;
             };
