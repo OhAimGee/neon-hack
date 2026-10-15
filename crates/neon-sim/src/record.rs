@@ -24,6 +24,8 @@ pub struct IntrusionRecord {
     pub trace: u8,
     /// Whether the run burned out.
     pub burned: bool,
+    /// Whether the game played it (`skip`), the player not.
+    pub automatic: bool,
 }
 
 /// How a game ended.
@@ -114,6 +116,7 @@ impl Observer for Tally {
             self.intrusion_steps += 1;
         }
         let mut burned = false;
+        let mut automatic = false;
         for event in &step.events {
             let Event::Message { role, text, .. } = event else {
                 continue;
@@ -128,6 +131,9 @@ impl Observer for Tally {
             }
             if key == "campaign.hack.retry" || key == "campaign.hack.lost" {
                 burned = true;
+            }
+            if key == "run.result.automatic" {
+                automatic = true;
             }
             if let Some(id) = key
                 .strip_prefix("ending.")
@@ -148,6 +154,7 @@ impl Observer for Tally {
                 turns: live.turns,
                 trace: live.trace,
                 burned,
+                automatic,
             });
         }
         Ok(())

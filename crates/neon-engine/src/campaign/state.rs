@@ -37,14 +37,16 @@ pub(super) const GAME_TAG: &str = "campaign";
 const MAX_HEAT_MODS: usize = 16;
 
 /// A typed handle: control characters removed, trimmed, cut to [`HANDLE_MAX_CHARS`] characters,
-/// never empty.
+/// never empty. Cleaning a clean handle changes nothing (a save refuses any other), so the cut
+/// is trimmed again: it may fall right after a space.
 pub(super) fn clean_handle(raw: &str) -> String {
     let cleaned: String = raw.chars().filter(|c| !c.is_control()).collect();
-    let handle: String = cleaned.trim().chars().take(HANDLE_MAX_CHARS).collect();
+    let cut: String = cleaned.trim().chars().take(HANDLE_MAX_CHARS).collect();
+    let handle = cut.trim_end();
     if handle.is_empty() {
         DEFAULT_HANDLE.to_owned()
     } else {
-        handle
+        handle.to_owned()
     }
 }
 

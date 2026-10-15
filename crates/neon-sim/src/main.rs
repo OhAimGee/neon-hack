@@ -15,8 +15,9 @@ use clap::{Args, Parser, Subcommand, ValueEnum};
 use neon_engine::campaign::Difficulty;
 use neon_engine::content::Content;
 use neon_sim::campaign::{Bot, PlanSet, plans, run_bot};
+use neon_sim::monkey::{DEFAULT_STEPS, play_monkey};
 use neon_sim::record::difficulty_name;
-use neon_sim::report::{CampaignReport, Report, SCHEMA_VERSION, SitesReport};
+use neon_sim::report::{CampaignReport, MonkeyReport, Report, SCHEMA_VERSION, SitesReport};
 use neon_sim::sites::{DEFAULT_EXPANSIONS, Loot, SiteResult, measure};
 use neon_sim::targets::{Level, Targets, check};
 
@@ -39,7 +40,8 @@ enum Command {
 
 #[derive(Args)]
 struct RunArgs {
-    /// The bot that plays: the optimist follows the solver, the others play by hand.
+    /// The bot that plays: the optimist follows the solver, the prudent, the reckless and the
+    /// story bot play by hand, the monkey types at random.
     #[arg(long, value_enum, default_value = "optimist")]
     bot: BotArg,
     /// The difficulty, or `all`.
@@ -54,6 +56,9 @@ struct RunArgs {
     /// Only the first plans of the set (a quick check).
     #[arg(long)]
     limit: Option<usize>,
+    /// The inputs the monkey is given in each game before it leaves (the monkey only).
+    #[arg(long, default_value_t = DEFAULT_STEPS)]
+    steps: usize,
     /// Where to write the report; with `all` difficulties, one file per difficulty with its
     /// name before the extension. Without it, the summary is the only output.
     #[arg(long)]
@@ -102,14 +107,19 @@ enum BotArg {
     Optimist,
     Prudent,
     Reckless,
+    Story,
+    Monkey,
 }
 
 impl BotArg {
-    const fn bot(self) -> Bot {
+    /// The bot that plays campaigns; the monkey does not play one.
+    const fn bot(self) -> Option<Bot> {
         match self {
-            Self::Optimist => Bot::Optimist,
-            Self::Prudent => Bot::Prudent,
-            Self::Reckless => Bot::Reckless,
+            Self::Optimist => Some(Bot::Optimist),
+            Self::Prudent => Some(Bot::Prudent),
+            Self::Reckless => Some(Bot::Reckless),
+            Self::Story => Some(Bot::Story),
+            Self::Monkey => None,
         }
     }
 }
@@ -176,6 +186,9 @@ fn main() -> ExitCode {
 }
 
 fn run(args: &RunArgs) -> Result<ExitCode, String> {
+    let Some(bot) = args.bot.bot() else {
+        return run_monkey(args);
+    };
     let set = match args.plans {
         Plans::All => PlanSet::All,
         Plans::Representative => PlanSet::Representative,
@@ -184,11 +197,21 @@ fn run(args: &RunArgs) -> Result<ExitCode, String> {
     if let Some(limit) = args.limit {
         plans.truncate(limit);
     }
-    let difficulties = args.difficulty.difficulties();
+    let mut difficulties = args.difficulty.difficulties();
+    if let Some(only) = bot.only_difficulty() {
+        if !matches!(args.difficulty, Which::All) && difficulties != [only] {
+            return Err(format!(
+                "the {} bot only plays {}",
+                bot.name(),
+                difficulty_name(only)
+            ));
+        }
+        difficulties = vec![only];
+    }
     let many = difficulties.len() > 1;
     let mut all_finished = true;
     for difficulty in difficulties {
-        let (report, _) = run_bot(args.bot.bot(), &plans, difficulty, &args.seeds);
+        let (report, _) = run_bot(bot, &plans, difficulty, &args.seeds);
         console::line(&summary(&report));
         all_finished &= report.stuck == 0;
         if let Some(out) = &args.out {
@@ -205,6 +228,57 @@ fn run(args: &RunArgs) -> Result<ExitCode, String> {
     } else {
         ExitCode::FAILURE
     })
+}
+
+/// The monkey: a game per seed, the difficulties taking turns.
+fn run_monkey(args: &RunArgs) -> Result<ExitCode, String> {
+    let difficulties = args.difficulty.difficulties();
+    let mut records = Vec::new();
+    for seed in args.seeds.clone() {
+        let turn = usize::try_from(seed).unwrap_or(0) % difficulties.len();
+        let difficulty = difficulties
+            .get(turn)
+            .copied()
+            .ok_or_else(|| "no difficulty to play".to_owned())?;
+        records.push(play_monkey(seed, difficulty, args.steps));
+    }
+    let report = MonkeyReport::of(
+        [*args.seeds.start(), *args.seeds.end()],
+        args.steps as u64,
+        &records,
+    );
+    console::line(&monkey_summary(&report));
+    for worst in &report.worst {
+        console::line(&format!(
+            "  seed {} ({}): {:?}",
+            worst.seed, worst.difficulty, worst.fault
+        ));
+    }
+    let clean =
+        report.panics + report.not_quittable + report.save_faults + report.contract_faults == 0;
+    if let Some(out) = &args.out {
+        write(out, &Report::Monkey(report))?;
+    }
+    Ok(if clean {
+        ExitCode::SUCCESS
+    } else {
+        ExitCode::FAILURE
+    })
+}
+
+fn monkey_summary(report: &MonkeyReport) -> String {
+    format!(
+        "monkey: {} games, {} inputs ({} per mille in an intrusion), {} panics, {} that cannot be left, {} save faults, {} contract faults; damaged saves: {} refused, {} taken",
+        report.games,
+        report.inputs,
+        report.intrusion_per_mille,
+        report.panics,
+        report.not_quittable,
+        report.save_faults,
+        report.contract_faults,
+        report.damaged_refused,
+        report.damaged_accepted
+    )
 }
 
 fn solve(args: &SolveArgs) -> Result<ExitCode, String> {

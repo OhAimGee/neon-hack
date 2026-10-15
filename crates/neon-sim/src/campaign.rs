@@ -17,6 +17,8 @@ pub const OPTIMIST: &str = "optimist";
 pub const PRUDENT: &str = "prudent";
 /// The name of the bot that plays like a reckless one.
 pub const RECKLESS: &str = "reckless";
+/// The name of the bot that skips the intrusions that last.
+pub const STORY: &str = "story";
 
 /// A bot: the campaign it plays is the plan's, what differs is how it plays an intrusion.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -27,6 +29,8 @@ pub enum Bot {
     Prudent,
     /// Plays by hand with the strongest program, and nothing else.
     Reckless,
+    /// Plays the Story difficulty and has the game play every intrusion that lasts.
+    Story,
 }
 
 impl Bot {
@@ -37,6 +41,16 @@ impl Bot {
             Self::Optimist => OPTIMIST,
             Self::Prudent => PRUDENT,
             Self::Reckless => RECKLESS,
+            Self::Story => STORY,
+        }
+    }
+
+    /// The only difficulty it plays, when it plays one only.
+    #[must_use]
+    pub const fn only_difficulty(self) -> Option<Difficulty> {
+        match self {
+            Self::Story => Some(Difficulty::Story),
+            Self::Optimist | Self::Prudent | Self::Reckless => None,
         }
     }
 
@@ -47,6 +61,7 @@ impl Bot {
             Self::Optimist => Tactic::Solver,
             Self::Prudent => Tactic::Hand(Style::Prudent),
             Self::Reckless => Tactic::Hand(Style::Reckless),
+            Self::Story => Tactic::Story,
         }
     }
 
@@ -57,7 +72,7 @@ impl Bot {
     pub const fn cools_from(self) -> Option<u8> {
         match self {
             Self::Prudent => Some(30),
-            Self::Optimist | Self::Reckless => None,
+            Self::Optimist | Self::Reckless | Self::Story => None,
         }
     }
 }

@@ -50,6 +50,19 @@ fn save_load_save_is_byte_identical_at_every_stage_of_a_play() {
 }
 
 #[test]
+fn a_handle_cut_right_after_a_space_is_a_handle_a_save_takes_back() {
+    // Twenty characters is the longest handle: the cut falls right after the space, and a save
+    // refuses a handle that is not clean (the monkey of the harness found it).
+    let typed = format!("{} tail", "n".repeat(19));
+    let mut driver = Driver::raw();
+    driver.lines(&[typed.as_str()]);
+    assert_eq!(driver.game.state().handle, "n".repeat(19));
+    let text = driver.game.snapshot().unwrap();
+    let loaded = CampaignGame::from_save(&text).unwrap();
+    assert_eq!(loaded.snapshot().unwrap(), text);
+}
+
+#[test]
 fn the_envelope_tells_the_handle_and_the_clock_without_loading_the_game() {
     let driver = played();
     let text = driver.game.snapshot().unwrap();
