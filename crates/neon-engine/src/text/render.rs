@@ -46,6 +46,10 @@ impl RenderMode {
 /// the template asks for but the text lacks as `<?name>`, so a problem is visible, and
 /// tests can assert that neither ever happens.
 ///
+/// An argument the text does not give, whose name is a term of the glossary (`{ice}` and the
+/// term `ice`), is that term: the vocabulary does not have to be passed along by every caller,
+/// and a help line or an error that names the `{node}` reads like the rest of the game.
+///
 /// When the mode is ASCII the result is transliterated here, once, so that everything a
 /// frontend lays out is the text that is really displayed.
 #[must_use]
@@ -88,16 +92,16 @@ fn push_template(
             Part::Literal(literal) => out.push_str(literal),
             Part::Placeholder(name) => match find(name) {
                 Some(arg) => push_arg(arg, catalog, mode, out),
-                None => push_unknown(name, out),
+                None => push_missing(name, catalog, mode, out),
             },
-            Part::Capitalized(name) => match find(name) {
-                Some(arg) => {
-                    let mut word = String::new();
-                    push_arg(arg, catalog, mode, &mut word);
-                    push_capitalized(&word, out);
+            Part::Capitalized(name) => {
+                let mut word = String::new();
+                match find(name) {
+                    Some(arg) => push_arg(arg, catalog, mode, &mut word),
+                    None => push_missing(name, catalog, mode, &mut word),
                 }
-                None => push_unknown(name, out),
-            },
+                push_capitalized(&word, out);
+            }
             Part::Plural {
                 selector,
                 one,
@@ -123,6 +127,17 @@ fn push_capitalized(word: &str, out: &mut String) {
     if let Some(first) = chars.next() {
         out.extend(first.to_uppercase());
         out.push_str(chars.as_str());
+    }
+}
+
+/// An argument the text lacks: the glossary term of that name if there is one, else the visible
+/// `<?name>`.
+fn push_missing(name: &str, catalog: &Catalog, mode: RenderMode, out: &mut String) {
+    let key = format!("term.{name}");
+    if catalog.get(&key).is_some() {
+        out.push_str(&render_inner(&Text::dynamic(key), catalog, mode));
+    } else {
+        push_unknown(name, out);
     }
 }
 
@@ -165,6 +180,7 @@ mod tests {
             with_term = "Watch the {gauge}."
             lone = "{n|one node|{n} nodes}"
             unknown_arg = "Value: {nothing}."
+            by_name = "Watch the {trace} and the {trace^}."
             accents = "Café → ok"
             "ui.raw" = "{value}"
             [item]
@@ -197,6 +213,20 @@ mod tests {
         assert_eq!(full(&nested), "Bought a proxy.");
         let term = Text::new("with_term").with_term("gauge", "trace");
         assert_eq!(full(&term), "Watch the Trace.");
+    }
+
+    #[test]
+    fn an_argument_the_text_lacks_is_the_glossary_term_of_that_name() {
+        // `{trace}` is given by nobody: it is the term `trace`, capital marker included.
+        assert_eq!(
+            full(&Text::new("by_name")),
+            "Watch the Trace and the Trace."
+        );
+        // What is not a term stays visible.
+        assert_eq!(full(&Text::new("unknown_arg")), "Value: <?nothing>.");
+        // An argument that is given wins over the term of the same name.
+        let given = Text::new("by_name").with_str("trace", "noise");
+        assert_eq!(full(&given), "Watch the noise and the Noise.");
     }
 
     #[test]

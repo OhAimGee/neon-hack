@@ -70,9 +70,10 @@ jackout
 hack nexus-mainframe
 y
 breach 2 exploit
+breach 2 backdoor
 end
 move 2
-breach 4 backdoor
+breach 4 decrypt
 end
 breach 3 backdoor
 breach 4 decrypt
@@ -83,13 +84,13 @@ use spoof
 move 4
 loot
 end
-breach 6 backdoor
 breach 6 quantum
 end
+breach 6 decrypt
 move 6
 loot
-breach 5 backdoor
 end
+breach 5 backdoor
 move 4
 move 2
 move 3

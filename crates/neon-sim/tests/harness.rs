@@ -13,7 +13,7 @@ use neon_engine::content::Content;
 use neon_sim::campaign::{PlanSet, plans, run_optimist};
 use neon_sim::record::Outcome;
 use neon_sim::report::{Report, SCHEMA_VERSION, SitesReport};
-use neon_sim::sites::{SiteResult, measure};
+use neon_sim::sites::{Loot, SiteResult, measure};
 use neon_sim::targets::{Level, Targets, check};
 
 #[test]
@@ -28,7 +28,7 @@ fn the_shipped_thresholds_parse() {
 #[test]
 fn every_site_is_measured_and_won_at_every_difficulty() {
     let content = Content::embedded().unwrap();
-    let rows = measure(&content, None, None, 2_000_000);
+    let rows = measure(&content, None, None, Loot::Objective, 2_000_000);
     assert_eq!(rows.len(), content.sites.len() * Difficulty::ALL.len());
     for row in &rows {
         match &row.result {
@@ -53,18 +53,19 @@ fn a_site_can_be_measured_alone() {
         &content,
         Some("localhost"),
         Some(Difficulty::Normal),
+        Loot::Objective,
         2_000_000,
     );
     assert_eq!(rows.len(), 1);
     assert_eq!(rows[0].site, "localhost");
     assert_eq!(rows[0].difficulty, "normal");
-    assert!(measure(&content, Some("nowhere"), None, 10).is_empty());
+    assert!(measure(&content, Some("nowhere"), None, Loot::Objective, 10).is_empty());
 }
 
 #[test]
 fn the_shipped_game_passes_the_barriers_on_the_sites() {
     let content = Content::embedded().unwrap();
-    let rows = measure(&content, None, None, 2_000_000);
+    let rows = measure(&content, None, None, Loot::Objective, 2_000_000);
     let report = Report::Sites(SitesReport {
         schema_version: SCHEMA_VERSION,
         expansions: 2_000_000,
@@ -119,4 +120,30 @@ fn a_campaign_report_is_checked_against_the_first_threshold() {
         "{}",
         findings[1].detail
     );
+}
+
+#[test]
+fn the_whole_loot_of_a_site_can_be_asked_for_and_is_not_written_by_default() {
+    let content = Content::embedded().unwrap();
+    let all = measure(
+        &content,
+        Some("corp-server-01"),
+        Some(Difficulty::Normal),
+        Loot::All,
+        2_000_000,
+    );
+    assert_eq!(all.len(), 1);
+    assert_eq!(all[0].loot, Loot::All);
+    assert!(matches!(all[0].result, SiteResult::Solved { .. }));
+    let json = serde_json::to_string(&all[0]).unwrap();
+    assert!(json.contains("\"loot\":\"all\""), "{json}");
+    let objective = measure(
+        &content,
+        Some("corp-server-01"),
+        Some(Difficulty::Normal),
+        Loot::Objective,
+        2_000_000,
+    );
+    let json = serde_json::to_string(&objective[0]).unwrap();
+    assert!(!json.contains("loot"), "{json}");
 }

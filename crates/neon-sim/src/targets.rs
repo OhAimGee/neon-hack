@@ -9,7 +9,7 @@ use serde::Deserialize;
 use crate::campaign::OPTIMIST;
 use crate::record::difficulty_name;
 use crate::report::{CampaignReport, Report, SitesReport};
-use crate::sites::{SiteResult, SiteRow};
+use crate::sites::{Loot, SiteResult, SiteRow};
 use neon_engine::campaign::Difficulty;
 
 /// The thresholds shipped with the harness.
@@ -47,6 +47,11 @@ pub struct Solvable {
 pub struct Length {
     /// P or O.
     pub level: Level,
+    /// The difficulty the plans are measured at: the reference one, the others scale from it.
+    pub difficulty: String,
+    /// The first tier the length applies to: the first two tiers are the tutorial, short on
+    /// purpose.
+    pub from_tier: u8,
     /// The fewest turns of the best plan.
     pub min_turns: u32,
     /// The most turns of the best plan.
@@ -59,6 +64,9 @@ pub struct Margin {
     /// The level of the order between difficulties: the margin never grows from Story to
     /// Hardcore.
     pub order_level: Level,
+    /// The first tier the gap and the bounds apply to: the first two tiers are the tutorial,
+    /// meant to be short and forgiving. The order between difficulties holds for every site.
+    pub from_tier: u8,
     /// The level of the gap between Story and Normal.
     pub gap_level: Level,
     /// How much more margin Story leaves than Normal, at least.
@@ -147,11 +155,17 @@ pub fn check(targets: &Targets, reports: &[Report]) -> Vec<Finding> {
     if !campaigns.is_empty() {
         findings.extend(t1(&targets.t1, &campaigns));
     }
-    let rows: Vec<&SiteRow> = sites.iter().flat_map(|s| &s.rows).collect();
+    let all_rows: Vec<&SiteRow> = sites.iter().flat_map(|s| &s.rows).collect();
+    let (rows, full): (Vec<&SiteRow>, Vec<&SiteRow>) = all_rows
+        .into_iter()
+        .partition(|row| row.loot == Loot::Objective);
     if !rows.is_empty() {
         findings.push(t2(&targets.t2, &rows));
         findings.push(t3(&targets.t3, &rows));
         findings.extend(t4(&targets.t4, &rows));
+    }
+    if !full.is_empty() {
+        findings.push(t2_full_loot(&targets.t2, &full));
     }
     findings
 }
@@ -213,9 +227,33 @@ fn t2(target: &Solvable, rows: &[&SiteRow]) -> Finding {
     }
 }
 
+/// T2 again, asked the way the campaign asks it: every loot of the site is taken (the files of
+/// the quests are on the nodes that are not the objective), with the whole deck of the tier.
+fn t2_full_loot(target: &Solvable, rows: &[&SiteRow]) -> Finding {
+    let bad: Vec<String> = rows
+        .iter()
+        .filter(|r| !matches!(r.result, SiteResult::Solved { .. }))
+        .map(|r| format!("{} {}", r.site, r.difficulty))
+        .collect();
+    Finding {
+        id: "T2",
+        level: target.level,
+        ok: bad.is_empty(),
+        detail: if bad.is_empty() {
+            format!(
+                "every site is won taking all its loot, at every difficulty ({} measures)",
+                rows.len()
+            )
+        } else {
+            format!("not won taking all the loot: {}", bad.join(", "))
+        },
+    }
+}
+
 fn t3(target: &Length, rows: &[&SiteRow]) -> Finding {
     let bad: Vec<String> = rows
         .iter()
+        .filter(|r| r.difficulty == target.difficulty && r.tier >= target.from_tier)
         .filter_map(|r| match r.result {
             SiteResult::Solved { turns, .. }
                 if turns < target.min_turns || turns > target.max_turns =>
@@ -258,16 +296,16 @@ fn margin_of(rows: &[&SiteRow], site: &str, difficulty: Difficulty) -> Option<u8
 fn t4(target: &Margin, rows: &[&SiteRow]) -> Vec<Finding> {
     // One entry per site, in the order of the reports: the rows of a site are spread over the
     // reports (one per difficulty), so a consecutive `dedup` would not be enough.
-    let mut sites: Vec<&str> = Vec::new();
+    let mut sites: Vec<(&str, u8)> = Vec::new();
     for row in rows {
-        if !sites.contains(&row.site.as_str()) {
-            sites.push(row.site.as_str());
+        if !sites.iter().any(|(site, _)| *site == row.site) {
+            sites.push((row.site.as_str(), row.tier));
         }
     }
     let mut disorder = Vec::new();
     let mut flat = Vec::new();
     let mut outside = Vec::new();
-    for site in sites {
+    for (site, tier) in sites {
         let at = |difficulty| margin_of(rows, site, difficulty);
         let (Some(story), Some(normal), Some(expert), Some(hardcore)) = (
             at(Difficulty::Story),
@@ -281,6 +319,9 @@ fn t4(target: &Margin, rows: &[&SiteRow]) -> Vec<Finding> {
             disorder.push(format!(
                 "{site} (story {story}, normal {normal}, expert {expert}, hardcore {hardcore})"
             ));
+        }
+        if tier < target.from_tier {
+            continue;
         }
         if u16::from(story) < u16::from(normal) + u16::from(target.story_over_normal) {
             flat.push(format!("{site} ({story} against {normal})"));
@@ -347,12 +388,13 @@ mod tests {
     use super::*;
     use crate::report::SCHEMA_VERSION;
 
-    fn row(site: &str, difficulty: &str, margin: u8, turns: u32) -> SiteRow {
+    fn row(site: &str, tier: u8, difficulty: &str, margin: u8, turns: u32) -> SiteRow {
         SiteRow {
             site: site.to_owned(),
-            tier: 1,
+            tier,
             difficulty: difficulty.to_owned(),
             cap: 100,
+            loot: Loot::Objective,
             result: SiteResult::Solved {
                 trace: 100 - margin,
                 margin,
@@ -373,10 +415,14 @@ mod tests {
 
     /// A site whose margin falls with the difficulty, as the thresholds want.
     fn well_behaved(site: &str, margins: [u8; 4], turns: u32) -> Vec<SiteRow> {
+        behaving_at_tier(site, 3, margins, turns)
+    }
+
+    fn behaving_at_tier(site: &str, tier: u8, margins: [u8; 4], turns: u32) -> Vec<SiteRow> {
         ["story", "normal", "expert", "hardcore"]
             .iter()
             .zip(margins)
-            .map(|(difficulty, margin)| row(site, difficulty, margin, turns))
+            .map(|(difficulty, margin)| row(site, tier, difficulty, margin, turns))
             .collect()
     }
 
@@ -417,16 +463,54 @@ mod tests {
 
     #[test]
     fn the_objectives_warn_and_do_not_fail() {
-        // Too short a plan (T3), Story too close to Normal and Normal over the bound (T4).
+        // The same thresholds, all as objectives: a plan too short (T3), Story too close to
+        // Normal and Normal over the bound (T4).
+        let objectives = Targets::parse(&EMBEDDED.replace("\"P\"", "\"O\"")).unwrap();
+        let report = sites(well_behaved("a", [95, 92, 86, 80], 1));
+        let findings = check(&objectives, &[report]);
+        let warned: Vec<&Finding> = findings
+            .iter()
+            .filter(|f| matches!(f.id, "T3" | "T4") && f.level == Level::O && !f.ok)
+            .collect();
+        assert_eq!(warned.len(), 3);
+        assert!(warned.iter().all(|f| !f.fails()));
+        assert!(findings.iter().all(|f| !f.fails()));
+    }
+
+    #[test]
+    fn the_shipped_barriers_fail_on_a_site_that_is_too_easy_or_too_short() {
         let report = sites(well_behaved("a", [95, 92, 86, 80], 1));
         let findings = check(&targets(), &[report]);
-        let objectives: Vec<&Finding> = findings
-            .iter()
-            .filter(|f| matches!(f.id, "T3" | "T4") && f.level == Level::O)
-            .collect();
-        assert_eq!(objectives.len(), 3);
-        assert!(objectives.iter().all(|f| !f.ok && !f.fails()));
-        assert!(findings.iter().all(|f| !f.fails()));
+        assert!(find(&findings, "T3", 0).fails());
+        assert!(find(&findings, "T4", 1).fails());
+        assert!(find(&findings, "T4", 2).fails());
+    }
+
+    #[test]
+    fn the_tutorial_is_exempt_from_the_length_the_gap_and_the_bounds_but_not_from_the_order() {
+        let easy = behaving_at_tier("tutorial", 2, [95, 92, 86, 80], 1);
+        let findings = check(&targets(), &[sites(easy)]);
+        assert!(findings.iter().all(|f| f.ok), "{findings:?}");
+        let disordered = behaving_at_tier("tutorial", 2, [80, 60, 70, 40], 3);
+        let findings = check(&targets(), &[sites(disordered)]);
+        assert!(find(&findings, "T4", 0).fails());
+    }
+
+    #[test]
+    fn only_the_reference_difficulty_is_held_to_the_length() {
+        // One turn at Story and at Expert is what the difficulty does; Normal takes four.
+        let mut rows = well_behaved("a", [80, 60, 50, 40], 1);
+        if let Some(normal) = rows.get_mut(1)
+            && let SiteResult::Solved { turns, .. } = &mut normal.result
+        {
+            *turns = 4;
+        }
+        let findings = check(&targets(), &[sites(rows)]);
+        assert!(
+            find(&findings, "T3", 0).ok,
+            "{}",
+            find(&findings, "T3", 0).detail
+        );
     }
 
     #[test]

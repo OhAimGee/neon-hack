@@ -14,11 +14,12 @@ use neon_engine::Game;
 use neon_engine::campaign::CampaignGame;
 use neon_engine::content::schema::{QuestStatus, ReadableKind};
 use neon_engine::prompt::{Input, Prompt, Step};
-use neon_engine::run::solve::{Resolution, auto_resolve};
-use neon_engine::run::{Action, LootKind};
+use neon_engine::run::Action;
+use neon_engine::run::solve::{Goal, Outcome, PROOF_EXPANSIONS, Resolution, auto_resolve, solve};
 use neon_engine::save::SaveRequest;
 
 use crate::brain::{Brain, Move, Plan};
+use crate::sites::full_loot_mission;
 
 /// Prompts one command may cause (a conversation with a few topics, a decision).
 const MAX_PROMPTS: usize = 24;
@@ -302,27 +303,29 @@ impl<O: Observer> Driver<O> {
         while let Some(intrusion) = self.game.intrusion() {
             let content = self.game.content();
             let site = intrusion.site().clone();
-            let (Some(def), Some(site_def)) = (content.run(&site), content.site(&site)) else {
-                return Err(self.stuck("an intrusion on a site that has none"));
-            };
-            let mut greedy = def.clone();
-            for node in &mut greedy.node {
-                if node.loot.is_some() {
-                    node.loot = Some(LootKind::Objective);
-                }
-            }
-            let tier = site_def.unlock.tier.unwrap_or(1);
-            let Some(kit) = content.kit(tier) else {
-                return Err(self.stuck("a site of a tier without a deck"));
-            };
-            let Ok(mission) = greedy.mission(kit, self.game.state().difficulty().pace()) else {
-                return Err(self.stuck("the greedy variant of an intrusion does not build"));
+            let Some(mission) =
+                full_loot_mission(content, &site, self.game.state().difficulty().pace())
+            else {
+                return Err(self.stuck("the full-loot variant of an intrusion does not build"));
             };
             let state = *intrusion.state();
-            let (Resolution::Optimal(plan) | Resolution::Best(plan)) =
-                auto_resolve(&mission, &state)
-            else {
-                return Err(self.stuck("no plan for an intrusion of the content"));
+            // The bounded chain of `skip` is enough for the small intrusions; a heavy one, with
+            // all its loot to take, gets the wide bound of the tools instead: the harness is not
+            // the game, and what it asks is whether the intrusion can be won.
+            let plan = match auto_resolve(&mission, &state) {
+                Resolution::Optimal(plan) | Resolution::Best(plan) => plan,
+                Resolution::Nominal => {
+                    match solve(&mission, &state, Goal::Feasible, PROOF_EXPANSIONS, u8::MAX).outcome
+                    {
+                        Outcome::Solved { plan, .. }
+                        | Outcome::Unknown {
+                            best: Some(plan), ..
+                        } => plan,
+                        Outcome::Unknown { best: None, .. } | Outcome::Unsolvable => {
+                            return Err(self.stuck(&format!("no plan for the intrusion of {site}")));
+                        }
+                    }
+                }
             };
             for action in &plan.actions {
                 if self.game.intrusion().is_none() {
