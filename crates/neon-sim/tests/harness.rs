@@ -282,3 +282,29 @@ fn the_monkey_breaks_nothing_and_is_the_same_game_every_time() {
         "the same seeds give the same bytes"
     );
 }
+
+#[test]
+fn the_farmer_repeats_what_it_did_and_earns_what_the_optimist_earns() {
+    let plans = plans(PlanSet::Representative).unwrap();
+    let mut reports = Vec::new();
+    for bot in [Bot::Optimist, Bot::Farmer] {
+        let (report, _) = run_bot(bot, &plans[..2], Difficulty::Normal, &(1..=1));
+        assert_eq!((report.finished, report.stuck), (2, 0), "{}", bot.name());
+        reports.push(Report::Campaign(report));
+    }
+    let Report::Campaign(farmer) = &reports[1] else {
+        panic!("a campaign report");
+    };
+    assert!(farmer.repeated.unwrap().min > 100, "{:?}", farmer.repeated);
+    // The farmer goes through many more intrusions than the optimist.
+    let Report::Campaign(optimist) = &reports[0] else {
+        panic!("a campaign report");
+    };
+    assert!(farmer.intrusions.total > optimist.intrusions.total);
+    assert_eq!(optimist.repeated, None);
+    let findings = check(&Targets::embedded().unwrap(), &reports);
+    let t8: Vec<_> = findings.iter().filter(|f| f.id == "T8").collect();
+    assert_eq!(t8.len(), 1);
+    assert!(t8[0].ok, "{}", t8[0].detail);
+    assert_eq!(Bot::Farmer.farm(), Some(2));
+}

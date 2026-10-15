@@ -41,7 +41,7 @@ enum Command {
 #[derive(Args)]
 struct RunArgs {
     /// The bot that plays: the optimist follows the solver, the prudent, the reckless and the
-    /// story bot play by hand, the monkey types at random.
+    /// story bot play by hand, the farmer repeats everything, the monkey types at random.
     #[arg(long, value_enum, default_value = "optimist")]
     bot: BotArg,
     /// The difficulty, or `all`.
@@ -108,6 +108,7 @@ enum BotArg {
     Prudent,
     Reckless,
     Story,
+    Farmer,
     Monkey,
 }
 
@@ -119,6 +120,7 @@ impl BotArg {
             Self::Prudent => Some(Bot::Prudent),
             Self::Reckless => Some(Bot::Reckless),
             Self::Story => Some(Bot::Story),
+            Self::Farmer => Some(Bot::Farmer),
             Self::Monkey => None,
         }
     }

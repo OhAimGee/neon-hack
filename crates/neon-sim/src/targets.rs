@@ -6,9 +6,9 @@
 
 use serde::Deserialize;
 
-use crate::campaign::{OPTIMIST, PRUDENT, RECKLESS, STORY};
+use crate::campaign::{FARMER, OPTIMIST, PRUDENT, RECKLESS, STORY};
 use crate::record::difficulty_name;
-use crate::report::{CampaignReport, MonkeyReport, Report, SitesReport};
+use crate::report::{CampaignReport, MonkeyReport, Report, SitesReport, Spread};
 use crate::sites::{Loot, SiteResult, SiteRow};
 use neon_engine::campaign::Difficulty;
 
@@ -131,6 +131,15 @@ pub struct Heat {
     pub reckless_hunted_per_mille_min: u64,
 }
 
+/// T8: repeating things earns nothing.
+#[derive(Debug, Clone, Deserialize)]
+pub struct AntiFarm {
+    /// P or O.
+    pub level: Level,
+    /// The fewest lines a farmer must have sent again in a game for the check to mean anything.
+    pub min_repeated: u64,
+}
+
 /// T12: the monkey breaks nothing.
 #[derive(Debug, Clone, Deserialize)]
 pub struct Robustness {
@@ -164,6 +173,8 @@ pub struct Targets {
     pub t5: Reasonable,
     /// T6.
     pub t6: Floor,
+    /// T8.
+    pub t8: AntiFarm,
     /// T10.
     pub t10: Duration,
     /// T11.
@@ -252,6 +263,7 @@ pub fn check(targets: &Targets, reports: &[Report]) -> Vec<Finding> {
         findings.extend(t1(&targets.t1, &campaigns));
     }
     findings.extend(bots(targets, &all_campaigns));
+    findings.extend(t8(&targets.t8, &all_campaigns));
     findings.extend(t12(&targets.t12, &monkeys));
     let all_rows: Vec<&SiteRow> = sites.iter().flat_map(|s| &s.rows).collect();
     let (rows, full): (Vec<&SiteRow>, Vec<&SiteRow>) = all_rows
@@ -428,6 +440,54 @@ fn bots(targets: &Targets, campaigns: &[&CampaignReport]) -> Vec<Finding> {
             format!(
                 "reckless in Story finishes {finished} per mille of its campaigns ({} wanted)",
                 t.story_finished_per_mille_min
+            ),
+        ));
+    }
+    findings
+}
+
+/// Whether a spread is nowhere above another, rank by rank.
+fn nowhere_above(spread: &Spread, other: &Spread) -> bool {
+    spread.min <= other.min
+        && spread.p10 <= other.p10
+        && spread.median <= other.median
+        && spread.p90 <= other.p90
+        && spread.max <= other.max
+}
+
+/// T8: at every difficulty both were played, the farmer, who sends again what the plan sent,
+/// ends with no more credits and no more reputation than the optimist, on the same games.
+fn t8(target: &AntiFarm, campaigns: &[&CampaignReport]) -> Vec<Finding> {
+    let mut findings = Vec::new();
+    for farmer in campaigns.iter().filter(|c| c.bot == FARMER) {
+        let Some(optimist) = report_of(campaigns, OPTIMIST, &farmer.difficulty) else {
+            continue;
+        };
+        let (Some(f_credits), Some(o_credits)) = (&farmer.credits, &optimist.credits) else {
+            continue;
+        };
+        let (Some(f_rep), Some(o_rep)) = (&farmer.reputation, &optimist.reputation) else {
+            continue;
+        };
+        let repeated = farmer.repeated.map_or(0, |r| r.min);
+        let same_games = farmer.games == optimist.games && farmer.seeds == optimist.seeds;
+        let ok = same_games
+            && repeated >= target.min_repeated
+            && nowhere_above(f_credits, o_credits)
+            && nowhere_above(f_rep, o_rep);
+        findings.push(claim(
+            "T8",
+            target.level,
+            ok,
+            format!(
+                "at {} the farmer sent again {repeated} lines at least per game and ends with {} credits and {} reputation at the median, the optimist with {} and {} ({} games each{})",
+                farmer.difficulty,
+                f_credits.median,
+                f_rep.median,
+                o_credits.median,
+                o_rep.median,
+                farmer.games,
+                if same_games { "" } else { "; not the same games" }
             ),
         ));
     }
@@ -864,9 +924,11 @@ mod tests {
             outcome,
             commands,
             credits: 0,
+            reputation: 0,
             max_notoriety: notoriety,
             intrusion_per_mille: 200,
             intrusions: intrusions.clone(),
+            repeated: None,
         };
         let records: Vec<GameRecord> = (0..finished)
             .map(|_| {
@@ -975,6 +1037,74 @@ mod tests {
             )
             .is_empty()
         );
+    }
+
+    // ------------------------------------------------------------------ the farmer
+
+    /// The report of a bot at Normal with the given rewards in every game, and the lines a
+    /// farmer sent again.
+    fn rewarded(bot: &str, credits: i64, reputation: i64, repeated: Option<u64>) -> Report {
+        let game = |seed: u64| GameRecord {
+            plan: "p".to_owned(),
+            difficulty: "normal".to_owned(),
+            seed,
+            outcome: Outcome::Finished {
+                ending: "e2".to_owned(),
+            },
+            commands: 600,
+            credits,
+            reputation,
+            max_notoriety: 20,
+            intrusion_per_mille: 200,
+            intrusions: Vec::new(),
+            repeated,
+        };
+        let records = [game(1), game(2)];
+        Report::Campaign(CampaignReport::of(bot, "normal", [1, 2], 1, &records))
+    }
+
+    #[test]
+    fn a_farmer_that_earns_what_the_optimist_earns_passes_t8() {
+        let reports = [
+            rewarded("optimist", 18_000, 500, None),
+            rewarded("farmer", 18_000, 500, Some(1_200)),
+        ];
+        let findings: Vec<_> = check(&targets(), &reports)
+            .into_iter()
+            .filter(|f| f.id == "T8")
+            .collect();
+        assert_eq!(findings.len(), 1);
+        assert!(findings[0].ok, "{}", findings[0].detail);
+        assert_eq!(targets().t8.level, Level::P);
+    }
+
+    #[test]
+    fn a_farmer_that_earns_more_or_repeats_nothing_fails_the_barrier() {
+        for (credits, reputation, repeated) in [
+            (18_001, 500, Some(1_200)),
+            (18_000, 501, Some(1_200)),
+            (18_000, 500, Some(0)),
+            (18_000, 500, None),
+        ] {
+            let reports = [
+                rewarded("optimist", 18_000, 500, None),
+                rewarded("farmer", credits, reputation, repeated),
+            ];
+            let findings: Vec<_> = check(&targets(), &reports)
+                .into_iter()
+                .filter(|f| f.id == "T8")
+                .collect();
+            assert!(
+                findings.len() == 1 && findings[0].fails(),
+                "{credits} {reputation} {repeated:?}: {findings:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_farmer_without_an_optimist_to_compare_with_gives_no_finding() {
+        let reports = [rewarded("farmer", 18_000, 500, Some(1_200))];
+        assert!(check(&targets(), &reports).iter().all(|f| f.id != "T8"));
     }
 
     // ------------------------------------------------------------------ the monkey

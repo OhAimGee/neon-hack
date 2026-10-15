@@ -86,3 +86,11 @@ finished_per_mille_min = 950
 [t12]
 level = "P"
 min_games = 100
+
+# T8: anti-farm. The farmer sends again, as they were sent, the conversations, the readings, the
+# decryptions and the links at every quest done, and at the end the sites, the purchases and the
+# cover too. It ends with no more credits and no more reputation than the optimist, on the
+# same games. A report where it sent nothing again says nothing.
+[t8]
+level = "P"
+min_repeated = 1
