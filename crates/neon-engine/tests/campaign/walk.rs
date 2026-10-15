@@ -13,8 +13,8 @@ use std::collections::BTreeSet;
 use neon_engine::campaign::Difficulty;
 use neon_engine::content::Content;
 use neon_engine::content::schema::{FlagValue, QuestKind, QuestStatus};
+use neon_sim::brain::{Plan, all_plans};
 
-use crate::brain::{Plan, all_plans};
 use crate::player::{Player, Reload, Walked, epilogue_contacts, expected_ending};
 
 fn content() -> Content {

@@ -8,6 +8,14 @@ license.workspace = true
 repository.workspace = true
 publish.workspace = true
 
+[lib]
+name = "neon_sim"
+path = "src/lib.rs"
+
+[[bin]]
+name = "neon-sim"
+path = "src/main.rs"
+
 [dependencies]
 neon-engine = { workspace = true }
 

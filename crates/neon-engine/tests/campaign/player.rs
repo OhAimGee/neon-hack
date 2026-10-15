@@ -1,30 +1,23 @@
 //! The optimistic player at the command level: it plays the real campaign through the plain
 //! frontend contract (`Game::handle` with the lines and answers a frontend sends, using the
 //! prompts the game gives), from a new game to the epilogue, and checks everything it sees.
+//!
+//! What to type and how to type it is the harness's (`neon_sim::brain` and
+//! `neon_sim::driver`); this module is the observer that checks each step: both languages
+//! render it, no text is a draft, errors are failures, and every save loads back identical.
 
-use std::collections::{BTreeMap, BTreeSet, VecDeque};
-use std::fmt::Write as _;
+use std::collections::{BTreeMap, BTreeSet};
 use std::sync::OnceLock;
 
+use neon_engine::Game;
 use neon_engine::campaign::{CampaignGame, Difficulty};
+use neon_engine::content::Content;
 use neon_engine::event::{Event, Role};
-use neon_engine::prompt::{Input, Prompt, Step};
-use neon_engine::run::solve::{Resolution, auto_resolve};
-use neon_engine::run::{Action, LootKind};
+use neon_engine::prompt::{Prompt, Step};
 use neon_engine::save::SaveRequest;
 use neon_engine::text::{Arg, Catalog, Lang, RenderMode, Text, render};
-use neon_engine::{Game, content::Content};
-
-use crate::brain::{Brain, Move, Plan};
-
-/// Safety net: the longest walk is a few hundred commands.
-const MAX_STEPS: usize = 2_500;
-/// Prompts one command may cause (a conversation with a few topics, a decision).
-const MAX_PROMPTS: usize = 24;
-/// The same move this many times in a row means the walk is going round in circles.
-const MAX_REPEATS: usize = 12;
-/// The handle of the walker.
-const HANDLE: &str = "Walker";
+use neon_sim::brain::Plan;
+use neon_sim::driver::{Config, Driver, Observer};
 
 /// What the walk does with the saves the game asks for.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -80,24 +73,9 @@ pub(crate) struct Walked {
 }
 
 pub(crate) struct Player {
-    game: CampaignGame,
     plan: Plan,
-    reload: Reload,
-    modes: Vec<RenderMode>,
-    steps: usize,
-    hash: u64,
-    checkpoints: usize,
-    reloads: usize,
-    endings: Vec<String>,
-    epilogue: Vec<String>,
-    completed: BTreeMap<String, u32>,
-    rewarded: i64,
-    typed: Vec<String>,
-    script: Vec<String>,
-    recent: VecDeque<String>,
-    last_said: String,
-    saved_slot: bool,
-    last_save: Option<SaveRequest>,
+    difficulty: Difficulty,
+    checks: Checks,
 }
 
 impl Player {
@@ -116,311 +94,93 @@ impl Player {
             ]);
         }
         Self {
-            game: CampaignGame::new(difficulty, 7).unwrap(),
             plan: plan.clone(),
-            reload,
-            modes,
-            steps: 0,
-            hash: 0xcbf2_9ce4_8422_2325,
-            checkpoints: 0,
-            reloads: 0,
-            endings: Vec::new(),
-            epilogue: Vec::new(),
-            completed: BTreeMap::new(),
-            rewarded: 0,
-            typed: Vec::new(),
-            script: Vec::new(),
-            recent: VecDeque::new(),
-            last_said: String::new(),
-            saved_slot: false,
-            last_save: None,
+            difficulty,
+            checks: Checks {
+                reload,
+                modes,
+                hash: 0xcbf2_9ce4_8422_2325,
+                checkpoints: 0,
+                reloads: 0,
+                endings: Vec::new(),
+                epilogue: Vec::new(),
+                completed: BTreeMap::new(),
+                rewarded: 0,
+                last_said: String::new(),
+            },
         }
     }
-
-    // ------------------------------------------------------------------ the walk
 
     /// Plays from a new game to the end of the campaign, then leaves.
-    pub(crate) fn play(mut self) -> Walked {
-        let start = self.game.start();
-        self.observe("(start)", &start);
-        self.opening();
-        let mut last: Option<Move> = None;
-        let mut repeats = 0;
-        loop {
-            if self.steps > MAX_STEPS {
-                self.fail(&format!("more than {MAX_STEPS} steps"));
-            }
-            if !self.saved_slot && self.steps > 40 {
-                self.saved_slot = true;
-                self.type_line("save 3");
-                assert_eq!(
-                    self.last_save,
-                    Some(SaveRequest::Slot(3)),
-                    "`save 3` asks for slot 3"
-                );
-            }
-            let next = Brain::new(&self.game, &self.plan).next_move();
-            match next {
-                Some(mv) => {
-                    // The same move again and again is a move that does not do what it
-                    // should (three conversations at most are ever asked for in a row).
-                    repeats = if last.as_ref() == Some(&mv) {
-                        repeats + 1
-                    } else {
-                        0
-                    };
-                    if repeats >= MAX_REPEATS {
-                        self.fail(&format!(
-                            "{mv:?} done {MAX_REPEATS} times in a row to no avail"
-                        ));
-                    }
-                    self.perform(&mv);
-                    last = Some(mv);
-                }
-                None => break,
-            }
-        }
-        self.finish()
-    }
-
-    /// The handle, the prologue skipped, the tutorial declined.
-    fn opening(&mut self) {
-        self.send("(handle)", Input::Line(HANDLE.to_owned()));
-        assert!(matches!(self.game.prompt(), Prompt::Continue));
-        // A plain frontend turns the word `skip` at a page into backing out.
-        self.send("(skip)", Input::Cancel);
-        assert!(matches!(self.game.prompt(), Prompt::Confirm { .. }));
-        self.send("(no tutorial)", Input::Confirm(false));
-        assert_eq!(self.game.prompt(), Prompt::Command);
-    }
-
-    fn finish(mut self) -> Walked {
-        let brain = Brain::new(&self.game, &self.plan);
-        let pending = brain.describe_pending();
-        let done = self.game.state().missions().status(&"m14".parse().unwrap())
-            == neon_engine::content::schema::QuestStatus::Completed;
-        if !done {
-            self.fail(&format!(
-                "the walk ran out of moves before the end:\n{pending}"
-            ));
-        }
-        // Leaving saves and ends the game.
-        self.type_line("quit");
-        self.settle(&Move::Tick);
-        assert_eq!(self.game.prompt(), Prompt::End, "quit ends the game");
-        Walked {
-            steps: self.steps,
-            hash: self.hash,
-            checkpoints: self.checkpoints,
-            reloads: self.reloads,
-            endings: self.endings,
-            epilogue: self.epilogue,
-            completed: self.completed,
-            rewarded: self.rewarded,
-            typed: self.typed,
-            script: self.script,
-            game: self.game,
-        }
-    }
-
-    // --------------------------------------------------------------------- a move
-
-    fn perform(&mut self, mv: &Move) {
-        let line = match mv {
-            Move::Accept(quest) => format!("accept {quest}"),
-            Move::Talk { contact, .. } => format!("talk {contact}"),
-            Move::Buy(item) => format!("buy {item}"),
-            Move::Hack(site) => format!("hack {site}"),
-            Move::Read(id) => {
-                let content = self.game.content();
-                let command = match content.readable(id).map(|r| r.kind) {
-                    Some(neon_engine::content::schema::ReadableKind::Mail) => "read",
-                    _ => "archives",
-                };
-                format!("{command} {id}")
-            }
-            Move::Decrypt(id) => format!("decrypt {id}"),
-            Move::Link(contact) => format!("link {contact}"),
-            Move::Use(command) => (*command).to_owned(),
-            Move::Cool(service) => format!("laylow {service}"),
-            Move::Tick => "talk echo7".to_owned(),
+    pub(crate) fn play(self) -> Walked {
+        let game = CampaignGame::new(self.difficulty, 7).unwrap();
+        let config = Config {
+            slot_save_after: Some(40),
+            ..Config::default()
         };
-        self.type_line(&line);
-        self.settle(mv);
-        if matches!(mv, Move::Hack(_)) {
-            self.play_intrusion(mv);
+        let name = self.plan.name();
+        let walk = Driver::new(game, self.plan, self.checks, config)
+            .play()
+            .unwrap_or_else(|stuck| panic!("plan [{name}]: {stuck}"));
+        let checks = walk.observer;
+        Walked {
+            steps: walk.steps,
+            hash: checks.hash,
+            checkpoints: checks.checkpoints,
+            reloads: checks.reloads,
+            endings: checks.endings,
+            epilogue: checks.epilogue,
+            completed: checks.completed,
+            rewarded: checks.rewarded,
+            typed: walk.typed,
+            script: walk.script,
+            game: walk.game,
         }
     }
+}
 
-    /// Plays the intrusion that `hack` opened to its end, typing the commands. The player takes
-    /// all the loot (the files are what the quests ask for), by the best plan the bounded solver
-    /// finds for a mission whose every loot is an objective: the same rules, so each of its
-    /// commands is a command of the real intrusion.
-    fn play_intrusion(&mut self, mv: &Move) {
-        while let Some(intrusion) = self.game.intrusion() {
-            let content = self.game.content();
-            let site = intrusion.site().clone();
-            let (Some(def), Some(site_def)) = (content.run(&site), content.site(&site)) else {
-                self.fail("an intrusion on a site that has none")
-            };
-            let mut greedy = def.clone();
-            for node in &mut greedy.node {
-                if node.loot.is_some() {
-                    node.loot = Some(LootKind::Objective);
-                }
-            }
-            let tier = site_def.unlock.tier.unwrap_or(1);
-            let Some(kit) = content.kit(tier) else {
-                self.fail("a site of a tier without a deck")
-            };
-            let Ok(mission) = greedy.mission(kit, self.game.state().difficulty().pace()) else {
-                self.fail("the greedy variant of an intrusion does not build")
-            };
-            let state = *intrusion.state();
-            let (Resolution::Optimal(plan) | Resolution::Best(plan)) =
-                auto_resolve(&mission, &state)
-            else {
-                self.fail("no plan for an intrusion of the content")
-            };
-            for action in &plan.actions {
-                if self.game.intrusion().is_none() {
-                    break;
-                }
-                let line = match action {
-                    Action::Move(node) => format!("move {}", node.number()),
-                    Action::Breach { node, program } => {
-                        format!("breach {} {}", node.number(), program.id())
-                    }
-                    Action::Use(utility) => format!("use {}", utility.program().id()),
-                    Action::Loot => "loot".to_owned(),
-                    Action::End => "end".to_owned(),
-                    Action::Jackout => "jackout".to_owned(),
-                };
-                self.type_line(&line);
-                self.settle(mv);
-            }
-            if self.game.intrusion().is_some() {
-                self.fail("a plan that does not end the intrusion");
-            }
-        }
-    }
+/// What is checked about each step of the walk.
+struct Checks {
+    reload: Reload,
+    modes: Vec<RenderMode>,
+    hash: u64,
+    checkpoints: usize,
+    reloads: usize,
+    endings: Vec<String>,
+    epilogue: Vec<String>,
+    completed: BTreeMap<String, u32>,
+    rewarded: i64,
+    last_said: String,
+}
 
-    /// Types a line at the command prompt.
-    fn type_line(&mut self, line: &str) {
-        assert_eq!(
-            self.game.prompt(),
-            Prompt::Command,
-            "`{line}` typed away from the command prompt"
-        );
-        self.typed.push(line.to_owned());
-        self.send(line, Input::Line(line.to_owned()));
-    }
-
-    /// Answers the prompts a command causes, until the command prompt is back.
-    fn settle(&mut self, mv: &Move) {
-        for _ in 0..MAX_PROMPTS {
-            match self.game.prompt() {
-                Prompt::Command | Prompt::End => return,
-                Prompt::Confirm { .. } => self.send("(yes)", Input::Confirm(true)),
-                Prompt::Continue => self.send("(continue)", Input::Continue),
-                Prompt::Text { .. } => self.fail("a text prompt in the middle of the walk"),
-                Prompt::Choice(choice) => {
-                    let ids: Vec<(&str, bool)> = choice
-                        .options
-                        .iter()
-                        .map(|o| (o.id.as_str(), o.available.is_ok()))
-                        .collect();
-                    let answer = Self::pick(mv, &ids);
-                    self.send(&format!("(menu {answer})"), Input::Line(answer));
-                }
-            }
-        }
-        self.fail("a menu that does not end");
-    }
-
-    /// The menu entry to take: what the move came for, else a topic not yet heard, else out.
-    fn pick(mv: &Move, options: &[(&str, bool)]) -> String {
-        let open = |id: &str| options.iter().any(|(o, ok)| *ok && *o == id);
-        if let Move::Talk { pay, decide, .. } = mv {
-            if let Some(quest) = pay {
-                let id = format!("pay:{quest}");
-                if open(&id) {
-                    return id;
-                }
-            }
-            if let Some((decision, choice)) = decide {
-                // The decision menu: the options are the choices themselves.
-                if options.iter().all(|(o, _)| !o.contains(':')) && open(choice.as_str()) {
-                    return choice.to_string();
-                }
-                let id = format!("decide:{decision}");
-                if open(&id) {
-                    return id;
-                }
-            }
-        }
-        options
-            .iter()
-            .find(|(id, ok)| *ok && id.starts_with("topic:"))
-            .map_or_else(|| "0".to_owned(), |(id, _)| (*id).to_owned())
-    }
-
-    // ----------------------------------------------------------------- one step
-
-    fn send(&mut self, what: &str, input: Input) {
-        self.recent.push_back(what.to_owned());
-        if self.recent.len() > 30 {
-            self.recent.pop_front();
-        }
-        self.script.push(match &input {
-            Input::Line(line) => line.clone(),
-            Input::Confirm(true) => "y".to_owned(),
-            Input::Confirm(false) => "n".to_owned(),
-            Input::Continue => String::new(),
-            Input::Cancel => "skip".to_owned(),
-            Input::Choice(_) | Input::Eof => unreachable!("the walk never sends {input:?}"),
-        });
-        let step = self.game.handle(input);
-        self.steps += 1;
-        self.observe(what, &step);
-    }
-
-    /// Everything checked about a step.
-    fn observe(&mut self, what: &str, step: &Step) {
+impl Observer for Checks {
+    fn observe(&mut self, game: &mut CampaignGame, what: &str, step: &Step) -> Result<(), String> {
         self.hash = fnv(self.hash, format!("{step:?}").as_bytes());
-        if step.prompt != self.game.prompt() {
-            self.fail(&format!("`{what}`: the step's prompt is not the game's"));
-        }
-        // Every prompt has a way forward: a menu has an entry that can be taken, or a way out.
-        if let Prompt::Choice(choice) = &step.prompt
-            && choice.cancel.is_none()
-            && choice
-                .options
-                .iter()
-                .all(|option| option.available.is_err())
-        {
-            self.fail(&format!("`{what}`: a menu with no way forward"));
-        }
         self.last_said.clear();
-        self.render_all(what, step);
-        self.check_drafts(what, step);
-        self.tally(what, step);
-        self.last_save = step.save;
+        self.render_all(game, what, step)?;
+        Self::check_drafts(what, step)?;
+        self.tally(what, step)?;
         match step.save {
             Some(SaveRequest::Checkpoint) => {
                 self.checkpoints += 1;
-                self.round_trip(what, self.reload != Reload::Never);
+                self.round_trip(game, what, self.reload != Reload::Never)
             }
-            Some(SaveRequest::Slot(_)) => self.round_trip(what, self.reload != Reload::Never),
+            Some(SaveRequest::Slot(_)) => self.round_trip(game, what, self.reload != Reload::Never),
             Some(SaveRequest::Autosave) => {
-                self.round_trip(what, self.reload == Reload::EverySave);
+                self.round_trip(game, what, self.reload == Reload::EverySave)
             }
-            None => {}
+            None => Ok(()),
         }
     }
 
+    fn context(&self) -> String {
+        self.last_said.clone()
+    }
+}
+
+impl Checks {
     /// Both languages render the step without a missing key or an argument left over.
-    fn render_all(&mut self, what: &str, step: &Step) {
+    fn render_all(&mut self, game: &CampaignGame, what: &str, step: &Step) -> Result<(), String> {
         for (lang, catalog) in catalogs() {
             for mode in &self.modes {
                 let mut said = String::new();
@@ -429,7 +189,7 @@ impl Player {
                 }
                 said.push_str(&render_prompt(&step.prompt, catalog, *mode));
                 // The side panel reads the view: its sections and the gauge's band.
-                let view = self.game.view();
+                let view = game.view();
                 for text in view
                     .sections
                     .iter()
@@ -442,7 +202,7 @@ impl Player {
                     said.push_str(&render(text, catalog, *mode));
                 }
                 if said.contains("<missing:") || said.contains("<?") {
-                    self.fail(&format!(
+                    return Err(format!(
                         "`{what}` in {lang:?} {mode:?} has a missing key or argument:\n{said}"
                     ));
                 }
@@ -451,43 +211,36 @@ impl Player {
                 }
             }
         }
+        Ok(())
     }
 
-    /// The texts of chapters 3 to 6 are still `TODO <key>` drafts, and the walk is allowed to
-    /// say them; every other text it needs is written: the interface, the opening, and the
-    /// quests of the first two chapters.
-    fn check_drafts(&self, what: &str, step: &Step) {
+    /// Every text of the game is written: none of the keys a step says is still a `TODO` draft.
+    fn check_drafts(what: &str, step: &Step) -> Result<(), String> {
         let mut keys = Vec::new();
         for text in step_texts(step) {
             collect_keys(text, &mut keys);
         }
         for key in keys {
-            let narrative = NARRATIVE.iter().any(|prefix| key.starts_with(prefix));
-            let chapter_one_or_two = ["quest.m01.", "quest.m02.", "quest.m03.", "quest.m04."]
-                .iter()
-                .any(|prefix| key.starts_with(prefix));
-            if narrative && !chapter_one_or_two {
-                continue;
-            }
             for (lang, catalog) in catalogs() {
                 // The key alone: its own template, without what its arguments bring.
                 let own = render(&Text::dynamic(key.clone()), catalog, RenderMode::FULL);
                 if own.starts_with("TODO ") {
-                    self.fail(&format!("`{what}`: `{key}` is still a draft in {lang:?}"));
+                    return Err(format!("`{what}`: `{key}` is still a draft in {lang:?}"));
                 }
             }
         }
+        Ok(())
     }
 
     /// Reads what the step said: errors are failures, the rest is counted.
-    fn tally(&mut self, what: &str, step: &Step) {
+    fn tally(&mut self, what: &str, step: &Step) -> Result<(), String> {
         for event in &step.events {
             let Event::Message { role, text, .. } = event else {
                 continue;
             };
             let key = text.key.as_ref();
             match role {
-                Role::Error => self.fail(&format!("`{what}` was refused: {key}")),
+                Role::Error => return Err(format!("`{what}` was refused: {key}")),
                 Role::Reward if key == "campaign.out.credits" => {
                     if let Some((_, Arg::Int(amount))) =
                         text.args.iter().find(|(name, _)| *name == "amount")
@@ -511,59 +264,35 @@ impl Player {
                 self.epilogue.push(key.to_owned());
             }
         }
+        Ok(())
     }
 
     /// The game is saved and loaded back: the copy must be the same game, and (when the walk
     /// asks for it) is the one that plays on.
-    fn round_trip(&mut self, what: &str, swap: bool) {
-        let text = self.game.snapshot().unwrap();
+    fn round_trip(
+        &mut self,
+        game: &mut CampaignGame,
+        what: &str,
+        swap: bool,
+    ) -> Result<(), String> {
+        let text = game.snapshot().unwrap();
         let loaded = CampaignGame::from_save(&text)
-            .unwrap_or_else(|e| self.fail(&format!("`{what}`: the save does not load: {e}")));
+            .map_err(|e| format!("`{what}`: the save does not load: {e}"))?;
         if loaded.snapshot().unwrap() != text {
-            self.fail(&format!("`{what}`: a loaded game saves differently"));
+            return Err(format!("`{what}`: a loaded game saves differently"));
         }
         // A game that is over is not saved as over: a loaded game is never finished.
-        let over = self.game.prompt() == Prompt::End;
-        if (!over && loaded.prompt() != self.game.prompt()) || loaded.view() != self.game.view() {
-            self.fail(&format!("`{what}`: a loaded game shows something else"));
+        let over = game.prompt() == Prompt::End;
+        if (!over && loaded.prompt() != game.prompt()) || loaded.view() != game.view() {
+            return Err(format!("`{what}`: a loaded game shows something else"));
         }
         if swap && !over {
-            self.game = loaded;
+            *game = loaded;
             self.reloads += 1;
         }
-    }
-
-    /// Stops the walk with the plan, the last things typed and the last thing said.
-    fn fail(&self, why: &str) -> ! {
-        let mut tail = String::new();
-        for line in &self.recent {
-            let _ = writeln!(tail, "    {line}");
-        }
-        let pending = Brain::new(&self.game, &self.plan).describe_pending();
-        panic!(
-            "plan [{}]: {why}\n  last inputs:\n{tail}  last said:\n{}\n  state:\n{pending}",
-            self.plan.name(),
-            self.last_said
-        );
+        Ok(())
     }
 }
-
-/// The families of keys that carry the story (`narrative_prefixes` of the glossary): their
-/// texts are the ones still being written.
-const NARRATIVE: &[&str] = &[
-    "quest.",
-    "contact.",
-    "frag.",
-    "doc.",
-    "mail.",
-    "cutscene.",
-    "decision.",
-    "ending.",
-    "epilogue.",
-    "node.",
-    "file.",
-    "item.",
-];
 
 /// Every text of a step: its events and its prompt.
 fn step_texts(step: &Step) -> Vec<&Text> {
