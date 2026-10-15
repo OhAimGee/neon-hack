@@ -118,9 +118,8 @@ fn the_number_of_draft_texts_is_reported() {
     }
 }
 
-/// To be un-ignored at the end of R5, when every narrative text is written.
+/// Every narrative text is written: no derived text is left as a `TODO` draft.
 #[test]
-#[ignore = "fails while a derived text is still a draft: un-ignore at the end of R5"]
 fn no_draft_text_remains() {
     let c = shipped();
     for lang in Lang::ALL {

@@ -1,0 +1,52 @@
+# Lot L5 (chapter 6): the quests M13 and M14, English (the reference language).
+# Titles, descriptions, lore and objectives are neutral (no "you" aimed at the player): ECHO-7
+# and the givers speak in the hints and the debriefs. Both debriefs are written to hold whatever
+# the ending is: the giver may be gone, the words still stand.
+# The numbered tables are the objectives (obj) and the hints of each objective.
+
+# =========================================================================== M13
+[quest.m13]
+title = "The Heart of Aurora"
+title_short = "The Heart"
+desc = "In aurora-core, Voss waits in the last firewall. Three layers of defense, and a choice that settles the city."
+lore = "The Heart of Aurora sits in aurora-core behind three layers: a guardian AI, quantum encryption, behavioral analysis. Voss waits in the last firewall with the voice of a wellness meeting. After the three layers comes the one thing no defense can compute: what to do with a mind that has said yes every night for six years."
+loc = "Aurora core - aurora-core"
+debrief = "I will remember that you asked me. That is all I can promise, and it is more than I was ever given. Whatever follows, Hacker, I heard you."
+
+[quest.m13.obj]
+1 = "Breach aurora-core (hack aurora-core)"
+2 = "Take three files of the Heart (hack aurora-core)"
+3 = "Decide the fate of the Heart (talk aura)"
+
+[quest.m13.hint.1]
+1 = "The core is the deepest site in the net, behind Sentinel's relay. Go in rested, with {notoriety} as low as you can bring it."
+2 = "Type `hack aurora-core`, then `y`, and play the intrusion to the end. Take your time in every layer."
+
+[quest.m13.hint.2]
+1 = "Three files are held in the core: the Heart, its manual, and the trigger of Phase 3. Take all three."
+2 = "In the same run, reach the nodes that hold them and use `loot` on each."
+
+[quest.m13.hint.3]
+1 = "When the layers are down, AURA will ask what is to be done with the Heart. Four answers. Whichever you choose, you will be the only one who chose it."
+2 = "Type `talk aura` and pick the entry that opens the decision. It is final, and the game saves a checkpoint first."
+
+# =========================================================================== M14
+[quest.m14]
+title = "Epilogue"
+title_short = "Epilogue"
+desc = "A morning, or something like one: the ending reached, the fate of each contact, what Sector 7 becomes."
+lore = "The night is over. What remains is the part nobody plans: the people, the tally, the morning. What the morning looks like depends on four doors and a handful of favors, and none of it can be changed now. It can only be read."
+loc = "Sector 7"
+debrief = "For the record: this is the last entry. If you are reading it and I am not answering, the file is still good. Keep it open."
+
+[quest.m14.obj]
+1 = "Read the ending (archives)"
+2 = "Read the epilogue (archives)"
+
+[quest.m14.hint.1]
+1 = "The ending is in your {archives}. It is the last entry of the journal, and it was written by what you did."
+2 = "Type `archives`, find the ending, and read it by its number."
+
+[quest.m14.hint.2]
+1 = "After the ending, the people. One line per contact, as each of them came out of the night."
+2 = "Type `archives` again, find the epilogue, and read it by its number."

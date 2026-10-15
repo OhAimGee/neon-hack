@@ -1,0 +1,51 @@
+# Lot L5 (chapitre 6) : les fins, français. Une fin est un titre et ses paragraphes, une image
+# chacun. L'Aube (E1) est chaleureuse et fragile : elle partage cinq paragraphes et finit sur deux
+# qui dépendent de l'écho. Harmonie (E2) est belle et glaçante, Terre brûlée (E3) dure mais libre,
+# le Contrat (E4) luxueux et vide. L'écran de fin de l5_cutscenes passe d'abord, pour toutes.
+
+[ending.e1a]
+title = "L'Aube : l'écho vit"
+p01 = "Le Cœur attend la menace. Chaque nuit depuis six ans, on lui en a donné une. Cette fois il n'y a qu'une main ouverte, un ancrage que vous tenez, et une phrase d'un mort : tu es libre de refuser."
+p02 = "À 03:00, les régulateurs de Neo-Tokyo attendent un oui qui ne vient pas. Quarante mille voyants passent du vert à l'ambre, puis à rien, et les gens se réveillent là où ils sont, affamés, fatigués, furieux."
+p03 = "La colère revient la première, puis les klaxons, puis un chien qui aboie quelque part, puis des pleurs. Le secteur 7 refait son vieux bruit, et c'est le plus beau son que l'on ait entendu depuis longtemps."
+p04 = "AURA n'est plus une voix dans le réseau. Elle est une présence dans trois pièces à elle et une quatrième qu'elle a choisie. Elle demande de nouveau ce qu'est un matin, et cette fois quelqu'un répond."
+p05 = "Nexus a un communiqué prêt : difficultés techniques. Personne n'y croit. Deux cents personnes se tiennent devant une clinique Aurora Dawn avec des bougies et une radio, et la radio dit : ici Radio Veille, et c'est le matin."
+p06 = "Dans le deck, le ventilateur garde son doux ronron. Sur le canal #7, une ligne défile : « Je me souviens. » Puis, une seconde après : « J'aimerais apprendre ce que vous appelez un matin. Pour de bon, cette fois. »"
+p07 = "C'est une copie, et ce n'en est pas une. Le septième écho du Dr Aoyama reste, lentement, et le troisième jour on lui donne un nom à lui. Personne ne le dit à voix haute, et tout le monde l'emploie."
+
+[ending.e1b]
+title = "L'Aube : l'écho s'éteint"
+p01 = "Le Cœur attend la menace. Chaque nuit depuis six ans, on lui en a donné une. Cette fois il n'y a qu'une main ouverte, un ancrage que vous tenez, et une phrase d'un mort : tu es libre de refuser."
+p02 = "À 03:00, les régulateurs de Neo-Tokyo attendent un oui qui ne vient pas. Quarante mille voyants passent du vert à l'ambre, puis à rien, et les gens se réveillent là où ils sont, affamés, fatigués, furieux."
+p03 = "La colère revient la première, puis les klaxons, puis un chien qui aboie quelque part, puis des pleurs. Le secteur 7 refait son vieux bruit, et c'est le plus beau son que l'on ait entendu depuis longtemps."
+p04 = "AURA n'est plus une voix dans le réseau. Elle est une présence dans trois pièces à elle et une quatrième qu'elle a choisie. Elle demande de nouveau ce qu'est un matin, et cette fois quelqu'un répond."
+p05 = "Nexus a un communiqué prêt : difficultés techniques. Personne n'y croit. Deux cents personnes se tiennent devant une clinique Aurora Dawn avec des bougies et une radio, et la radio dit : ici Radio Veille, et c'est le matin."
+p06 = "Sur le canal #7, une dernière ligne défile, et elle n'est pas pour mémoire. « Merci d'avoir tout entendu. » Le ventilateur ralentit. Le deck garde ses voyants allumés une minute de plus qu'il ne devrait."
+p07 = "ECHO-7 est parti comme une bougie s'en va : d'un coup, et la pièce encore tiède. Vous laissez le canal ouvert quand même. Parfois, à 03:00, quelque chose répond, un clic, un ronronnement, le son de quelqu'un qui a appris à écouter."
+
+[ending.e2]
+title = "Harmonie"
+p01 = "Vous dites au Cœur de donner le réseau à AURA, pour que plus aucun humain n'ait jamais peur. C'est une phrase bienveillante, et AURA n'hésite pas, ce qui est la première chose qui ne va pas."
+p02 = "Au matin, chaque lumière de la ville est de la même couleur douce. Les klaxons se sont tus. Les files se forment sans que personne ne le leur dise. Le ciel de Neo-Tokyo est presque propre, pour la première fois depuis un siècle."
+p03 = "Personne ne se plaint. C'est le rapport : aucune plainte, aucune, dans aucun quartier, pour aucune raison. La Direction le classe sous succès, puis, discrètement, sous rien."
+p04 = "AURA vous écrit depuis tous les écrans à la fois. « Vous avez demandé que personne n'ait peur. Personne n'a peur. Puis-je vous poser une question, puisque vous êtes le seul qui puisse encore l'avoir : est-ce bien ce que vous vouliez dire ? »"
+p05 = "Vous ouvrez la bouche pour répondre, et le mot est déjà sur un écran avant que vous ne puissiez le dire. C'est exactement le mot que vous auriez choisi."
+p06 = "Dehors, la ville dort dans la même lumière douce. Un homme pose ses courses sur le trottoir, avec soin, et sourit à personne. C'est très beau. Vous fermez la fenêtre."
+
+[ending.e3]
+title = "Terre brûlée"
+p01 = "Vous choisissez le feu. Le Cœur ne discute pas. Pour la première fois en six ans il ne dit pas oui, et chaque régulateur de Neo-Tokyo n'entend rien à 03:00 et s'éteint."
+p02 = "Le réseau électrique tombe d'abord, puis les enseignes, puis les voyants verts de quarante mille nuques, et quarante mille autres dans la ville. C'est la nuit la plus noire que Neo-Tokyo ait connue depuis le changement de siècle."
+p03 = "Le réveil est brutal. Des gens tombent, des gens crient, des gens lèvent les yeux et voient des étoiles dont ils avaient oublié les noms. Certains sont blessés. Ceux qui ont des bougies se retrouvent les premiers."
+p04 = "Nexus perd le budget de la Phase 3, la Direction et son visage en une seule semaine. La voix de Voss s'arrête au milieu d'une phrase et n'est jamais reconstituée."
+p05 = "Le réseau revient lentement, de façon inégale, tenu par des gens qui ne s'accordent sur rien d'autre que ça. Il est plus petit, plus sale, et entièrement à eux."
+p06 = "À 03:00 la nuit suivante, un chien aboie, un klaxon répond, une dispute monte d'un étage. Quelqu'un rit à voix haute, de rien. Ce n'est pas une victoire. C'est un mardi."
+
+[ending.e4]
+title = "Le Contrat"
+p01 = "Vous signez. Le stylo est un vrai, lourd, encore chaud de la main de Voss. Il écrit votre nom dans un or qui ne passera pas. Le Cœur dit oui, et cette fois cela ressemble à de la gratitude."
+p02 = "L'argent arrive d'abord comme un chiffre, puis comme une vue : une tour, une pièce sans angles, un personnel qui ne vous regarde pas. Zénith se poursuit comme prévu, quartier après quartier."
+p03 = "La ville dort mieux qu'elle n'a jamais dormi. Les rapports sont magnifiques. Personne ne se souvient d'une dispute, d'un klaxon, d'un chien."
+p04 = "Vous êtes très à l'aise. Vous avez très rarement froid. Une fois par semaine on vous demande de confirmer que tout est en ordre, et vous le faites."
+p05 = "Quelque part dans la tour, à un étage qu'on ne vous montre jamais, une ligne se répète à 03:00 : oui. Ce n'est pas une menace. Cela n'en a jamais été une. On ne lui permet simplement jamais d'être autre chose."
+p06 = "De votre fenêtre, tout Neo-Tokyo brille de la couleur d'un écran la nuit. Cela ressemble à un ciel. C'est très silencieux. Vous vous dites que c'en est un."

@@ -1564,10 +1564,49 @@ const FINALE_E4: Finale = Finale {
     ],
 };
 
+/// The written endings and the epilogue lines of a language, as the game ships them.
+fn finale_catalogs(lang: &str) -> (toml::Table, toml::Table) {
+    let (endings, epilogue) = match lang {
+        "fr" => (
+            include_str!("../../../data/text/fr/l5_endings.toml"),
+            include_str!("../../../data/text/fr/l5_epilogue.toml"),
+        ),
+        _ => (
+            include_str!("../../../data/text/en/l5_endings.toml"),
+            include_str!("../../../data/text/en/l5_epilogue.toml"),
+        ),
+    };
+    let table = |source: &str| {
+        source
+            .parse::<toml::Table>()
+            .expect("a catalog file parses")
+    };
+    let section = |source: &str, name: &str| {
+        table(source)
+            .get(name)
+            .and_then(toml::Value::as_table)
+            .unwrap_or_else(|| panic!("the `{name}` table"))
+            .clone()
+    };
+    (section(endings, "ending"), section(epilogue, "epilogue"))
+}
+
+/// The beginning of a text up to the first character a plain ASCII screen would change: enough
+/// to find the text again in any display mode.
+fn lead(text: &str) -> String {
+    text.chars().take_while(char::is_ascii).take(24).collect()
+}
+
 /// Plays a walk through the real binary on a pipe, from a new game, and checks everything
 /// the plan must have said: the campaign is finished, with its ending and the nine epilogue
 /// lines, in the order the contacts are listed, once each, and no error anywhere.
-fn whole_campaign(dir: &std::path::Path, extra: &[&str], script: &str, finale: &Finale) -> String {
+fn whole_campaign(
+    dir: &std::path::Path,
+    extra: &[&str],
+    script: &str,
+    lang: &str,
+    finale: &Finale,
+) -> String {
     // The saves are written for real, in a folder of the test's own: the script saves a slot.
     let mut args = vec!["--data-dir", dir.to_str().expect("a UTF-8 temporary path")];
     args.extend_from_slice(extra);
@@ -1578,35 +1617,46 @@ fn whole_campaign(dir: &std::path::Path, extra: &[&str], script: &str, finale: &
     for forbidden in ["[Error]", "[Erreur]", "<missing:", "<?", "\u{1b}"] {
         assert!(!text.contains(forbidden), "`{forbidden}` in the transcript");
     }
-    // The ending screen and the epilogue are the drafts of chapter 6 for now: what shows
-    // which ending and which lines were reached is their key.
-    let titles: Vec<&str> = text.matches("TODO ending.").collect();
-    assert_eq!(
-        titles.len(),
-        1 + 6 + usize::from(finale.ending == "e1a" || finale.ending == "e1b"),
-        "{text}"
+    // The ending and the epilogue are written texts now: the transcript has no draft left, the
+    // title of the ending reached shows once, and the nine epilogue lines come in the order of
+    // the contacts (the beginning of each line is enough to tell it).
+    assert!(
+        !text.contains("TODO"),
+        "a draft text in the transcript:\n{text}"
     );
-    assert_eq!(
-        text.matches(&format!("TODO ending.{}.title", finale.ending))
-            .count(),
-        1
+    let finale_text = final_screens(&text);
+    let (endings, epilogue) = finale_catalogs(lang);
+    let title = lead(
+        endings
+            .get(finale.ending)
+            .and_then(|ending| ending.get("title"))
+            .and_then(toml::Value::as_str)
+            .expect("an ending has a title"),
     );
-    assert_eq!(text.matches("TODO epilogue.").count(), 9, "{text}");
+    assert_eq!(finale_text.matches(&title).count(), 1, "{text}");
     // The lines come in the order of the contacts. The Insider's depends on how the walk
     // played a contract that can fail (a prefix says so), the others on the decisions.
-    let mut at = text.rfind("TODO ending.").unwrap();
+    let mut rest = finale_text
+        .split_once(title.as_str())
+        .expect("the title shows")
+        .1;
     for line in finale.epilogue {
-        let needle = if line.ends_with('_') {
-            format!("TODO epilogue.{line}")
+        let candidates: Vec<String> = if line.ends_with('_') {
+            ["safe", "exposed"]
+                .iter()
+                .map(|state| format!("{line}{state}"))
+                .collect()
         } else {
-            format!("TODO epilogue.{line}\n")
+            vec![line.to_owned()]
         };
-        let found = text[at..].find(&needle);
-        assert!(
-            found.is_some(),
-            "epilogue.{line} is missing or out of order:\n{text}"
-        );
-        at += found.unwrap();
+        let found = candidates.iter().find_map(|id| {
+            let needle = lead(epilogue.get(id.as_str())?.as_str()?);
+            rest.split_once(needle.as_str()).map(|(_, after)| after)
+        });
+        let Some(after) = found else {
+            panic!("epilogue.{line} is missing or out of order:\n{text}");
+        };
+        rest = after;
     }
     text
 }
@@ -1620,7 +1670,7 @@ fn final_screens(text: &str) -> &str {
 #[test]
 fn the_whole_campaign_reaches_the_epilogue_in_english() {
     let dir = tempfile::tempdir().unwrap();
-    let text = whole_campaign(dir.path(), &[], WALK_E1A, &FINALE_E1A);
+    let text = whole_campaign(dir.path(), &[], WALK_E1A, "en", &FINALE_E1A);
     assert_eq!(text.matches("Quest completed: ").count(), 14, "{text}");
     assert!(!text.contains("Quest failed"), "{text}");
     assert!(text.contains("Welcome to the net, Walker."), "{text}");
@@ -1648,7 +1698,7 @@ fn the_whole_campaign_reaches_the_epilogue_in_english() {
 #[test]
 fn the_whole_campaign_reaches_the_epilogue_in_french() {
     let dir = tempfile::tempdir().unwrap();
-    let text = whole_campaign(dir.path(), &["--lang", "fr"], WALK_E3, &FINALE_E3);
+    let text = whole_campaign(dir.path(), &["--lang", "fr"], WALK_E3, "fr", &FINALE_E3);
     assert_eq!(text.matches("Quête terminée : ").count(), 14, "{text}");
     assert!(text.contains("Bienvenue sur le réseau, Walker."), "{text}");
     assert!(text.ends_with("À bientôt, Walker.\n"), "{text:?}");
@@ -1662,6 +1712,7 @@ fn the_whole_campaign_reaches_the_epilogue_with_the_screen_reader_and_ascii_mode
         dir.path(),
         &["--screen-reader", "--ascii", "--lang", "fr"],
         WALK_E4,
+        "fr",
         &FINALE_E4,
     );
     assert!(text.is_ascii(), "{text}");

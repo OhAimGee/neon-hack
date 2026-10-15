@@ -1,0 +1,7 @@
+# Lot L5 (chapitre 6) : le fragment F23, français. Un fragment s'ouvre sur l'en-tête du document
+# (nature, émetteur, date), puis deux à quatre phrases, et son dernier mot laisse une question
+# ouverte.
+
+[frag.f23]
+title = "Cœur d'Aurora, manuel d'exploitation"
+body = "MANUEL, cœur d'Aurora, exploitation. 1. Le cœur confirme les régulateurs chaque nuit à 03:00. 2. La confirmation est garantie par une condition permanente : si le cœur refuse, chaque unité s'éteint. 3. La condition est une sécurité, pas une menace. 4. Les opérateurs sont rappelés à l'ordre : on ne demande pas au cœur ce qu'il ressent. Qui a écrit la règle quatre ?"

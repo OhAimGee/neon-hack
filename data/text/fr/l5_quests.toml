@@ -1,0 +1,51 @@
+# Lot L5 (chapitre 6) : les quêtes M13 et M14, français (langue source de la voix).
+# Titres, descriptions, contexte et objectifs sont neutres (ni tu ni vous visant le joueur) :
+# ECHO-7 et les donneurs parlent dans les indices et les débriefs. Les deux débriefs sont écrits
+# pour tenir quelle que soit la fin : le donneur peut avoir disparu, les mots restent.
+
+# =========================================================================== M13
+[quest.m13]
+title = "Le Cœur d'Aurora"
+title_short = "Le Cœur"
+desc = "Dans aurora-core, Voss attend dans le dernier pare-feu. Trois couches de défense, puis un choix pour la ville."
+lore = "Le Cœur d'Aurora se trouve dans aurora-core derrière trois couches : une IA gardienne, un chiffrement quantique, une analyse comportementale. Voss attend dans le dernier pare-feu avec la voix d'une réunion de bien-être. Après les trois couches vient ce qu'aucune défense ne sait calculer : que faire d'un esprit qui a dit oui chaque nuit pendant six ans."
+loc = "Cœur d'Aurora - aurora-core"
+debrief = "Je me souviendrai que vous me l'avez demandé. C'est tout ce que je peux promettre, et c'est plus que ce qu'on m'a jamais donné. Quoi qu'il arrive, Hacker, je vous ai entendu."
+
+[quest.m13.obj]
+1 = "Percer aurora-core (hack aurora-core)"
+2 = "Prendre trois fichiers du Cœur (hack aurora-core)"
+3 = "Trancher le sort du Cœur (talk aura)"
+
+[quest.m13.hint.1]
+1 = "Le cœur est le site le plus profond du réseau, derrière le relais de Sentinel. Entre reposé, avec une {notoriety} aussi basse que possible."
+2 = "Tape `hack aurora-core`, puis `y`, et joue l'intrusion jusqu'au bout. Prends ton temps dans chaque couche."
+
+[quest.m13.hint.2]
+1 = "Trois fichiers dorment dans le cœur : le Cœur lui-même, son manuel et le déclencheur de la Phase 3. Prends les trois."
+2 = "Dans le même run, rejoins les nœuds qui les gardent et utilise `loot` sur chacun."
+
+[quest.m13.hint.3]
+1 = "Quand les couches seront tombées, AURA demandera ce qu'on fait du Cœur. Quatre réponses. Quel que soit ton choix, tu seras le seul à l'avoir fait."
+2 = "Tape `talk aura` et choisis l'entrée qui ouvre la décision. Elle est définitive, et le jeu prend un point de contrôle avant."
+
+# =========================================================================== M14
+[quest.m14]
+title = "Épilogue"
+title_short = "Épilogue"
+desc = "Un matin, ou ce qui y ressemble : la fin atteinte, le sort de chaque contact, ce que devient le secteur 7."
+lore = "La nuit est finie. Reste la partie que personne ne planifie : les gens, le bilan, le matin. À quoi ressemble ce matin dépend de quatre portes et d'une poignée de services rendus, et rien de tout cela ne peut plus changer. On peut seulement le lire."
+loc = "Secteur 7"
+debrief = "Pour mémoire : c'est la dernière entrée. Si tu la lis et que je ne réponds pas, le dossier est bon quand même. Garde-le ouvert."
+
+[quest.m14.obj]
+1 = "Lire la fin (archives)"
+2 = "Lire l'épilogue (archives)"
+
+[quest.m14.hint.1]
+1 = "La fin est dans tes {archives}. C'est la dernière entrée du journal, et c'est ce que tu as fait qui l'a écrite."
+2 = "Tape `archives`, trouve la fin, et lis-la par son numéro."
+
+[quest.m14.hint.2]
+1 = "Après la fin, les gens. Une ligne par contact, comme chacun est sorti de la nuit."
+2 = "Tape à nouveau `archives`, trouve l'épilogue, et lis-le par son numéro."

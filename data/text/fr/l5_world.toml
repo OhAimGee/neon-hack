@@ -1,0 +1,14 @@
+# Lot L5 (chapitre 6) : le dernier site et ses fichiers, français.
+# Une ligne de nœud s'affiche avec la fiche d'un site (`net <site>`), une ligne de fichier dans les listes.
+
+[node.aurora_core]
+desc = "Cœur d'Aurora : le Cœur, sous trois couches."
+
+[file.aurora_core.aura_core]
+desc = "Le Cœur d'AURA, retenu"
+
+[file.aurora_core.core_manual]
+desc = "Manuel d'exploitation du cœur d'Aurora"
+
+[file.aurora_core.phase3_trigger]
+desc = "Déclencheur de la Phase 3 : Zénith"

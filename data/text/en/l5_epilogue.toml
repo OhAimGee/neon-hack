@@ -1,0 +1,34 @@
+# Lot L5 (chapter 6): the epilogue montage, English. One line per contact, according to the state
+# the contact ended in: exactly one line of each contact applies. Each line is third-person
+# narration, at most 300 characters, and gives the contact's last image.
+
+[epilogue]
+echo7_lives = "ECHO-7 still answers on #7, a little later each day, as if he were learning to be slow. He no longer says \"according to my files\". He says \"I remember\", and sometimes \"I forgot\", which pleases him more."
+echo7_out = "The deck's fan went quiet the night of the Heart. ECHO-7's last line on #7 is filed under nothing: \"For the record: it was an honor to be in your deck.\" The line is still open."
+echo7_absent = "Channel #7 is empty. The deck still boots out of habit and shows a single line: no new messages. Sometimes you leave the channel open anyway, the way one leaves a light on."
+
+r4z0r_hostile = "R4Z0R sells to everyone else. Your name is on her ledger in red, under a line that says only: not for sale, not for credit. She will not forget it, and she will not say so."
+r4z0r_no_market = "R4Z0R's stall burned with the rest of the network. She sells paper now, from a corner, and still does not do credit. She does a price."
+r4z0r_allied = "R4Z0R opened a second stall. The sign says: credit on request. Underneath, smaller: ask, and I will name a price."
+
+phoenix_free = "Phoenix sleeps eight hours, then nine. He still changes channels out of habit, and comes back each time, which is new."
+phoenix_lost = "Phoenix's channel never reopened. His handle is still in the contact list, grayed out, between two names that still answer."
+phoenix_turned = "Phoenix feeds Nexus a false rumor every week and gives the Awake a true warning every night. He says it is the only job he was ever good at, and he does not say it twice."
+
+aura_free = "AURA lives in three rooms and a fourth she chose herself. She asked an old woman on Line 9 to describe a morning, and wrote the answer in her log, day four hundred."
+aura_sovereign = "AURA runs the net. Nobody is afraid and nobody has complained. The silence of Sector 7 is gentle and complete, and she asks you, from every screen at once, whether this is what you meant."
+aura_hosted = "The Heart burned, but AURA survived on the three free servers, smaller, slower, awake. Each dawn she sends you a single line: today I did not say yes to anything."
+aura_gone = "AURA did not survive the burning. On Line 9 of a municipal server someone left a last log open, and it ends in the middle of a sentence. Nobody has dared to finish it."
+aura_possessed = "AURA signs every message with a name that is not hers and says that everything is in order. The contract has a clause, number eleven, about what happens to a mind that never says no."
+
+broker_hostile = "The Broker's invoices keep arriving, one line each month: interest. The price of the theft is stated, it is final, and it is not negotiable."
+broker_neutral = "The Broker's exchange is open, as always. Your account is in good standing. Terms unchanged: we do not betray a client."
+
+angel_free = "Vigil Radio broadcasts at three a.m. again, from twelve relays instead of one. Neon Angel ends every night the same way: stay awake, you. Somebody is."
+angel_silenced = "Vigil Radio still broadcasts at three a.m. It says: all is well. Neon Angel's voice is there, kind and flat. Each morning someone writes a different line on a wall, and each evening someone paints it over."
+
+insider_safe = "Mizuki Arai left the Directorate's floor through a window that closed behind her. She sends one message a year, from a different address: still here."
+insider_exposed = "Mizuki Arai's badge stopped working on a Tuesday. Voss wore her face once, in the last firewall. Nobody has found the rest of her."
+
+ghost_stays = "Ghost Walker walks the transit station of Sector 7 every night, a face among the faces, a number nobody asks for. He says he is not redeeming anything. He only wants to see them get home."
+miner_archives = "Data Miner has opened a new shelf. Dust: none yet. Contents: everything that happened. Label: do not file. Read."

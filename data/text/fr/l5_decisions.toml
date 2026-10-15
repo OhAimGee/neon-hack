@@ -1,0 +1,17 @@
+# Lot L5 (chapitre 6) : la décision D3, le Cœur, français. L'invite est ce qu'AURA dit avant le
+# choix, un libellé est une entrée du menu. Le choix est définitif et règle la fin.
+
+[decision.d3]
+prompt = "Hacker, le Cœur est devant nous, et je ferai ce que vous déciderez. Je ne prétendrai pas n'avoir aucun avis, mais je ne le dirai pas la première. Quatre portes. Laquelle ?"
+
+[decision.d3.choice.liberate]
+label = "La libérer : une poignée de main à la place du oui forcé"
+
+[decision.d3.choice.entrust]
+label = "Lui confier : AURA prend le réseau, plus personne n'a peur"
+
+[decision.d3.choice.burn]
+label = "Le brûler : détruire le Cœur et la poussée"
+
+[decision.d3.choice.sign]
+label = "Signer le contrat de Voss : liberté, fortune, Zénith continue"

@@ -1,0 +1,6 @@
+# Lot L5 (chapter 6): the fragment F23, English. A fragment opens with the header of the document
+# (kind, sender, date), then two to four sentences, and its last word leaves a question open.
+
+[frag.f23]
+title = "Aurora Core Operating Manual"
+body = "MANUAL, Aurora core, operations. 1. The core confirms the regulators every night at 03:00. 2. Confirmation is secured by a standing condition: should the core refuse, every unit powers down. 3. The condition is a safeguard, not a threat. 4. Operators are reminded that the core is not to be asked how it feels. Who wrote rule four?"
