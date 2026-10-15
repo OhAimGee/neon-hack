@@ -415,3 +415,68 @@ fn an_automatic_intrusion_always_finds_a_plan_and_never_beats_the_exact_one() {
         }
     }
 }
+
+// ------------------------------------------------------------------- the deck of a player
+
+#[test]
+fn a_program_the_stall_sells_is_in_the_deck_only_of_the_player_who_owns_its_item() {
+    use neon_engine::content::Stock;
+    use std::collections::BTreeSet;
+
+    let c = shipped();
+    let id = site("corp-server-01");
+    let has = |mission: &Mission, program: Program| mission.supply(program).is_some();
+    let count = |mission: &Mission| Program::ALL.iter().filter(|p| has(mission, **p)).count();
+    let none = BTreeSet::new();
+    let owning: BTreeSet<_> = ["prog_exploit".parse().unwrap()].into_iter().collect();
+
+    let everything = c
+        .mission_holding(&id, Pace::NORMAL, Stock::Everything)
+        .unwrap();
+    let empty_handed = c
+        .mission_holding(&id, Pace::NORMAL, Stock::Owned(&none))
+        .unwrap();
+    let with_exploit = c
+        .mission_holding(&id, Pace::NORMAL, Stock::Owned(&owning))
+        .unwrap();
+
+    // The tools see the whole deck of the tier, which is the deck `mission` has always given.
+    assert!(has(&everything, Program::Exploit));
+    assert_eq!(
+        count(&c.mission(&id, Pace::NORMAL).unwrap()),
+        count(&everything)
+    );
+    // The player who bought nothing keeps the programs nobody sells.
+    for base in [Program::BruteForce, Program::Backdoor, Program::Cloak] {
+        assert!(has(&empty_handed, base), "{base:?}");
+    }
+    assert!(!has(&empty_handed, Program::Exploit));
+    assert!(!has(&empty_handed, Program::Decrypt));
+    // Owning an item puts its program in the deck, and only that one.
+    assert!(has(&with_exploit, Program::Exploit));
+    assert!(!has(&with_exploit, Program::Decrypt));
+    assert!(count(&with_exploit) > count(&empty_handed));
+}
+
+#[test]
+fn every_program_of_a_deck_beyond_the_base_one_is_sold_at_the_tier_it_appears() {
+    let c = shipped();
+    for kit in &c.kits {
+        for program in &kit.programs {
+            if !c.is_sold(*program) {
+                continue;
+            }
+            let item = c
+                .items
+                .iter()
+                .find(|item| item.program == Some(*program))
+                .unwrap();
+            let sold_from = item.unlock.tier.unwrap_or(1);
+            assert!(
+                sold_from <= kit.tier,
+                "{program:?} is in the deck of tier {} but sold from tier {sold_from}",
+                kit.tier
+            );
+        }
+    }
+}

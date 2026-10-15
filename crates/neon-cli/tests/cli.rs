@@ -1276,8 +1276,8 @@ fn the_first_three_quests_play_to_the_end_through_the_real_binary() {
     let text = campaign(&[], FIRST_QUESTS);
     assert_eq!(text.matches("Quest completed: ").count(), 3, "{text}");
     assert!(text.contains("[Reward] Reached level 3."), "{text}");
-    assert!(text.contains("Credits: 555"), "{text}");
-    assert!(text.contains("Notoriety: 29/100 (Discreet)"), "{text}");
+    assert!(text.contains("Credits: 375"), "{text}");
+    assert!(text.contains("Notoriety: 31/100 (Watched)"), "{text}");
     assert!(!text.contains("[Error]"), "{text}");
     assert!(text.ends_with("Goodbye, Walker.\n"), "{text:?}");
 }

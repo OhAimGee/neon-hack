@@ -322,3 +322,19 @@ proptest! {
         }
     }
 }
+
+#[test]
+fn the_dominance_keeps_a_node_part_way_open_when_a_virus_can_still_use_it() {
+    // A seed the property test found: an open node is not better than a node open part way when
+    // the Virus that finishes it also puts down the patrol standing there. The optimum with
+    // dominance (the default) has to be the brute force's.
+    let mission = small_mission(12_663_343_630_951_363_990);
+    let expected = brute_force(&mission);
+    assert_eq!(expected, Some(11));
+    let report = optimum(&mission, 0);
+    let Outcome::Solved { plan, optimal } = &report.outcome else {
+        panic!("{:?}", report.outcome);
+    };
+    assert!(*optimal);
+    assert_eq!(Some(plan.trace), expected);
+}

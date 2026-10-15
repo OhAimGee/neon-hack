@@ -4,8 +4,6 @@ expression: "picture(&app, 64, 20)"
 ---
 64x20
  Neon │ Notoriété 2/100 (Discret)
-[Gain] +80 crédits
-[Gain] +10 réputation
 ╭Étal──────────────────────────────────────────────────────────╮
 │ [1] ghost_protocol - Ghost Protocol - 80 crédits -           │
 │ disponible                                                   │
@@ -17,9 +15,11 @@ expression: "picture(&app, 64, 20)"
 │ niveau 4 requis                                              │
 │ [5] quantum_chip - Quantum Processing Chip - 800 crédits -   │
 │ niveau 5 requis                                              │
-╰ Échap ferme ─────────────────────────────────────────────────╯
-niveau 4 requis
-[5] quantum_chip - Quantum Processing Chip - 800 crédits -
-niveau 5 requis
+│ [6] prog_exploit - Kit d'exploits - 100 crédits - disponible │
+│ [7] prog_decrypt - Suite de déchiffrement - 100 crédits -    │
+│ disponible                                                   │
+│ [8] prog_spoof - Module de leurre - 80 crédits - disponible  │
+│ [9] prog_quantum - Casseur quantique - 250 crédits - niveau  │
+╰ 1-15/24 | PgUp/PgDn défiler | Échap ferme ───────────────────╯
 >
 F2 panneau | Tab compléter | Ctrl+C quitter

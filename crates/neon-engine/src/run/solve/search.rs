@@ -11,7 +11,7 @@ use std::collections::{BTreeMap, BinaryHeap};
 
 use super::super::action::{Action, Utility};
 use super::super::mission::Mission;
-use super::super::program::PROGRAM_COUNT;
+use super::super::program::{PROGRAM_COUNT, Program};
 use super::super::rules::{apply, legal_actions};
 use super::super::state::{RunState, Status};
 use super::bound::Bound;
@@ -65,7 +65,11 @@ impl Entry {
 
     /// `self` is no worse than `other` on every axis: lower Trace, lower floor, fewer turns,
     /// more progress, patrols down at least as long, at least as many charges.
-    fn dominates(&self, other: &Self) -> bool {
+    ///
+    /// With `exact_progress`, the progress must be the same: more progress is no better when a
+    /// breach has an effect of its own (a Virus puts down the patrols standing on the node), so a
+    /// node that is only part way open can still be worth more than one that is open.
+    fn dominates(&self, other: &Self, exact_progress: bool) -> bool {
         self.trace <= other.trace
             && self.floor <= other.floor
             && self.turns <= other.turns
@@ -73,7 +77,7 @@ impl Entry {
                 .progress
                 .iter()
                 .zip(&other.progress)
-                .all(|(a, b)| a >= b)
+                .all(|(a, b)| if exact_progress { a == b } else { a >= b })
             && self.down.iter().zip(&other.down).all(|(a, b)| a >= b)
             && self.charges.iter().zip(&other.charges).all(|(a, b)| a >= b)
     }
@@ -84,12 +88,20 @@ impl Entry {
 type Bucket = (usize, u8, u32, bool, bool, u8);
 
 /// The expanded states, by bucket.
-#[derive(Default)]
 struct Dominance {
     buckets: BTreeMap<Bucket, Vec<Entry>>,
+    /// Whether progress must be equal for one state to dominate another (the deck has a Virus).
+    exact_progress: bool,
 }
 
 impl Dominance {
+    fn new(mission: &Mission) -> Self {
+        Self {
+            buckets: BTreeMap::new(),
+            exact_progress: mission.supply(Program::Virus).is_some(),
+        }
+    }
+
     /// True if `state` is dominated; otherwise records it, dropping what it dominates.
     fn check_insert(&mut self, state: &RunState, turns: u32) -> bool {
         let entry = Entry::of(state, turns);
@@ -106,10 +118,10 @@ impl Dominance {
             .or_default();
         let mut index = 0;
         while let Some(other) = bucket.get(index) {
-            if other.dominates(&entry) {
+            if other.dominates(&entry, self.exact_progress) {
                 return true;
             }
-            if entry.dominates(other) {
+            if entry.dominates(other, self.exact_progress) {
                 bucket.swap_remove(index);
             } else {
                 index += 1;
@@ -257,7 +269,7 @@ pub(super) fn search(mission: &Mission, start: &RunState, settings: Settings) ->
         index: BTreeMap::new(),
         nodes: Vec::new(),
         heap: BinaryHeap::new(),
-        dominance: settings.dominance.then(Dominance::default),
+        dominance: settings.dominance.then(|| Dominance::new(mission)),
         stats: Stats::default(),
         incumbent: i32::MAX,
         incumbent_node: None,

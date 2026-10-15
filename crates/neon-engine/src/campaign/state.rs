@@ -14,6 +14,7 @@ use serde::{Deserialize, Serialize};
 use crate::content::Content;
 use crate::content::ids::{ContactId, DecisionId, ItemId, QuestId, ReadableId, SiteId};
 use crate::content::money::Credits;
+use crate::content::runs::Stock;
 use crate::content::schema::{ContactState, HintBudgets, QuestStatus, ReadableKind, SiteDef, Turn};
 use crate::content::state::{HEAT_MAX, State};
 use crate::intrusion::Intrusion;
@@ -484,9 +485,16 @@ impl CampaignState {
         if !self.flows.is_empty() {
             return Err("a menu is open during an intrusion".to_owned());
         }
-        Intrusion::resume(c, &run.site, self.difficulty, run.turn_start, run.undo)
-            .map(|_| ())
-            .map_err(|error| error.to_string())
+        Intrusion::resume(
+            c,
+            &run.site,
+            self.difficulty,
+            Stock::Owned(&self.missions.owned),
+            run.turn_start,
+            run.undo,
+        )
+        .map(|_| ())
+        .map_err(|error| error.to_string())
     }
 
     fn validate_mods(&self, c: &Content) -> Result<(), String> {

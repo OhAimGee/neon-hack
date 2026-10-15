@@ -42,3 +42,28 @@ desc = "Reads ICE patterns for you. Nexus-grade, and priced like it."
 
 [item.quantum_chip]
 desc = "Opens quantum-sealed documents. R4Z0R won't say where it came from."
+
+[item.prog_exploit]
+desc = "A kit of known flaws for network defenses. Strong, quiet, a few charges."
+
+[item.prog_decrypt]
+desc = "A patient key-breaker. Steady against encryption."
+
+[item.prog_spoof]
+desc = "Forges the log entries of your own noise. Erases Trace gained earlier in the turn."
+
+[item.prog_quantum]
+desc = "The sharpest tool against encryption. Spends its charges fast."
+
+[item.prog_social]
+desc = "Scripts for the human link. Works only on a site you have intel on."
+
+[item.prog_virus]
+desc = "A parasite for guardian AIs. Also takes down the sentinels on the node."
+
+[item.prog_ghost]
+desc = "Runs your next actions in silence."
+
+[item.prog_overclock]
+desc = "Squeezes more cycles out of the deck for a little noise."
+

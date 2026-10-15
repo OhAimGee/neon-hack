@@ -6,8 +6,8 @@
 //! are the same on every machine. Only the counts of expansions measure the work.
 
 use neon_engine::campaign::Difficulty;
-use neon_engine::content::Content;
 use neon_engine::content::ids::SiteId;
+use neon_engine::content::{Content, Stock};
 use neon_engine::run::solve::{Goal, Outcome, PROOF_EXPANSIONS, optimum, solve};
 use neon_engine::run::{LootKind, Mission, Pace};
 use serde::{Deserialize, Serialize};
@@ -61,10 +61,16 @@ impl Loot {
     }
 }
 
-/// The intrusion of a site where every loot is an objective, with the deck of its tier: the
-/// variant the optimist plays, and the one the measures of [`Loot::All`] solve.
+/// The intrusion of a site where every loot is an objective, with the deck of its tier that a
+/// player holding `stock` has: the variant the optimist plays, and (with everything) the one the
+/// measures of [`Loot::All`] solve.
 #[must_use]
-pub fn full_loot_mission(content: &Content, site: &SiteId, pace: Pace) -> Option<Mission> {
+pub fn full_loot_mission(
+    content: &Content,
+    site: &SiteId,
+    pace: Pace,
+    stock: Stock<'_>,
+) -> Option<Mission> {
     let def = content.run(site)?;
     let tier = content.site(site)?.unlock.tier.unwrap_or(1);
     let kit = content.kit(tier)?;
@@ -74,7 +80,7 @@ pub fn full_loot_mission(content: &Content, site: &SiteId, pace: Pace) -> Option
             node.loot = Some(LootKind::Objective);
         }
     }
-    greedy.mission(kit, pace).ok()
+    greedy.mission(kit, &content.deck(kit, stock), pace).ok()
 }
 
 /// A site at a difficulty.
@@ -118,7 +124,7 @@ pub fn measure(
                 Loot::Objective => content
                     .mission(&site.id, level.pace())
                     .map(|mission| mission.unlimited_only()),
-                Loot::All => full_loot_mission(content, &site.id, level.pace()),
+                Loot::All => full_loot_mission(content, &site.id, level.pace(), Stock::Everything),
             };
             let Some(mission) = mission else {
                 continue;

@@ -134,8 +134,8 @@ fn a_screen_taller_than_the_room_turns_its_own_pages() {
     let mut app = modal_app(&mut game, &catalog, RenderMode::FULL);
     open_the_stall(&mut app);
     type_line(&mut app, "shop");
-    // Few rows: the keys are the log's.
-    let _ = screen(&app, 64, 20);
+    // Rows to spare (the stall sells a dozen things): the keys are the log's.
+    let _ = screen(&app, 64, 60);
     assert!(!app.modal.as_ref().unwrap().overflow.get());
     press(&mut app, KeyCode::PageUp);
     assert!(app.scroll.get() > 0, "the log is scrolled");

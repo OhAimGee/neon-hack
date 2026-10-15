@@ -6,7 +6,7 @@ use crate::campaign::Difficulty;
 use crate::command::{ArgKind, ArgRef, CommandSpec, Listing, Resolver};
 use crate::content::Content;
 use crate::content::ids::SiteId;
-use crate::content::runs::site_tier;
+use crate::content::runs::{Stock, site_tier};
 use crate::event::{Event, Severity};
 use crate::game::View;
 use crate::prompt::Prompt;
@@ -114,8 +114,9 @@ impl Intrusion {
         content: &Content,
         site: &SiteId,
         difficulty: Difficulty,
+        stock: Stock<'_>,
     ) -> Result<Self, StartError> {
-        let (mission, nominal) = Self::mission_of(content, site, difficulty)?;
+        let (mission, nominal) = Self::mission_of(content, site, difficulty, stock)?;
         Ok(Self::from_mission(site.clone(), difficulty, mission).with_nominal_trace(nominal))
     }
 
@@ -128,10 +129,11 @@ impl Intrusion {
         content: &Content,
         site: &SiteId,
         difficulty: Difficulty,
+        stock: Stock<'_>,
         turn_start: RunState,
         undo: Undo,
     ) -> Result<Self, StartError> {
-        let (mission, nominal) = Self::mission_of(content, site, difficulty)?;
+        let (mission, nominal) = Self::mission_of(content, site, difficulty, stock)?;
         if let Some(reason) = mission.turn_start_error(&turn_start) {
             return Err(StartError::BadSave {
                 site: site.as_str().to_owned(),
@@ -152,12 +154,13 @@ impl Intrusion {
         content: &Content,
         site: &SiteId,
         difficulty: Difficulty,
+        stock: Stock<'_>,
     ) -> Result<(Mission, u8), StartError> {
         let def = content
             .site(site)
             .ok_or_else(|| StartError::UnknownSite(site.as_str().to_owned()))?;
         let mission = content
-            .mission(site, difficulty.pace())
+            .mission_holding(site, difficulty.pace(), stock)
             .ok_or_else(|| StartError::NoIntrusion(site.as_str().to_owned()))?;
         let tier = usize::from(site_tier(def)).max(1);
         let nominal = content

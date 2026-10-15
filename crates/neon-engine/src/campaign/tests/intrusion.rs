@@ -209,8 +209,13 @@ fn every_site_of_the_content_has_a_plan_the_driver_can_follow() {
     let driver = manual(Difficulty::Normal);
     let content = driver.game.content;
     for run in &content.runs {
-        let intrusion = crate::intrusion::Intrusion::new(content, &run.site, Difficulty::Normal)
-            .expect("an intrusion for every site");
+        let intrusion = crate::intrusion::Intrusion::new(
+            content,
+            &run.site,
+            Difficulty::Normal,
+            crate::content::Stock::Everything,
+        )
+        .expect("an intrusion for every site");
         let solved = solve(
             intrusion.run().mission(),
             intrusion.state(),

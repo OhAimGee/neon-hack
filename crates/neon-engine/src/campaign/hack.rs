@@ -18,7 +18,7 @@ use crate::command::ArgRef;
 use crate::content::Fact;
 use crate::content::eval::applicable;
 use crate::content::ids::SiteId;
-use crate::content::runs::site_tier;
+use crate::content::runs::{Stock, site_tier};
 use crate::content::schema::{Goal, Objective, QuestStatus, SiteMark};
 use crate::event::{Effect, Event, Severity};
 use crate::intrusion::{Intrusion, Question, Reply};
@@ -64,7 +64,12 @@ impl CampaignGame {
             events.push(Event::error(Text::new("campaign.reason.site_unknown")));
             return;
         }
-        let intrusion = match Intrusion::new(self.content, site, self.state.difficulty) {
+        let intrusion = match Intrusion::new(
+            self.content,
+            site,
+            self.state.difficulty,
+            Stock::Owned(&self.state.missions.owned),
+        ) {
             Ok(intrusion) => intrusion,
             Err(error) => {
                 events.push(Event::error(

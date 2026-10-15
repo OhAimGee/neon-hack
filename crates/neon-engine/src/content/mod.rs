@@ -37,4 +37,5 @@ pub mod view;
 pub use engine::{Outcome, new_game, refresh};
 pub use loader::{Content, Diagnostic, File, LoadError, Sources};
 pub use money::{Credits, Reputation};
+pub use runs::Stock;
 pub use state::{Fact, State};

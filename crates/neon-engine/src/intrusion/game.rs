@@ -7,6 +7,7 @@ use thiserror::Error;
 use crate::campaign::{Difficulty, embedded_content};
 use crate::command::{ArgRef, Availability, Capabilities, CommandSpec, Lookup, NoLists};
 use crate::content::ids::SiteId;
+use crate::content::runs::Stock;
 use crate::event::Event;
 use crate::game::{Game, View};
 use crate::prompt::{Input, Prompt, Step};
@@ -57,7 +58,7 @@ impl IntrusionGame {
             .parse()
             .map_err(|_| IntrusionError::BadSite(site.to_owned()))?;
         Ok(Self {
-            intrusion: Intrusion::new(content, &id, difficulty)?,
+            intrusion: Intrusion::new(content, &id, difficulty, Stock::Everything)?,
             question: None,
             over: false,
             frontend: Capabilities::PLAIN,

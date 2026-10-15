@@ -38,6 +38,7 @@ pub use state::{Band, CampaignState, Difficulty, SiteStatus};
 use thiserror::Error;
 
 use crate::command::{Availability, Capabilities};
+use crate::content::runs::Stock;
 use crate::content::schema::QuestStatus;
 use crate::content::{Content, Fact};
 use crate::event::{Event, Gauge, ScreenKind, Severity, Table};
@@ -116,6 +117,7 @@ impl CampaignGame {
                     content,
                     &run.site,
                     state.difficulty,
+                    Stock::Owned(&state.missions.owned),
                     run.turn_start,
                     run.undo,
                 )

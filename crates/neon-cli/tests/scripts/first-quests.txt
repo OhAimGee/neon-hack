@@ -23,16 +23,21 @@ laylow
 read mail-welcome
 talk r4z0r
 topic:how_to_earn
+buy prog_spoof
+y
+buy prog_decrypt
+y
 hack corp-server-01
 y
 move 3
 loot
 use cloak
 end
-breach 4 exploit
+breach 4 brute
+use spoof
 use cloak
 end
-breach 4 backdoor
+breach 4 brute
 move 4
 loot
 jackout
@@ -60,47 +65,53 @@ move 3
 loot
 use cloak
 end
-breach 4 exploit
+breach 4 brute
+use spoof
 use cloak
 end
-breach 4 backdoor
+breach 4 brute
 move 4
 loot
 jackout
 hack nexus-mainframe
 y
-breach 2 exploit
-breach 2 backdoor
-end
+breach 2 brute
+breach 2 brute
 move 2
 breach 4 decrypt
 end
 breach 3 backdoor
+breach 3 brute
 breach 4 decrypt
-breach 3 backdoor
 end
-breach 3 backdoor
-use spoof
+move 3
+loot
+use cloak
+end
+breach 5 backdoor
+move 2
 move 4
 loot
-end
-breach 6 quantum
 end
 breach 6 decrypt
-move 6
-loot
-end
-breach 5 backdoor
-move 4
 move 2
+end
 move 3
 end
+breach 5 backdoor
+move 2
+end
+move 4
+breach 6 decrypt
+breach 6 decrypt
+use spoof
+end
+move 6
+breach 5 backdoor
+breach 5 backdoor
+use spoof
+end
 loot
-end
-breach 5 backdoor
-end
-breach 5 backdoor
-breach 5 backdoor
 move 5
 loot
 jackout

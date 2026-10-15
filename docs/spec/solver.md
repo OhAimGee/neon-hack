@@ -84,3 +84,7 @@ Le modèle est une lecture de l'audit (chaque écart est marqué `CHOICE` dans `
 
 
 **Lot R4.6.** `skip` de la campagne appelle `auto_resolve` depuis l'état du tour en cours ; l'étape 3 règle l'état sur la Trace nominale du palier (`[auto_resolve] nominal_trace = [16, 32, 48, 64, 80, 96]`) par `Mission::settled_at`, un état que la validation d'une sauvegarde accepte. La campagne ne s'en sert plus pour `hack`.
+
+## Correctif de la dominance (lot R6.8)
+
+La dominance du solveur (`neon_engine::run::solve`) écarte un état qu'un autre état déjà développé « domine » (Trace, plancher, tours, progression, patrouilles à terre et charges au moins aussi bons). La progression plus avancée n'est **pas** toujours meilleure : une brèche au `Virus` met à terre les patrouilles qui se tiennent sur le nœud, y compris celle qui l'ouvre, alors qu'un nœud déjà ouvert par un autre programme ne peut plus produire cet effet. La propriété `the_optimum_agrees_with_the_brute_force` l'a trouvé sur une graine aléatoire (un optimum de 12 annoncé optimal, 11 pour la force brute). **Quand le deck de la mission contient un `Virus`, la dominance exige une progression égale** (`exact_progress`) ; sans `Virus` elle reste « au moins aussi avancée ». Les 64 mesures de sites (T2 à T4) sont identiques avant et après, état par état.

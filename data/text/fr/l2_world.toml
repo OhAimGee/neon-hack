@@ -42,3 +42,28 @@ desc = "Lit les motifs de glace à ta place. Qualité Nexus, prix Nexus."
 
 [item.quantum_chip]
 desc = "Ouvre les documents scellés en quantique. R4Z0R ne dit pas d'où elle vient."
+
+[item.prog_exploit]
+desc = "Un lot de failles connues contre les défenses réseau. Puissant, discret, quelques charges."
+
+[item.prog_decrypt]
+desc = "Un casseur de clés patient. Constant contre le chiffrement."
+
+[item.prog_spoof]
+desc = "Falsifie les traces de votre propre bruit. Efface la Trace gagnée plus tôt dans le tour."
+
+[item.prog_quantum]
+desc = "L'outil le plus tranchant contre le chiffrement. Ses charges partent vite."
+
+[item.prog_social]
+desc = "Des scripts pour le maillon humain. Ne marche que sur un site dont vous avez des infos."
+
+[item.prog_virus]
+desc = "Un parasite pour les IA gardiennes. Neutralise aussi les sentinelles du nœud."
+
+[item.prog_ghost]
+desc = "Exécute vos prochaines actions en silence."
+
+[item.prog_overclock]
+desc = "Arrache plus de cycles au deck pour un peu de bruit."
+

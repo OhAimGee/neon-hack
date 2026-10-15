@@ -176,7 +176,7 @@ impl V<'_> {
             let Some(kit) = c.kit(tier) else {
                 continue;
             };
-            if let Err(error) = run.mission(kit, Pace::NORMAL) {
+            if let Err(error) = run.mission(kit, &kit.programs, Pace::NORMAL) {
                 self.err(f, run.at, format!("{ctx}: {error}"));
             }
             let mut linked = BTreeSet::new();
