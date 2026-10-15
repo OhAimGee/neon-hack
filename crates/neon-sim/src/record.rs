@@ -69,12 +69,16 @@ pub struct GameRecord {
     pub commands: u64,
     /// The credits announced as rewards.
     pub credits: i64,
+    /// The reputation points announced as rewards.
+    pub reputation: i64,
     /// The highest Notoriety met.
     pub max_notoriety: u8,
     /// The share of the steps of the game spent inside an intrusion, per mille.
     pub intrusion_per_mille: u64,
     /// The intrusions, in order.
     pub intrusions: Vec<IntrusionRecord>,
+    /// The lines a farmer sent again; `None` for the other bots.
+    pub repeated: Option<u64>,
 }
 
 /// The name of a difficulty, as typed on the command line and written in reports.
@@ -103,6 +107,7 @@ struct Tally {
     intrusion_steps: u64,
     credits: i64,
     ending: Option<String>,
+    reputation: i64,
     intrusions: Vec<IntrusionRecord>,
     live: Option<Live>,
     max_notoriety: u8,
@@ -128,6 +133,13 @@ impl Observer for Tally {
                     text.args.iter().find(|(name, _)| *name == "amount")
             {
                 self.credits += amount;
+            }
+            if *role == Role::Reward
+                && key == "campaign.out.reputation"
+                && let Some((_, Arg::Int(points))) =
+                    text.args.iter().find(|(name, _)| *name == "points")
+            {
+                self.reputation += points;
             }
             if key == "campaign.hack.retry" || key == "campaign.hack.lost" {
                 burned = true;
@@ -170,6 +182,7 @@ pub fn play_game(
     seed: u64,
     tactic: Tactic,
     cool_from: Option<u8>,
+    farm: Option<usize>,
 ) -> GameRecord {
     let mut record = GameRecord {
         plan: plan.name(),
@@ -180,9 +193,11 @@ pub fn play_game(
         },
         commands: 0,
         credits: 0,
+        reputation: 0,
         max_notoriety: 0,
         intrusion_per_mille: 0,
         intrusions: Vec::new(),
+        repeated: None,
     };
     let game = match CampaignGame::new(difficulty, seed) {
         Ok(game) => game,
@@ -196,6 +211,9 @@ pub fn play_game(
     let config = Config {
         tactic,
         cool_from,
+        farm,
+        // The repetitions of a farmer are many more than the moves of a campaign.
+        max_steps: if farm.is_some() { 200_000 } else { 2_500 },
         ..Config::default()
     };
     match Driver::new(game, plan.clone(), Tally::default(), config).play() {
@@ -208,6 +226,8 @@ pub fn play_game(
                 .checked_div(tally.steps)
                 .unwrap_or(0);
             record.intrusions = tally.intrusions;
+            record.repeated = farm.map(|_| walk.farm_lines as u64);
+            record.reputation = tally.reputation;
             record.outcome = match walk.fate {
                 Fate::Finished => match tally.ending {
                     Some(ending) => Outcome::Finished { ending },

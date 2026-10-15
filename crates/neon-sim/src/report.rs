@@ -12,7 +12,7 @@ use crate::record::{GameRecord, Outcome};
 use crate::sites::SiteRow;
 
 /// The version of the report format.
-pub const SCHEMA_VERSION: u32 = 3;
+pub const SCHEMA_VERSION: u32 = 4;
 /// The games of a campaign report that are listed by name when they went wrong.
 const WORST: usize = 20;
 
@@ -106,6 +106,8 @@ pub struct CampaignReport {
     pub commands: Option<Spread>,
     /// The credits announced as rewards in a finished game.
     pub credits: Option<Spread>,
+    /// The reputation points announced as rewards in a finished game.
+    pub reputation: Option<Spread>,
     /// The highest Notoriety of a game, whatever its end.
     pub max_notoriety: Option<Spread>,
     /// The games that reached the Hunted band, per mille of the games.
@@ -114,6 +116,9 @@ pub struct CampaignReport {
     pub in_intrusion: Option<Spread>,
     /// The intrusions.
     pub intrusions: IntrusionStats,
+    /// The lines a farmer sent again in a game; absent for the other bots.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub repeated: Option<Spread>,
     /// The games that went wrong, or lasted the longest.
     pub worst: Vec<Worst>,
 }
@@ -194,6 +199,7 @@ impl CampaignReport {
             })
             .collect();
         worst.truncate(WORST);
+        let repeated = Spread::of(records.iter().filter_map(|r| r.repeated).collect());
         Self {
             schema_version: SCHEMA_VERSION,
             bot: bot.to_owned(),
@@ -213,6 +219,12 @@ impl CampaignReport {
                     .map(|r| u64::try_from(r.credits).unwrap_or(0))
                     .collect(),
             ),
+            reputation: Spread::of(
+                finished
+                    .iter()
+                    .map(|r| u64::try_from(r.reputation).unwrap_or(0))
+                    .collect(),
+            ),
             max_notoriety: Spread::of(records.iter().map(|r| u64::from(r.max_notoriety)).collect()),
             hunted_per_mille: (hunted * 1000)
                 .checked_div(records.len() as u64)
@@ -226,6 +238,7 @@ impl CampaignReport {
                 turns: Spread::of(intrusions.iter().map(|i| u64::from(i.turns)).collect()),
                 longest_burn_streak: records.iter().map(burn_streak).max().unwrap_or(0),
             },
+            repeated,
             worst,
         }
     }
@@ -394,9 +407,11 @@ mod tests {
             outcome,
             commands: 100,
             credits: 0,
+            reputation: 0,
             max_notoriety: notoriety,
             intrusion_per_mille: 250,
             intrusions,
+            repeated: None,
         }
     }
 

@@ -28,6 +28,11 @@ const MAX_PROMPTS: usize = 24;
 const MAX_REPEATS: usize = 12;
 /// The inputs remembered for a failure report.
 const RECENT: usize = 30;
+/// The verbs a farmer repeats at every milestone: they cost nothing and change no choice.
+const FARM_ALWAYS: &[&str] = &["talk", "read", "archives", "decrypt", "link"];
+/// The verbs it also repeats once the campaign is over: re-entering a site, buying again,
+/// laying low. Mid-campaign they would spend what the plan needs.
+const FARM_LAST: &[&str] = &["hack", "buy", "laylow"];
 /// The most actions a run played by hand may take: the ambient Trace burns a run that does
 /// nothing in about fifty turns.
 const MAX_ACTIONS: usize = 600;
@@ -73,6 +78,9 @@ pub struct Config {
     /// The notoriety from which the player buys cover before anything else (it buys it only
     /// when a quest asks for it if this is `None`).
     pub cool_from: Option<u8>,
+    /// A farmer: each command it repeats, it repeats this many times, at every quest done and
+    /// once more when the campaign is over.
+    pub farm: Option<usize>,
 }
 
 impl Default for Config {
@@ -83,6 +91,7 @@ impl Default for Config {
             slot_save_after: None,
             tactic: Tactic::Solver,
             cool_from: None,
+            farm: None,
         }
     }
 }
@@ -167,6 +176,8 @@ pub struct Walk<O> {
     pub fate: Fate,
     /// The inputs sent to the game.
     pub steps: usize,
+    /// The lines the farmer typed again (nothing for the others).
+    pub farm_lines: usize,
     /// Every command line typed.
     pub typed: Vec<String>,
     /// Every line a plain frontend would read to send the same inputs (`y` for a yes, an
@@ -195,6 +206,14 @@ pub struct Driver<O> {
     last_site: String,
     /// The sites the player has entered, for the one that skips only the first time.
     skipped_sites: BTreeSet<String>,
+    /// The lines typed in the farm rounds.
+    farm_lines: usize,
+    /// The quests done when the last farm round was played.
+    farmed_at: usize,
+    /// Every input sent, for the farmer to send again.
+    sent: Vec<Input>,
+    /// What each move of the plan sent, without the moves that sent the same thing.
+    groups: Vec<Vec<Input>>,
 }
 
 impl<O: Observer> Driver<O> {
@@ -214,6 +233,10 @@ impl<O: Observer> Driver<O> {
             last_save: None,
             last_site: String::new(),
             skipped_sites: BTreeSet::new(),
+            farm_lines: 0,
+            farmed_at: 0,
+            sent: Vec::new(),
+            groups: Vec::new(),
         }
     }
 
@@ -279,7 +302,10 @@ impl<O: Observer> Driver<O> {
             let next = Brain::new(&self.game, &self.plan)
                 .cooling_from(self.config.cool_from)
                 .next_move();
-            let Some(mv) = next else { break };
+            let Some(mv) = next else {
+                self.farm_round(true)?;
+                break;
+            };
             // The same move again and again is a move that does not do what it should (three
             // conversations at most are ever asked for in a row).
             repeats = if last.as_ref() == Some(&mv) {
@@ -302,6 +328,7 @@ impl<O: Observer> Driver<O> {
                 )));
             }
             self.perform(&mv)?;
+            self.farm_round(false)?;
             last = Some(mv);
         }
         self.finish()
@@ -346,6 +373,7 @@ impl<O: Observer> Driver<O> {
         Walk {
             fate,
             steps: self.steps,
+            farm_lines: self.farm_lines,
             typed: self.typed,
             script: self.script,
             game: self.game,
@@ -356,6 +384,18 @@ impl<O: Observer> Driver<O> {
     // --------------------------------------------------------------------- a move
 
     fn perform(&mut self, mv: &Move) -> Result<(), Stuck> {
+        let from = self.sent.len();
+        self.perform_move(mv)?;
+        if self.config.farm.is_some()
+            && let Some(group) = self.sent.get(from..)
+            && !self.groups.iter().any(|known| known == group)
+        {
+            self.groups.push(group.to_vec());
+        }
+        Ok(())
+    }
+
+    fn perform_move(&mut self, mv: &Move) -> Result<(), Stuck> {
         let line = match mv {
             Move::Accept(quest) => format!("accept {quest}"),
             Move::Talk { contact, .. } => format!("talk {contact}"),
@@ -462,6 +502,76 @@ impl<O: Observer> Driver<O> {
         Err(self.stuck("an intrusion played by hand that does not end"))
     }
 
+    /// The quests done so far.
+    fn quests_done(&self) -> usize {
+        let missions = self.game.state().missions();
+        self.game
+            .content()
+            .quests
+            .iter()
+            .filter(|quest| missions.status(&quest.id) == QuestStatus::Completed)
+            .count()
+    }
+
+    /// A farmer's round: every command it can repeat, with every argument the game offers it,
+    /// again and again. Mid-campaign it happens when a quest has been done since the last round;
+    /// the last one (`last`) adds the verbs that spend or re-enter. What it earns more than the
+    /// plan alone would is what the reports compare.
+    fn farm_round(&mut self, last: bool) -> Result<(), Stuck> {
+        let Some(times) = self.config.farm else {
+            return Ok(());
+        };
+        let done = self.quests_done();
+        if !last && done == self.farmed_at {
+            return Ok(());
+        }
+        self.farmed_at = done;
+        let mut verbs: Vec<&str> = FARM_ALWAYS.to_vec();
+        if last {
+            verbs.extend(FARM_LAST);
+        }
+        self.farm_verbs(&verbs, times)
+    }
+
+    /// Sends again, as they were sent, what the plan sent for the commands of the verbs.
+    fn farm_verbs(&mut self, verbs: &[&str], times: usize) -> Result<(), Stuck> {
+        let groups: Vec<Vec<Input>> = self
+            .groups
+            .iter()
+            .filter(|group| match group.first() {
+                Some(Input::Line(line)) => line
+                    .split_whitespace()
+                    .next()
+                    .is_some_and(|verb| verbs.contains(&verb)),
+                _ => false,
+            })
+            .cloned()
+            .collect();
+        for group in &groups {
+            for _ in 0..times {
+                if self.game.prompt() != Prompt::Command {
+                    return Ok(());
+                }
+                self.farm_lines += 1;
+                for input in group {
+                    if self.game.prompt() == Prompt::End {
+                        return Ok(());
+                    }
+                    let what = match input {
+                        Input::Line(line) => line.clone(),
+                        other => format!("{other:?}"),
+                    };
+                    self.send(&what, input.clone())?;
+                }
+                self.settle(&Move::Tick)?;
+                if self.game.intrusion().is_some() {
+                    self.play_intrusion(&Move::Tick)?;
+                }
+            }
+        }
+        Ok(())
+    }
+
     /// Types a line at the command prompt.
     fn type_line(&mut self, line: &str) -> Result<(), Stuck> {
         if self.game.prompt() != Prompt::Command {
@@ -498,6 +608,9 @@ impl<O: Observer> Driver<O> {
     // ----------------------------------------------------------------- one step
 
     fn send(&mut self, what: &str, input: Input) -> Result<(), Stuck> {
+        if self.config.farm.is_some() {
+            self.sent.push(input.clone());
+        }
         self.recent.push_back(what.to_owned());
         if self.recent.len() > RECENT {
             self.recent.pop_front();

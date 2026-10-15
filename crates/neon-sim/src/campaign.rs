@@ -19,6 +19,10 @@ pub const PRUDENT: &str = "prudent";
 pub const RECKLESS: &str = "reckless";
 /// The name of the bot that skips the intrusions that last.
 pub const STORY: &str = "story";
+/// The name of the bot that repeats everything it can.
+pub const FARMER: &str = "farmer";
+/// How many times a farmer repeats each command.
+pub const FARM_TIMES: usize = 2;
 
 /// A bot: the campaign it plays is the plan's, what differs is how it plays an intrusion.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -31,6 +35,9 @@ pub enum Bot {
     Reckless,
     /// Plays the Story difficulty and has the game play every intrusion that lasts.
     Story,
+    /// Follows the plan of the solver and repeats every command, with every argument, at every
+    /// quest done and when the campaign is over.
+    Farmer,
 }
 
 impl Bot {
@@ -42,6 +49,16 @@ impl Bot {
             Self::Prudent => PRUDENT,
             Self::Reckless => RECKLESS,
             Self::Story => STORY,
+            Self::Farmer => FARMER,
+        }
+    }
+
+    /// How many times it repeats each command, if it farms.
+    #[must_use]
+    pub const fn farm(self) -> Option<usize> {
+        match self {
+            Self::Farmer => Some(FARM_TIMES),
+            Self::Optimist | Self::Prudent | Self::Reckless | Self::Story => None,
         }
     }
 
@@ -50,7 +67,7 @@ impl Bot {
     pub const fn only_difficulty(self) -> Option<Difficulty> {
         match self {
             Self::Story => Some(Difficulty::Story),
-            Self::Optimist | Self::Prudent | Self::Reckless => None,
+            Self::Optimist | Self::Prudent | Self::Reckless | Self::Farmer => None,
         }
     }
 
@@ -58,7 +75,7 @@ impl Bot {
     #[must_use]
     pub const fn tactic(self) -> Tactic {
         match self {
-            Self::Optimist => Tactic::Solver,
+            Self::Optimist | Self::Farmer => Tactic::Solver,
             Self::Prudent => Tactic::Hand(Style::Prudent),
             Self::Reckless => Tactic::Hand(Style::Reckless),
             Self::Story => Tactic::Story,
@@ -72,7 +89,7 @@ impl Bot {
     pub const fn cools_from(self) -> Option<u8> {
         match self {
             Self::Prudent => Some(30),
-            Self::Optimist | Self::Reckless | Self::Story => None,
+            Self::Optimist | Self::Reckless | Self::Story | Self::Farmer => None,
         }
     }
 }
@@ -119,6 +136,7 @@ pub fn run_bot(
                 seed,
                 bot.tactic(),
                 bot.cools_from(),
+                bot.farm(),
             ));
         }
     }

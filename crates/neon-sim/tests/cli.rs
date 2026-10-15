@@ -198,3 +198,37 @@ fn the_monkey_writes_its_report_and_a_short_one_does_not_pass_t12() {
         "{text}"
     );
 }
+
+#[test]
+fn the_farmer_is_checked_against_the_optimist_by_t8() {
+    let dir = tempfile::tempdir().unwrap();
+    let optimist = path(dir.path(), "optimist.json");
+    let farmer = path(dir.path(), "farmer.json");
+    for (bot, file) in [("optimist", &optimist), ("farmer", &farmer)] {
+        let ran = sim(&[
+            "run",
+            "--bot",
+            bot,
+            "--difficulty",
+            "story",
+            "--seeds",
+            "1",
+            "--limit",
+            "1",
+            "--out",
+            file,
+        ]);
+        assert!(ran.status.success(), "{}", out(&ran));
+    }
+    let json = std::fs::read_to_string(&farmer).unwrap();
+    assert!(
+        json.contains("\"bot\": \"farmer\"") && json.contains("\"repeated\""),
+        "{json}"
+    );
+    let checked = sim(&["check", &optimist, &farmer]);
+    let text = out(&checked);
+    assert!(
+        text.contains("[ok  ] T8 (P): at story the farmer sent again"),
+        "{text}"
+    );
+}
