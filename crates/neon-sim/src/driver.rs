@@ -14,7 +14,7 @@ use neon_engine::Game;
 use neon_engine::campaign::CampaignGame;
 use neon_engine::content::schema::{QuestStatus, ReadableKind};
 use neon_engine::prompt::{Input, Prompt, Step};
-use neon_engine::run::solve::{Resolution, auto_resolve};
+use neon_engine::run::solve::{Goal, Outcome, PROOF_EXPANSIONS, Resolution, auto_resolve, solve};
 use neon_engine::run::{Action, LootKind};
 use neon_engine::save::SaveRequest;
 
@@ -319,10 +319,23 @@ impl<O: Observer> Driver<O> {
                 return Err(self.stuck("the greedy variant of an intrusion does not build"));
             };
             let state = *intrusion.state();
-            let (Resolution::Optimal(plan) | Resolution::Best(plan)) =
-                auto_resolve(&mission, &state)
-            else {
-                return Err(self.stuck("no plan for an intrusion of the content"));
+            // The bounded chain of `skip` is enough for the small intrusions; a heavy one, with
+            // all its loot to take, gets the wide bound of the tools instead: the harness is not
+            // the game, and what it asks is whether the intrusion can be won.
+            let plan = match auto_resolve(&mission, &state) {
+                Resolution::Optimal(plan) | Resolution::Best(plan) => plan,
+                Resolution::Nominal => {
+                    match solve(&mission, &state, Goal::Feasible, PROOF_EXPANSIONS, u8::MAX).outcome
+                    {
+                        Outcome::Solved { plan, .. }
+                        | Outcome::Unknown {
+                            best: Some(plan), ..
+                        } => plan,
+                        Outcome::Unknown { best: None, .. } | Outcome::Unsolvable => {
+                            return Err(self.stuck("no plan for an intrusion of the content"));
+                        }
+                    }
+                }
             };
             for action in &plan.actions {
                 if self.game.intrusion().is_none() {
