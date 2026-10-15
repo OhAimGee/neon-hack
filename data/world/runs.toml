@@ -88,19 +88,19 @@ link = [[1, 2], [2, 3], [2, 4], [3, 5], [4, 6], [5, 6]]
 [[run.node]] # 1 Gateway
 
 [[run.node]] # 2 Firewall
-ice = { family = "network", strength = 5 }
+ice = { family = "network", strength = 4 }
 
 [[run.node]] # 3 Relay
-ice = { family = "network", strength = 5 }
+ice = { family = "network", strength = 3 }
 loot = "intel"
 
 [[run.node]] # 4 Archives
-ice = { family = "encryption", strength = 5 }
+ice = { family = "encryption", strength = 4 }
 loot = "extra"
 files = ["project_ghost"]
 
 [[run.node]] # 5 Helpdesk
-ice = { family = "human", strength = 6 }
+ice = { family = "human", strength = 4 }
 loot = "extra"
 files = ["neural_maps"]
 

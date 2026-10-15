@@ -8,7 +8,7 @@
 use neon_engine::campaign::Difficulty;
 use neon_engine::content::Content;
 use neon_engine::content::ids::SiteId;
-use neon_engine::run::solve::{Outcome, PROOF_EXPANSIONS, optimum};
+use neon_engine::run::solve::{Goal, Outcome, PROOF_EXPANSIONS, optimum, solve};
 use neon_engine::run::{LootKind, Mission, Pace};
 use serde::{Deserialize, Serialize};
 
@@ -124,7 +124,19 @@ pub fn measure(
                 continue;
             };
             let cap = mission.trace_cap();
-            let report = optimum(&mission, max_expanded);
+            // The objective alone asks for the lowest Trace. Taking everything with the whole deck
+            // asks only whether it can be won: the exact search is out of reach there, and the
+            // plan found is any plan, not the best.
+            let report = match loot {
+                Loot::Objective => optimum(&mission, max_expanded),
+                Loot::All => solve(
+                    &mission,
+                    &mission.initial_state(),
+                    Goal::Feasible,
+                    max_expanded,
+                    u8::MAX,
+                ),
+            };
             let expanded = report.stats.expanded;
             let result = match report.outcome {
                 Outcome::Solved { plan, optimal } => SiteResult::Solved {
