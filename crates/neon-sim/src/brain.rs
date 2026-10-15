@@ -8,7 +8,7 @@
 //! is not offered right now is not made. A thing that is wanted but never offered is a dead
 //! end, and the walk reports it.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 
 use neon_engine::Game;
@@ -74,6 +74,67 @@ pub fn all_plans(c: &Content) -> Vec<Plan> {
             })
         })
         .collect()
+}
+
+/// The ending a plan leads to, from the rules of the game's story (decision D3, the echo
+/// choice and the advantage of the echo log).
+#[must_use]
+pub fn expected_ending(plan: &Plan) -> &'static str {
+    let choice = |decision: &str| {
+        plan.choices
+            .iter()
+            .find(|(d, _)| d.as_str() == decision)
+            .map(|(_, c)| c.as_str())
+    };
+    match choice("d3") {
+        Some("liberate") if matches!(choice("echo"), Some("wait" | "believe")) => "e1a",
+        Some("liberate") => "e1b",
+        Some("entrust") => "e2",
+        Some("burn") => "e3",
+        _ => "e4",
+    }
+}
+
+/// What a plan covers: each option of each decision with the optional flag, and its ending.
+fn features(plan: &Plan) -> Vec<String> {
+    let mut features: Vec<String> = plan
+        .choices
+        .iter()
+        .map(|(decision, choice)| format!("{decision}={choice}/{}", plan.optional))
+        .collect();
+    features.extend(
+        plan.choices
+            .iter()
+            .map(|(decision, choice)| format!("{decision}={choice}")),
+    );
+    features.push(format!("ending {}", expected_ending(plan)));
+    features.push(format!("optional {}", plan.optional));
+    features
+}
+
+/// A subset of the plans that covers every feature (a greedy cover): small, and still every
+/// ending and every option of every decision at least once, with and without the optional
+/// objectives.
+#[must_use]
+pub fn representative(plans: &[Plan]) -> Vec<Plan> {
+    let wanted: BTreeSet<String> = plans.iter().flat_map(features).collect();
+    let mut seen = BTreeSet::new();
+    let mut chosen = Vec::new();
+    while seen.len() < wanted.len() {
+        let Some(best) = plans
+            .iter()
+            .max_by_key(|plan| features(plan).iter().filter(|f| !seen.contains(*f)).count())
+        else {
+            break;
+        };
+        let before = seen.len();
+        seen.extend(features(best));
+        if seen.len() == before {
+            break;
+        }
+        chosen.push(best.clone());
+    }
+    chosen
 }
 
 /// One thing the player does at the command prompt.

@@ -397,24 +397,6 @@ fn render_prompt(prompt: &Prompt, catalog: &Catalog, mode: RenderMode) -> String
     }
 }
 
-/// The ending expected for a plan, from the rules of the game's story (decision D3, the echo
-/// choice and the advantage of the echo log).
-pub(crate) fn expected_ending(plan: &Plan) -> &'static str {
-    let choice = |decision: &str| {
-        plan.choices
-            .iter()
-            .find(|(d, _)| d.as_str() == decision)
-            .map(|(_, c)| c.as_str())
-    };
-    match choice("d3") {
-        Some("liberate") if matches!(choice("echo"), Some("wait" | "believe")) => "e1a",
-        Some("liberate") => "e1b",
-        Some("entrust") => "e2",
-        Some("burn") => "e3",
-        _ => "e4",
-    }
-}
-
 /// The contacts that have an epilogue line, from the content.
 pub(crate) fn epilogue_contacts(c: &Content) -> BTreeSet<String> {
     c.epilogue
