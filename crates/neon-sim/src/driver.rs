@@ -171,9 +171,10 @@ pub enum Fate {
         /// The site.
         site: String,
     },
-    /// A hoarder that nothing is left to do for without buying: a quest asks for the item.
+    /// A hoarder that nothing is left to do for without buying: a quest asks for an item, or
+    /// the deck it kept is too thin for an intrusion.
     Blocked {
-        /// The item a quest asks to own.
+        /// The item, or the deck of the site.
         by: String,
     },
 }
@@ -223,6 +224,8 @@ pub struct Driver<O> {
     sent: Vec<Input>,
     /// What each move of the plan sent, without the moves that sent the same thing.
     groups: Vec<Vec<Input>>,
+    /// The site a hoarder could find no plan for with the deck it kept.
+    too_thin: Option<String>,
 }
 
 impl<O: Observer> Driver<O> {
@@ -246,6 +249,7 @@ impl<O: Observer> Driver<O> {
             farmed_at: 0,
             sent: Vec::new(),
             groups: Vec::new(),
+            too_thin: None,
         }
     }
 
@@ -344,7 +348,14 @@ impl<O: Observer> Driver<O> {
                     "{mv:?} done {MAX_REPEATS} times in a row to no avail"
                 )));
             }
-            self.perform(&mv)?;
+            if let Err(stuck) = self.perform(&mv) {
+                return match self.too_thin.take() {
+                    Some(site) => Ok(self.ended(Fate::Blocked {
+                        by: format!("the deck for {site}"),
+                    })),
+                    None => Err(stuck),
+                };
+            }
             self.farm_round(false)?;
             last = Some(mv);
         }
@@ -478,6 +489,11 @@ impl<O: Observer> Driver<O> {
                             best: Some(plan), ..
                         } => plan,
                         Outcome::Unknown { best: None, .. } | Outcome::Unsolvable => {
+                            // A hoarder that kept to the deck of base is held up by it, which
+                            // is a result; for the others it is a defect of the walk.
+                            if self.config.hoard {
+                                self.too_thin = Some(site.to_string());
+                            }
                             return Err(self.stuck(&format!("no plan for the intrusion of {site}")));
                         }
                     }
