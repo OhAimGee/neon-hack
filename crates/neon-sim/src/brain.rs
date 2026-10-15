@@ -18,6 +18,7 @@ use neon_engine::content::eval::{applicable, holds};
 use neon_engine::content::ids::{
     ChoiceId, ContactId, DecisionId, ItemId, QuestId, ReadableId, ServiceId, SiteId,
 };
+use neon_engine::content::runs::site_tier;
 use neon_engine::content::schema::{
     ExtractWhat, Goal, Objective, QuestDef, QuestKind, QuestStatus, ReadableKind, Turn,
 };
@@ -475,8 +476,31 @@ impl<'a> Brain<'a> {
             }
         }
         let target = chain.pop()?;
-        self.offers("hack", target.as_str())
-            .then_some(Move::Hack(target))
+        if !self.offers("hack", target.as_str()) {
+            return None;
+        }
+        // The deck of the site is only as good as what the player bought for it.
+        if let Some(buy) = self.deck_purchase(&target) {
+            return Some(buy);
+        }
+        Some(Move::Hack(target))
+    }
+
+    /// The program of the deck of a site that the player does not have yet and can pay for now,
+    /// the cheapest first. A hoarder buys none.
+    fn deck_purchase(&self, site: &SiteId) -> Option<Move> {
+        if self.hoards {
+            return None;
+        }
+        let kit = self.c.kit(site_tier(self.c.site(site)?))?;
+        self.c
+            .items
+            .iter()
+            .filter(|item| item.program.is_some_and(|p| kit.programs.contains(&p)))
+            .filter(|item| !self.s.owned.contains(&item.id))
+            .filter(|item| self.offers("buy", item.id.as_str()))
+            .min_by_key(|item| (item.price.get(), item.id.as_str().to_owned()))
+            .map(|item| Move::Buy(item.id.clone()))
     }
 
     fn extract(&self, site: Option<&SiteId>, what: &ExtractWhat) -> Option<Move> {

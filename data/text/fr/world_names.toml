@@ -40,3 +40,28 @@ name = "Neural Assistant v3.1"
 
 [item.quantum_chip]
 name = "Quantum Processing Chip"
+
+[item.prog_exploit]
+name = "Kit d'exploits"
+
+[item.prog_decrypt]
+name = "Suite de déchiffrement"
+
+[item.prog_spoof]
+name = "Module de leurre"
+
+[item.prog_quantum]
+name = "Casseur quantique"
+
+[item.prog_social]
+name = "Boîte à outils sociale"
+
+[item.prog_virus]
+name = "Charge virale"
+
+[item.prog_ghost]
+name = "Coquille fantôme"
+
+[item.prog_overclock]
+name = "Banc de surcadençage"
+

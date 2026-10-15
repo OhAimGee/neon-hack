@@ -12,6 +12,7 @@ use std::fmt;
 
 use neon_engine::Game;
 use neon_engine::campaign::CampaignGame;
+use neon_engine::content::Stock;
 use neon_engine::content::schema::{QuestStatus, ReadableKind};
 use neon_engine::prompt::{Input, Prompt, Step};
 use neon_engine::run::Action;
@@ -455,9 +456,12 @@ impl<O: Observer> Driver<O> {
         while let Some(intrusion) = self.game.intrusion() {
             let content = self.game.content();
             let site = intrusion.site().clone();
-            let Some(mission) =
-                full_loot_mission(content, &site, self.game.state().difficulty().pace())
-            else {
+            let Some(mission) = full_loot_mission(
+                content,
+                &site,
+                self.game.state().difficulty().pace(),
+                Stock::Owned(&self.game.state().missions().owned),
+            ) else {
                 return Err(self.stuck("the full-loot variant of an intrusion does not build"));
             };
             let state = *intrusion.state();

@@ -210,6 +210,66 @@ legacy_name = "Quantum Processing Chip"
 price = 800
 unlock = { tier = 5 }
 
+# The programs of the deck that the stall sells (the tier where the deck of `runs.toml` first has
+# them is the tier of the item). A player's deck is the deck of the tier of the site without the
+# programs of the items it does not own.
+
+[[item]]
+id = "prog_exploit"
+legacy_name = "Exploit Kit"
+price = 100
+unlock = { tier = 2 }
+program = "exploit"
+
+[[item]]
+id = "prog_decrypt"
+legacy_name = "Decrypt Suite"
+price = 100
+unlock = { tier = 2 }
+program = "decrypt"
+
+[[item]]
+id = "prog_spoof"
+legacy_name = "Spoof Module"
+price = 80
+unlock = { tier = 2 }
+program = "spoof"
+
+[[item]]
+id = "prog_quantum"
+legacy_name = "Quantum Cracker"
+price = 250
+unlock = { tier = 3 }
+program = "quantum"
+
+[[item]]
+id = "prog_social"
+legacy_name = "Social Toolkit"
+price = 200
+unlock = { tier = 3 }
+program = "social"
+
+[[item]]
+id = "prog_virus"
+legacy_name = "Virus Payload"
+price = 600
+unlock = { tier = 4 }
+program = "virus"
+
+[[item]]
+id = "prog_ghost"
+legacy_name = "Ghost Shell"
+price = 500
+unlock = { tier = 4 }
+program = "ghost"
+
+[[item]]
+id = "prog_overclock"
+legacy_name = "Overclock Rig"
+price = 900
+unlock = { tier = 5 }
+program = "overclock"
+
 # ------------------------------------------------------------------------- contacts
 # Every contact but ECHO-7 starts `offline`: a quest unlocks it (`set_contact_state`).
 

@@ -40,3 +40,28 @@ name = "Neural Assistant v3.1"
 
 [item.quantum_chip]
 name = "Quantum Processing Chip"
+
+[item.prog_exploit]
+name = "Exploit Kit"
+
+[item.prog_decrypt]
+name = "Decrypt Suite"
+
+[item.prog_spoof]
+name = "Spoof Module"
+
+[item.prog_quantum]
+name = "Quantum Cracker"
+
+[item.prog_social]
+name = "Social Toolkit"
+
+[item.prog_virus]
+name = "Virus Payload"
+
+[item.prog_ghost]
+name = "Ghost Shell"
+
+[item.prog_overclock]
+name = "Overclock Rig"
+

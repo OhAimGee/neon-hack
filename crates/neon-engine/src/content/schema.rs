@@ -781,7 +781,9 @@ pub struct RunDef {
 
 /// The deck the player holds at a tier, and the cycles a turn gives there.
 ///
-/// Programs come from the shop in a later lot; until then the deck of a tier is data.
+/// The deck of a tier: every program the intrusions of that tier can use. The programs some
+/// item grants are sold at the stall, so a player's deck is this one without the programs of
+/// the items it does not own (see `Content::deck`).
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct KitDef {
@@ -809,6 +811,10 @@ pub struct ItemDef {
     /// Gate of the item.
     #[serde(default)]
     pub unlock: Unlock,
+    /// The program owning the item puts in the deck of every intrusion. A program that some
+    /// item grants is sold: the deck of a tier has it only for the player who owns that item.
+    #[serde(default)]
+    pub program: Option<Program>,
     /// Byte offset of the entry in its file, for line numbers.
     #[serde(skip)]
     pub at: usize,
