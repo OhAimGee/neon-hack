@@ -3,7 +3,8 @@
 //! ```text
 //! neon-sim run   --difficulty all --seeds 1..=3 --plans representative --out target/sim/optimist.json
 //! neon-sim solve --out target/sim/sites.json
-//! neon-sim check target/sim/optimist.json target/sim/sites.json
+//! neon-sim economy --out target/sim/economy.json
+//! neon-sim check target/sim/optimist.json target/sim/sites.json target/sim/economy.json
 //! ```
 
 use std::fs;
@@ -15,6 +16,7 @@ use clap::{Args, Parser, Subcommand, ValueEnum};
 use neon_engine::campaign::Difficulty;
 use neon_engine::content::Content;
 use neon_sim::campaign::{Bot, PlanSet, plans, run_bot};
+use neon_sim::economy::measure as measure_economy;
 use neon_sim::monkey::{DEFAULT_STEPS, play_monkey};
 use neon_sim::record::difficulty_name;
 use neon_sim::report::{CampaignReport, MonkeyReport, Report, SCHEMA_VERSION, SitesReport};
@@ -34,8 +36,17 @@ enum Command {
     Run(RunArgs),
     /// Measure the sites with the solver: can each be won, with what margin.
     Solve(SolveArgs),
+    /// What the stall sells and the quests pay: the economy of the content.
+    Economy(EconomyArgs),
     /// Check reports against the thresholds; exits with 1 when a barrier fails.
     Check(CheckArgs),
+}
+
+#[derive(Args)]
+struct EconomyArgs {
+    /// Where to write the report.
+    #[arg(long)]
+    out: Option<PathBuf>,
 }
 
 #[derive(Args)]
@@ -109,6 +120,7 @@ enum BotArg {
     Reckless,
     Story,
     Farmer,
+    Hoarder,
     Monkey,
 }
 
@@ -121,6 +133,7 @@ impl BotArg {
             Self::Reckless => Some(Bot::Reckless),
             Self::Story => Some(Bot::Story),
             Self::Farmer => Some(Bot::Farmer),
+            Self::Hoarder => Some(Bot::Hoarder),
             Self::Monkey => None,
         }
     }
@@ -176,6 +189,7 @@ fn main() -> ExitCode {
     let result = match cli.command {
         Command::Run(args) => run(&args),
         Command::Solve(args) => solve(&args),
+        Command::Economy(args) => economy(&args),
         Command::Check(args) => check_reports(&args),
     };
     match result {
@@ -340,6 +354,29 @@ fn solve(args: &SolveArgs) -> Result<ExitCode, String> {
     Ok(ExitCode::SUCCESS)
 }
 
+fn economy(args: &EconomyArgs) -> Result<ExitCode, String> {
+    let content =
+        Content::embedded().map_err(|e| format!("the game content does not load: {e}"))?;
+    let report = measure_economy(&content);
+    console::line(&format!(
+        "the stall: {} items for {} credits, {} services; start with {} credits",
+        report.items.len(),
+        report.catalogue_total,
+        report.services.len(),
+        report.start_credits
+    ));
+    for tier in &report.tiers {
+        console::line(&format!(
+            "tier {}: flagship {} credits, main quests pay {}, all quests {}",
+            tier.tier, tier.flagship_price, tier.main_credits, tier.all_credits
+        ));
+    }
+    if let Some(out) = &args.out {
+        write(out, &Report::Economy(report))?;
+    }
+    Ok(ExitCode::SUCCESS)
+}
+
 fn check_reports(args: &CheckArgs) -> Result<ExitCode, String> {
     let targets = match &args.targets {
         Some(path) => {
@@ -398,13 +435,14 @@ fn summary(report: &CampaignReport) -> String {
         )
     };
     format!(
-        "{} {}: {} games, {} finished, {} lost, {} gave up, {} stuck{commands}{intrusions}; endings: {}",
+        "{} {}: {} games, {} finished, {} lost, {} gave up, {} blocked, {} stuck{commands}{intrusions}; endings: {}",
         report.bot,
         report.difficulty,
         report.games,
         report.finished,
         report.lost,
         report.gave_up,
+        report.blocked,
         report.stuck,
         if endings.is_empty() {
             "none".to_owned()

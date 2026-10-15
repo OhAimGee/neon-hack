@@ -168,6 +168,8 @@ pub struct Brain<'a> {
     plan: &'a Plan,
     /// The notoriety from which the player buys cover before anything else, if it does.
     cool_from: Option<u32>,
+    /// A player who never buys anything that stays (the stall's items): cover is not one.
+    hoards: bool,
 }
 
 /// The notoriety at which the stall closes (the band "hunted").
@@ -194,7 +196,33 @@ impl<'a> Brain<'a> {
             s: game.state().missions(),
             plan,
             cool_from: None,
+            hoards: false,
         }
+    }
+
+    /// A player who buys nothing from the stall: it keeps its credits for cover.
+    #[must_use]
+    pub fn hoarding(mut self, hoards: bool) -> Self {
+        self.hoards = hoards;
+        self
+    }
+
+    /// The first item an open quest asks to own that the player does not own, if any.
+    #[must_use]
+    pub fn missing_purchase(&self) -> Option<String> {
+        fn wanted(objective: &Objective, owned: &BTreeSet<ItemId>) -> Option<String> {
+            match &objective.goal {
+                Goal::Buy { item } if !owned.contains(item) => Some(item.to_string()),
+                Goal::AnyOf(of) => of.iter().find_map(|child| wanted(child, owned)),
+                _ => None,
+            }
+        }
+        self.c
+            .quests
+            .iter()
+            .filter(|quest| self.s.status(&quest.id) == QuestStatus::Active)
+            .flat_map(|quest| &quest.objective)
+            .find_map(|objective| wanted(objective, &self.s.owned))
     }
 
     /// A player who buys cover as soon as the notoriety reaches `from`, instead of only when a
@@ -417,7 +445,7 @@ impl<'a> Brain<'a> {
     }
 
     fn buy(&self, item: &ItemId) -> Option<Move> {
-        if self.s.owned.contains(item) {
+        if self.s.owned.contains(item) || self.hoards {
             return None;
         }
         if self.offers("buy", item.as_str()) {

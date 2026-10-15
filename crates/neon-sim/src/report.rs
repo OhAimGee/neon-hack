@@ -7,12 +7,13 @@ use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
 
+use crate::economy::EconomyReport;
 use crate::monkey::{Fault, MonkeyRecord};
 use crate::record::{GameRecord, Outcome};
 use crate::sites::SiteRow;
 
 /// The version of the report format.
-pub const SCHEMA_VERSION: u32 = 4;
+pub const SCHEMA_VERSION: u32 = 5;
 /// The games of a campaign report that are listed by name when they went wrong.
 const WORST: usize = 20;
 
@@ -98,6 +99,8 @@ pub struct CampaignReport {
     pub lost: u64,
     /// The games the bot gave up.
     pub gave_up: u64,
+    /// The games a hoarder could not finish: a quest asks it to own an item it will not buy.
+    pub blocked: u64,
     /// The games the harness could not go on with: a bug of the walk, never a result.
     pub stuck: u64,
     /// The endings reached, by name.
@@ -165,6 +168,7 @@ impl CampaignReport {
         };
         let lost = count(|o| matches!(o, Outcome::Lost { .. }));
         let gave_up = count(|o| matches!(o, Outcome::GaveUp { .. }));
+        let blocked = count(|o| matches!(o, Outcome::Blocked { .. }));
         let stuck = count(|o| matches!(o, Outcome::Stuck { .. }));
         let mut endings: BTreeMap<String, u64> = BTreeMap::new();
         for record in &finished {
@@ -189,6 +193,7 @@ impl CampaignReport {
                     Outcome::Stuck { why } => why.clone(),
                     Outcome::Lost { site } => format!("lost on {site}"),
                     Outcome::GaveUp { site } => format!("gave up on {site}"),
+                    Outcome::Blocked { by } => format!("blocked by {by}"),
                     Outcome::Finished { .. } => return None,
                 };
                 Some(Worst {
@@ -210,6 +215,7 @@ impl CampaignReport {
             finished: finished.len() as u64,
             lost,
             gave_up,
+            blocked,
             stuck,
             endings,
             commands: Spread::of(finished.iter().map(|r| r.commands).collect()),
@@ -355,6 +361,8 @@ pub enum Report {
     Sites(SitesReport),
     /// A batch of games of the monkey.
     Monkey(MonkeyReport),
+    /// The economy of the content.
+    Economy(EconomyReport),
 }
 
 impl Report {
