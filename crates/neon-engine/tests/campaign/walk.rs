@@ -13,47 +13,12 @@ use std::collections::BTreeSet;
 use neon_engine::campaign::Difficulty;
 use neon_engine::content::Content;
 use neon_engine::content::schema::{FlagValue, QuestKind, QuestStatus};
-use neon_sim::brain::{Plan, all_plans};
+use neon_sim::brain::{Plan, all_plans, expected_ending, representative};
 
-use crate::player::{Player, Reload, Walked, epilogue_contacts, expected_ending};
+use crate::player::{Player, Reload, Walked, epilogue_contacts};
 
 fn content() -> Content {
     Content::embedded().unwrap()
-}
-
-/// What a plan covers: each option of each decision with the optional flag, and its ending.
-fn features(plan: &Plan) -> Vec<String> {
-    let mut features: Vec<String> = plan
-        .choices
-        .iter()
-        .map(|(decision, choice)| format!("{decision}={choice}/{}", plan.optional))
-        .collect();
-    features.extend(
-        plan.choices
-            .iter()
-            .map(|(decision, choice)| format!("{decision}={choice}")),
-    );
-    features.push(format!("ending {}", expected_ending(plan)));
-    features.push(format!("optional {}", plan.optional));
-    features
-}
-
-/// A subset of the plans that covers every feature (a greedy cover): small, and still every
-/// ending and every option of every decision at least once, with and without the optional
-/// objectives.
-fn representative(plans: &[Plan]) -> Vec<Plan> {
-    let wanted: BTreeSet<String> = plans.iter().flat_map(features).collect();
-    let mut seen = BTreeSet::new();
-    let mut chosen = Vec::new();
-    while seen.len() < wanted.len() {
-        let best = plans
-            .iter()
-            .max_by_key(|plan| features(plan).iter().filter(|f| !seen.contains(*f)).count())
-            .unwrap();
-        seen.extend(features(best));
-        chosen.push(best.clone());
-    }
-    chosen
 }
 
 /// Everything a finished walk must satisfy, whatever the plan.

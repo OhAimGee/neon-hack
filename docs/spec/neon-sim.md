@@ -92,6 +92,16 @@ neon-sim list-worst --report target/sim/prudent-normal.json          # graines �
 - **Chaque nuit** (comme le `proptest` élevé) : 5 000 graines par couple, toutes les barrières, rapport JSON publié comme artefact ; un écart de plus de 5 % d'un indicateur par rapport à la veille est signalé.
 - **À la demande** : `workflow_dispatch` avec les graines et les difficultés au choix, pour régler une valeur de données.
 
+## 7 bis. État de l'implémentation (R6.2)
+
+Livré : `neon-sim run`, `solve` et `check`, avec le seul bot `optimist` ; les autres bots, `list-worst` et la mesure de performance (T13) restent à faire.
+
+- `run --difficulty all|story|normal|expert|hardcore --seeds N|A..=B --plans all|representative [--limit N] --out FICHIER` joue l'optimiste (`brain` + `driver`) sur les combinaisons de décisions demandées. Avec `all`, un fichier par difficulté (suffixe ajouté au nom). Les graines servent d'amorce aux parties ; une partie qui ne peut pas continuer est une `Stuck` (jamais une panique).
+- `solve [--site ID] --difficulty D [--expansions N] --out FICHIER` mesure chaque site avec `optimum` sur le kit illimité du palier : plan, marge, tours, états explorés.
+- `check [--targets FICHIER] RAPPORT...` lit les rapports et les seuils (par défaut ceux de `data/sim/targets.toml`, embarqués) ; code de sortie 0 (rien d'échoué), 1 (une barrière P échoue), 2 (arguments ou fichiers invalides).
+- **Rapport canonique** : JSON `kind = campaign | sites`, `schema = 1`, sans horloge ni flottant (les rapports se comparent octet à octet) ; les répartitions sont des rangs au plus proche (`Spread`).
+- **Seuils livrés** : T1 et T2 en P. T3 et T4 sont mesurés sur le contenu livré et ne le satisfont pas encore : les meilleurs plans prennent 1 à 4 tours (spec : 3 à 12) et la marge au kit minimal dépasse les bornes de Normal (spec : 25 à 70). Ils sont déclarés en **O** dans `targets.toml` (sauf l'ordre des difficultés, en P) en attendant la décision du propriétaire : changer les bornes ou changer les sites.
+
 ## 8. Procédure de réglage (R6)
 
 1. Lancer la campagne complète pour tous les bots et difficultés ; lire le rapport.
