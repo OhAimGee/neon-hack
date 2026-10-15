@@ -141,11 +141,25 @@ jobs:
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
       - run: cargo doc --workspace --no-deps --document-private-items --locked
 
+  sim-gate:
+    # The quick balancing gate: the P thresholds of `neon-sim` on a small set of games.
+    name: balancing gate (neon-sim)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install the toolchain from rust-toolchain.toml
+        run: rustup toolchain install
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - run: scripts/sim-gate.sh
+
   # The single check to require in the branch protection rules.
   ci-ok:
     name: CI OK
     if: always()
-    needs: [fmt, clippy, test, plain-only, msrv, deny, docs]
+    needs: [fmt, clippy, test, plain-only, sim-gate, msrv, deny, docs]
     runs-on: ubuntu-latest
     steps:
       - name: Every required job succeeded
