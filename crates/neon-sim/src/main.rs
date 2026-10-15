@@ -17,7 +17,7 @@ use neon_engine::content::Content;
 use neon_sim::campaign::{OPTIMIST, PlanSet, plans, run_optimist};
 use neon_sim::record::difficulty_name;
 use neon_sim::report::{CampaignReport, Report, SCHEMA_VERSION, SitesReport};
-use neon_sim::sites::{DEFAULT_EXPANSIONS, SiteResult, measure};
+use neon_sim::sites::{DEFAULT_EXPANSIONS, Loot, SiteResult, measure};
 use neon_sim::targets::{Level, Targets, check};
 
 #[derive(Parser)]
@@ -65,12 +65,23 @@ struct SolveArgs {
     /// The difficulty, or `all`.
     #[arg(long, value_enum, default_value = "all")]
     difficulty: Which,
+    /// What to ask of the intrusion: `objective` (the room the site leaves, with the deck every
+    /// player has) or `all` (take every loot, with the whole deck of the tier, as the optimist
+    /// does).
+    #[arg(long, value_enum, default_value = "objective")]
+    loot: LootArg,
     /// The expansions the solver may spend on each measure.
     #[arg(long, default_value_t = DEFAULT_EXPANSIONS)]
     expansions: u64,
     /// Where to write the report.
     #[arg(long)]
     out: Option<PathBuf>,
+}
+
+#[derive(Clone, Copy, ValueEnum)]
+enum LootArg {
+    Objective,
+    All,
 }
 
 #[derive(Args)]
@@ -183,7 +194,17 @@ fn solve(args: &SolveArgs) -> Result<ExitCode, String> {
         Which::All => None,
         other => other.difficulties().first().copied(),
     };
-    let rows = measure(&content, args.site.as_deref(), difficulty, args.expansions);
+    let loot = match args.loot {
+        LootArg::Objective => Loot::Objective,
+        LootArg::All => Loot::All,
+    };
+    let rows = measure(
+        &content,
+        args.site.as_deref(),
+        difficulty,
+        loot,
+        args.expansions,
+    );
     if rows.is_empty() {
         return Err("no such site".to_owned());
     }

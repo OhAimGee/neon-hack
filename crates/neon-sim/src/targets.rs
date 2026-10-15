@@ -9,7 +9,7 @@ use serde::Deserialize;
 use crate::campaign::OPTIMIST;
 use crate::record::difficulty_name;
 use crate::report::{CampaignReport, Report, SitesReport};
-use crate::sites::{SiteResult, SiteRow};
+use crate::sites::{Loot, SiteResult, SiteRow};
 use neon_engine::campaign::Difficulty;
 
 /// The thresholds shipped with the harness.
@@ -155,11 +155,17 @@ pub fn check(targets: &Targets, reports: &[Report]) -> Vec<Finding> {
     if !campaigns.is_empty() {
         findings.extend(t1(&targets.t1, &campaigns));
     }
-    let rows: Vec<&SiteRow> = sites.iter().flat_map(|s| &s.rows).collect();
+    let all_rows: Vec<&SiteRow> = sites.iter().flat_map(|s| &s.rows).collect();
+    let (rows, full): (Vec<&SiteRow>, Vec<&SiteRow>) = all_rows
+        .into_iter()
+        .partition(|row| row.loot == Loot::Objective);
     if !rows.is_empty() {
         findings.push(t2(&targets.t2, &rows));
         findings.push(t3(&targets.t3, &rows));
         findings.extend(t4(&targets.t4, &rows));
+    }
+    if !full.is_empty() {
+        findings.push(t2_full_loot(&targets.t2, &full));
     }
     findings
 }
@@ -217,6 +223,29 @@ fn t2(target: &Solvable, rows: &[&SiteRow]) -> Finding {
             )
         } else {
             format!("not won: {}", bad.join(", "))
+        },
+    }
+}
+
+/// T2 again, asked the way the campaign asks it: every loot of the site is taken (the files of
+/// the quests are on the nodes that are not the objective), with the whole deck of the tier.
+fn t2_full_loot(target: &Solvable, rows: &[&SiteRow]) -> Finding {
+    let bad: Vec<String> = rows
+        .iter()
+        .filter(|r| !matches!(r.result, SiteResult::Solved { .. }))
+        .map(|r| format!("{} {}", r.site, r.difficulty))
+        .collect();
+    Finding {
+        id: "T2",
+        level: target.level,
+        ok: bad.is_empty(),
+        detail: if bad.is_empty() {
+            format!(
+                "every site is won taking all its loot, at every difficulty ({} measures)",
+                rows.len()
+            )
+        } else {
+            format!("not won taking all the loot: {}", bad.join(", "))
         },
     }
 }
@@ -365,6 +394,7 @@ mod tests {
             tier,
             difficulty: difficulty.to_owned(),
             cap: 100,
+            loot: Loot::Objective,
             result: SiteResult::Solved {
                 trace: 100 - margin,
                 margin,

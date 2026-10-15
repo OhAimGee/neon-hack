@@ -7,7 +7,9 @@
 
 use neon_engine::campaign::Difficulty;
 use neon_engine::content::Content;
+use neon_engine::content::ids::SiteId;
 use neon_engine::run::solve::{Outcome, PROOF_EXPANSIONS, optimum};
+use neon_engine::run::{LootKind, Mission, Pace};
 use serde::{Deserialize, Serialize};
 
 use crate::record::difficulty_name;
@@ -38,6 +40,43 @@ pub enum SiteResult {
     },
 }
 
+/// What a measure asks of the intrusion.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Loot {
+    /// Reach the objective, with the deck every player has (no consumable): the room the site
+    /// leaves.
+    #[default]
+    Objective,
+    /// Take every loot of the site, with the whole deck of the tier: what the campaign asks of
+    /// the optimist, since the files of the quests are on the nodes that are not the objective.
+    All,
+}
+
+impl Loot {
+    /// Whether this is the default, the one that is not written in the reports.
+    #[must_use]
+    pub fn is_objective(&self) -> bool {
+        matches!(self, Self::Objective)
+    }
+}
+
+/// The intrusion of a site where every loot is an objective, with the deck of its tier: the
+/// variant the optimist plays, and the one the measures of [`Loot::All`] solve.
+#[must_use]
+pub fn full_loot_mission(content: &Content, site: &SiteId, pace: Pace) -> Option<Mission> {
+    let def = content.run(site)?;
+    let tier = content.site(site)?.unlock.tier.unwrap_or(1);
+    let kit = content.kit(tier)?;
+    let mut greedy = def.clone();
+    for node in &mut greedy.node {
+        if node.loot.is_some() {
+            node.loot = Some(LootKind::Objective);
+        }
+    }
+    greedy.mission(kit, pace).ok()
+}
+
 /// A site at a difficulty.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SiteRow {
@@ -49,6 +88,9 @@ pub struct SiteRow {
     pub difficulty: String,
     /// The cap of the Trace.
     pub cap: u8,
+    /// What was asked of the intrusion (not written when it is the objective alone).
+    #[serde(default, skip_serializing_if = "Loot::is_objective")]
+    pub loot: Loot,
     /// What the solver found.
     pub result: SiteResult,
 }
@@ -60,6 +102,7 @@ pub fn measure(
     content: &Content,
     only: Option<&str>,
     difficulty: Option<Difficulty>,
+    loot: Loot,
     max_expanded: u64,
 ) -> Vec<SiteRow> {
     let mut rows = Vec::new();
@@ -71,10 +114,15 @@ pub fn measure(
             if difficulty.is_some_and(|wanted| wanted != level) {
                 continue;
             }
-            let Some(mission) = content.mission(&site.id, level.pace()) else {
+            let mission = match loot {
+                Loot::Objective => content
+                    .mission(&site.id, level.pace())
+                    .map(|mission| mission.unlimited_only()),
+                Loot::All => full_loot_mission(content, &site.id, level.pace()),
+            };
+            let Some(mission) = mission else {
                 continue;
             };
-            let mission = mission.unlimited_only();
             let cap = mission.trace_cap();
             let report = optimum(&mission, max_expanded);
             let expanded = report.stats.expanded;
@@ -103,6 +151,7 @@ pub fn measure(
                 tier: site.unlock.tier.unwrap_or(1),
                 difficulty: difficulty_name(level).to_owned(),
                 cap,
+                loot,
                 result,
             });
         }
