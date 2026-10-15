@@ -256,8 +256,14 @@ fn margin_of(rows: &[&SiteRow], site: &str, difficulty: Difficulty) -> Option<u8
 }
 
 fn t4(target: &Margin, rows: &[&SiteRow]) -> Vec<Finding> {
-    let mut sites: Vec<&str> = rows.iter().map(|r| r.site.as_str()).collect();
-    sites.dedup();
+    // One entry per site, in the order of the reports: the rows of a site are spread over the
+    // reports (one per difficulty), so a consecutive `dedup` would not be enough.
+    let mut sites: Vec<&str> = Vec::new();
+    for row in rows {
+        if !sites.contains(&row.site.as_str()) {
+            sites.push(row.site.as_str());
+        }
+    }
     let mut disorder = Vec::new();
     let mut flat = Vec::new();
     let mut outside = Vec::new();
@@ -421,6 +427,18 @@ mod tests {
         assert_eq!(objectives.len(), 3);
         assert!(objectives.iter().all(|f| !f.ok && !f.fails()));
         assert!(findings.iter().all(|f| !f.fails()));
+    }
+
+    #[test]
+    fn a_site_measured_in_several_reports_is_named_once() {
+        // `neon-sim solve` writes one report per difficulty: the rows of a site are interleaved.
+        let reports: Vec<Report> = well_behaved("a", [95, 92, 86, 80], 5)
+            .into_iter()
+            .map(|r| sites(vec![r]))
+            .collect();
+        let findings = check(&targets(), &reports);
+        let flat = find(&findings, "T4", 1);
+        assert_eq!(flat.detail.matches("a (95 against 92)").count(), 1, "{}", flat.detail);
     }
 
     #[test]
