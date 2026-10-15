@@ -35,7 +35,7 @@ Les deux modes se combinent (`--screen-reader --ascii`) : la variante `@sr` pass
 
 ## Vocabulaire
 
-Les mots du jeu (Trace, Notoriété, nœud, quête…) ne s'écrivent pas à la main dans une phrase : `terms.toml` en donne le mot canonique (`term.<id>`), le code le cite par `Arg::Term`, et `data/glossary.toml` liste les variantes interdites. Règles et arbitrages : [`docs/spec/glossary.md`](../../docs/spec/glossary.md).
+Les mots du jeu (Trace, Notoriété, nœud, quête…) ne s'écrivent pas à la main dans une phrase : `terms.toml` en donne le mot canonique (`term.<id>`), le code le cite par `Arg::Term`, et `data/glossary.toml` liste les variantes interdites. Un gabarit qui demande `{ice}` sans que le code le donne reçoit le terme du même nom (`term.ice`) : l'aide et les erreurs peuvent nommer le vocabulaire sans que chaque appel le transmette ; un argument qui n'est pas un terme reste signalé `<?nom>`. Règles et arbitrages : [`docs/spec/glossary.md`](../../docs/spec/glossary.md).
 
 ## Les fichiers du jeu de campagne
 
