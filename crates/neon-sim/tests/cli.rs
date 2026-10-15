@@ -35,12 +35,13 @@ fn solve_writes_a_report_that_check_reads() {
     let json = std::fs::read_to_string(&file).unwrap();
     assert!(json.contains("\"kind\": \"sites\""), "{json}");
 
-    // The report holds one site: T2 holds, T3 and T4 are objectives, nothing fails.
+    // The report holds the tutorial: it is won, its best plan takes three turns, and the order
+    // of the difficulties holds. The gap and the bounds start at tier 2.
     let checked = sim(&["check", &file]);
     assert!(checked.status.success(), "{}", out(&checked));
     let text = out(&checked);
     assert!(text.contains("[ok  ] T2 (P)"), "{text}");
-    assert!(text.contains("T3 (O)"), "{text}");
+    assert!(text.contains("[ok  ] T3 (P)"), "{text}");
 }
 
 #[test]

@@ -2,7 +2,7 @@
 #
 # P is a barrier: `neon-sim check` fails when it does not hold. O is an objective: it is
 # reported and does not fail the check, until the owner validates its value and it is promoted
-# to P (section 8 of the spec). The numbers are starting hypotheses [H] of the spec: the
+# to P (section 8 of the spec). The numbers are the starting hypotheses [H] of the spec; the
 # harness never changes game data, a person does, with a report to justify it.
 
 # T1: the optimist finishes the campaign, whatever its decisions, and every ending is reached.
@@ -15,21 +15,23 @@ endings = ["e1a", "e1b", "e2", "e3", "e4"]
 [t2]
 level = "P"
 
-# T3: the best plan of a site takes between 3 and 12 turns. An objective for now: the
-# spec's hypothesis is not met by the shipped sites (their best plans take 1 to 4 turns), and
-# it is for the owner to say whether the bounds or the sites change (docs/ROADMAP.md, R6).
+# T3: the best plan of a site takes between 3 and 12 turns, at the reference difficulty. The
+# other difficulties scale from it (Story gives a cycle and halves the Trace; Expert and
+# Hardcore press the player to go faster), so their plans are not bound.
 [t3]
-level = "O"
+level = "P"
+difficulty = "normal"
 min_turns = 3
 max_turns = 12
 
 # T4: the room the minimal deck leaves under the cap of the Trace. The order between
-# difficulties is a barrier; the gap between Story and Normal and the bounds at Normal are
-# objectives (the shipped sites leave more room than the spec's hypothesis asks for).
+# difficulties holds for every site. The gap between Story and Normal and the bounds at Normal
+# start at tier 2: the first site is the tutorial, short and forgiving on purpose.
 [t4]
 order_level = "P"
-gap_level = "O"
+from_tier = 2
+gap_level = "P"
 story_over_normal = 10
-bounds_level = "O"
+bounds_level = "P"
 normal_min = 25
 normal_max = 70
