@@ -38,3 +38,38 @@ story_over_normal = 10
 bounds_level = "P"
 normal_min = 25
 normal_max = 70
+
+# T5: a reasonable player (the prudent bot) at Normal: it finishes the campaign, and a share of
+# its intrusions burns out, never many in a row on the same site. Objectives: the numbers are
+# the starting hypotheses of the spec and the measure of the shipped sites is for the owner.
+[t5]
+level = "O"
+finished_per_mille_min = 950
+burned_per_mille_min = 100
+burned_per_mille_max = 250
+longest_streak_max = 4
+
+# T6: a reckless player (the strongest program, no cloak, no forecast) is the floor of the
+# difficulty: it does not get through Expert, and gets through Story.
+[t6]
+level = "O"
+expert_finished_per_mille_max = 100
+story_finished_per_mille_min = 800
+
+# T10: how long a campaign lasts for the prudent bot at Normal, in command lines (1500 to
+# 2500 is about 4 to 5 hours at the reference pace of the spec), and how much of it is spent
+# in an intrusion.
+[t10]
+level = "O"
+commands_min = 1500
+commands_max = 2500
+in_intrusion_per_mille_max = 300
+
+# T11: the Notoriety at Normal: the prudent bot stays at most Watched at the median (under 50)
+# and is Hunted (80 and more) in a tenth of its games at most; the reckless bot is Hunted in
+# half of them at least.
+[t11]
+level = "O"
+prudent_median_max = 49
+prudent_hunted_per_mille_max = 100
+reckless_hunted_per_mille_min = 500

@@ -20,6 +20,7 @@ use neon_engine::save::SaveRequest;
 
 use crate::brain::{Brain, Move, Plan};
 use crate::sites::full_loot_mission;
+use crate::tactics::{self, Style};
 
 /// Prompts one command may cause (a conversation with a few topics, a decision).
 const MAX_PROMPTS: usize = 24;
@@ -27,6 +28,32 @@ const MAX_PROMPTS: usize = 24;
 const MAX_REPEATS: usize = 12;
 /// The inputs remembered for a failure report.
 const RECENT: usize = 30;
+/// The most actions a run played by hand may take: the ambient Trace burns a run that does
+/// nothing in about fifty turns.
+const MAX_ACTIONS: usize = 600;
+
+/// The command a player types for an action of the run.
+#[must_use]
+pub fn command_line(action: &Action) -> String {
+    match action {
+        Action::Move(node) => format!("move {}", node.number()),
+        Action::Breach { node, program } => format!("breach {} {}", node.number(), program.id()),
+        Action::Use(utility) => format!("use {}", utility.program().id()),
+        Action::Loot => "loot".to_owned(),
+        Action::End => "end".to_owned(),
+        Action::Jackout => "jackout".to_owned(),
+    }
+}
+
+/// How the player plays the intrusions.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum Tactic {
+    /// By the plan of the solver: the optimist, who never burns.
+    #[default]
+    Solver,
+    /// By hand, one action at a time, as a heuristic player does ([`tactics`]): it can burn.
+    Hand(Style),
+}
 
 /// What a driver is told to do besides playing the plan.
 #[derive(Debug, Clone)]
@@ -37,6 +64,11 @@ pub struct Config {
     pub max_steps: usize,
     /// Types `save 3` once, after this many steps (a slot save is a path of its own).
     pub slot_save_after: Option<usize>,
+    /// How the intrusions are played.
+    pub tactic: Tactic,
+    /// The notoriety from which the player buys cover before anything else (it buys it only
+    /// when a quest asks for it if this is `None`).
+    pub cool_from: Option<u8>,
 }
 
 impl Default for Config {
@@ -45,6 +77,8 @@ impl Default for Config {
             handle: "Walker".to_owned(),
             max_steps: 2_500,
             slot_save_after: None,
+            tactic: Tactic::Solver,
+            cool_from: None,
         }
     }
 }
@@ -105,9 +139,28 @@ impl Observer for Blind {
     }
 }
 
+/// How a walk that went on to its end ended.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Fate {
+    /// The campaign was played to its epilogue.
+    Finished,
+    /// An intrusion burned in Hardcore: the game is lost.
+    Lost {
+        /// The site.
+        site: String,
+    },
+    /// The player gave up: it burned the same intrusion over and over.
+    GaveUp {
+        /// The site.
+        site: String,
+    },
+}
+
 /// What a finished walk leaves.
 #[derive(Debug)]
 pub struct Walk<O> {
+    /// How it ended.
+    pub fate: Fate,
     /// The inputs sent to the game.
     pub steps: usize,
     /// Every command line typed.
@@ -134,6 +187,8 @@ pub struct Driver<O> {
     recent: VecDeque<String>,
     saved_slot: bool,
     last_save: Option<SaveRequest>,
+    /// The site of the last `hack`, for the report of a game lost on it.
+    last_site: String,
 }
 
 impl<O: Observer> Driver<O> {
@@ -151,6 +206,7 @@ impl<O: Observer> Driver<O> {
             recent: VecDeque::new(),
             saved_slot: false,
             last_save: None,
+            last_site: String::new(),
         }
     }
 
@@ -172,7 +228,9 @@ impl<O: Observer> Driver<O> {
         Stuck {
             why: why.to_owned(),
             recent: self.recent.iter().cloned().collect(),
-            pending: Brain::new(&self.game, &self.plan).describe_pending(),
+            pending: Brain::new(&self.game, &self.plan)
+                .cooling_from(self.config.cool_from)
+                .describe_pending(),
             context: self.observer.context(),
         }
     }
@@ -205,7 +263,15 @@ impl<O: Observer> Driver<O> {
                     return Err(self.stuck("`save 3` does not ask for slot 3"));
                 }
             }
-            let next = Brain::new(&self.game, &self.plan).next_move();
+            // The game ends by itself only when an intrusion burned in Hardcore: leaving is
+            // typed once the epilogue is done.
+            if self.game.prompt() == Prompt::End {
+                let site = self.last_site.clone();
+                return Ok(self.ended(Fate::Lost { site }));
+            }
+            let next = Brain::new(&self.game, &self.plan)
+                .cooling_from(self.config.cool_from)
+                .next_move();
             let Some(mv) = next else { break };
             // The same move again and again is a move that does not do what it should (three
             // conversations at most are ever asked for in a row).
@@ -215,6 +281,13 @@ impl<O: Observer> Driver<O> {
                 0
             };
             if repeats >= MAX_REPEATS {
+                // A player who plays by hand and burns the same intrusion again and again
+                // gives up; for the solver, which cannot burn, it is a bug of the walk.
+                if let (Tactic::Hand(_), Move::Hack(site)) = (self.config.tactic, &mv) {
+                    return Ok(self.ended(Fate::GaveUp {
+                        site: site.to_string(),
+                    }));
+                }
                 return Err(self.stuck(&format!(
                     "{mv:?} done {MAX_REPEATS} times in a row to no avail"
                 )));
@@ -256,13 +329,19 @@ impl<O: Observer> Driver<O> {
         if self.game.prompt() != Prompt::End {
             return Err(self.stuck("`quit` does not end the game"));
         }
-        Ok(Walk {
+        Ok(self.ended(Fate::Finished))
+    }
+
+    /// The walk, ended with a fate.
+    fn ended(self, fate: Fate) -> Walk<O> {
+        Walk {
+            fate,
             steps: self.steps,
             typed: self.typed,
             script: self.script,
             game: self.game,
             observer: self.observer,
-        })
+        }
     }
 
     // --------------------------------------------------------------------- a move
@@ -289,8 +368,12 @@ impl<O: Observer> Driver<O> {
         };
         self.type_line(&line)?;
         self.settle(mv)?;
-        if matches!(mv, Move::Hack(_)) {
-            self.play_intrusion(mv)?;
+        if let Move::Hack(site) = mv {
+            self.last_site = site.to_string();
+            match self.config.tactic {
+                Tactic::Solver => self.play_intrusion(mv)?,
+                Tactic::Hand(style) => self.play_by_hand(mv, style)?,
+            }
         }
         Ok(())
     }
@@ -331,17 +414,7 @@ impl<O: Observer> Driver<O> {
                 if self.game.intrusion().is_none() {
                     break;
                 }
-                let line = match action {
-                    Action::Move(node) => format!("move {}", node.number()),
-                    Action::Breach { node, program } => {
-                        format!("breach {} {}", node.number(), program.id())
-                    }
-                    Action::Use(utility) => format!("use {}", utility.program().id()),
-                    Action::Loot => "loot".to_owned(),
-                    Action::End => "end".to_owned(),
-                    Action::Jackout => "jackout".to_owned(),
-                };
-                self.type_line(&line)?;
+                self.type_line(&command_line(action))?;
                 self.settle(mv)?;
             }
             if self.game.intrusion().is_some() {
@@ -349,6 +422,22 @@ impl<O: Observer> Driver<O> {
             }
         }
         Ok(())
+    }
+
+    /// Plays the intrusion that `hack` opened by hand, one action at a time, as the style
+    /// would: the state is read again after every command. The run ends won, or burned.
+    fn play_by_hand(&mut self, mv: &Move, style: Style) -> Result<(), Stuck> {
+        for _ in 0..MAX_ACTIONS {
+            let action = match self.game.intrusion() {
+                Some(intrusion) => {
+                    tactics::choose(style, intrusion.run().mission(), intrusion.state())
+                }
+                None => return Ok(()),
+            };
+            self.type_line(&command_line(&action))?;
+            self.settle(mv)?;
+        }
+        Err(self.stuck("an intrusion played by hand that does not end"))
     }
 
     /// Types a line at the command prompt.

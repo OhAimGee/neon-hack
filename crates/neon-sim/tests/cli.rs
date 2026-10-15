@@ -64,7 +64,7 @@ fn run_plays_a_game_and_writes_a_report_per_difficulty() {
     ]);
     assert!(ran.status.success(), "{}", out(&ran));
     assert!(
-        out(&ran).contains("1 games, 1 finished, 0 stuck"),
+        out(&ran).contains("1 games, 1 finished, 0 lost, 0 gave up, 0 stuck"),
         "{}",
         out(&ran)
     );
@@ -104,4 +104,38 @@ fn bad_arguments_and_files_are_refused_with_two() {
     assert_eq!(solved.status.code(), Some(2));
     let seeds = sim(&["run", "--seeds", "9..=2"]);
     assert_ne!(seeds.status.code(), Some(0));
+}
+
+#[test]
+fn a_bot_that_plays_by_hand_is_named_in_its_summary_and_checked_against_its_threshold() {
+    let dir = tempfile::tempdir().unwrap();
+    let file = path(dir.path(), "reckless.json");
+    let ran = sim(&[
+        "run",
+        "--bot",
+        "reckless",
+        "--difficulty",
+        "story",
+        "--seeds",
+        "1",
+        "--limit",
+        "1",
+        "--out",
+        &file,
+    ]);
+    assert!(ran.status.success(), "{}", out(&ran));
+    assert!(
+        out(&ran).contains("reckless story: 1 games, 1 finished"),
+        "{}",
+        out(&ran)
+    );
+    let json = std::fs::read_to_string(&file).unwrap();
+    assert!(json.contains("\"bot\": \"reckless\""), "{json}");
+    let checked = sim(&["check", &file]);
+    assert!(checked.status.success(), "{}", out(&checked));
+    assert!(
+        out(&checked).contains("[ok  ] T6 (O): reckless in Story finishes 1000 per mille"),
+        "{}",
+        out(&checked)
+    );
 }

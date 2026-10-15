@@ -9,6 +9,7 @@
 //!   own tests use both.
 //! - [`record`] and [`campaign`] play batches of games and keep what each one cost.
 //! - [`sites`] measures every site with the solver.
+//! - [`tactics`] plays an intrusion by hand, as a heuristic player does.
 //! - [`report`] writes all of it as canonical JSON, [`targets`] holds the thresholds as data and
 //!   checks reports against them.
 
@@ -18,4 +19,5 @@ pub mod driver;
 pub mod record;
 pub mod report;
 pub mod sites;
+pub mod tactics;
 pub mod targets;

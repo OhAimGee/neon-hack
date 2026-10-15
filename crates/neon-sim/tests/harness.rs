@@ -10,7 +10,7 @@
 
 use neon_engine::campaign::Difficulty;
 use neon_engine::content::Content;
-use neon_sim::campaign::{PlanSet, plans, run_optimist};
+use neon_sim::campaign::{Bot, PlanSet, plans, run_bot};
 use neon_sim::record::Outcome;
 use neon_sim::report::{Report, SCHEMA_VERSION, SitesReport};
 use neon_sim::sites::{Loot, SiteResult, measure};
@@ -85,8 +85,8 @@ fn the_shipped_game_passes_the_barriers_on_the_sites() {
 fn a_game_is_played_to_its_ending_and_the_report_is_the_same_every_time() {
     let plans = plans(PlanSet::Representative).unwrap();
     let first = &plans[..1];
-    let (report, records) = run_optimist(first, Difficulty::Story, &(3..=3));
-    let (again, _) = run_optimist(first, Difficulty::Story, &(3..=3));
+    let (report, records) = run_bot(Bot::Optimist, first, Difficulty::Story, &(3..=3));
+    let (again, _) = run_bot(Bot::Optimist, first, Difficulty::Story, &(3..=3));
     assert_eq!(
         Report::Campaign(report.clone()).to_json().unwrap(),
         Report::Campaign(again).to_json().unwrap(),
@@ -110,7 +110,7 @@ fn a_game_is_played_to_its_ending_and_the_report_is_the_same_every_time() {
 #[test]
 fn a_campaign_report_is_checked_against_the_first_threshold() {
     let plans = plans(PlanSet::Representative).unwrap();
-    let (report, _) = run_optimist(&plans[..1], Difficulty::Story, &(1..=1));
+    let (report, _) = run_bot(Bot::Optimist, &plans[..1], Difficulty::Story, &(1..=1));
     let findings = check(&Targets::embedded().unwrap(), &[Report::Campaign(report)]);
     // One game finished: the share is right, and four of the five endings are missing.
     assert_eq!(findings.len(), 2);
@@ -146,4 +146,81 @@ fn the_whole_loot_of_a_site_can_be_asked_for_and_is_not_written_by_default() {
     );
     let json = serde_json::to_string(&objective[0]).unwrap();
     assert!(!json.contains("loot"), "{json}");
+}
+
+#[test]
+fn the_bots_that_play_by_hand_finish_story_and_normal_without_burning() {
+    let plans = plans(PlanSet::Representative).unwrap();
+    for bot in [Bot::Prudent, Bot::Reckless] {
+        for difficulty in [Difficulty::Story, Difficulty::Normal] {
+            let (report, _) = run_bot(bot, &plans[..1], difficulty, &(1..=1));
+            assert_eq!(report.bot, bot.name());
+            assert_eq!(
+                (report.finished, report.lost, report.gave_up, report.stuck),
+                (1, 0, 0, 0),
+                "{} {difficulty:?}",
+                bot.name()
+            );
+            assert_eq!(report.intrusions.burned_per_mille, 0);
+        }
+    }
+}
+
+#[test]
+fn a_game_burned_out_in_hardcore_is_lost_and_recorded_as_such() {
+    let plans = plans(PlanSet::Representative).unwrap();
+    let (report, records) = run_bot(Bot::Reckless, &plans[..1], Difficulty::Hardcore, &(1..=1));
+    assert_eq!((report.finished, report.lost, report.stuck), (0, 1, 0));
+    let Outcome::Lost { site } = &records[0].outcome else {
+        panic!("{:?}", records[0].outcome);
+    };
+    // The burned intrusion is the last one, on the site the game was lost on.
+    let last = records[0].intrusions.last().unwrap();
+    assert!(last.burned);
+    assert_eq!(&last.site, site);
+    assert!(
+        report.worst[0].why.starts_with("lost on "),
+        "{:?}",
+        report.worst
+    );
+}
+
+#[test]
+fn a_bot_that_burns_the_same_intrusion_again_and_again_gives_up() {
+    let plans = plans(PlanSet::Representative).unwrap();
+    let (report, records) = run_bot(Bot::Prudent, &plans[..1], Difficulty::Expert, &(1..=1));
+    assert_eq!((report.finished, report.gave_up, report.stuck), (0, 1, 0));
+    assert!(matches!(records[0].outcome, Outcome::GaveUp { .. }));
+    // A dozen runs in a row burned on one site: the streak is what T5 reads.
+    assert!(
+        report.intrusions.longest_burn_streak >= 12,
+        "{:?}",
+        report.intrusions
+    );
+}
+
+#[test]
+fn the_bots_are_checked_against_the_thresholds_of_the_spec() {
+    let plans = plans(PlanSet::Representative).unwrap();
+    let mut reports = Vec::new();
+    for (bot, difficulty) in [
+        (Bot::Prudent, Difficulty::Normal),
+        (Bot::Reckless, Difficulty::Normal),
+        (Bot::Reckless, Difficulty::Story),
+        (Bot::Reckless, Difficulty::Expert),
+    ] {
+        let (report, _) = run_bot(bot, &plans[..1], difficulty, &(1..=1));
+        reports.push(Report::Campaign(report));
+    }
+    let findings = check(&Targets::embedded().unwrap(), &reports);
+    let ids: Vec<&str> = findings.iter().map(|f| f.id).collect();
+    for id in ["T5", "T6", "T10", "T11"] {
+        assert!(ids.contains(&id), "{id} is missing from {ids:?}");
+    }
+    // The reckless floor holds: Story is finished, Expert is not.
+    let t6: Vec<_> = findings.iter().filter(|f| f.id == "T6").collect();
+    assert_eq!(t6.len(), 2);
+    assert!(t6.iter().all(|f| f.ok), "{t6:?}");
+    // None of them is a barrier yet: the numbers are the owner's to validate.
+    assert!(findings.iter().all(|f| f.id == "T1" || !f.fails()));
 }

@@ -11,7 +11,7 @@ use neon_engine::text::Arg;
 use serde::{Deserialize, Serialize};
 
 use crate::brain::Plan;
-use crate::driver::{Config, Driver, Observer};
+use crate::driver::{Config, Driver, Fate, Observer, Tactic};
 
 /// How an intrusion ended, and what it cost.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -35,7 +35,17 @@ pub enum Outcome {
         /// The ending reached (`e1a`, `e1b`, `e2`, `e3` or `e4`).
         ending: String,
     },
-    /// The bot could not go on.
+    /// An intrusion burned in Hardcore: the game is lost.
+    Lost {
+        /// The site it burned on.
+        site: String,
+    },
+    /// The bot burned the same intrusion over and over and gave up.
+    GaveUp {
+        /// The site it could not get through.
+        site: String,
+    },
+    /// The harness could not go on: a bug of the walk, never a result.
     Stuck {
         /// Why.
         why: String,
@@ -59,6 +69,8 @@ pub struct GameRecord {
     pub credits: i64,
     /// The highest Notoriety met.
     pub max_notoriety: u8,
+    /// The share of the steps of the game spent inside an intrusion, per mille.
+    pub intrusion_per_mille: u64,
     /// The intrusions, in order.
     pub intrusions: Vec<IntrusionRecord>,
 }
@@ -85,6 +97,8 @@ struct Live {
 /// Counts what a game says and does.
 #[derive(Debug, Default)]
 struct Tally {
+    steps: u64,
+    intrusion_steps: u64,
     credits: i64,
     ending: Option<String>,
     intrusions: Vec<IntrusionRecord>,
@@ -95,6 +109,10 @@ struct Tally {
 impl Observer for Tally {
     fn observe(&mut self, game: &mut CampaignGame, _: &str, step: &Step) -> Result<(), String> {
         self.max_notoriety = self.max_notoriety.max(game.notoriety());
+        self.steps += 1;
+        if game.intrusion().is_some() {
+            self.intrusion_steps += 1;
+        }
         let mut burned = false;
         for event in &step.events {
             let Event::Message { role, text, .. } = event else {
@@ -139,7 +157,13 @@ impl Observer for Tally {
 /// Plays a campaign from a new game to its epilogue with the plan, and records it. A game that
 /// cannot go on is a record like any other, with the reason.
 #[must_use]
-pub fn play_game(plan: &Plan, difficulty: Difficulty, seed: u64) -> GameRecord {
+pub fn play_game(
+    plan: &Plan,
+    difficulty: Difficulty,
+    seed: u64,
+    tactic: Tactic,
+    cool_from: Option<u8>,
+) -> GameRecord {
     let mut record = GameRecord {
         plan: plan.name(),
         difficulty: difficulty_name(difficulty).to_owned(),
@@ -150,6 +174,7 @@ pub fn play_game(plan: &Plan, difficulty: Difficulty, seed: u64) -> GameRecord {
         commands: 0,
         credits: 0,
         max_notoriety: 0,
+        intrusion_per_mille: 0,
         intrusions: Vec::new(),
     };
     let game = match CampaignGame::new(difficulty, seed) {
@@ -161,18 +186,30 @@ pub fn play_game(plan: &Plan, difficulty: Difficulty, seed: u64) -> GameRecord {
             return record;
         }
     };
-    match Driver::new(game, plan.clone(), Tally::default(), Config::default()).play() {
+    let config = Config {
+        tactic,
+        cool_from,
+        ..Config::default()
+    };
+    match Driver::new(game, plan.clone(), Tally::default(), config).play() {
         Ok(walk) => {
             let tally = walk.observer;
             record.commands = walk.typed.len() as u64;
             record.credits = tally.credits;
             record.max_notoriety = tally.max_notoriety;
+            record.intrusion_per_mille = (tally.intrusion_steps * 1000)
+                .checked_div(tally.steps)
+                .unwrap_or(0);
             record.intrusions = tally.intrusions;
-            record.outcome = match tally.ending {
-                Some(ending) => Outcome::Finished { ending },
-                None => Outcome::Stuck {
-                    why: "the epilogue was reached without an ending".to_owned(),
+            record.outcome = match walk.fate {
+                Fate::Finished => match tally.ending {
+                    Some(ending) => Outcome::Finished { ending },
+                    None => Outcome::Stuck {
+                        why: "the epilogue was reached without an ending".to_owned(),
+                    },
                 },
+                Fate::Lost { site } => Outcome::Lost { site },
+                Fate::GaveUp { site } => Outcome::GaveUp { site },
             };
         }
         Err(stuck) => {

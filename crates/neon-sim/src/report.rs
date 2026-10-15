@@ -11,7 +11,7 @@ use crate::record::{GameRecord, Outcome};
 use crate::sites::SiteRow;
 
 /// The version of the report format.
-pub const SCHEMA_VERSION: u32 = 1;
+pub const SCHEMA_VERSION: u32 = 2;
 /// The games of a campaign report that are listed by name when they went wrong.
 const WORST: usize = 20;
 
@@ -70,6 +70,8 @@ pub struct IntrusionStats {
     pub burned_per_mille: u64,
     /// The turns of an intrusion.
     pub turns: Option<Spread>,
+    /// The most burned runs in a row on the same site, in any game.
+    pub longest_burn_streak: u64,
 }
 
 /// The report of a batch of games of one bot at one difficulty.
@@ -89,7 +91,11 @@ pub struct CampaignReport {
     pub games: u64,
     /// The games that reached the epilogue.
     pub finished: u64,
-    /// The games the bot could not go on with.
+    /// The games lost in Hardcore.
+    pub lost: u64,
+    /// The games the bot gave up.
+    pub gave_up: u64,
+    /// The games the harness could not go on with: a bug of the walk, never a result.
     pub stuck: u64,
     /// The endings reached, by name.
     pub endings: BTreeMap<String, u64>,
@@ -97,12 +103,39 @@ pub struct CampaignReport {
     pub commands: Option<Spread>,
     /// The credits announced as rewards in a finished game.
     pub credits: Option<Spread>,
-    /// The highest Notoriety of a finished game.
+    /// The highest Notoriety of a game, whatever its end.
     pub max_notoriety: Option<Spread>,
+    /// The games that reached the Hunted band, per mille of the games.
+    pub hunted_per_mille: u64,
+    /// The share of the steps of a game spent inside an intrusion, per mille.
+    pub in_intrusion: Option<Spread>,
     /// The intrusions.
     pub intrusions: IntrusionStats,
     /// The games that went wrong, or lasted the longest.
     pub worst: Vec<Worst>,
+}
+
+/// The Notoriety from which the market is closed: the Hunted band.
+const HUNTED_AT: u8 = 80;
+
+/// The most burned runs in a row on one site in a game: the retries of a burned intrusion
+/// follow one another, so a streak is a run of burned records on the same site.
+fn burn_streak(record: &GameRecord) -> u64 {
+    let mut longest = 0;
+    let mut current = 0;
+    let mut site: Option<&str> = None;
+    for intrusion in &record.intrusions {
+        if intrusion.burned && site == Some(intrusion.site.as_str()) {
+            current += 1;
+        } else if intrusion.burned {
+            current = 1;
+        } else {
+            current = 0;
+        }
+        site = Some(intrusion.site.as_str());
+        longest = longest.max(current);
+    }
+    longest
 }
 
 impl CampaignReport {
@@ -119,24 +152,41 @@ impl CampaignReport {
             .iter()
             .filter(|r| matches!(r.outcome, Outcome::Finished { .. }))
             .collect();
+        let count = |wanted: fn(&Outcome) -> bool| {
+            records.iter().filter(|r| wanted(&r.outcome)).count() as u64
+        };
+        let lost = count(|o| matches!(o, Outcome::Lost { .. }));
+        let gave_up = count(|o| matches!(o, Outcome::GaveUp { .. }));
+        let stuck = count(|o| matches!(o, Outcome::Stuck { .. }));
         let mut endings: BTreeMap<String, u64> = BTreeMap::new();
         for record in &finished {
             if let Outcome::Finished { ending } = &record.outcome {
                 *endings.entry(ending.clone()).or_insert(0) += 1;
             }
         }
-        let intrusions: Vec<_> = finished.iter().flat_map(|r| &r.intrusions).collect();
+        // What happened in the intrusions, and how the Notoriety went, counts for every game,
+        // whatever its end: a bot that burns out is what these numbers are about.
+        let intrusions: Vec<_> = records.iter().flat_map(|r| &r.intrusions).collect();
         let burned = intrusions.iter().filter(|i| i.burned).count() as u64;
         let total = intrusions.len() as u64;
+        let hunted = records
+            .iter()
+            .filter(|r| r.max_notoriety >= HUNTED_AT)
+            .count() as u64;
         let mut worst: Vec<Worst> = records
             .iter()
-            .filter_map(|r| match &r.outcome {
-                Outcome::Stuck { why } => Some(Worst {
+            .filter_map(|r| {
+                let why = match &r.outcome {
+                    Outcome::Stuck { why } => why.clone(),
+                    Outcome::Lost { site } => format!("lost on {site}"),
+                    Outcome::GaveUp { site } => format!("gave up on {site}"),
+                    Outcome::Finished { .. } => return None,
+                };
+                Some(Worst {
                     seed: r.seed,
                     plan: r.plan.clone(),
-                    why: why.clone(),
-                }),
-                Outcome::Finished { .. } => None,
+                    why,
+                })
             })
             .collect();
         worst.truncate(WORST);
@@ -148,7 +198,9 @@ impl CampaignReport {
             plans,
             games: records.len() as u64,
             finished: finished.len() as u64,
-            stuck: (records.len() - finished.len()) as u64,
+            lost,
+            gave_up,
+            stuck,
             endings,
             commands: Spread::of(finished.iter().map(|r| r.commands).collect()),
             credits: Spread::of(
@@ -157,17 +209,17 @@ impl CampaignReport {
                     .map(|r| u64::try_from(r.credits).unwrap_or(0))
                     .collect(),
             ),
-            max_notoriety: Spread::of(
-                finished
-                    .iter()
-                    .map(|r| u64::from(r.max_notoriety))
-                    .collect(),
-            ),
+            max_notoriety: Spread::of(records.iter().map(|r| u64::from(r.max_notoriety)).collect()),
+            hunted_per_mille: (hunted * 1000)
+                .checked_div(records.len() as u64)
+                .unwrap_or(0),
+            in_intrusion: Spread::of(records.iter().map(|r| r.intrusion_per_mille).collect()),
             intrusions: IntrusionStats {
                 total,
-                per_game: Spread::of(finished.iter().map(|r| r.intrusions.len() as u64).collect()),
+                per_game: Spread::of(records.iter().map(|r| r.intrusions.len() as u64).collect()),
                 burned_per_mille: (burned * 1000).checked_div(total).unwrap_or(0),
                 turns: Spread::of(intrusions.iter().map(|i| u64::from(i.turns)).collect()),
+                longest_burn_streak: records.iter().map(burn_streak).max().unwrap_or(0),
             },
             worst,
         }
@@ -229,6 +281,30 @@ mod tests {
     )]
 
     use super::*;
+    use crate::record::IntrusionRecord;
+
+    fn intrusion(site: &str, burned: bool) -> IntrusionRecord {
+        IntrusionRecord {
+            site: site.to_owned(),
+            turns: 3,
+            trace: 40,
+            burned,
+        }
+    }
+
+    fn game(outcome: Outcome, notoriety: u8, intrusions: Vec<IntrusionRecord>) -> GameRecord {
+        GameRecord {
+            plan: "p".to_owned(),
+            difficulty: "normal".to_owned(),
+            seed: 1,
+            outcome,
+            commands: 100,
+            credits: 0,
+            max_notoriety: notoriety,
+            intrusion_per_mille: 250,
+            intrusions,
+        }
+    }
 
     #[test]
     fn the_spread_is_by_nearest_rank() {
@@ -257,5 +333,84 @@ mod tests {
         assert_eq!((report.games, report.finished, report.stuck), (0, 0, 0));
         assert_eq!(report.intrusions.burned_per_mille, 0);
         assert_eq!(report.commands, None);
+    }
+
+    #[test]
+    fn the_ends_of_a_game_are_counted_apart_and_a_lost_game_still_counts_for_the_bot() {
+        let ending = Outcome::Finished {
+            ending: "e2".to_owned(),
+        };
+        let records = [
+            game(ending, 20, vec![intrusion("a", false)]),
+            game(
+                Outcome::Lost {
+                    site: "b".to_owned(),
+                },
+                90,
+                vec![intrusion("a", false), intrusion("b", true)],
+            ),
+            game(
+                Outcome::GaveUp {
+                    site: "c".to_owned(),
+                },
+                80,
+                vec![
+                    intrusion("c", true),
+                    intrusion("c", true),
+                    intrusion("c", true),
+                ],
+            ),
+            game(
+                Outcome::Stuck {
+                    why: "a bug".to_owned(),
+                },
+                10,
+                Vec::new(),
+            ),
+        ];
+        let report = CampaignReport::of("prudent", "expert", [1, 1], 4, &records);
+        assert_eq!(
+            (
+                report.games,
+                report.finished,
+                report.lost,
+                report.gave_up,
+                report.stuck
+            ),
+            (4, 1, 1, 1, 1)
+        );
+        // 6 intrusions, 4 burned: the unfinished games count.
+        assert_eq!(report.intrusions.total, 6);
+        assert_eq!(report.intrusions.burned_per_mille, 666);
+        assert_eq!(report.intrusions.longest_burn_streak, 3);
+        // Two of four games reached the Hunted band (80 and more).
+        assert_eq!(report.hunted_per_mille, 500);
+        let why: Vec<&str> = report.worst.iter().map(|w| w.why.as_str()).collect();
+        assert_eq!(why, ["lost on b", "gave up on c", "a bug"]);
+    }
+
+    #[test]
+    fn a_streak_is_burned_runs_in_a_row_on_the_same_site() {
+        let apart = game(
+            Outcome::Stuck { why: String::new() },
+            0,
+            vec![
+                intrusion("a", true),
+                intrusion("b", true),
+                intrusion("a", true),
+            ],
+        );
+        assert_eq!(burn_streak(&apart), 1);
+        let retries = game(
+            Outcome::Stuck { why: String::new() },
+            0,
+            vec![
+                intrusion("a", true),
+                intrusion("a", true),
+                intrusion("a", false),
+                intrusion("a", true),
+            ],
+        );
+        assert_eq!(burn_streak(&retries), 2);
     }
 }
