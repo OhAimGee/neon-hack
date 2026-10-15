@@ -332,7 +332,7 @@ impl<O: Observer> Driver<O> {
                             best: Some(plan), ..
                         } => plan,
                         Outcome::Unknown { best: None, .. } | Outcome::Unsolvable => {
-                            return Err(self.stuck("no plan for an intrusion of the content"));
+                            return Err(self.stuck(&format!("no plan for the intrusion of {site}")));
                         }
                     }
                 }
