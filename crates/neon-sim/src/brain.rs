@@ -166,6 +166,8 @@ pub struct Brain<'a> {
     c: &'a Content,
     s: &'a State,
     plan: &'a Plan,
+    /// The notoriety from which the player buys cover before anything else, if it does.
+    cool_from: Option<u32>,
 }
 
 /// The notoriety at which the stall closes (the band "hunted").
@@ -191,7 +193,16 @@ impl<'a> Brain<'a> {
             c: game.content(),
             s: game.state().missions(),
             plan,
+            cool_from: None,
         }
+    }
+
+    /// A player who buys cover as soon as the notoriety reaches `from`, instead of only when a
+    /// quest asks for it.
+    #[must_use]
+    pub fn cooling_from(mut self, from: Option<u8>) -> Self {
+        self.cool_from = from.map(u32::from);
+        self
     }
 
     /// Whether the game offers `command` with this argument now: what TAB would complete.
@@ -214,6 +225,7 @@ impl<'a> Brain<'a> {
     #[must_use]
     pub fn next_move(&self) -> Option<Move> {
         self.free()
+            .or_else(|| self.cool_early())
             .or_else(|| self.work(|q| q.kind != QuestKind::Main))
             .or_else(|| self.work(|q| q.kind == QuestKind::Main))
             .or_else(|| self.cool())
@@ -541,6 +553,11 @@ impl<'a> Brain<'a> {
             })
             .min()?;
         self.cool_below(limit)
+    }
+
+    /// The cover a careful player buys before it goes on: down under the level it keeps.
+    fn cool_early(&self) -> Option<Move> {
+        self.cool_below(self.cool_from?)
     }
 
     /// A cover service that brings the notoriety under `limit`, or at least lowers it.

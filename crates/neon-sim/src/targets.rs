@@ -6,7 +6,7 @@
 
 use serde::Deserialize;
 
-use crate::campaign::OPTIMIST;
+use crate::campaign::{OPTIMIST, PRUDENT, RECKLESS};
 use crate::record::difficulty_name;
 use crate::report::{CampaignReport, Report, SitesReport};
 use crate::sites::{Loot, SiteResult, SiteRow};
@@ -79,6 +79,58 @@ pub struct Margin {
     pub normal_max: u8,
 }
 
+/// T5: how a reasonable player fares at Normal.
+#[derive(Debug, Clone, Deserialize)]
+pub struct Reasonable {
+    /// P or O.
+    pub level: Level,
+    /// The share of campaigns the prudent bot finishes, per mille, at least.
+    pub finished_per_mille_min: u64,
+    /// The share of its intrusions that burn, per mille, at least.
+    pub burned_per_mille_min: u64,
+    /// The share of its intrusions that burn, per mille, at most.
+    pub burned_per_mille_max: u64,
+    /// The most burned runs in a row on one site.
+    pub longest_streak_max: u64,
+}
+
+/// T6: how a reckless player fares: the floor of the difficulty.
+#[derive(Debug, Clone, Deserialize)]
+pub struct Floor {
+    /// P or O.
+    pub level: Level,
+    /// The share of campaigns the reckless bot finishes at Expert, per mille, at most.
+    pub expert_finished_per_mille_max: u64,
+    /// The share of campaigns it finishes in Story, per mille, at least.
+    pub story_finished_per_mille_min: u64,
+}
+
+/// T10: how long a campaign lasts for the prudent bot, at Normal.
+#[derive(Debug, Clone, Deserialize)]
+pub struct Duration {
+    /// P or O.
+    pub level: Level,
+    /// The fewest command lines of a finished campaign (the median).
+    pub commands_min: u64,
+    /// The most command lines of a finished campaign (the median).
+    pub commands_max: u64,
+    /// The most of the steps of a game spent inside an intrusion, per mille (the worst game).
+    pub in_intrusion_per_mille_max: u64,
+}
+
+/// T11: the Notoriety of the prudent and of the reckless bot, at Normal.
+#[derive(Debug, Clone, Deserialize)]
+pub struct Heat {
+    /// P or O.
+    pub level: Level,
+    /// The highest Notoriety of a game the prudent bot may reach, at the median.
+    pub prudent_median_max: u64,
+    /// The share of the prudent bot's games that reach the Hunted band, per mille, at most.
+    pub prudent_hunted_per_mille_max: u64,
+    /// The share of the reckless bot's games that reach the Hunted band, per mille, at least.
+    pub reckless_hunted_per_mille_min: u64,
+}
+
 /// All the thresholds.
 #[derive(Debug, Clone, Deserialize)]
 pub struct Targets {
@@ -90,6 +142,14 @@ pub struct Targets {
     pub t3: Length,
     /// T4.
     pub t4: Margin,
+    /// T5.
+    pub t5: Reasonable,
+    /// T6.
+    pub t6: Floor,
+    /// T10.
+    pub t10: Duration,
+    /// T11.
+    pub t11: Heat,
 }
 
 impl Targets {
@@ -144,6 +204,13 @@ pub fn check(targets: &Targets, reports: &[Report]) -> Vec<Finding> {
             _ => None,
         })
         .collect();
+    let all_campaigns: Vec<&CampaignReport> = reports
+        .iter()
+        .filter_map(|r| match r {
+            Report::Campaign(c) => Some(c),
+            Report::Sites(_) => None,
+        })
+        .collect();
     let sites: Vec<&SitesReport> = reports
         .iter()
         .filter_map(|r| match r {
@@ -155,6 +222,7 @@ pub fn check(targets: &Targets, reports: &[Report]) -> Vec<Finding> {
     if !campaigns.is_empty() {
         findings.extend(t1(&targets.t1, &campaigns));
     }
+    findings.extend(bots(targets, &all_campaigns));
     let all_rows: Vec<&SiteRow> = sites.iter().flat_map(|s| &s.rows).collect();
     let (rows, full): (Vec<&SiteRow>, Vec<&SiteRow>) = all_rows
         .into_iter()
@@ -166,6 +234,157 @@ pub fn check(targets: &Targets, reports: &[Report]) -> Vec<Finding> {
     }
     if !full.is_empty() {
         findings.push(t2_full_loot(&targets.t2, &full));
+    }
+    findings
+}
+
+/// The report of a bot at a difficulty, if the caller gave one.
+fn report_of<'a>(
+    campaigns: &[&'a CampaignReport],
+    bot: &str,
+    difficulty: &str,
+) -> Option<&'a CampaignReport> {
+    campaigns
+        .iter()
+        .find(|c| c.bot == bot && c.difficulty == difficulty)
+        .copied()
+}
+
+/// The share of the games a bot finished, per mille.
+fn finished_per_mille(report: &CampaignReport) -> u64 {
+    (report.finished * 1000)
+        .checked_div(report.games)
+        .unwrap_or(0)
+}
+
+/// A verdict on one claim.
+fn claim(id: &'static str, level: Level, ok: bool, detail: String) -> Finding {
+    Finding {
+        id,
+        level,
+        ok,
+        detail,
+    }
+}
+
+/// T5, T6, T10 and T11: what the prudent and the reckless bot go through.
+fn bots(targets: &Targets, campaigns: &[&CampaignReport]) -> Vec<Finding> {
+    let mut findings = Vec::new();
+    let prudent = report_of(campaigns, PRUDENT, "normal");
+    let reckless_normal = report_of(campaigns, RECKLESS, "normal");
+    if let Some(report) = prudent {
+        let t = &targets.t5;
+        let finished = finished_per_mille(report);
+        findings.push(claim(
+            "T5",
+            t.level,
+            finished >= t.finished_per_mille_min,
+            format!(
+                "prudent at Normal finishes {finished} per mille of its campaigns ({} wanted)",
+                t.finished_per_mille_min
+            ),
+        ));
+        let burned = report.intrusions.burned_per_mille;
+        findings.push(claim(
+            "T5",
+            t.level,
+            (t.burned_per_mille_min..=t.burned_per_mille_max).contains(&burned),
+            format!(
+                "prudent at Normal burns {burned} per mille of its {} intrusions ({} to {} wanted)",
+                report.intrusions.total, t.burned_per_mille_min, t.burned_per_mille_max
+            ),
+        ));
+        let streak = report.intrusions.longest_burn_streak;
+        findings.push(claim(
+            "T5",
+            t.level,
+            streak <= t.longest_streak_max,
+            format!(
+                "prudent at Normal burns at most {streak} runs in a row on a site ({} allowed)",
+                t.longest_streak_max
+            ),
+        ));
+        let d = &targets.t10;
+        if let Some(commands) = report.commands {
+            findings.push(claim(
+                "T10",
+                d.level,
+                (d.commands_min..=d.commands_max).contains(&commands.median),
+                format!(
+                    "a prudent campaign at Normal takes {} command lines at the median ({} to {} wanted)",
+                    commands.median, d.commands_min, d.commands_max
+                ),
+            ));
+        }
+        if let Some(share) = report.in_intrusion {
+            findings.push(claim(
+                "T10",
+                d.level,
+                share.max <= d.in_intrusion_per_mille_max,
+                format!(
+                    "at most {} per mille of a prudent game is spent in an intrusion ({} allowed)",
+                    share.max, d.in_intrusion_per_mille_max
+                ),
+            ));
+        }
+        let h = &targets.t11;
+        if let Some(notoriety) = report.max_notoriety {
+            findings.push(claim(
+                "T11",
+                h.level,
+                notoriety.median <= h.prudent_median_max,
+                format!(
+                    "the prudent bot's highest Notoriety is {} at the median ({} allowed)",
+                    notoriety.median, h.prudent_median_max
+                ),
+            ));
+        }
+        findings.push(claim(
+            "T11",
+            h.level,
+            report.hunted_per_mille <= h.prudent_hunted_per_mille_max,
+            format!(
+                "the prudent bot is Hunted in {} per mille of its games ({} allowed)",
+                report.hunted_per_mille, h.prudent_hunted_per_mille_max
+            ),
+        ));
+    }
+    if let Some(report) = reckless_normal {
+        let h = &targets.t11;
+        findings.push(claim(
+            "T11",
+            h.level,
+            report.hunted_per_mille >= h.reckless_hunted_per_mille_min,
+            format!(
+                "the reckless bot is Hunted in {} per mille of its games ({} wanted)",
+                report.hunted_per_mille, h.reckless_hunted_per_mille_min
+            ),
+        ));
+    }
+    let t = &targets.t6;
+    if let Some(report) = report_of(campaigns, RECKLESS, "expert") {
+        let finished = finished_per_mille(report);
+        findings.push(claim(
+            "T6",
+            t.level,
+            finished <= t.expert_finished_per_mille_max,
+            format!(
+                "reckless at Expert finishes {finished} per mille of its campaigns ({} allowed)",
+                t.expert_finished_per_mille_max
+            ),
+        ));
+    }
+    if let Some(report) = report_of(campaigns, RECKLESS, "story") {
+        let finished = finished_per_mille(report);
+        findings.push(claim(
+            "T6",
+            t.level,
+            finished >= t.story_finished_per_mille_min,
+            format!(
+                "reckless in Story finishes {finished} per mille of its campaigns ({} wanted)",
+                t.story_finished_per_mille_min
+            ),
+        ));
     }
     findings
 }
@@ -533,5 +752,118 @@ mod tests {
     #[test]
     fn nothing_to_measure_gives_no_finding() {
         assert!(check(&targets(), &[]).is_empty());
+    }
+
+    // ------------------------------------------------------------------ the bots
+
+    use crate::record::{GameRecord, IntrusionRecord, Outcome};
+    use crate::report::CampaignReport;
+
+    /// A campaign of a bot: `finished` games reached an ending, the others were lost.
+    fn campaign(
+        bot: &str,
+        difficulty: &str,
+        finished: usize,
+        lost: usize,
+        burned_per_ten: usize,
+        commands: u64,
+        notoriety: u8,
+    ) -> Report {
+        let intrusions = (0..10)
+            .map(|n| IntrusionRecord {
+                site: format!("site{n}"),
+                turns: 4,
+                trace: 50,
+                burned: n < burned_per_ten,
+            })
+            .collect::<Vec<_>>();
+        let game = |outcome| GameRecord {
+            plan: "p".to_owned(),
+            difficulty: difficulty.to_owned(),
+            seed: 1,
+            outcome,
+            commands,
+            credits: 0,
+            max_notoriety: notoriety,
+            intrusion_per_mille: 200,
+            intrusions: intrusions.clone(),
+        };
+        let records: Vec<GameRecord> = (0..finished)
+            .map(|_| {
+                game(Outcome::Finished {
+                    ending: "e2".to_owned(),
+                })
+            })
+            .chain((0..lost).map(|_| {
+                game(Outcome::Lost {
+                    site: "x".to_owned(),
+                })
+            }))
+            .collect();
+        Report::Campaign(CampaignReport::of(
+            bot,
+            difficulty,
+            [1, 1],
+            records.len() as u64,
+            &records,
+        ))
+    }
+
+    #[test]
+    fn a_prudent_bot_inside_every_bound_passes_t5_t10_and_t11() {
+        let reports = [
+            // 2 of 10 intrusions burn, 2000 commands, Notoriety 40: all inside.
+            campaign("prudent", "normal", 20, 0, 2, 2000, 40),
+            campaign("reckless", "normal", 20, 0, 5, 1000, 90),
+            campaign("reckless", "story", 20, 0, 0, 1000, 60),
+            campaign("reckless", "expert", 1, 19, 8, 1000, 90),
+        ];
+        let findings = check(&targets(), &reports);
+        assert!(!findings.is_empty());
+        let bad: Vec<_> = findings.iter().filter(|f| !f.ok).collect();
+        assert!(bad.is_empty(), "{bad:?}");
+        let ids: Vec<&str> = findings.iter().map(|f| f.id).collect();
+        assert_eq!(ids.iter().filter(|id| **id == "T5").count(), 3);
+        assert_eq!(ids.iter().filter(|id| **id == "T6").count(), 2);
+        assert_eq!(ids.iter().filter(|id| **id == "T10").count(), 2);
+        assert_eq!(ids.iter().filter(|id| **id == "T11").count(), 3);
+    }
+
+    #[test]
+    fn a_bot_outside_the_bounds_is_reported_by_claim_and_none_of_them_fails_the_check() {
+        let reports = [
+            // Never burns, 500 commands, always Hunted: every claim about the prudent bot fails.
+            campaign("prudent", "normal", 20, 0, 0, 500, 100),
+            // The reckless bot is never Hunted and finishes Expert.
+            campaign("reckless", "normal", 20, 0, 5, 1000, 10),
+            campaign("reckless", "expert", 20, 0, 0, 1000, 10),
+        ];
+        let findings = check(&targets(), &reports);
+        let failed: Vec<(&str, &str)> = findings
+            .iter()
+            .filter(|f| !f.ok)
+            .map(|f| (f.id, f.detail.as_str()))
+            .collect();
+        for needle in [
+            "burns 0 per mille",
+            "500 command lines",
+            "highest Notoriety is 100",
+            "prudent bot is Hunted in 1000",
+            "reckless bot is Hunted in 0",
+            "reckless at Expert finishes 1000",
+        ] {
+            assert!(
+                failed.iter().any(|(_, detail)| detail.contains(needle)),
+                "{needle} is not among {failed:?}"
+            );
+        }
+        assert!(findings.iter().all(|f| !f.fails()), "they are objectives");
+    }
+
+    #[test]
+    fn a_bot_nobody_asked_about_gives_no_finding() {
+        // Prudent at Expert: no threshold reads it.
+        let reports = [campaign("prudent", "expert", 0, 5, 8, 0, 100)];
+        assert!(check(&targets(), &reports).is_empty());
     }
 }

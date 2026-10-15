@@ -92,15 +92,33 @@ neon-sim list-worst --report target/sim/prudent-normal.json          # graines �
 - **Chaque nuit** (comme le `proptest` élevé) : 5 000 graines par couple, toutes les barrières, rapport JSON publié comme artefact ; un écart de plus de 5 % d'un indicateur par rapport à la veille est signalé.
 - **À la demande** : `workflow_dispatch` avec les graines et les difficultés au choix, pour régler une valeur de données.
 
-## 7 bis. État de l'implémentation (R6.2)
+## 7 bis. État de l'implémentation (R6.2 à R6.4)
 
-Livré : `neon-sim run`, `solve` et `check`, avec le seul bot `optimist` ; les autres bots, `list-worst` et la mesure de performance (T13) restent à faire.
+Livré : `neon-sim run`, `solve` et `check`, avec les bots `optimist`, `prudent` et `reckless` ; les bots `hoarder`, `farmer`, `monkey` et `story`, l'économie (T7), l'anti-farm (T8), `list-worst` et la mesure de performance (T13) restent à faire.
 
-- `run --difficulty all|story|normal|expert|hardcore --seeds N|A..=B --plans all|representative [--limit N] --out FICHIER` joue l'optimiste (`brain` + `driver`) sur les combinaisons de décisions demandées. Avec `all`, un fichier par difficulté (suffixe ajouté au nom). Les graines servent d'amorce aux parties ; une partie qui ne peut pas continuer est une `Stuck` (jamais une panique).
+- `run [--bot optimist|prudent|reckless] --difficulty all|story|normal|expert|hardcore --seeds N|A..=B --plans all|representative [--limit N] --out FICHIER` joue le bot (`brain` + `driver`) sur les combinaisons de décisions demandées. Avec `all`, un fichier par difficulté (suffixe ajouté au nom). Les graines servent d'amorce aux parties ; une partie qui ne peut pas continuer est une `Stuck` (jamais une panique).
 - `solve [--site ID] --difficulty D [--loot objective|all] [--expansions N] --out FICHIER` mesure chaque site : par défaut (`objective`) avec `optimum` sur le kit illimité du palier (plan, marge, tours, états explorés) ; avec `--loot all`, en prenant **tout** le butin avec le deck complet du palier, comme le fait l'optimiste (les fichiers des quêtes sont sur les nœuds qui ne sont pas l'objectif) : la recherche de faisabilité seule, car l'optimum y est hors de portée. `check` en tire un second constat T2 (« gagné en prenant tout le butin »).
 - `check [--targets FICHIER] RAPPORT...` lit les rapports et les seuils (par défaut ceux de `data/sim/targets.toml`, embarqués) ; code de sortie 0 (rien d'échoué), 1 (une barrière P échoue), 2 (arguments ou fichiers invalides).
-- **Rapport canonique** : JSON `kind = campaign | sites`, `schema = 1`, sans horloge ni flottant (les rapports se comparent octet à octet) ; les répartitions sont des rangs au plus proche (`Spread`).
-- **Seuils livrés** : T1 à T4 en **P**, tous tenus par le contenu livré. T3 se lit en Normal seulement (les autres difficultés en découlent) et, comme les bornes de T4 (écart Histoire/Normal, marge en Normal), commence au palier 3 : les deux premiers sites sont le tutoriel. L'ordre des difficultés vaut pour tous les sites. Lot R6.3 : le contenu a été retouché pour les atteindre ([`DECISIONS.md`](../design/DECISIONS.md) R-32).
+- **Rapport canonique** : JSON `kind = campaign | sites`, `schema = 2`, sans horloge ni flottant (les rapports se comparent octet à octet) ; les répartitions sont des rangs au plus proche (`Spread`).
+- **Seuils livrés** : T1 à T4 en **P**, tous tenus par le contenu livré. T3 se lit en Normal seulement (les autres difficultés en découlent) et, comme les bornes de T4 (écart Histoire/Normal, marge en Normal), commence au palier 3 : les deux premiers sites sont le tutoriel. L'ordre des difficultés vaut pour tous les sites. Lot R6.3 : le contenu a été retouché pour les atteindre ([`DECISIONS.md`](../design/DECISIONS.md) R-32). T5, T6, T10 et T11 sont des objectifs (**O**) : les seuils sont ceux de la spec et la mesure du contenu livré dit où il en est.
+
+**Les bots à la main (R6.4, [`DECISIONS.md`](../design/DECISIONS.md) R-33).** Les règles d'une intrusion n'ont pas de hasard : le plan du solveur ne grille jamais. `prudent` et `reckless` jouent donc **à la main**, une action à la fois, depuis l'état affiché (`neon_sim::tactics`) : ils vont au butin le plus proche, ouvrent ce qui barre la route, prennent tout et sortent. `reckless` ouvre avec le programme le plus fort contre la glace, quel que soit son bruit, n'utilise aucun utilitaire et finit le tour sans regarder la prévision. `prudent` ouvre avec le programme le moins bruyant par point de progrès, lit la prévision avant de finir un tour, masque (`cloak`) quand un scan arrive et efface (`spoof`) le bruit d'un tour bruyant ; il achète de la couverture (`laylow`) dès la bande « Surveillé » (30), alors que les autres bots n'en achètent que si une quête l'exige. Le joueur ne voit rien de plus que le jeu n'en montre ; le résultat ne dépend pas de la graine (aucun hasard dans les règles), les graines ne font varier que le reste de la partie.
+
+Une partie a quatre issues : **terminée**, **perdue** (une intrusion grille en Hardcore), **abandonnée** (un bot à la main brûle douze fois de suite la même intrusion) ou **bloquée** (un défaut du banc, jamais un résultat). Les statistiques d'intrusion et de Notoriété comptent toutes les parties, pas seulement les terminées : un bot qui grille est ce qu'elles mesurent. Le rapport donne aussi la part de grillés, la plus longue série de grillés sur un site, la part de parties qui atteignent la bande « Chassé » (80) et la part des pas passée en intrusion.
+
+**Mesures du contenu livré** (216 plans, graine 1, versions de R6.4) :
+
+| Bot | Histoire | Normal | Expert | Hardcore |
+|---|---|---|---|---|
+| `optimist` | 216 terminées | 216 terminées | 216 terminées | 216 terminées |
+| `prudent` | 216 terminées, 0 ‰ grillé | 216 terminées, 0 ‰ grillé | 216 abandonnées (`nexus-mainframe` dans les parties listées), 800 ‰ grillé | 216 perdues (`nexus-mainframe` dans les parties listées) |
+| `reckless` | 216 terminées | 216 terminées, 0 ‰ grillé | 216 abandonnées (`sentinel-hub` dans les parties listées), 404 ‰ grillé | 216 perdues (`research-lab` dans les parties listées) |
+
+- **T6 tenu** : `reckless` termine l'Histoire (1000 ‰) et pas l'Expert (0 ‰).
+- **T5 non tenu** : `prudent` ne grille aucune intrusion en Normal (0 ‰ pour 100 à 250 ‰ attendus) : le Normal est facile pour un joueur qui lit la prévision. Il termine à 1000 ‰, et la série de grillés est de 0.
+- **T10 non tenu** : une campagne `prudent` en Normal dure 550 lignes de commande au médian (1 500 à 2 500 attendues), et 734 ‰ des pas d'une partie se passent en intrusion au pire (300 ‰ permis).
+- **T11 non tenu pour `prudent`** : même en achetant de la couverture dès 30, sa Notoriété maximale est de 65 au médian (49 permis), sans jamais atteindre « Chassé » (0 ‰ pour 100 ‰ permis) ; `reckless` est « Chassé » dans 1000 ‰ de ses parties (500 ‰ attendus).
+- **Constats pour le réglage** : en Expert, un joueur sans recherche (`prudent` y compris) ne passe pas `nexus-mainframe`, alors que le solveur le gagne (marge de 42) ; en Hardcore le moindre grillage perd la partie.
 
 ## 8. Procédure de réglage (R6)
 

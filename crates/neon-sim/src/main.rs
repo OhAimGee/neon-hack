@@ -14,7 +14,7 @@ use std::process::ExitCode;
 use clap::{Args, Parser, Subcommand, ValueEnum};
 use neon_engine::campaign::Difficulty;
 use neon_engine::content::Content;
-use neon_sim::campaign::{OPTIMIST, PlanSet, plans, run_optimist};
+use neon_sim::campaign::{Bot, PlanSet, plans, run_bot};
 use neon_sim::record::difficulty_name;
 use neon_sim::report::{CampaignReport, Report, SCHEMA_VERSION, SitesReport};
 use neon_sim::sites::{DEFAULT_EXPANSIONS, Loot, SiteResult, measure};
@@ -29,7 +29,7 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
-    /// Play the optimist through the campaign and report what it met.
+    /// Play a bot through the campaign and report what it met.
     Run(RunArgs),
     /// Measure the sites with the solver: can each be won, with what margin.
     Solve(SolveArgs),
@@ -39,6 +39,9 @@ enum Command {
 
 #[derive(Args)]
 struct RunArgs {
+    /// The bot that plays: the optimist follows the solver, the others play by hand.
+    #[arg(long, value_enum, default_value = "optimist")]
+    bot: BotArg,
     /// The difficulty, or `all`.
     #[arg(long, value_enum, default_value = "all")]
     difficulty: Which,
@@ -92,6 +95,23 @@ struct CheckArgs {
     /// The reports to check.
     #[arg(required = true)]
     reports: Vec<PathBuf>,
+}
+
+#[derive(Clone, Copy, ValueEnum)]
+enum BotArg {
+    Optimist,
+    Prudent,
+    Reckless,
+}
+
+impl BotArg {
+    const fn bot(self) -> Bot {
+        match self {
+            Self::Optimist => Bot::Optimist,
+            Self::Prudent => Bot::Prudent,
+            Self::Reckless => Bot::Reckless,
+        }
+    }
 }
 
 #[derive(Clone, Copy, ValueEnum)]
@@ -168,7 +188,7 @@ fn run(args: &RunArgs) -> Result<ExitCode, String> {
     let many = difficulties.len() > 1;
     let mut all_finished = true;
     for difficulty in difficulties {
-        let (report, _) = run_optimist(&plans, difficulty, &args.seeds);
+        let (report, _) = run_bot(args.bot.bot(), &plans, difficulty, &args.seeds);
         console::line(&summary(&report));
         all_finished &= report.stuck == 0;
         if let Some(out) = &args.out {
@@ -291,11 +311,24 @@ fn summary(report: &CampaignReport) -> String {
     let commands = report.commands.map_or_else(String::new, |s| {
         format!(", {} commands (median {})", s.max, s.median)
     });
+    let intrusions = if report.intrusions.total == 0 {
+        String::new()
+    } else {
+        format!(
+            "; {} intrusions, {} per mille burned, longest streak {}",
+            report.intrusions.total,
+            report.intrusions.burned_per_mille,
+            report.intrusions.longest_burn_streak
+        )
+    };
     format!(
-        "{OPTIMIST} {}: {} games, {} finished, {} stuck{commands}; endings: {}",
+        "{} {}: {} games, {} finished, {} lost, {} gave up, {} stuck{commands}{intrusions}; endings: {}",
+        report.bot,
         report.difficulty,
         report.games,
         report.finished,
+        report.lost,
+        report.gave_up,
         report.stuck,
         if endings.is_empty() {
             "none".to_owned()
