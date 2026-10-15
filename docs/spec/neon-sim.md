@@ -89,13 +89,13 @@ neon-sim solve --site corp-server-01 --difficulty normal             # plan opti
 neon-sim list-worst --report target/sim/prudent-normal.json          # graines à rejouer
 ```
 
-- **Sur chaque PR** : `neon-sim check` en mode rapide (50 graines par bot, `optimist` sur les 216 combinaisons de décisions, `monkey` sur 100 parties), budget de 3 minutes, intégré au job `test` (Linux). Barrières T1-T3, T8, T9, T12.
+- **Sur chaque PR** : `neon-sim check` en mode rapide (`scripts/sim-gate.sh`, job `sim-gate` de la CI : `optimist` et `farmer` sur les plans représentatifs, les 16 sites au solveur, `monkey` sur 100 parties), budget de 3 minutes. Barrières T1-T4, T8, T12. T9 (la preuve de chaque programme, 3 min 30) est un objectif : il reste pour la nuit.
 - **Chaque nuit** (comme le `proptest` élevé) : 5 000 graines par couple, toutes les barrières, rapport JSON publié comme artefact ; un écart de plus de 5 % d'un indicateur par rapport à la veille est signalé.
 - **À la demande** : `workflow_dispatch` avec les graines et les difficultés au choix, pour régler une valeur de données.
 
-## 7 bis. État de l'implémentation (R6.2 à R6.9)
+## 7 bis. État de l'implémentation (R6.2 à R6.10)
 
-Livré : `neon-sim run`, `solve` et `check`, avec les bots `optimist`, `prudent`, `reckless`, `story`, `monkey`, `farmer` et `hoarder` ; l'économie (T7, en objectif), les programmes dominés (T9, en objectif), `list-worst` et la mesure de performance (T13) restent à faire.
+Livré : `neon-sim run`, `solve` et `check`, avec les bots `optimist`, `prudent`, `reckless`, `story`, `monkey`, `farmer` et `hoarder` ; l'économie (T7, en objectif), les programmes dominés (T9, en objectif), `list-worst` et la mesure de performance (T13) restent à faire. **R6.10** : la barrière rapide tourne à chaque PR (`scripts/sim-gate.sh`, environ 45 s en version de publication, job `sim-gate` requis par `CI OK`) ; la nuit reste à faire.
 
 - `run [--bot optimist|prudent|reckless|story|farmer|hoarder|monkey] --difficulty all|story|normal|expert|hardcore --seeds N|A..=B --plans all|representative [--limit N] [--steps N] --out FICHIER` joue le bot (`brain` + `driver`) sur les combinaisons de décisions demandées. Avec `all`, un fichier par difficulté (suffixe ajouté au nom). Les graines servent d'amorce aux parties ; une partie qui ne peut pas continuer est une `Stuck` (jamais une panique).
 - `solve [--site ID] --difficulty D [--loot objective|all] [--expansions N] --out FICHIER` mesure chaque site : par défaut (`objective`) avec `optimum` sur le kit illimité du palier (plan, marge, tours, états explorés) ; avec `--loot all`, en prenant **tout** le butin avec le deck complet du palier, comme le fait l'optimiste (les fichiers des quêtes sont sur les nœuds qui ne sont pas l'objectif) : la recherche de faisabilité seule, car l'optimum y est hors de portée. `check` en tire un second constat T2 (« gagné en prenant tout le butin »).
