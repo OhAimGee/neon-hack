@@ -36,7 +36,7 @@ fn solve_writes_a_report_that_check_reads() {
     assert!(json.contains("\"kind\": \"sites\""), "{json}");
 
     // The report holds the tutorial: it is won, and the order of the difficulties holds. The
-    // length, the gap and the bounds start at tier 2.
+    // length, the gap and the bounds start at tier 3.
     let checked = sim(&["check", &file]);
     assert!(checked.status.success(), "{}", out(&checked));
     let text = out(&checked);

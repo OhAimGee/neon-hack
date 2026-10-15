@@ -17,21 +17,22 @@ level = "P"
 
 # T3: the best plan of a site takes between 3 and 12 turns, at the reference difficulty. The
 # other difficulties scale from it (Story gives a cycle and halves the Trace; Expert and
-# Hardcore press the player to go faster), so their plans are not bound. It starts at tier 2:
-# the first site is the tutorial, short and forgiving on purpose.
+# Hardcore press the player to go faster), so their plans are not bound. It starts at tier 3:
+# the first two sites are the tutorial, short and forgiving on purpose (the player has three
+# cycles and the first deck).
 [t3]
 level = "P"
 difficulty = "normal"
-from_tier = 2
+from_tier = 3
 min_turns = 3
 max_turns = 12
 
 # T4: the room the minimal deck leaves under the cap of the Trace. The order between
 # difficulties holds for every site. The gap between Story and Normal and the bounds at Normal
-# start at tier 2, like T3.
+# start at tier 3, like T3.
 [t4]
 order_level = "P"
-from_tier = 2
+from_tier = 3
 gap_level = "P"
 story_over_normal = 10
 bounds_level = "P"

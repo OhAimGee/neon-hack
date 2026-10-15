@@ -49,7 +49,8 @@ pub struct Length {
     pub level: Level,
     /// The difficulty the plans are measured at: the reference one, the others scale from it.
     pub difficulty: String,
-    /// The first tier the length applies to: tier 1 is the tutorial, short on purpose.
+    /// The first tier the length applies to: the first two tiers are the tutorial, short on
+    /// purpose.
     pub from_tier: u8,
     /// The fewest turns of the best plan.
     pub min_turns: u32,
@@ -63,8 +64,8 @@ pub struct Margin {
     /// The level of the order between difficulties: the margin never grows from Story to
     /// Hardcore.
     pub order_level: Level,
-    /// The first tier the gap and the bounds apply to: tier 1 is the tutorial, meant to be short
-    /// and forgiving. The order between difficulties holds for every site.
+    /// The first tier the gap and the bounds apply to: the first two tiers are the tutorial,
+    /// meant to be short and forgiving. The order between difficulties holds for every site.
     pub from_tier: u8,
     /// The level of the gap between Story and Normal.
     pub gap_level: Level,
@@ -384,7 +385,7 @@ mod tests {
 
     /// A site whose margin falls with the difficulty, as the thresholds want.
     fn well_behaved(site: &str, margins: [u8; 4], turns: u32) -> Vec<SiteRow> {
-        behaving_at_tier(site, 2, margins, turns)
+        behaving_at_tier(site, 3, margins, turns)
     }
 
     fn behaving_at_tier(site: &str, tier: u8, margins: [u8; 4], turns: u32) -> Vec<SiteRow> {
@@ -457,10 +458,10 @@ mod tests {
 
     #[test]
     fn the_tutorial_is_exempt_from_the_length_the_gap_and_the_bounds_but_not_from_the_order() {
-        let easy = behaving_at_tier("tutorial", 1, [95, 92, 86, 80], 1);
+        let easy = behaving_at_tier("tutorial", 2, [95, 92, 86, 80], 1);
         let findings = check(&targets(), &[sites(easy)]);
         assert!(findings.iter().all(|f| f.ok), "{findings:?}");
-        let disordered = behaving_at_tier("tutorial", 1, [80, 60, 70, 40], 3);
+        let disordered = behaving_at_tier("tutorial", 2, [80, 60, 70, 40], 3);
         let findings = check(&targets(), &[sites(disordered)]);
         assert!(find(&findings, "T4", 0).fails());
     }
