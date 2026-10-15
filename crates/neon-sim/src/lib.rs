@@ -8,11 +8,13 @@
 //!   types it through the frontend contract, handing every step to an observer. The engine's
 //!   own tests use both.
 //! - [`record`] and [`campaign`] play batches of games and keep what each one cost.
+//! - [`mod@bench`] times the harness (T13), the only place a clock is read.
 //! - [`sites`] measures every site with the solver.
 //! - [`tactics`] plays an intrusion by hand, as a heuristic player does.
 //! - [`report`] writes all of it as canonical JSON, [`targets`] holds the thresholds as data and
 //!   checks reports against them.
 
+pub mod bench;
 pub mod brain;
 pub mod campaign;
 pub mod driver;

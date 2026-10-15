@@ -15,6 +15,7 @@ use std::process::ExitCode;
 use clap::{Args, Parser, Subcommand, ValueEnum};
 use neon_engine::campaign::Difficulty;
 use neon_engine::content::Content;
+use neon_sim::bench::bench;
 use neon_sim::campaign::{Bot, PlanSet, plans, run_bot};
 use neon_sim::economy::measure as measure_economy;
 use neon_sim::monkey::{DEFAULT_STEPS, play_monkey};
@@ -22,7 +23,7 @@ use neon_sim::programs::analyse as analyse_programs;
 use neon_sim::record::difficulty_name;
 use neon_sim::report::{CampaignReport, MonkeyReport, Report, SCHEMA_VERSION, SitesReport};
 use neon_sim::sites::{DEFAULT_EXPANSIONS, Loot, SiteResult, measure};
-use neon_sim::targets::{Level, Targets, check};
+use neon_sim::targets::{Finding, Level, Targets, check, judge_bench};
 
 #[derive(Parser)]
 #[command(name = "neon-sim", version, about = "Balancing harness of Neon Hack")]
@@ -41,8 +42,20 @@ enum Command {
     Economy(EconomyArgs),
     /// What each program is worth: the margin of every site with and without each program.
     Programs(ProgramsArgs),
+    /// Time the harness (T13): campaigns, the bounded resolution of a site, a double run.
+    Bench(BenchArgs),
     /// Check reports against the thresholds; exits with 1 when a barrier fails.
     Check(CheckArgs),
+}
+
+#[derive(Args)]
+struct BenchArgs {
+    /// How many campaigns to time (the representative plans in turn, at Normal).
+    #[arg(long, default_value_t = 16)]
+    games: usize,
+    /// Where to write the timings (`bench.json`: not a canonical report, it holds durations).
+    #[arg(long)]
+    out: Option<PathBuf>,
 }
 
 #[derive(Args)]
@@ -207,6 +220,7 @@ fn main() -> ExitCode {
         Command::Solve(args) => solve(&args),
         Command::Economy(args) => economy(&args),
         Command::Programs(args) => programs(&args),
+        Command::Bench(args) => bench_command(&args),
         Command::Check(args) => check_reports(&args),
     };
     match result {
@@ -417,6 +431,44 @@ fn programs(args: &ProgramsArgs) -> Result<ExitCode, String> {
     Ok(ExitCode::SUCCESS)
 }
 
+fn bench_command(args: &BenchArgs) -> Result<ExitCode, String> {
+    let content =
+        Content::embedded().map_err(|e| format!("the game content does not load: {e}"))?;
+    let plans = plans(PlanSet::Representative)
+        .map_err(|e| format!("the game content does not load: {e}"))?;
+    let targets = Targets::embedded().map_err(|e| format!("the thresholds do not load: {e}"))?;
+    let report = bench(&content, &plans, args.games);
+    if let Some(out) = &args.out {
+        let mut text = serde_json::to_string_pretty(&report).map_err(|e| e.to_string())?;
+        text.push('\n');
+        fs::write(out, text).map_err(|e| format!("{}: {e}", out.display()))?;
+    }
+    let failed = print_findings(&judge_bench(&targets.t13, &report));
+    Ok(if failed {
+        ExitCode::FAILURE
+    } else {
+        ExitCode::SUCCESS
+    })
+}
+
+/// Prints the verdicts, and tells whether a barrier failed.
+fn print_findings(findings: &[Finding]) -> bool {
+    let mut failed = false;
+    for finding in findings {
+        let mark = match (finding.ok, finding.level) {
+            (true, _) => "ok  ",
+            (false, Level::P) => "FAIL",
+            (false, Level::O) => "warn",
+        };
+        console::line(&format!(
+            "[{mark}] {} ({:?}): {}",
+            finding.id, finding.level, finding.detail
+        ));
+        failed |= finding.fails();
+    }
+    failed
+}
+
 fn check_reports(args: &CheckArgs) -> Result<ExitCode, String> {
     let targets = match &args.targets {
         Some(path) => {
@@ -434,19 +486,7 @@ fn check_reports(args: &CheckArgs) -> Result<ExitCode, String> {
     if findings.is_empty() {
         return Err("the reports give nothing to check".to_owned());
     }
-    let mut failed = false;
-    for finding in &findings {
-        let mark = match (finding.ok, finding.level) {
-            (true, _) => "ok  ",
-            (false, Level::P) => "FAIL",
-            (false, Level::O) => "warn",
-        };
-        console::line(&format!(
-            "[{mark}] {} ({:?}): {}",
-            finding.id, finding.level, finding.detail
-        ));
-        failed |= finding.fails();
-    }
+    let failed = print_findings(&findings);
     Ok(if failed {
         ExitCode::FAILURE
     } else {
