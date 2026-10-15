@@ -1277,7 +1277,7 @@ fn the_first_three_quests_play_to_the_end_through_the_real_binary() {
     assert_eq!(text.matches("Quest completed: ").count(), 3, "{text}");
     assert!(text.contains("[Reward] Reached level 3."), "{text}");
     assert!(text.contains("Credits: 555"), "{text}");
-    assert!(text.contains("Notoriety: 26/100 (Discreet)"), "{text}");
+    assert!(text.contains("Notoriety: 30/100 (Watched)"), "{text}");
     assert!(!text.contains("[Error]"), "{text}");
     assert!(text.ends_with("Goodbye, Walker.\n"), "{text:?}");
 }

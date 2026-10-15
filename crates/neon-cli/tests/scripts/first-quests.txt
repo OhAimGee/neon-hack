@@ -70,37 +70,42 @@ jackout
 hack nexus-mainframe
 y
 breach 2 exploit
-end
+breach 2 brute
 move 2
+end
 breach 4 backdoor
 end
 breach 3 backdoor
 breach 4 decrypt
-breach 3 backdoor
+end
+breach 3 exploit
+breach 4 decrypt
 end
 breach 3 backdoor
 use spoof
 move 4
 loot
 end
-breach 6 backdoor
 breach 6 quantum
 end
+breach 6 decrypt
 move 6
 loot
-breach 5 backdoor
-end
-move 4
-move 2
-move 3
-end
-loot
-end
-breach 5 backdoor
+use cloak
 end
 breach 5 backdoor
 breach 5 backdoor
+breach 5 backdoor
+use spoof
+end
+breach 5 backdoor
+breach 5 backdoor
+breach 5 backdoor
+use cloak
+end
 move 5
+loot
+move 3
 loot
 jackout
 archives f07
