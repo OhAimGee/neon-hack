@@ -1,0 +1,34 @@
+---
+source: crates/neon-cli/src/tui/app/tests/snapshots.rs
+assertion_line: 76
+expression: "picture(&app, 100, 28)"
+---
+100x28
+ Néon │ Trace 6/100 (calme) │ Tour 3 │ Cycles 3/3
+╭Terminal────────────────────────────────────────────────────────────╮╭Panneau─────────────────────╮
+│Trace ambiante +2.                                                  ││Trace 6/100                 │
+│Trace +2 (2 → 4, calme).                                            ││[█░░░░░░░░░] calme          │
+│                                                                    ││                            │
+│Tour 2 : Trace 4/100 (calme), cycles 3/3.                           ││▸ Nœuds                     │
+│Prévision : Trace +2 en fin de tour.                                ││▶1 Passerelle ici           │
+│Prévision : Trace ambiante +2.                                      ││ 2 Pare-feu Réseau 2/4      │
+│> breach 3 backdoor                                                 ││ 3 Archives Réseau 0/4      │
+│[Erreur] 3 est indisponible : non relié au <?node> actuel.          ││                            │
+│> breach 3 backdoor                                                 ││▸ Prévision                 │
+│[Erreur] 3 est indisponible : non relié au <?node> actuel.          ││Fin de tour : Trace +2      │
+│> end                                                               ││Ambiante : +2               │
+│Trace ambiante +2.                                                  ││                            │
+│Trace +2 (4 → 6, calme).                                            ││▸ Deck                      │
+│                                                                    ││1 Brute  2 Backdoor         │
+│Tour 3 : Trace 6/100 (calme), cycles 3/3.                           ││3 Cloak (2)                 │
+│Prévision : Trace +2 en fin de tour.                                ││                            │
+│Prévision : Trace ambiante +2.                                      ││                            │
+│> move 3                                                            ││                            │
+│[Erreur] 3 est indisponible : non relié au <?node> actuel.          ││                            │
+│> loot                                                              ││                            │
+│[Erreur] Il n'y a rien à prendre ici.                               ││                            │
+│> jackout                                                           ││                            │
+│[Erreur] L'objectif n'est pas pris : la déconnexion est impossible. ││                            │
+╰────────────────────────────────────────────────────────────────────╯╰────────────────────────────╯
+>
+F2 panneau | Tab compléter | Ctrl+C quitter | Haut/Bas historique | PgUp/PgDn défiler

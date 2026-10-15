@@ -1,0 +1,26 @@
+---
+source: crates/neon-cli/src/tui/app/tests/modal.rs
+assertion_line: 211
+expression: "picture(&app, 64, 20)"
+---
+64x20
+ Neon │ Trace 6/100 (calme) │ Tour 3 │ Cycles 3/3
+Trace ambiante +2.
+Trace +2 (4 → 6, calme).
+
+Tour 3 : Trace 6/100 (calme), cycles 3/3.
+Prévision : Trace +2 en fin de tour.
+Prévision : Trace ambiante +2.
+> move 3
+[Erreur] 3 est indisponible : non relié au <?node> actuel.
+> loot
+[Erreur] Il n'y a rien à prendre ici.
+> jackout
+[Erreur] L'objectif n'est pas pris : la déconnexion est
+impossible.
+> laylow
+[Erreur] Pas pendant une intrusion.
+> shop
+[Erreur] Pas pendant une intrusion.
+>
+F2 panneau | Tab compléter | Ctrl+C quitter

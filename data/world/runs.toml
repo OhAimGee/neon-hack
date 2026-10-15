@@ -48,10 +48,10 @@ link = [[1, 2], [2, 3]]
 [[run.node]] # 1 Gateway
 
 [[run.node]] # 2 Firewall
-ice = { family = "network", strength = 4 }
+ice = { family = "network", strength = 2 }
 
 [[run.node]] # 3 Archives
-ice = { family = "network", strength = 4 }
+ice = { family = "network", strength = 2 }
 loot = "objective"
 files = ["user_data"]
 

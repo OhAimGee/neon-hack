@@ -1,0 +1,34 @@
+---
+source: crates/neon-cli/src/tui/app/tests/intrusion.rs
+assertion_line: 123
+expression: "picture(&app, 100, 28)"
+---
+100x28
+ corp-server-01 │ Trace 0/100 (calme) │ Tour 1 │ Cycles 2/3
+╭Terminal────────────────────────────────────────────────────────────╮╭Panneau─────────────────────╮
+│Intrusion : corp-server-01.                                         ││Trace 0/100                 │
+│Tour 1 : Trace 0/100 (calme), cycles 3/3.                           ││[░░░░░░░░░░] calme          │
+│Prévision : Trace +8 en fin de tour.                                ││                            │
+│Prévision : patrouille 1 vers Archives (3).                         ││▸ Nœuds                     │
+│Prévision : patrouille 1 scanne Passerelle (1) : Trace +5, sauf si  ││▶1 Passerelle ici           │
+│Cloak est actif.                                                    ││ 2 Pare-feu Réseau 0/4      │
+│Prévision : Trace ambiante +3.                                      ││ 3 Archives Réseau 0/4      │
+│> move 3                                                            ││ 4 Coffre Réseau 0/6        │
+│[Erreur] 3 est indisponible : ICE encore en place.                  ││ 5 Caméras Gardien IA 0/5   │
+│> breach 4 brute                                                    ││                            │
+│[Erreur] 4 est indisponible : non relié au nœud actuel.             ││▸ Patrouilles               │
+│> use cloak                                                         ││Patrouille 1 : 5 puis 3     │
+│Cloak actif : les scans de fin de tour sont annulés (1 charge       ││                            │
+│restante).                                                          ││▸ Prévision                 │
+│Fin de tour maintenant : Trace +3 (0 → 3, calme).                   ││Cloak est actif.            │
+│Cycles 2/3.                                                         ││Fin de tour : Trace +3      │
+│                                                                    ││Patrouille 1 : annulé       │
+│                                                                    ││Ambiante : +3               │
+│                                                                    ││                            │
+│                                                                    ││▸ Deck                      │
+│                                                                    ││1 Brute  2 Exploit (2)      │
+│                                                                    ││3 Backdoor  4 Decrypt       │
+│                                                                    ││5 Spoof (2)  6 Cloak (1)    │
+╰────────────────────────────────────────────────────────────────────╯╰────────────────────────────╯
+>
+F2 panneau | Tab compléter | Ctrl+C quitter | Haut/Bas historique | PgUp/PgDn défiler

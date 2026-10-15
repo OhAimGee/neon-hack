@@ -1,0 +1,26 @@
+---
+source: crates/neon-cli/src/tui/app/tests/intrusion.rs
+assertion_line: 132
+expression: "picture(&app, 64, 20)"
+---
+64x20
+ corp-server-01 │ Trace 0/100 (calm) │ Turn 1 │ Cycles 2/3
+Run: corp-server-01.              ╭Panel───────────────────────╮
+Turn 1: Trace 0/100 (calm), cycles│Trace 0/100                 │
+Forecast: Trace +8 at the end of t│[░░░░░░░░░░] calm           │
+Forecast: patrol 1 moves to Archiv│                            │
+Forecast: patrol 1 scans Gateway (│▸ Nodes                     │
+active.                           │▶1 Gateway here             │
+Forecast: ambient Trace +3.       │... 4 more rows             │
+> move 3                          │                            │
+[Error] 3 is unavailable: its ICE │▸ Patrols                   │
+> breach 4 brute                  │Patrol 1: 5 then 3          │
+[Error] 4 is unavailable: not link│                            │
+> use cloak                       │▸ Forecast                  │
+Cloak active: the scans at the end│... 4 more rows             │
+charge left).                     │                            │
+End of the turn now: Trace +3 (0 →│▸ Deck                      │
+Cycles 2/3.                       │... 3 more rows             │
+                                  ╰────────────────────────────╯
+>
+F2 panel | Tab complete | Ctrl+C quit | Up/Down history
