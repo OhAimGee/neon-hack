@@ -29,4 +29,15 @@ done
 mkdir -p "$out/timings"
 "$sim" bench --out "$out/timings/bench.json"
 
-"$sim" check "$out"/*.json
+# The thresholds decide the exit code; the games to replay come after them, whatever it is.
+status=0
+"$sim" check "$out"/*.json || status=$?
+
+games=()
+for report in "$out"/{optimist,prudent,reckless,story,farmer,hoarder,monkey}*.json; do
+  [ -e "$report" ] && games+=(--report "$report")
+done
+echo
+echo "Games to replay:"
+"$sim" list-worst "${games[@]}"
+exit "$status"

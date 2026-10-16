@@ -51,4 +51,10 @@ jobs:
             echo '```'
             grep -E '^\[(ok  |FAIL|warn)' target/sim-nightly.log || tail -n 40 target/sim-nightly.log
             echo '```'
+            if grep -q '^Games to replay:' target/sim-nightly.log; then
+              echo '### Games to replay'
+              echo '```'
+              sed -n '/^Games to replay:/,$p' target/sim-nightly.log | tail -n +2
+              echo '```'
+            fi
           } >> "$GITHUB_STEP_SUMMARY"

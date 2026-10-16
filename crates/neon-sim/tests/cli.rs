@@ -175,6 +175,72 @@ fn the_story_bot_plays_story_and_is_checked_against_t14() {
 }
 
 #[test]
+fn list_worst_names_the_games_to_replay_and_refuses_a_report_without_games() {
+    let dir = tempfile::tempdir().unwrap();
+    let hoarder = path(dir.path(), "hoarder.json");
+    let ran = sim(&[
+        "run",
+        "--bot",
+        "hoarder",
+        "--difficulty",
+        "normal",
+        "--seeds",
+        "7",
+        "--limit",
+        "1",
+        "--out",
+        &hoarder,
+    ]);
+    assert!(ran.status.success(), "{}", out(&ran));
+    let listed = sim(&["list-worst", "--report", &hoarder]);
+    assert!(listed.status.success(), "{}", out(&listed));
+    let text = out(&listed);
+    assert!(
+        text.contains("hoarder at normal: 1 of 1 games did not finish"),
+        "{text}"
+    );
+    assert!(text.contains("  seed 7, plan "), "{text}");
+    assert!(text.contains(": blocked by "), "{text}");
+    assert!(
+        text.contains("replay: neon-sim run --bot hoarder --difficulty normal --seeds SEED"),
+        "{text}"
+    );
+    // A report in which every game finished says so.
+    let optimist = path(dir.path(), "optimist.json");
+    let ran = sim(&[
+        "run",
+        "--difficulty",
+        "story",
+        "--seeds",
+        "1",
+        "--limit",
+        "1",
+        "--out",
+        &optimist,
+    ]);
+    assert!(ran.status.success(), "{}", out(&ran));
+    let listed = sim(&["list-worst", "--report", &optimist]);
+    assert!(listed.status.success(), "{}", out(&listed));
+    assert!(
+        out(&listed).contains("no game went wrong"),
+        "{}",
+        out(&listed)
+    );
+    // Sites hold no games, and the report is required.
+    let sites = path(dir.path(), "sites.json");
+    let solved = sim(&["solve", "--site", "localhost", "--out", &sites]);
+    assert!(solved.status.success(), "{}", out(&solved));
+    let refused = sim(&["list-worst", "--report", &sites]);
+    assert_eq!(refused.status.code(), Some(2), "{}", out(&refused));
+    assert!(
+        String::from_utf8_lossy(&refused.stderr).contains("holds no games"),
+        "{}",
+        String::from_utf8_lossy(&refused.stderr)
+    );
+    assert_eq!(sim(&["list-worst"]).status.code(), Some(2));
+}
+
+#[test]
 fn the_monkey_writes_its_report_and_a_short_one_does_not_pass_t12() {
     let dir = tempfile::tempdir().unwrap();
     let file = path(dir.path(), "monkey.json");
