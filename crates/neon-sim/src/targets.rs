@@ -1206,8 +1206,8 @@ mod tests {
     #[test]
     fn a_prudent_bot_inside_every_bound_passes_t5_t10_and_t11() {
         let reports = [
-            // 2 of 10 intrusions burn, 2000 commands, Notoriety 40: all inside.
-            campaign("prudent", "normal", 20, 0, 2, 2000, 40),
+            // 2 of 10 intrusions burn, 800 commands, Notoriety 40: all inside.
+            campaign("prudent", "normal", 20, 0, 2, 800, 40),
             campaign("reckless", "normal", 20, 0, 5, 1000, 90),
             campaign("reckless", "story", 20, 0, 0, 1000, 60),
             campaign("reckless", "expert", 1, 19, 8, 1000, 90),
@@ -1226,8 +1226,9 @@ mod tests {
     #[test]
     fn a_bot_outside_the_bounds_is_reported_by_claim_and_none_of_them_fails_the_check() {
         let reports = [
-            // Never burns, 500 commands, always Hunted: every claim about the prudent bot fails.
-            campaign("prudent", "normal", 20, 0, 0, 500, 100),
+            // Burns half of its intrusions, 1500 commands, always Hunted: every claim about the
+            // prudent bot fails.
+            campaign("prudent", "normal", 20, 0, 5, 1500, 100),
             // The reckless bot is never Hunted and finishes Expert.
             campaign("reckless", "normal", 20, 0, 5, 1000, 10),
             campaign("reckless", "expert", 20, 0, 0, 1000, 10),
@@ -1239,8 +1240,8 @@ mod tests {
             .map(|f| (f.id, f.detail.as_str()))
             .collect();
         for needle in [
-            "burns 0 per mille",
-            "500 command lines",
+            "burns 500 per mille",
+            "1500 command lines",
             "highest Notoriety is 100",
             "prudent bot is Hunted in 1000",
             "reckless bot is Hunted in 0",
