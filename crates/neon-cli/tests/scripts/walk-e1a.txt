@@ -128,27 +128,32 @@ talk r4z0r
 topic:ledger_rumor
 talk miner
 topic:shelf
-buy prog_exploit
-y
-buy prog_social
+buy prog_quantum
 y
 hack underground-market
 y
 breach 2 brute
 breach 2 brute
+end
 move 2
+breach 4 quantum
+end
+breach 4 backdoor
+end
 breach 3 backdoor
+end
+breach 3 backdoor
+move 4
+end
+breach 5 quantum
+move 2
 end
 breach 3 backdoor
 use spoof
 breach 3 backdoor
-breach 3 backdoor
-end
 move 3
-breach 5 decrypt
-breach 5 decrypt
-breach 5 decrypt
 end
+breach 5 decrypt
 loot
 move 5
 loot
@@ -160,34 +165,42 @@ buy quantum_key
 y
 hack nexus-mainframe
 y
-breach 2 exploit
-breach 2 backdoor
-end
+breach 2 brute
+breach 2 brute
 move 2
-breach 4 decrypt
+breach 3 brute
+end
+breach 3 backdoor
 breach 4 decrypt
 end
-breach 3 exploit
+breach 4 decrypt
+move 3
+loot
+end
+breach 5 backdoor
+move 2
 move 4
 loot
 end
-breach 6 decrypt
-breach 6 decrypt
+move 2
+move 3
+breach 5 backdoor
+end
+move 2
+end
+move 4
+breach 6 quantum
 end
 breach 6 decrypt
 move 6
+use spoof
+use cloak
+end
+breach 5 backdoor
 loot
+use spoof
+use cloak
 end
-breach 5 backdoor
-move 4
-move 2
-move 3
-end
-loot
-end
-breach 5 backdoor
-end
-breach 5 backdoor
 breach 5 backdoor
 move 5
 loot
@@ -204,41 +217,44 @@ talk phoenix
 0
 decrypt doc_phoenix
 archives f11
-buy prog_quantum
-y
 hack nexus-mainframe
 y
-breach 2 exploit
-breach 2 backdoor
-end
+breach 2 brute
+breach 2 brute
 move 2
-breach 4 decrypt
+breach 3 brute
 end
 breach 3 backdoor
 breach 4 decrypt
-breach 3 backdoor
 end
-breach 3 backdoor
-use spoof
+breach 4 decrypt
+move 3
+loot
+end
+breach 5 backdoor
+move 2
 move 4
 loot
 end
+move 2
+move 3
+breach 5 backdoor
+end
+move 2
+end
+move 4
 breach 6 quantum
 end
 breach 6 decrypt
 move 6
+use spoof
+use cloak
+end
+breach 5 backdoor
 loot
+use spoof
+use cloak
 end
-breach 5 backdoor
-move 4
-move 2
-move 3
-end
-loot
-end
-breach 5 backdoor
-end
-breach 5 backdoor
 breach 5 backdoor
 move 5
 loot
@@ -249,9 +265,10 @@ talk angel
 0
 hack banking-network
 y
-breach 2 exploit
-breach 2 exploit
+breach 2 brute
+breach 2 brute
 end
+breach 2 backdoor
 move 2
 breach 4 quantum
 end
@@ -266,8 +283,9 @@ loot
 jackout
 hack research-lab
 y
-breach 3 exploit
-breach 3 exploit
+breach 3 brute
+breach 3 brute
+breach 3 backdoor
 end
 move 3
 breach 4 quantum
@@ -290,20 +308,16 @@ buy prog_overclock
 y
 hack halcyon-clinic-7
 y
-use ghost
-breach 2 brute
-breach 2 brute
-breach 3 exploit
+breach 3 brute
+breach 3 brute
 end
-breach 3 exploit
-end
+breach 3 brute
 move 3
 breach 4 quantum
-breach 4 quantum
+breach 4 decrypt
 end
 move 4
-breach 6 decrypt
-breach 6 decrypt
+breach 6 quantum
 breach 6 decrypt
 loot
 use overclock
@@ -318,14 +332,13 @@ talk phoenix
 topic:thank_you
 hack radio-veille
 y
-breach 2 exploit
 breach 2 brute
+breach 2 brute
+breach 2 backdoor
+end
 move 2
-end
-use ghost
-breach 3 brute
-breach 3 brute
-end
+breach 3 backdoor
+breach 3 backdoor
 breach 3 backdoor
 end
 breach 3 backdoor
@@ -345,20 +358,16 @@ accept s12
 accept s13
 hack halcyon-clinic-7
 y
-use ghost
-breach 2 brute
-breach 2 brute
-breach 3 exploit
+breach 3 brute
+breach 3 brute
 end
-breach 3 exploit
-end
+breach 3 brute
 move 3
 breach 4 quantum
-breach 4 quantum
+breach 4 decrypt
 end
 move 4
-breach 6 decrypt
-breach 6 decrypt
+breach 6 quantum
 breach 6 decrypt
 loot
 use overclock
@@ -378,36 +387,39 @@ breach 4 quantum
 end
 move 4
 breach 5 brute
-breach 5 brute
-move 5
 loot
-end
-breach 7 quantum
-end
-move 4
-loot
-end
-breach 3 backdoor
-breach 3 backdoor
-end
-move 5
-breach 7 decrypt
-move 4
-use spoof
-use cloak
 end
 use ghost
 breach 3 brute
+breach 5 brute
 breach 3 brute
-breach 3 brute
+end
+move 5
+loot
+move 4
+breach 3 backdoor
+end
+move 5
+breach 7 quantum
+end
+move 4
+breach 3 backdoor
+use overclock
+use spoof
+move 5
+breach 7 decrypt
+use spoof
 use cloak
 end
+move 4
+breach 3 backdoor
 move 3
 loot
+use cloak
+end
 move 4
 move 5
 move 7
-use overclock
 loot
 jackout
 archives f14
@@ -427,14 +439,10 @@ breach 2 brute
 breach 2 brute
 move 2
 end
-use ghost
-breach 3 brute
-breach 3 brute
-breach 3 brute
-use cloak
-end
 breach 3 backdoor
-use spoof
+breach 3 backdoor
+breach 3 backdoor
+breach 3 backdoor
 breach 3 backdoor
 end
 breach 3 backdoor
@@ -472,14 +480,10 @@ breach 2 brute
 breach 2 brute
 move 2
 end
-use ghost
-breach 3 brute
-breach 3 brute
-breach 3 brute
-use cloak
-end
 breach 3 backdoor
-use spoof
+breach 3 backdoor
+breach 3 backdoor
+breach 3 backdoor
 breach 3 backdoor
 end
 breach 3 backdoor
@@ -504,14 +508,10 @@ breach 2 brute
 breach 2 brute
 move 2
 end
-use ghost
-breach 3 brute
-breach 3 brute
-breach 3 brute
-use cloak
-end
 breach 3 backdoor
-use spoof
+breach 3 backdoor
+breach 3 backdoor
+breach 3 backdoor
 breach 3 backdoor
 end
 breach 3 backdoor
@@ -549,14 +549,10 @@ breach 2 brute
 breach 2 brute
 move 2
 end
-use ghost
-breach 3 brute
-breach 3 brute
-breach 3 brute
-use cloak
-end
 breach 3 backdoor
-use spoof
+breach 3 backdoor
+breach 3 backdoor
+breach 3 backdoor
 breach 3 backdoor
 end
 breach 3 backdoor
@@ -599,9 +595,8 @@ talk echo7
 0
 hack gov-database
 y
-use ghost
 breach 2 brute
-breach 2 exploit
+breach 2 brute
 breach 2 brute
 end
 move 2
@@ -627,45 +622,47 @@ breach 4 quantum
 end
 move 4
 breach 5 brute
-breach 5 brute
-move 5
 loot
 end
+use ghost
+breach 3 brute
+breach 5 brute
+breach 3 brute
+end
+move 5
+loot
+move 4
+breach 3 backdoor
+end
+move 5
 breach 7 quantum
 end
 move 4
-loot
-end
 breach 3 backdoor
-breach 3 backdoor
-end
+use overclock
+use spoof
 move 5
 breach 7 decrypt
-move 4
 use spoof
 use cloak
 end
-use ghost
-breach 3 brute
-breach 3 brute
-breach 3 brute
-use cloak
-end
+move 4
+breach 3 backdoor
 move 3
 loot
+use cloak
+end
 move 4
 move 5
 move 7
-use overclock
 loot
 jackout
-laylow lie_low
+laylow scrub_traces
 archives f20
 hack aurora-core
 y
-use ghost
 breach 2 brute
-breach 2 exploit
+breach 2 brute
 breach 2 brute
 end
 move 2
@@ -673,42 +670,40 @@ breach 4 quantum
 breach 4 decrypt
 move 4
 end
-breach 6 quantum
+loot
 breach 6 decrypt
+end
+breach 3 backdoor
+breach 6 quantum
+breach 3 backdoor
+end
+breach 3 backdoor
+use spoof
 move 6
 loot
+breach 7 decrypt
 end
+move 4
+breach 3 backdoor
+end
+breach 3 backdoor
+move 6
 breach 7 decrypt
 use spoof
 move 4
 end
-loot
-end
-breach 3 backdoor
-end
-breach 3 backdoor
-end
-breach 3 backdoor
-end
-move 6
-use cloak
-end
-breach 7 decrypt
-breach 7 decrypt
-move 4
-use spoof
-end
-breach 3 backdoor
-breach 3 backdoor
-use cloak
-end
-breach 3 backdoor
-move 3
-loot
-move 4
+use ghost
+breach 3 brute
 move 6
 use overclock
+breach 7 decrypt
 move 7
+loot
+use cloak
+end
+move 6
+move 4
+move 3
 loot
 jackout
 archives f23

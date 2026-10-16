@@ -25,9 +25,9 @@ expression: "picture(&app, 100, 28)"
 │Fin de tour maintenant : Trace +2 (5 → 7, calme).                   ││Ambiante : +2               │
 │Cycles 0/3. Plus de cycle : `end` termine le tour.                  ││                            │
 │                                                                    ││▸ Deck                      │
-│                                                                    ││1 Brute  2 Exploit (2)      │
-│                                                                    ││3 Backdoor  4 Decrypt       │
-│                                                                    ││5 Spoof (2)  6 Cloak (1)    │
+│                                                                    ││1 Brute  2 Backdoor         │
+│                                                                    ││3 Decrypt  4 Spoof (2)      │
+│                                                                    ││5 Cloak (1)                 │
 ╰────────────────────────────────────────────────────────────────────╯╰────────────────────────────╯
 >
 F2 panneau | Tab compléter | Ctrl+C quitter | Haut/Bas historique | PgUp/PgDn défiler

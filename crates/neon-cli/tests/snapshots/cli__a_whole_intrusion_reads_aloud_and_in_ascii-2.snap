@@ -34,11 +34,10 @@ Trace 0 sur 100, niveau calme.
 3 sur 3 cycles.
 Deck
 1. Programme : Brute-Force; Fort contre : Reseau 2; Cout : 1 cycle; Bruit : bruit 5; Charges : illimite
-2. Programme : Exploit; Fort contre : Reseau 3; Cout : 2 cycles; Bruit : bruit 2; Charges : 2 restantes
-3. Programme : Backdoor; Fort contre : Reseau 1; Cout : 1 cycle; Bruit : bruit 1; Charges : illimite
-4. Programme : Decrypt; Fort contre : Chiffrement 2; Cout : 1 cycle; Bruit : bruit 3; Charges : illimite
-5. Programme : Spoof; Fort contre : utilitaire; Cout : 1 cycle; Bruit : bruit 0; Charges : 2 restantes
-6. Programme : Cloak; Fort contre : utilitaire; Cout : 1 cycle; Bruit : bruit 0; Charges : 2 restantes
+2. Programme : Backdoor; Fort contre : Reseau 1; Cout : 1 cycle; Bruit : bruit 1; Charges : illimite
+3. Programme : Decrypt; Fort contre : Chiffrement 2; Cout : 1 cycle; Bruit : bruit 3; Charges : illimite
+4. Programme : Spoof; Fort contre : utilitaire; Cout : 1 cycle; Bruit : bruit 0; Charges : 2 restantes
+5. Programme : Cloak; Fort contre : utilitaire; Cout : 1 cycle; Bruit : bruit 0; Charges : 2 restantes
 Butin : 0 sur 2 pris.
 Annulations restantes : 3.
 Prevision : Trace +7 en fin de tour.
@@ -100,11 +99,10 @@ Trace 17 sur 100, niveau calme.
 1 sur 3 cycles.
 Deck
 1. Programme : Brute-Force; Fort contre : Reseau 2; Cout : 1 cycle; Bruit : bruit 5; Charges : illimite
-2. Programme : Exploit; Fort contre : Reseau 3; Cout : 2 cycles; Bruit : bruit 2; Charges : 2 restantes
-3. Programme : Backdoor; Fort contre : Reseau 1; Cout : 1 cycle; Bruit : bruit 1; Charges : illimite
-4. Programme : Decrypt; Fort contre : Chiffrement 2; Cout : 1 cycle; Bruit : bruit 3; Charges : illimite
-5. Programme : Spoof; Fort contre : utilitaire; Cout : 1 cycle; Bruit : bruit 0; Charges : 2 restantes
-6. Programme : Cloak; Fort contre : utilitaire; Cout : 1 cycle; Bruit : bruit 0; Charges : 2 restantes
+2. Programme : Backdoor; Fort contre : Reseau 1; Cout : 1 cycle; Bruit : bruit 1; Charges : illimite
+3. Programme : Decrypt; Fort contre : Chiffrement 2; Cout : 1 cycle; Bruit : bruit 3; Charges : illimite
+4. Programme : Spoof; Fort contre : utilitaire; Cout : 1 cycle; Bruit : bruit 0; Charges : 2 restantes
+5. Programme : Cloak; Fort contre : utilitaire; Cout : 1 cycle; Bruit : bruit 0; Charges : 2 restantes
 Butin : 1 sur 2 pris.
 Annulations restantes : 2.
 Prevision : Trace +2 en fin de tour.

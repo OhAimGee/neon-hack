@@ -41,9 +41,6 @@ name = "Neural Assistant v3.1"
 [item.quantum_chip]
 name = "Quantum Processing Chip"
 
-[item.prog_exploit]
-name = "Exploit Kit"
-
 [item.prog_decrypt]
 name = "Decrypt Suite"
 
@@ -52,9 +49,6 @@ name = "Spoof Module"
 
 [item.prog_quantum]
 name = "Quantum Cracker"
-
-[item.prog_social]
-name = "Social Toolkit"
 
 [item.prog_virus]
 name = "Virus Payload"
