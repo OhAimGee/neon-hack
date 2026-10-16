@@ -17,6 +17,8 @@ use crate::sites::SiteRow;
 pub const SCHEMA_VERSION: u32 = 5;
 /// The games of a campaign report that are listed by name when they went wrong.
 const WORST: usize = 20;
+/// The last inputs of a game of the monkey that `list-worst` shows.
+const MONKEY_TRAIL: usize = 8;
 
 /// The spread of a number over the games: the least, the tenth percentile, the median, the
 /// ninetieth percentile and the most (nearest rank).
@@ -380,6 +382,67 @@ impl Report {
         Ok(text)
     }
 
+    /// The games to replay, one line each (more for the monkey: the last inputs of the game),
+    /// or `None` for a report that holds no games (the sites, the economy, the programs).
+    ///
+    /// The first line says what the report is; a report in which no game went wrong says so.
+    #[must_use]
+    pub fn worst_lines(&self) -> Option<Vec<String>> {
+        match self {
+            Self::Campaign(report) => {
+                let mut lines = vec![format!(
+                    "{} at {}: {} of {} games did not finish",
+                    report.bot,
+                    report.difficulty,
+                    report.games - report.finished,
+                    report.games
+                )];
+                for worst in &report.worst {
+                    lines.push(format!(
+                        "  seed {}, plan {}: {}",
+                        worst.seed, worst.plan, worst.why
+                    ));
+                }
+                if report.worst.is_empty() {
+                    lines.push("  no game went wrong".to_owned());
+                } else {
+                    lines.push(format!(
+                        "  replay: neon-sim run --bot {} --difficulty {} --seeds SEED",
+                        report.bot, report.difficulty
+                    ));
+                }
+                Some(lines)
+            }
+            Self::Monkey(report) => {
+                let mut lines = vec![format!(
+                    "monkey: {} games, {} with a fault",
+                    report.games,
+                    report.worst.len()
+                )];
+                for worst in &report.worst {
+                    lines.push(format!(
+                        "  seed {} ({}): {:?}",
+                        worst.seed, worst.difficulty, worst.fault
+                    ));
+                    let skipped = worst.trail.len().saturating_sub(MONKEY_TRAIL);
+                    for input in worst.trail.iter().skip(skipped) {
+                        lines.push(format!("    {input}"));
+                    }
+                }
+                if report.worst.is_empty() {
+                    lines.push("  no game went wrong".to_owned());
+                } else {
+                    lines.push(
+                        "  replay: neon-sim run --bot monkey --difficulty all --seeds SEED"
+                            .to_owned(),
+                    );
+                }
+                Some(lines)
+            }
+            Self::Sites(_) | Self::Economy(_) | Self::Programs(_) => None,
+        }
+    }
+
     /// Reads a report from its JSON.
     ///
     /// # Errors
@@ -507,6 +570,43 @@ mod tests {
         assert_eq!(report.hunted_per_mille, 500);
         let why: Vec<&str> = report.worst.iter().map(|w| w.why.as_str()).collect();
         assert_eq!(why, ["lost on b", "gave up on c", "a bug"]);
+        // `list-worst` names each of them with its seed and plan, and how to replay it.
+        let lines = Report::Campaign(report).worst_lines().unwrap();
+        assert_eq!(
+            lines,
+            [
+                "prudent at expert: 3 of 4 games did not finish",
+                "  seed 1, plan p: lost on b",
+                "  seed 1, plan p: gave up on c",
+                "  seed 1, plan p: a bug",
+                "  replay: neon-sim run --bot prudent --difficulty expert --seeds SEED",
+            ]
+        );
+    }
+
+    #[test]
+    fn list_worst_says_so_when_nothing_went_wrong_and_skips_reports_without_games() {
+        let clean = CampaignReport::of("optimist", "normal", [1, 1], 0, &[]);
+        let lines = Report::Campaign(clean).worst_lines().unwrap();
+        assert_eq!(
+            lines,
+            [
+                "optimist at normal: 0 of 0 games did not finish",
+                "  no game went wrong"
+            ]
+        );
+        let monkey = MonkeyReport::of([1, 3], 60, &[]);
+        let lines = Report::Monkey(monkey).worst_lines().unwrap();
+        assert_eq!(
+            lines.last().map(String::as_str),
+            Some("  no game went wrong")
+        );
+        let sites = SitesReport {
+            schema_version: SCHEMA_VERSION,
+            expansions: 1,
+            rows: Vec::new(),
+        };
+        assert_eq!(Report::Sites(sites).worst_lines(), None);
     }
 
     #[test]

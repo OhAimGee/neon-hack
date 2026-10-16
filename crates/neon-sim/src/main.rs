@@ -5,6 +5,7 @@
 //! neon-sim solve --out target/sim/sites.json
 //! neon-sim economy --out target/sim/economy.json
 //! neon-sim check target/sim/optimist.json target/sim/sites.json target/sim/economy.json
+//! neon-sim list-worst --report target/sim/prudent-normal.json
 //! ```
 
 use std::fs;
@@ -46,6 +47,15 @@ enum Command {
     Bench(BenchArgs),
     /// Check reports against the thresholds; exits with 1 when a barrier fails.
     Check(CheckArgs),
+    /// List the games of a report that went wrong, with the seed to replay each.
+    ListWorst(ListWorstArgs),
+}
+
+#[derive(Args)]
+struct ListWorstArgs {
+    /// A report of games (a bot or the monkey); repeat the option for several.
+    #[arg(long = "report", required = true)]
+    reports: Vec<PathBuf>,
 }
 
 #[derive(Args)]
@@ -222,6 +232,7 @@ fn main() -> ExitCode {
         Command::Programs(args) => programs(&args),
         Command::Bench(args) => bench_command(&args),
         Command::Check(args) => check_reports(&args),
+        Command::ListWorst(args) => list_worst(&args),
     };
     match result {
         Ok(code) => code,
@@ -491,6 +502,20 @@ fn check_reports(args: &CheckArgs) -> Result<ExitCode, String> {
     } else {
         ExitCode::SUCCESS
     })
+}
+
+fn list_worst(args: &ListWorstArgs) -> Result<ExitCode, String> {
+    for path in &args.reports {
+        let text = fs::read_to_string(path).map_err(|e| format!("{}: {e}", path.display()))?;
+        let report = Report::from_json(&text).map_err(|e| format!("{}: {e}", path.display()))?;
+        let lines = report
+            .worst_lines()
+            .ok_or_else(|| format!("{}: this report holds no games", path.display()))?;
+        for line in lines {
+            console::line(&line);
+        }
+    }
+    Ok(ExitCode::SUCCESS)
 }
 
 /// A line that sums up a campaign report.
