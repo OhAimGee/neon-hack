@@ -15,6 +15,8 @@ on:
 
 permissions:
   contents: read
+  # To fetch the reports of the night before (the artifact of the previous run).
+  actions: read
 
 concurrency:
   group: sim-nightly-${{ github.ref }}
@@ -58,6 +60,22 @@ jobs:
               echo '```'
             fi
           } >> "$GITHUB_STEP_SUMMARY"
+      - name: Compare with the night before
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          scripts/sim-drift.sh target/sim-nightly target/sim-previous 2>&1 | tee target/sim-drift.log
+          moved=$(grep -c '^\[drift\] .* -> ' target/sim-drift.log || true)
+          if [ "${moved:-0}" -gt 0 ]; then
+            echo "::warning title=Balancing drift::${moved} indicators moved by more than 5 % since the night before (see the job summary)"
+          fi
+          {
+            echo '### Drift since the night before'
+            echo '```'
+            cat target/sim-drift.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
       # The reports of the night (the canonical JSON, the timings and the log) are kept for a
       # month, to compare a night with the one before. Referenced by its major tag, not by a
       # commit: the owner chose not to pin this action.
@@ -69,5 +87,6 @@ jobs:
           path: |
             target/sim-nightly/
             target/sim-nightly.log
+            target/sim-drift.log
           if-no-files-found: warn
           retention-days: 30
