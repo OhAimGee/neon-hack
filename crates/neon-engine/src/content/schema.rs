@@ -977,6 +977,33 @@ pub struct HintBudgets {
     pub hardcore: u8,
 }
 
+/// How much of the final Trace of an intrusion becomes notoriety, by difficulty, in percent.
+/// Story forgives more: a player who has the game play the intrusions is not hunted for it.
+#[derive(Debug, Clone, Copy, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct HeatShares {
+    /// Story difficulty.
+    pub story: u8,
+    /// Normal difficulty.
+    pub normal: u8,
+    /// Expert difficulty.
+    pub expert: u8,
+    /// Hardcore difficulty.
+    pub hardcore: u8,
+}
+
+impl Default for HeatShares {
+    /// A quarter of the Trace, at every difficulty: what the notoriety has always cost.
+    fn default() -> Self {
+        Self {
+            story: 25,
+            normal: 25,
+            expert: 25,
+            hardcore: 25,
+        }
+    }
+}
+
 /// When a command of the game opens (docs/spec/commands.md, section 6). A command without a
 /// rule is open from the start.
 #[derive(Debug, Clone, Deserialize)]
@@ -1160,6 +1187,8 @@ pub(crate) struct RewardsFile {
     pub auto_resolve: AutoResolveRules,
     #[serde(default)]
     pub hints: HintBudgets,
+    #[serde(default)]
+    pub heat: HeatShares,
 }
 
 #[derive(Debug, Deserialize)]

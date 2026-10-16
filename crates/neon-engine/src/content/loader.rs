@@ -14,7 +14,7 @@ use crate::content::ids::{ContactId, DecisionId, FlagId, ItemId, QuestId, Readab
 use crate::content::money::{Credits, Reputation};
 use crate::content::schema::{
     AutoResolveRules, CatalogFile, CommandDef, ContactDef, DecisionDef, DecisionsFile, EndingDef,
-    EpilogueDef, FlagDef, FlagsFile, HintBudgets, ItemDef, KitDef, QuestDef, QuestsFile,
+    EpilogueDef, FlagDef, FlagsFile, HeatShares, HintBudgets, ItemDef, KitDef, QuestDef, QuestsFile,
     ReadableDef, RewardsFile, Rules, RunDef, RunsFile, ServiceDef, SiteDef, Size, SizeDef,
     TextsFile, TierDef, TopicDef, TopicsFile, UnlockDef, UnlocksFile,
 };
@@ -258,6 +258,8 @@ pub struct Content {
     pub auto_resolve: AutoResolveRules,
     /// The hint budget of a quest, by difficulty.
     pub hints: HintBudgets,
+    /// The share of the Trace of an intrusion that becomes notoriety, by difficulty.
+    pub heat: HeatShares,
     /// When the commands of the game open.
     pub unlocks: Vec<UnlockDef>,
     /// The tactical intrusion of each site.
@@ -377,6 +379,7 @@ impl Content {
             services: unspan(rewards.service),
             auto_resolve: rewards.auto_resolve,
             hints: rewards.hints,
+            heat: rewards.heat,
             unlocks: unspan(unlocks.unlock),
             runs: run_defs,
             kits: unspan(runs.kit),

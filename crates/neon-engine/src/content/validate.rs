@@ -522,6 +522,17 @@ impl V<'_> {
                 "`[hints]` must not grow with the difficulty: story >= normal >= expert >= hardcore",
             );
         }
+        let heat = &c.heat;
+        let shares = [heat.story, heat.normal, heat.expert, heat.hardcore];
+        if shares.iter().any(|share| !(1..=100).contains(share))
+            || !(heat.story <= heat.normal && heat.normal <= heat.expert && heat.expert <= heat.hardcore)
+        {
+            self.err(
+                f,
+                0,
+                "`[heat]` shares are percents from 1 to 100 that do not fall with the difficulty: story <= normal <= expert <= hardcore",
+            );
+        }
     }
 
     // ------------------------------------------------------------- unlocks

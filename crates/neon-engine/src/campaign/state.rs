@@ -15,7 +15,9 @@ use crate::content::Content;
 use crate::content::ids::{ContactId, DecisionId, ItemId, QuestId, ReadableId, SiteId};
 use crate::content::money::Credits;
 use crate::content::runs::Stock;
-use crate::content::schema::{ContactState, HintBudgets, QuestStatus, ReadableKind, SiteDef, Turn};
+use crate::content::schema::{
+    ContactState, HeatShares, HintBudgets, QuestStatus, ReadableKind, SiteDef, Turn,
+};
 use crate::content::state::{HEAT_MAX, State};
 use crate::intrusion::Intrusion;
 use crate::run::{Pace, RunState, Undo};
@@ -90,6 +92,17 @@ impl Difficulty {
             Self::Normal => budgets.normal,
             Self::Expert => budgets.expert,
             Self::Hardcore => budgets.hardcore,
+        }
+    }
+
+    /// The share of the final Trace of an intrusion that becomes notoriety, in percent.
+    #[must_use]
+    pub fn heat_percent(self, shares: &HeatShares) -> u8 {
+        match self {
+            Self::Story => shares.story,
+            Self::Normal => shares.normal,
+            Self::Expert => shares.expert,
+            Self::Hardcore => shares.hardcore,
         }
     }
 
