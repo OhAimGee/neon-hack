@@ -167,7 +167,7 @@ Une partie a quatre issues : **terminée**, **perdue** (une intrusion grille en 
 
 ## 9. Limites et décisions
 
-- Les bots ne reproduisent pas un humain : ils bornent le jeu (plancher, plafond, robustesse), ils ne mesurent pas l'ennui ni la lisibilité. R7 y ajoute un essai humain.
+- Les bots ne reproduisent pas un humain : ils bornent le jeu (plancher, plafond, robustesse), ils ne mesurent pas l'ennui ni la lisibilité. R7 y ajoute un essai humain, dont le protocole est dans [`docs/playtest/PROTOCOLE.md`](../playtest/PROTOCOLE.md).
 - La durée dépend de la cadence supposée (§ 6) et du volume de texte lu, que le moteur ne connaît pas.
 - Le *bot solveur* dépend de la borne du solveur et de son repli ([`solver.md`](solver.md)) ; les seuils T2-T4 et T13 sont recalés sur les mesures du spike, mais le contenu final reste à écrire : ce sont des **cibles**, pas encore des mesures.
 - **S-8** (validée le 8 octobre 2026, [`DECISIONS.md`](../design/DECISIONS.md) § 6) : le principe des seuils en données, les barrières P/O du § 5 comme point de départ, et la cadence de 8 commandes par minute.
