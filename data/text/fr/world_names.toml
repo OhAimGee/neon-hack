@@ -59,3 +59,21 @@ name = "Coquille fantôme"
 [item.prog_overclock]
 name = "Banc de surcadençage"
 
+[item.up_spoof]
+name = "Module de leurre II"
+
+[item.up_cloak]
+name = "Matrice de camouflage II"
+
+[item.up_quantum]
+name = "Casseur quantique II"
+
+[item.up_ghost]
+name = "Coquille fantôme II"
+
+[item.up_virus]
+name = "Charge virale II"
+
+[item.up_overclock]
+name = "Banc de surcadençage II"
+

@@ -815,6 +815,11 @@ pub struct ItemDef {
     /// item grants is sold: the deck of a tier has it only for the player who owns that item.
     #[serde(default)]
     pub program: Option<Program>,
+    /// The limited program whose supply the item raises by one charge in every intrusion whose
+    /// deck has it (never above [`Supply::MAX_LIMITED`](crate::run::Supply::MAX_LIMITED)): an
+    /// upgrade nobody needs.
+    #[serde(default)]
+    pub boost: Option<Program>,
     /// Byte offset of the entry in its file, for line numbers.
     #[serde(skip)]
     pub at: usize,

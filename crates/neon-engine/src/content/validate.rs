@@ -289,6 +289,42 @@ impl V<'_> {
         }
         for i in &c.items {
             self.unlock(f, i.at, &format!("item `{}`", i.id), &i.unlock);
+            let ctx = format!("item `{}`", i.id);
+            if let Some(boost) = i.boost {
+                if i.program.is_some() {
+                    self.err(
+                        f,
+                        i.at,
+                        format!("{ctx}: grants a program or raises one, not both"),
+                    );
+                }
+                let raises = matches!(
+                    boost.spec().supply,
+                    Supply::Limited(count) if count < Supply::MAX_LIMITED
+                );
+                if !raises {
+                    self.err(
+                        f,
+                        i.at,
+                        format!(
+                            "{ctx}: `{}` has no limited supply that one more charge can raise",
+                            boost.id()
+                        ),
+                    );
+                }
+                let tier = i.unlock.tier.unwrap_or(1);
+                if !c
+                    .kits
+                    .iter()
+                    .any(|kit| kit.tier >= tier && kit.programs.contains(&boost))
+                {
+                    self.err(
+                        f,
+                        i.at,
+                        format!("{ctx}: no deck from its tier on has `{}`", boost.id()),
+                    );
+                }
+            }
         }
         for r in &c.readables {
             let ctx = format!("readable `{}`", r.id);

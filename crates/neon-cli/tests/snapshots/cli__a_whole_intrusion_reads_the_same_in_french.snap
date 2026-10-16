@@ -36,8 +36,8 @@ Deck
 [1] Brute-Force - Réseau 2 - 1 cycle - bruit 5 - illimité
 [2] Backdoor - Réseau 1 - 1 cycle - bruit 1 - illimité
 [3] Decrypt - Chiffrement 2 - 1 cycle - bruit 3 - illimité
-[4] Spoof - utilitaire - 1 cycle - bruit 0 - 2 restantes
-[5] Cloak - utilitaire - 1 cycle - bruit 0 - 2 restantes
+[4] Spoof - utilitaire - 1 cycle - bruit 0 - 3 restantes
+[5] Cloak - utilitaire - 1 cycle - bruit 0 - 3 restantes
 Butin : 0 sur 2 pris.
 Annulations restantes : 3.
 Prévision : Trace +7 en fin de tour.
@@ -101,8 +101,8 @@ Deck
 [1] Brute-Force - Réseau 2 - 1 cycle - bruit 5 - illimité
 [2] Backdoor - Réseau 1 - 1 cycle - bruit 1 - illimité
 [3] Decrypt - Chiffrement 2 - 1 cycle - bruit 3 - illimité
-[4] Spoof - utilitaire - 1 cycle - bruit 0 - 2 restantes
-[5] Cloak - utilitaire - 1 cycle - bruit 0 - 2 restantes
+[4] Spoof - utilitaire - 1 cycle - bruit 0 - 3 restantes
+[5] Cloak - utilitaire - 1 cycle - bruit 0 - 3 restantes
 Butin : 1 sur 2 pris.
 Annulations restantes : 2.
 Prévision : Trace +2 en fin de tour.

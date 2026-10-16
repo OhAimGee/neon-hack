@@ -5,7 +5,7 @@ use std::collections::BTreeSet;
 use crate::content::Content;
 use crate::content::ids::{ItemId, SiteId};
 use crate::content::schema::{KitDef, RunDef, SiteDef};
-use crate::run::{Mission, MissionBuilder, MissionError, NodeId, Pace, Program};
+use crate::run::{Mission, MissionBuilder, MissionError, NodeId, Pace, Program, Supply};
 
 /// The tier a site belongs to: the one that unlocks it (1 when it is not gated by a tier).
 #[must_use]
@@ -37,6 +37,23 @@ impl RunDef {
         programs: &[Program],
         pace: Pace,
     ) -> Result<Mission, MissionError> {
+        self.mission_boosted(kit, programs, &[], pace)
+    }
+
+    /// Builds the mission like [`RunDef::mission`], with one more charge for each program of
+    /// `boosts` that the deck has with a limited supply (never above the most a supply may
+    /// hold).
+    ///
+    /// # Errors
+    ///
+    /// The [`MissionError`] that makes the data unplayable.
+    pub fn mission_boosted(
+        &self,
+        kit: &KitDef,
+        programs: &[Program],
+        boosts: &[Program],
+        pace: Pace,
+    ) -> Result<Mission, MissionError> {
         let node = |number: u8| Self::node_id(number).ok_or(MissionError::UnknownNode(number));
         let mut builder = MissionBuilder::new();
         for def in &self.node {
@@ -54,8 +71,16 @@ impl RunDef {
                 .collect::<Result<Vec<_>, _>>()?;
             builder.patrol(&route, patrol.anchor.map(node).transpose()?);
         }
+        builder.programs(programs);
+        for boost in boosts {
+            if programs.contains(boost)
+                && let Supply::Limited(count) = boost.spec().supply
+            {
+                let raised = count.saturating_add(1).min(Supply::MAX_LIMITED);
+                builder.program_with(*boost, Supply::Limited(raised));
+            }
+        }
         builder
-            .programs(programs)
             .cycles_per_turn(kit.cycles.saturating_add(pace.bonus_cycles))
             .gain_quarters(pace.gain_quarters)
             .ambient(self.ambient)
@@ -99,6 +124,20 @@ impl Content {
             .collect()
     }
 
+    /// The programs whose supply the upgrades a player holds raise: every upgrade of the stall
+    /// for [`Stock::Everything`], the owned ones otherwise.
+    #[must_use]
+    pub fn boosts(&self, stock: Stock<'_>) -> Vec<Program> {
+        self.items
+            .iter()
+            .filter(|item| match stock {
+                Stock::Everything => true,
+                Stock::Owned(owned) => owned.contains(&item.id),
+            })
+            .filter_map(|item| item.boost)
+            .collect()
+    }
+
     /// The mission of a site at a pace with the whole deck of its tier: `None` for a site that
     /// has no intrusion.
     ///
@@ -115,6 +154,7 @@ impl Content {
         let def = self.site(site)?;
         let run = self.run(site)?;
         let kit = self.kit(site_tier(def))?;
-        run.mission(kit, &self.deck(kit, stock), pace).ok()
+        run.mission_boosted(kit, &self.deck(kit, stock), &self.boosts(stock), pace)
+            .ok()
     }
 }

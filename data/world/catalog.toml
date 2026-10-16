@@ -481,3 +481,49 @@ group = "cover"
 [[command]]
 id = "blend"
 group = "cover"
+
+# The upgrades of the stall: one more charge for a program whose supply is limited, in every
+# intrusion whose deck has the program. Nobody needs them; they are what the money of the late
+# game is for (and why the stall costs more than a campaign pays).
+
+[[item]]
+id = "up_spoof"
+legacy_name = "Spoof Module II"
+price = 1500
+unlock = { tier = 3 }
+boost = "spoof"
+
+[[item]]
+id = "up_cloak"
+legacy_name = "Cloak Matrix II"
+price = 2500
+unlock = { tier = 4 }
+boost = "cloak"
+
+[[item]]
+id = "up_quantum"
+legacy_name = "Quantum Cracker II"
+price = 3000
+unlock = { tier = 4 }
+boost = "quantum"
+
+[[item]]
+id = "up_ghost"
+legacy_name = "Ghost Shell II"
+price = 4000
+unlock = { tier = 5 }
+boost = "ghost"
+
+[[item]]
+id = "up_virus"
+legacy_name = "Virus Payload II"
+price = 4000
+unlock = { tier = 5 }
+boost = "virus"
+
+[[item]]
+id = "up_overclock"
+legacy_name = "Overclock Rig II"
+price = 5500
+unlock = { tier = 6 }
+boost = "overclock"

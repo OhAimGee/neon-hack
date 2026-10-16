@@ -624,10 +624,12 @@ fn t7(
             .tiers
             .iter()
             .filter_map(|tier| {
+                // Only what a quest asks for has to be paid for by the tier before: the rest is
+                // there to be wanted.
                 let next = economy
                     .items
                     .iter()
-                    .filter(|item| item.tier == tier.tier + 1)
+                    .filter(|item| item.tier == tier.tier + 1 && !item.required_by.is_empty())
                     .map(|item| item.price)
                     .max()?;
                 (tier.main_credits < next)

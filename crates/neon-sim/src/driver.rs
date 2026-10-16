@@ -16,12 +16,11 @@ use neon_engine::campaign::CampaignGame;
 use neon_engine::content::Stock;
 use neon_engine::content::schema::{QuestStatus, ReadableKind};
 use neon_engine::prompt::{Input, Prompt, Step};
-use neon_engine::run::solve::{Goal, Outcome, PROOF_EXPANSIONS, Resolution, auto_resolve, solve};
 use neon_engine::run::{Action, RunState};
 use neon_engine::save::SaveRequest;
 
 use crate::brain::{Brain, Move, Plan};
-use crate::sites::full_loot_mission;
+use crate::sites::{find_plan, full_loot_mission};
 use crate::tactics::{self, Style};
 
 /// Prompts one command may cause (a conversation with a few topics, a decision).
@@ -505,28 +504,13 @@ impl<O: Observer> Driver<O> {
                 // The bounded chain of `skip` is enough for the small intrusions; a heavy one,
                 // with all its loot to take, gets the wide bound of the tools instead: the
                 // harness is not the game, and what it asks is whether the intrusion can be won.
-                let plan = match auto_resolve(&mission, &state) {
-                    Resolution::Optimal(plan) | Resolution::Best(plan) => plan,
-                    Resolution::Nominal => {
-                        match solve(&mission, &state, Goal::Feasible, PROOF_EXPANSIONS, u8::MAX)
-                            .outcome
-                        {
-                            Outcome::Solved { plan, .. }
-                            | Outcome::Unknown {
-                                best: Some(plan), ..
-                            } => plan,
-                            Outcome::Unknown { best: None, .. } | Outcome::Unsolvable => {
-                                // A hoarder that kept to the deck of base is held up by it,
-                                // which is a result; for the others it is a defect of the walk.
-                                if self.config.hoard {
-                                    self.too_thin = Some(site.to_string());
-                                }
-                                return Err(
-                                    self.stuck(&format!("no plan for the intrusion of {site}"))
-                                );
-                            }
-                        }
+                let Some(plan) = find_plan(&mission, &state) else {
+                    // A hoarder that kept to the deck of base is held up by it, which is a
+                    // result; for the others it is a defect of the walk.
+                    if self.config.hoard {
+                        self.too_thin = Some(site.to_string());
                     }
+                    return Err(self.stuck(&format!("no plan for the intrusion of {site}")));
                 };
                 PLANS.with(|plans| plans.borrow_mut().insert(key, plan.actions.clone()));
                 plan.actions

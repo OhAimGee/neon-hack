@@ -59,3 +59,21 @@ name = "Ghost Shell"
 [item.prog_overclock]
 name = "Overclock Rig"
 
+[item.up_spoof]
+name = "Spoof Module II"
+
+[item.up_cloak]
+name = "Cloak Matrix II"
+
+[item.up_quantum]
+name = "Quantum Cracker II"
+
+[item.up_ghost]
+name = "Ghost Shell II"
+
+[item.up_virus]
+name = "Virus Payload II"
+
+[item.up_overclock]
+name = "Overclock Rig II"
+

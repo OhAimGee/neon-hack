@@ -61,3 +61,21 @@ desc = "Exécute vos prochaines actions en silence."
 [item.prog_overclock]
 desc = "Arrache plus de cycles au deck pour un peu de bruit."
 
+[item.up_spoof]
+desc = "Une charge de plus pour le leurre. Demande le module de leurre."
+
+[item.up_cloak]
+desc = "Une charge de plus pour le camouflage, que tout deck porte."
+
+[item.up_quantum]
+desc = "Une charge de plus pour le casseur quantique. Il le faut."
+
+[item.up_ghost]
+desc = "Une charge de plus pour la coquille fantôme. Il la faut."
+
+[item.up_virus]
+desc = "Une charge de plus pour la charge virale. Il la faut."
+
+[item.up_overclock]
+desc = "Une charge de plus pour le banc de surcadençage. Il le faut."
+
