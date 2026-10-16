@@ -1105,6 +1105,10 @@ fn a_purchase_is_refused_for_want_of_credits_level_or_market() {
     let mut driver = Driver::new();
     driver.finish_m01();
     driver.lines(&["buy 1", "y"]);
+    // The purse is cut down to 10 credits: the second item is out of reach.
+    let left = driver.credits();
+    driver.game.state.missions.earned =
+        crate::content::Credits::new(driver.game.state.missions.earned.get() - left + 10);
     let said = driver.line("buy 2");
     assert!(driver.errored() && said.contains("short"), "{said}");
     let said = driver.line("buy quantum_key");

@@ -70,10 +70,10 @@ fn a_greedy_player_finishes_the_first_three_quests_with_typed_lines() {
     assert_eq!(driver.game.state.missions.tier, 3);
     assert_eq!(driver.last.prompt, Prompt::Command);
 
-    // The economy of the three quests, to the credit: 100 to begin with, M01 (80), the first
-    // breach of the big server (75) and M02 (150), the first breach of the market (100) and M03
+    // The economy of the three quests, to the credit: 100 to begin with, M01 (160), the first
+    // breach of the big server (75) and M02 (300), the first breach of the market (100) and M03
     // (200), less the Stealth Module (150).
-    assert_eq!(driver.credits(), 100 + 80 + 75 + 150 + 100 + 200 - 150);
+    assert_eq!(driver.credits(), 100 + 160 + 75 + 300 + 100 + 200 - 150);
     // Reputation: M01 10, M02 25, M03 40, and 10 for each of the two first breaches.
     assert_eq!(
         driver.game.state.missions.reputation.get(),

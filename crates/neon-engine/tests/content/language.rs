@@ -53,8 +53,8 @@ fn m01_to_m03_unlock_the_contacts_and_pay_the_symbolic_rewards() {
             "{who}"
         );
     }
-    // M01 M@P1 = 80 credits, M02 M@P2 = 150, M03 M@P3 = 200, breaches S: 75 (corp) + 100 (nexus).
-    assert_eq!(g.s.earned, Credits::new(100 + 80 + 150 + 200 + 75 + 100));
+    // M01 L@P1 = 160 credits, M02 L@P2 = 300, M03 M@P3 = 200, breaches S: 75 (corp) + 100 (nexus).
+    assert_eq!(g.s.earned, Credits::new(100 + 160 + 300 + 200 + 75 + 100));
     assert_eq!(g.s.reputation, Reputation::new(10 + 25 + 40 + 10 + 10));
     assert_eq!(
         g.status("m04"),
