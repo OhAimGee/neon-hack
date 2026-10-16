@@ -3,9 +3,9 @@
 #
 # A node is numbered from 1 in the order it is written; `link` and `patrol` name nodes by number.
 # `ice` = { family = network|encryption|human|ai_guardian, strength = 1..6 }; `loot` is
-# `objective` (taking all of them opens `jackout`), `intel` (what social engineering needs) or
-# `extra`; `files` are the files of the site that taking the loot extracts. A patrol walks its
-# `route` one node per turn; with an `anchor` it is the guardian process of that node and stops
+# `objective` (taking all of them opens `jackout`) or `extra` (worth taking, never required);
+# `files` are the files of the site that taking the loot extracts. A patrol walks its `route` one
+# node per turn; with an `anchor` it is the guardian process of that node and stops
 # once its ICE is open. The names of the nodes are texts: `site.<id>.node.<n>.name`.
 
 # The deck of each tier. Programs come from the shop later; until then the tier decides.
@@ -18,27 +18,27 @@ programs = ["brute", "backdoor", "cloak"]
 [[kit]]
 tier = 2
 cycles = 3
-programs = ["brute", "backdoor", "cloak", "exploit", "decrypt", "spoof"]
+programs = ["brute", "backdoor", "cloak", "decrypt", "spoof"]
 
 [[kit]]
 tier = 3
 cycles = 4
-programs = ["brute", "backdoor", "cloak", "exploit", "decrypt", "spoof", "quantum", "social"]
+programs = ["brute", "backdoor", "cloak", "decrypt", "spoof", "quantum"]
 
 [[kit]]
 tier = 4
 cycles = 4
-programs = ["brute", "backdoor", "cloak", "exploit", "decrypt", "spoof", "quantum", "social", "virus", "ghost"]
+programs = ["brute", "backdoor", "cloak", "decrypt", "spoof", "quantum", "virus", "ghost"]
 
 [[kit]]
 tier = 5
 cycles = 5
-programs = ["brute", "backdoor", "cloak", "exploit", "decrypt", "spoof", "quantum", "social", "virus", "ghost", "overclock"]
+programs = ["brute", "backdoor", "cloak", "decrypt", "spoof", "quantum", "virus", "ghost", "overclock"]
 
 [[kit]]
 tier = 6
 cycles = 5
-programs = ["brute", "backdoor", "cloak", "exploit", "decrypt", "spoof", "quantum", "social", "virus", "ghost", "overclock"]
+programs = ["brute", "backdoor", "cloak", "decrypt", "spoof", "quantum", "virus", "ghost", "overclock"]
 
 # ----------------------------------------------------------------------------
 [[run]]
@@ -92,7 +92,7 @@ ice = { family = "network", strength = 4 }
 
 [[run.node]] # 3 Relay
 ice = { family = "network", strength = 3 }
-loot = "intel"
+loot = "extra"
 
 [[run.node]] # 4 Archives
 ice = { family = "encryption", strength = 4 }
@@ -128,7 +128,7 @@ ice = { family = "network", strength = 4 }
 
 [[run.node]] # 3 Stalls
 ice = { family = "human", strength = 4 }
-loot = "intel"
+loot = "extra"
 
 [[run.node]] # 4 Cellar
 ice = { family = "encryption", strength = 5 }
@@ -188,7 +188,7 @@ ice = { family = "human", strength = 5 }
 
 [[run.node]] # 4 Ledger
 ice = { family = "encryption", strength = 5 }
-loot = "intel"
+loot = "extra"
 
 [[run.node]] # 5 Cluster
 ice = { family = "network", strength = 6 }
@@ -269,7 +269,7 @@ ice = { family = "human", strength = 6 }
 
 [[run.node]] # 4 Mainframe
 ice = { family = "encryption", strength = 6 }
-loot = "intel"
+loot = "extra"
 
 [[run.node]] # 5 Warden
 ice = { family = "ai_guardian", strength = 6 }
@@ -335,7 +335,7 @@ ice = { family = "network", strength = 4 }
 
 [[run.node]] # 3 Console
 ice = { family = "human", strength = 5 }
-loot = "intel"
+loot = "extra"
 
 [[run.node]] # 4 Logs
 ice = { family = "encryption", strength = 4 }
@@ -441,7 +441,7 @@ ice = { family = "network", strength = 5 }
 
 [[run.node]] # 3 Auctions
 ice = { family = "human", strength = 5 }
-loot = "intel"
+loot = "extra"
 
 [[run.node]] # 4 Contracts
 ice = { family = "encryption", strength = 5 }
@@ -476,7 +476,7 @@ ice = { family = "network", strength = 6 }
 
 [[run.node]] # 3 Relay
 ice = { family = "human", strength = 6 }
-loot = "intel"
+loot = "extra"
 
 [[run.node]] # 4 Manual
 ice = { family = "encryption", strength = 6 }

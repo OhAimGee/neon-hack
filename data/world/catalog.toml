@@ -215,13 +215,6 @@ unlock = { tier = 5 }
 # programs of the items it does not own.
 
 [[item]]
-id = "prog_exploit"
-legacy_name = "Exploit Kit"
-price = 100
-unlock = { tier = 2 }
-program = "exploit"
-
-[[item]]
 id = "prog_decrypt"
 legacy_name = "Decrypt Suite"
 price = 100
@@ -241,13 +234,6 @@ legacy_name = "Quantum Cracker"
 price = 250
 unlock = { tier = 3 }
 program = "quantum"
-
-[[item]]
-id = "prog_social"
-legacy_name = "Social Toolkit"
-price = 200
-unlock = { tier = 3 }
-program = "social"
 
 [[item]]
 id = "prog_virus"

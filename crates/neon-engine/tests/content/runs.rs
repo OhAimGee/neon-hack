@@ -76,8 +76,14 @@ fn the_files_of_a_site_are_on_its_nodes_and_nowhere_else() {
 #[test]
 fn corp_server_01_is_the_payroll_run_of_the_spec() {
     // `docs/spec/run-screen.md` § 5, played on the real data: four turns, Trace 7, 14, 23.
+    // The deck of the example holds an Exploit, which the game no longer sells: the graph is the
+    // shipped one, the deck is the one of the spec.
     let c = shipped();
-    let mission = c.mission(&site("corp-server-01"), Pace::NORMAL).unwrap();
+    let def = c.run(&site("corp-server-01")).unwrap();
+    let kit = c.kit(2).unwrap();
+    let mut programs = kit.programs.clone();
+    programs.push(Program::Exploit);
+    let mission = def.mission(kit, &programs, Pace::NORMAL).unwrap();
     let mut run = Run::new(mission, Undo::NONE);
     let breach = |number, program| Action::Breach {
         node: node(number),
@@ -294,8 +300,8 @@ fn a_broken_deck_is_reported() {
 
     let errors = broken(|s| {
         s.runs = s.runs.replacen(
-            "\"decrypt\", \"spoof\", \"quantum\", \"social\"]",
-            "\"decrypt\", \"quantum\", \"social\"]",
+            "\"decrypt\", \"spoof\", \"quantum\"]",
+            "\"decrypt\", \"quantum\"]",
             1,
         );
     });
@@ -428,7 +434,7 @@ fn a_program_the_stall_sells_is_in_the_deck_only_of_the_player_who_owns_its_item
     let has = |mission: &Mission, program: Program| mission.supply(program).is_some();
     let count = |mission: &Mission| Program::ALL.iter().filter(|p| has(mission, **p)).count();
     let none = BTreeSet::new();
-    let owning: BTreeSet<_> = ["prog_exploit".parse().unwrap()].into_iter().collect();
+    let owning: BTreeSet<_> = ["prog_decrypt".parse().unwrap()].into_iter().collect();
 
     let everything = c
         .mission_holding(&id, Pace::NORMAL, Stock::Everything)
@@ -436,12 +442,12 @@ fn a_program_the_stall_sells_is_in_the_deck_only_of_the_player_who_owns_its_item
     let empty_handed = c
         .mission_holding(&id, Pace::NORMAL, Stock::Owned(&none))
         .unwrap();
-    let with_exploit = c
+    let with_decrypt = c
         .mission_holding(&id, Pace::NORMAL, Stock::Owned(&owning))
         .unwrap();
 
     // The tools see the whole deck of the tier, which is the deck `mission` has always given.
-    assert!(has(&everything, Program::Exploit));
+    assert!(has(&everything, Program::Spoof));
     assert_eq!(
         count(&c.mission(&id, Pace::NORMAL).unwrap()),
         count(&everything)
@@ -450,12 +456,12 @@ fn a_program_the_stall_sells_is_in_the_deck_only_of_the_player_who_owns_its_item
     for base in [Program::BruteForce, Program::Backdoor, Program::Cloak] {
         assert!(has(&empty_handed, base), "{base:?}");
     }
-    assert!(!has(&empty_handed, Program::Exploit));
+    assert!(!has(&empty_handed, Program::Spoof));
     assert!(!has(&empty_handed, Program::Decrypt));
     // Owning an item puts its program in the deck, and only that one.
-    assert!(has(&with_exploit, Program::Exploit));
-    assert!(!has(&with_exploit, Program::Decrypt));
-    assert!(count(&with_exploit) > count(&empty_handed));
+    assert!(has(&with_decrypt, Program::Decrypt));
+    assert!(!has(&with_decrypt, Program::Spoof));
+    assert!(count(&with_decrypt) > count(&empty_handed));
 }
 
 #[test]
