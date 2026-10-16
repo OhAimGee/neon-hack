@@ -34,11 +34,10 @@ Trace 0 out of 100, level calm.
 3 of 3 cycles.
 Deck
 1. Program: Brute-Force; Strong against: Network 2; Cost: 1 cycle; Noise: noise 5; Charges: unlimited
-2. Program: Exploit; Strong against: Network 3; Cost: 2 cycles; Noise: noise 2; Charges: 2 left
-3. Program: Backdoor; Strong against: Network 1; Cost: 1 cycle; Noise: noise 1; Charges: unlimited
-4. Program: Decrypt; Strong against: Encryption 2; Cost: 1 cycle; Noise: noise 3; Charges: unlimited
-5. Program: Spoof; Strong against: utility; Cost: 1 cycle; Noise: noise 0; Charges: 2 left
-6. Program: Cloak; Strong against: utility; Cost: 1 cycle; Noise: noise 0; Charges: 2 left
+2. Program: Backdoor; Strong against: Network 1; Cost: 1 cycle; Noise: noise 1; Charges: unlimited
+3. Program: Decrypt; Strong against: Encryption 2; Cost: 1 cycle; Noise: noise 3; Charges: unlimited
+4. Program: Spoof; Strong against: utility; Cost: 1 cycle; Noise: noise 0; Charges: 2 left
+5. Program: Cloak; Strong against: utility; Cost: 1 cycle; Noise: noise 0; Charges: 2 left
 Loot: 0 of 2 taken.
 Undos left: 3.
 Forecast: Trace +7 at the end of the turn.
@@ -100,11 +99,10 @@ Trace 17 out of 100, level calm.
 1 of 3 cycles.
 Deck
 1. Program: Brute-Force; Strong against: Network 2; Cost: 1 cycle; Noise: noise 5; Charges: unlimited
-2. Program: Exploit; Strong against: Network 3; Cost: 2 cycles; Noise: noise 2; Charges: 2 left
-3. Program: Backdoor; Strong against: Network 1; Cost: 1 cycle; Noise: noise 1; Charges: unlimited
-4. Program: Decrypt; Strong against: Encryption 2; Cost: 1 cycle; Noise: noise 3; Charges: unlimited
-5. Program: Spoof; Strong against: utility; Cost: 1 cycle; Noise: noise 0; Charges: 2 left
-6. Program: Cloak; Strong against: utility; Cost: 1 cycle; Noise: noise 0; Charges: 2 left
+2. Program: Backdoor; Strong against: Network 1; Cost: 1 cycle; Noise: noise 1; Charges: unlimited
+3. Program: Decrypt; Strong against: Encryption 2; Cost: 1 cycle; Noise: noise 3; Charges: unlimited
+4. Program: Spoof; Strong against: utility; Cost: 1 cycle; Noise: noise 0; Charges: 2 left
+5. Program: Cloak; Strong against: utility; Cost: 1 cycle; Noise: noise 0; Charges: 2 left
 Loot: 1 of 2 taken.
 Undos left: 2.
 Forecast: Trace +2 at the end of the turn.

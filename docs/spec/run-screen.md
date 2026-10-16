@@ -120,7 +120,7 @@ La phrase « sauf si Cloak est actif » n'apparaît que si Cloak est dans le dec
 
 ## 5. Un tour entier, en trois présentations
 
-Les chiffres sont ceux de la mission d'exemple : site « MegaCorp Industries, serveur de paie », 5 nœuds (1 Passerelle, 2 Pare-feu, 3 Archives, 4 Coffre, 5 Caméras), liens 1-2, 1-3, 2-3, 3-4, 3-5, 4-5, défenses Pare-feu = Réseau 2, Coffre = Réseau 4, Caméras = Gardien IA 3, une patrouille d'itinéraire 5, 3, 2, 3, 5…, un scan = +5 Trace si la patrouille est sur le nœud du joueur ou à côté, ambiante +2, difficulté Normal (3 cycles), deck : Brute-Force (Réseau 2, 1 cycle, bruit 5), Exploit (Réseau 3, 2 cycles, bruit 2, 2 charges), Cloak (1 cycle, 2 charges). Les valeurs sont **illustratives** : ni l'équilibre ni l'écriture ne sont figés.
+(Le jeu ne vend plus `exploit` : l'exemple reste un exemple de règles, rejoué par un test avec un deck qui en contient un.) Les chiffres sont ceux de la mission d'exemple : site « MegaCorp Industries, serveur de paie », 5 nœuds (1 Passerelle, 2 Pare-feu, 3 Archives, 4 Coffre, 5 Caméras), liens 1-2, 1-3, 2-3, 3-4, 3-5, 4-5, défenses Pare-feu = Réseau 2, Coffre = Réseau 4, Caméras = Gardien IA 3, une patrouille d'itinéraire 5, 3, 2, 3, 5…, un scan = +5 Trace si la patrouille est sur le nœud du joueur ou à côté, ambiante +2, difficulté Normal (3 cycles), deck : Brute-Force (Réseau 2, 1 cycle, bruit 5), Exploit (Réseau 3, 2 cycles, bruit 2, 2 charges), Cloak (1 cycle, 2 charges). Les valeurs sont **illustratives** : ni l'équilibre ni l'écriture ne sont figés.
 
 ### 5.1 Plain, anglais, verbosité `normal`
 

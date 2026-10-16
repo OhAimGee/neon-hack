@@ -56,7 +56,7 @@ fn the_full_panel_lists_the_nodes_the_patrols_the_forecast_and_the_deck() {
     assert!(has(&rows, "Patrol 1: 5 then 3"), "{rows:#?}");
     assert!(has(&rows, "Cloak is active."), "{rows:#?}");
     assert!(has(&rows, "End of turn: Trace +2"), "{rows:#?}");
-    assert!(has(&rows, "6 Cloak (1)"), "{rows:#?}");
+    assert!(has(&rows, "5 Cloak (1)"), "{rows:#?}");
     assert!(rows.iter().all(|row| row.width() <= 100));
 }
 

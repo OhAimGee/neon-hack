@@ -241,7 +241,7 @@ fn the_economy_and_the_hoarder_are_reported_and_read_by_t7() {
     let told = sim(&["economy", "--out", &economy]);
     assert!(told.status.success(), "{}", out(&told));
     assert!(
-        out(&told).contains("the stall: 13 items for 4460 credits"),
+        out(&told).contains("the stall: 11 items for 4160 credits"),
         "{}",
         out(&told)
     );
