@@ -175,9 +175,11 @@ impl CampaignGame {
         };
         let status = self.state.site_status(def);
         let (at, mut facts) = self.tick();
-        // Notoriety follows the Trace the intrusion ended on: a quarter of it, never nothing.
-        let trace = state.trace().min(intrusion.run().mission().trace_cap());
-        let heat = (trace / 4).max(1);
+        // Notoriety follows the Trace the intrusion ended on: a share of it that the difficulty
+        // sets (a quarter, bar Story), never nothing.
+        let trace = u16::from(state.trace().min(intrusion.run().mission().trace_cap()));
+        let share = u16::from(self.state.difficulty.heat_percent(&c.heat));
+        let heat = u8::try_from(trace * share / 100).unwrap_or(u8::MAX).max(1);
         self.state.base_notoriety = self.state.base_notoriety.saturating_add(heat).min(100);
         if burned {
             events.extend(closing);

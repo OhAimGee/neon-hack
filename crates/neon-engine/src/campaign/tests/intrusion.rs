@@ -170,13 +170,15 @@ fn skip_plays_the_intrusion_in_story_difficulty_only() {
     assert!(driver.game.intrusion().is_some());
 
     let mut story = inside(Difficulty::Story);
+    let before = story.game.state().base_notoriety;
     story.line("skip");
     assert!(matches!(story.last.prompt, Prompt::Confirm { .. }));
     story.send(Input::Confirm(true));
     assert!(story.game.intrusion().is_none());
     let text = story.text();
     assert!(text.contains("Automatic"), "{text}");
-    assert!(story.game.state().base_notoriety >= 1);
+    // Story forgives: the intrusion costs a few percent of its Trace in notoriety, never nothing.
+    assert_eq!(story.game.state().base_notoriety, before + 1);
 }
 
 #[test]
@@ -224,5 +226,38 @@ fn every_site_of_the_content_has_a_plan_the_driver_can_follow() {
             u8::MAX,
         );
         assert!(solved.plan().is_some(), "{}", run.site);
+    }
+}
+
+#[test]
+fn skip_takes_everything_the_site_holds_the_files_of_the_quests_included() {
+    let driver = manual(Difficulty::Story);
+    let content = driver.game.content;
+    for run in &content.runs {
+        let mut intrusion = crate::intrusion::Intrusion::new(
+            content,
+            &run.site,
+            Difficulty::Story,
+            crate::content::Stock::Everything,
+        )
+        .expect("an intrusion for every site");
+        let mut events = Vec::new();
+        intrusion.answer(crate::intrusion::Question::Skip, true, &mut events);
+        assert!(intrusion.is_over(), "{}", run.site);
+        let holding: Vec<_> = intrusion
+            .run()
+            .mission()
+            .nodes()
+            .filter(|node| intrusion.run().mission().loot(*node).is_some())
+            .collect();
+        assert!(!holding.is_empty(), "{}", run.site);
+        for node in holding {
+            assert!(
+                intrusion.looted().contains(&node),
+                "{}: node {} was left behind",
+                run.site,
+                node.number()
+            );
+        }
     }
 }

@@ -384,11 +384,13 @@ impl Intrusion {
         }
     }
 
-    /// Plays the intrusion by itself: the best plan the bounded solver finds, or, when it finds
-    /// none, the end the tier calls nominal.
+    /// Plays the intrusion by itself: the best plan the bounded solver finds for taking
+    /// everything on the site (the files of the quests are on the nodes that are not the
+    /// objective), or, when it finds none, the end the tier calls nominal.
     fn skip(&mut self) {
         let start = *self.run.state();
-        let played = match auto_resolve(self.run.mission(), &start) {
+        let everything = self.run.mission().taking_everything();
+        let played = match auto_resolve(&everything, &start) {
             Resolution::Optimal(plan) | Resolution::Best(plan) => {
                 plan.actions
                     .iter()

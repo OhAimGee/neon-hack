@@ -520,6 +520,26 @@ impl Mission {
         mission
     }
 
+    /// The same mission where every loot is an objective: a run is won once everything on the
+    /// site is taken. A plan for it is a plan for this mission too (it only jacks out last),
+    /// which is how an automatic intrusion takes the files the quests ask for.
+    #[must_use]
+    pub fn taking_everything(&self) -> Self {
+        let mut mission = self.clone();
+        let mut mask = 0u8;
+        for (index, node) in mission.nodes.iter_mut().enumerate() {
+            if node.loot.is_some() {
+                node.loot = Some(LootKind::Objective);
+                if let Some(id) = u8::try_from(index).ok().and_then(NodeId::new) {
+                    mask |= id.bit();
+                }
+            }
+        }
+        mission.objective_mask = mask;
+        mission.intel_mask = 0;
+        mission
+    }
+
     /// How many nodes there are.
     #[must_use]
     pub fn node_count(&self) -> usize {

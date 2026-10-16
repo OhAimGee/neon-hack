@@ -7,7 +7,7 @@
 //! harness counts. A game that cannot be played on is a [`Stuck`], never a panic: the harness
 //! reports it and goes on with the next game.
 
-use std::collections::{BTreeSet, VecDeque};
+use std::collections::VecDeque;
 use std::fmt;
 
 use neon_engine::Game;
@@ -60,8 +60,8 @@ pub enum Tactic {
     /// By hand, one action at a time, as a heuristic player does ([`tactics`]): it can burn.
     Hand(Style),
     /// By hand with the quiet style, until an intrusion costs more than one turn: then `skip`,
-    /// which the Story difficulty offers, plays the rest of it. A site `skip` left something
-    /// at is played by hand the second time: the player has learned what `skip` leaves.
+    /// which the Story difficulty offers, plays the rest of it (and takes everything on the
+    /// site, the files of the quests included).
     Story,
 }
 
@@ -214,8 +214,6 @@ pub struct Driver<O> {
     last_save: Option<SaveRequest>,
     /// The site of the last `hack`, for the report of a game lost on it.
     last_site: String,
-    /// The sites the player has entered, for the one that skips only the first time.
-    skipped_sites: BTreeSet<String>,
     /// The lines typed in the farm rounds.
     farm_lines: usize,
     /// The quests done when the last farm round was played.
@@ -244,7 +242,6 @@ impl<O: Observer> Driver<O> {
             saved_slot: false,
             last_save: None,
             last_site: String::new(),
-            skipped_sites: BTreeSet::new(),
             farm_lines: 0,
             farmed_at: 0,
             sent: Vec::new(),
@@ -450,10 +447,7 @@ impl<O: Observer> Driver<O> {
             match self.config.tactic {
                 Tactic::Solver => self.play_intrusion(mv)?,
                 Tactic::Hand(style) => self.play_by_hand(mv, style, false)?,
-                Tactic::Story => {
-                    let first_visit = self.skipped_sites.insert(site.to_string());
-                    self.play_by_hand(mv, Style::Prudent, first_visit)?;
-                }
+                Tactic::Story => self.play_by_hand(mv, Style::Prudent, true)?,
             }
         }
         Ok(())

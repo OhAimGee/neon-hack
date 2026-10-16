@@ -82,7 +82,7 @@ Dans le plain, `panel` et `plain` répondent « Seulement en plein écran. » (m
 | `end` | — | — | termine le tour : la prévision se joue, la Trace ambiante s'ajoute, les patrouilles avancent | toujours en intrusion | (nouveau) |
 | `jackout` | — | — | quitte l'intrusion avec le butin ramassé ; demande confirmation si le butin visible n'est pas ramassé | toujours en intrusion | (nouveau) |
 | `undo` | — | — | rend le dernier tour ; réglé par la difficulté (illimité en Histoire, 3 par intrusion en Normal, aucun en Expert et Hardcore) ; la liste dit « 2 restants » | toujours en intrusion | (nouveau) |
-| `skip` | — | — | joue l'intrusion automatiquement (le meilleur plan du solveur borné, sinon la Trace nominale du palier : le rapport dit « automatique » ou « approximatif ») ; seulement en difficulté Histoire, confirmation | difficulté Histoire | (nouveau, G8, R-31) |
+| `skip` | — | — | joue l'intrusion automatiquement, **en prenant tout le butin du site** (les fichiers des quêtes inclus, R6.14) : le meilleur plan du solveur borné pour une mission dont chaque butin est un objectif, sinon la Trace nominale du palier (le rapport dit « automatique » ou « approximatif ») ; seulement en difficulté Histoire, confirmation | difficulté Histoire | (nouveau, G8, R-31) |
 
 `status` et `help` fonctionnent aussi en intrusion (§ 2.1). **Choix de l'audit non repris** : l'audit liste `cloak` et `spoof` comme commandes dédiées ; seuls deux utilitaires sur quatre auraient une commande, ce qui est incohérent. Tous les utilitaires passent par `use <programme>` (`use cloak`). Si l'expérience montre que c'est trop long à taper, R4 ajoutera des alias de **programme** (la saisie `cloak` ouvre le programme) sans changer la table.
 

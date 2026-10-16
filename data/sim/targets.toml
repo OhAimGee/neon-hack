@@ -75,10 +75,13 @@ prudent_hunted_per_mille_max = 100
 reckless_hunted_per_mille_min = 500
 
 # T14: Story mode is played to its end without any tactic: the story bot plays what costs a
-# single turn and skips the rest (and plays by hand a site that `skip` left something at).
+# single turn and skips the rest (`skip` takes everything on the site). It is Hunted in a seventh
+# of its games at most: the betrayal branches of the story force the heat to 85 by themselves
+# (`heat_force` in quests.toml), the intrusions do not.
 [t14]
 level = "O"
 finished_per_mille_min = 950
+hunted_per_mille_max = 150
 
 # T12: the monkey (random inputs, valid and hostile, damaged saves) finds no panic, no game that
 # cannot be left, no save that does not round trip. A report of fewer games than the quick check

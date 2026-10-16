@@ -361,6 +361,24 @@ fn the_hub_constants_of_rewards_are_checked() {
         File::Rewards,
         "must not grow with the difficulty"
     ));
+    // The notoriety an intrusion costs is a share of the Trace that does not fall with the
+    // difficulty (Story forgives more, never less), between 1 and 100 percent.
+    let errors = broken(|s| {
+        replace_once(
+            &mut s.rewards,
+            "story = 3\nnormal = 25",
+            "story = 30\nnormal = 25",
+        );
+    });
+    assert!(has(&errors, File::Rewards, "`[heat]` shares"));
+    let errors = broken(|s| {
+        replace_once(
+            &mut s.rewards,
+            "story = 3\nnormal = 25",
+            "story = 0\nnormal = 25",
+        );
+    });
+    assert!(has(&errors, File::Rewards, "`[heat]` shares"));
     let errors = broken(|s| replace_once(&mut s.rewards, "cooling = 10", "cooling = 0"));
     assert!(has(&errors, File::Rewards, "cooling must be between"));
     let errors = broken(|s| replace_once(&mut s.rewards, "price = 25", "price = 0"));

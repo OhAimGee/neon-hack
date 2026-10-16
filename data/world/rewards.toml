@@ -69,6 +69,14 @@ cooling = 60
 [auto_resolve]
 nominal_trace = [16, 32, 48, 64, 80, 96]
 
+# The share of the final Trace of an intrusion that becomes notoriety, in percent, by difficulty
+# (a quarter, bar Story: whoever has the game play the intrusions is not hunted for it).
+[heat]
+story = 3
+normal = 25
+expert = 25
+hardcore = 25
+
 # Hints (`hint`) a quest may use, by difficulty.
 [hints]
 story = 6
