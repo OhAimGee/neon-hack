@@ -270,7 +270,7 @@ fn the_economy_and_the_hoarder_are_reported_and_read_by_t7() {
     assert!(checked.status.success(), "{}", out(&checked));
     let text = out(&checked);
     assert!(
-        text.contains("[warn] T7 (O): the main quests of a tier do not pay for the item of the next: tier 1 pays 80 for 150"),
+        text.contains("[ok  ] T7 (O): the main quests of every tier pay for the item of the next"),
         "{text}"
     );
     assert!(

@@ -73,45 +73,47 @@ breach 4 brute
 move 4
 loot
 jackout
+buy prog_quantum
+y
 hack nexus-mainframe
 y
 breach 2 brute
 breach 2 brute
 move 2
-breach 4 decrypt
+breach 3 brute
 end
 breach 3 backdoor
-breach 3 brute
 breach 4 decrypt
 end
+breach 4 decrypt
 move 3
 loot
+end
+breach 5 backdoor
+move 2
+move 4
+loot
+end
+move 2
+move 3
+breach 5 backdoor
+end
+move 2
+end
+move 4
+breach 6 quantum
+end
+breach 6 decrypt
+move 6
+use spoof
 use cloak
 end
 breach 5 backdoor
-move 2
-move 4
 loot
-end
-breach 6 decrypt
-move 2
-end
-move 3
-end
-breach 5 backdoor
-move 2
-end
-move 4
-breach 6 decrypt
-breach 6 decrypt
 use spoof
+use cloak
 end
-move 6
 breach 5 backdoor
-breach 5 backdoor
-use spoof
-end
-loot
 move 5
 loot
 jackout
