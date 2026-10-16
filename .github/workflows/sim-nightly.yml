@@ -58,3 +58,16 @@ jobs:
               echo '```'
             fi
           } >> "$GITHUB_STEP_SUMMARY"
+      # The reports of the night (the canonical JSON, the timings and the log) are kept for a
+      # month, to compare a night with the one before. Referenced by its major tag, not by a
+      # commit: the owner chose not to pin this action.
+      - name: Keep the reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sim-nightly-${{ github.run_id }}
+          path: |
+            target/sim-nightly/
+            target/sim-nightly.log
+          if-no-files-found: warn
+          retention-days: 30
