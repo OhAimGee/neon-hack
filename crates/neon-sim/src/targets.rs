@@ -193,6 +193,9 @@ pub struct StoryMode {
     pub level: Level,
     /// The share of campaigns the story bot finishes, per mille, at least.
     pub finished_per_mille_min: u64,
+    /// The share of campaigns in which the story bot is Hunted, per mille, at most: whoever has
+    /// the game play the intrusions is not hunted for it.
+    pub hunted_per_mille_max: u64,
 }
 
 /// All the thresholds.
@@ -530,6 +533,15 @@ fn bots(targets: &Targets, campaigns: &[&CampaignReport]) -> Vec<Finding> {
                 report.intrusions.automatic_per_mille,
                 report.intrusions.total,
                 t.finished_per_mille_min
+            ),
+        ));
+        findings.push(claim(
+            "T14",
+            t.level,
+            report.hunted_per_mille <= t.hunted_per_mille_max,
+            format!(
+                "story is Hunted in {} per mille of its games ({} allowed)",
+                report.hunted_per_mille, t.hunted_per_mille_max
             ),
         ));
     }
@@ -1247,7 +1259,13 @@ mod tests {
             campaign("story", "story", 10, 10, 0, 600, 20),
         ];
         let findings = check(&targets(), &reports[..1]);
-        assert_eq!(findings.len(), 1);
+        assert_eq!(findings.len(), 2);
+        assert!(
+            findings
+                .iter()
+                .any(|f| f.ok && f.detail.contains("Hunted in 0 per mille")),
+            "{findings:?}"
+        );
         let finding = findings.first().unwrap();
         assert_eq!((finding.id, finding.ok), ("T14", true));
         assert!(
@@ -1262,10 +1280,15 @@ mod tests {
         );
         // Half of the games lost: the objective is not met, and it stays an objective.
         let findings = check(&targets(), &reports[1..]);
+        assert!(findings.iter().all(|f| f.id == "T14" && !f.fails()));
+        assert!(findings.iter().any(|f| !f.ok));
+        // A story bot that is Hunted is told so.
+        let hunted = check(&targets(), &[campaign("story", "story", 20, 0, 0, 600, 90)]);
         assert!(
-            findings
+            hunted
                 .iter()
-                .all(|f| f.id == "T14" && !f.ok && !f.fails())
+                .any(|f| !f.ok && f.detail.contains("Hunted in 1000 per mille")),
+            "{hunted:?}"
         );
         // The story bot at another difficulty is read by nothing.
         assert!(

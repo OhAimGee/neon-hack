@@ -57,6 +57,19 @@ pub(crate) fn payroll() -> Mission {
     builder.build().expect("the payroll mission is valid")
 }
 
+/// The payroll mission with a second loot, an extra, on the archives.
+fn payroll_with_a_file() -> Mission {
+    let mut builder = MissionBuilder::new();
+    let gateway = builder.node(None, None);
+    let archives = builder.node(None, Some(LootKind::Extra));
+    let vault = builder.node(None, Some(LootKind::Objective));
+    builder
+        .link(gateway, archives)
+        .link(archives, vault)
+        .programs(&[Program::BruteForce]);
+    builder.build().expect("a valid mission")
+}
+
 fn breach(mission: &Mission, number: u8, program: Program) -> Action {
     Action::Breach {
         node: node(mission, number),
@@ -1235,4 +1248,36 @@ fn an_automatic_end_takes_every_loot_and_wins_at_the_trace_it_is_given() {
     assert!(settled.objectives_done(&mission));
     // Never at or past the cap, which would be a burned run.
     assert!(mission.settled_at(&mission.initial_state(), 255).trace() < mission.trace_cap());
+}
+
+#[test]
+fn taking_everything_makes_the_win_wait_for_every_loot() {
+    let mission = payroll_with_a_file();
+    let m = &mission;
+    let greedy = mission.taking_everything();
+
+    // The objective alone wins the mission, but the greedy one asks for the extra too.
+    let mut run = Run::new(mission.clone(), Undo::Unlimited);
+    run.act(Action::Move(node(m, 2))).unwrap();
+    run.act(Action::Move(node(m, 3))).unwrap();
+    run.act(Action::Loot).unwrap();
+    assert!(run.act(Action::Jackout).is_ok());
+    assert_eq!(run.status(), Status::Won);
+    assert!(!run.state().is_looted(node(m, 2)));
+
+    let mut run = Run::new(greedy.clone(), Undo::Unlimited);
+    run.act(Action::Move(node(m, 2))).unwrap();
+    run.act(Action::Loot).unwrap();
+    run.act(Action::End).unwrap();
+    run.act(Action::Move(node(m, 3))).unwrap();
+    run.act(Action::Loot).unwrap();
+    assert_eq!(run.act(Action::Jackout).map(|_| ()), Ok(()));
+    assert_eq!(run.status(), Status::Won);
+    assert!(run.state().is_looted(node(m, 2)));
+    assert!(run.state().is_looted(node(m, 3)));
+
+    // The graph, the deck and the patrols are the mission's own.
+    assert_eq!(greedy.node_count(), mission.node_count());
+    assert_eq!(greedy.trace_cap(), mission.trace_cap());
+    assert_eq!(greedy.loot(node(m, 2)), Some(LootKind::Objective));
 }

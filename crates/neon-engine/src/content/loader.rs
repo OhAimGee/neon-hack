@@ -14,9 +14,9 @@ use crate::content::ids::{ContactId, DecisionId, FlagId, ItemId, QuestId, Readab
 use crate::content::money::{Credits, Reputation};
 use crate::content::schema::{
     AutoResolveRules, CatalogFile, CommandDef, ContactDef, DecisionDef, DecisionsFile, EndingDef,
-    EpilogueDef, FlagDef, FlagsFile, HeatShares, HintBudgets, ItemDef, KitDef, QuestDef, QuestsFile,
-    ReadableDef, RewardsFile, Rules, RunDef, RunsFile, ServiceDef, SiteDef, Size, SizeDef,
-    TextsFile, TierDef, TopicDef, TopicsFile, UnlockDef, UnlocksFile,
+    EpilogueDef, FlagDef, FlagsFile, HeatShares, HintBudgets, ItemDef, KitDef, QuestDef,
+    QuestsFile, ReadableDef, RewardsFile, Rules, RunDef, RunsFile, ServiceDef, SiteDef, Size,
+    SizeDef, TextsFile, TierDef, TopicDef, TopicsFile, UnlockDef, UnlocksFile,
 };
 use crate::content::validate;
 

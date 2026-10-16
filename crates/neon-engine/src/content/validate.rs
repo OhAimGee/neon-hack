@@ -525,7 +525,9 @@ impl V<'_> {
         let heat = &c.heat;
         let shares = [heat.story, heat.normal, heat.expert, heat.hardcore];
         if shares.iter().any(|share| !(1..=100).contains(share))
-            || !(heat.story <= heat.normal && heat.normal <= heat.expert && heat.expert <= heat.hardcore)
+            || !(heat.story <= heat.normal
+                && heat.normal <= heat.expert
+                && heat.expert <= heat.hardcore)
         {
             self.err(
                 f,
