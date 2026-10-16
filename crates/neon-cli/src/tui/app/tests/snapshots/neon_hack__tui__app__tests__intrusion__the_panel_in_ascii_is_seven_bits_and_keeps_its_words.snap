@@ -20,14 +20,14 @@ expression: "picture(&app, 100, 28)"
 |Trace +5 (0 -> 5, calme).                                           ||                            |
 |Cycles 1/3.                                                         ||> Prevision                 |
 |> use cloak                                                         ||Cloak est actif.            |
-|Cloak actif : les scans de fin de tour sont annules (1 charge       ||Fin de tour : Trace +2      |
-|restante).                                                          ||Patrouille 1 : annule       |
+|Cloak actif : les scans de fin de tour sont annules (2 charges      ||Fin de tour : Trace +2      |
+|restantes).                                                         ||Patrouille 1 : annule       |
 |Fin de tour maintenant : Trace +2 (5 -> 7, calme).                  ||Ambiante : +2               |
 |Cycles 0/3. Plus de cycle : `end` termine le tour.                  ||                            |
 |                                                                    ||> Deck                      |
 |                                                                    ||1 Brute  2 Backdoor         |
-|                                                                    ||3 Decrypt  4 Spoof (2)      |
-|                                                                    ||5 Cloak (1)                 |
+|                                                                    ||3 Decrypt  4 Spoof (3)      |
+|                                                                    ||5 Cloak (2)                 |
 +--------------------------------------------------------------------++----------------------------+
 >
 F2 panneau | Tab completer | Ctrl+C quitter | Haut/Bas historique | PgUp/PgDn defiler

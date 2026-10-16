@@ -486,3 +486,45 @@ fn every_program_of_a_deck_beyond_the_base_one_is_sold_at_the_tier_it_appears() 
         }
     }
 }
+
+#[test]
+fn an_upgrade_adds_one_charge_to_a_limited_program_of_the_deck_of_the_player_who_owns_it() {
+    use neon_engine::content::Stock;
+    use neon_engine::run::Supply;
+    use std::collections::BTreeSet;
+
+    let c = shipped();
+    let id = site("corp-server-01");
+    let charges = |mission: &Mission, program: Program| match mission.supply(program) {
+        Some(Supply::Limited(count)) => Some(count),
+        _ => None,
+    };
+    let none = BTreeSet::new();
+    let owning: BTreeSet<_> = ["up_cloak".parse().unwrap()].into_iter().collect();
+    let plain = c
+        .mission_holding(&id, Pace::NORMAL, Stock::Owned(&none))
+        .unwrap();
+    let upgraded = c
+        .mission_holding(&id, Pace::NORMAL, Stock::Owned(&owning))
+        .unwrap();
+    let everything = c
+        .mission_holding(&id, Pace::NORMAL, Stock::Everything)
+        .unwrap();
+
+    // The Cloak of every deck has two charges; the upgrade makes it three, and only for its owner.
+    assert_eq!(charges(&plain, Program::Cloak), Some(2));
+    assert_eq!(charges(&upgraded, Program::Cloak), Some(3));
+    assert_eq!(charges(&everything, Program::Cloak), Some(3));
+    // Nothing else moves: the other limited programs of the deck keep their charges.
+    assert_eq!(
+        charges(&plain, Program::Spoof),
+        charges(&upgraded, Program::Spoof)
+    );
+    // An upgrade for a program the deck does not have adds nothing to the deck: the first tier
+    // has no Virus, and the owner of its upgrade still has none.
+    let virus: BTreeSet<_> = ["up_virus".parse().unwrap()].into_iter().collect();
+    let first = c
+        .mission_holding(&site("localhost"), Pace::NORMAL, Stock::Owned(&virus))
+        .unwrap();
+    assert_eq!(first.supply(Program::Virus), None);
+}

@@ -100,8 +100,8 @@ min_repeated = 1
 
 # T7: the economy. What the stall costs, as a share of the most a campaign pays (the spec
 # wants 120 to 150 %: more to buy than to earn), the main quests of each tier paying for the
-# item of the next, not everything buyable, and a hoarder (who buys nothing from the stall)
-# not able to finish. Objective: the numbers are the starting hypotheses of the spec and the
+# item of the next (only the items a quest asks for), not everything buyable, and a hoarder (who
+# buys nothing from the stall) not able to finish. Objective: the numbers are the starting hypotheses of the spec and the
 # measure of the shipped content is for the owner.
 [t7]
 level = "O"

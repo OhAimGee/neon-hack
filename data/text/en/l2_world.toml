@@ -61,3 +61,21 @@ desc = "Runs your next actions in silence."
 [item.prog_overclock]
 desc = "Squeezes more cycles out of the deck for a little noise."
 
+[item.up_spoof]
+desc = "One more charge for the Spoof. Needs the Spoof Module."
+
+[item.up_cloak]
+desc = "One more charge for the Cloak, which every deck carries."
+
+[item.up_quantum]
+desc = "One more charge for the Quantum Cracker. Needs it."
+
+[item.up_ghost]
+desc = "One more charge for the Ghost Shell. Needs it."
+
+[item.up_virus]
+desc = "One more charge for the Virus Payload. Needs it."
+
+[item.up_overclock]
+desc = "One more charge for the Overclock Rig. Needs it."
+

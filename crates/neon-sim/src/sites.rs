@@ -8,8 +8,10 @@
 use neon_engine::campaign::Difficulty;
 use neon_engine::content::ids::SiteId;
 use neon_engine::content::{Content, Stock};
-use neon_engine::run::solve::{Goal, Outcome, PROOF_EXPANSIONS, optimum, solve};
-use neon_engine::run::{LootKind, Mission, Pace};
+use neon_engine::run::solve::{
+    Goal, Outcome, PROOF_EXPANSIONS, Plan, Resolution, auto_resolve, optimum, solve,
+};
+use neon_engine::run::{LootKind, Mission, Pace, Program, RunState};
 use serde::{Deserialize, Serialize};
 
 use crate::record::difficulty_name;
@@ -80,7 +82,9 @@ pub fn full_loot_mission(
             node.loot = Some(LootKind::Objective);
         }
     }
-    greedy.mission(kit, &content.deck(kit, stock), pace).ok()
+    greedy
+        .mission_boosted(kit, &content.deck(kit, stock), &content.boosts(stock), pace)
+        .ok()
 }
 
 /// A site at a difficulty.
@@ -179,3 +183,35 @@ pub fn measure(
 
 /// The expansions the solver may spend on a site by default: those of the proof.
 pub const DEFAULT_EXPANSIONS: u64 = PROOF_EXPANSIONS;
+
+/// A plan for an intrusion: the bounded chain of `skip`, then, when it settles nothing, the wide
+/// search of the tools, then the same search over a deck from which one program has been taken
+/// (a plan for a smaller deck is a plan for the whole one, and the search of a bigger deck can
+/// lose its way where the smaller one does not). `None` when no plan is found.
+#[must_use]
+pub fn find_plan(mission: &Mission, state: &RunState) -> Option<Plan> {
+    let wide = |mission: &Mission, expansions: u64| match solve(
+        mission,
+        state,
+        Goal::Feasible,
+        expansions,
+        u8::MAX,
+    )
+    .outcome
+    {
+        Outcome::Solved { plan, .. }
+        | Outcome::Unknown {
+            best: Some(plan), ..
+        } => Some(plan),
+        Outcome::Unknown { best: None, .. } | Outcome::Unsolvable => None,
+    };
+    match auto_resolve(mission, state) {
+        Resolution::Optimal(plan) | Resolution::Best(plan) => Some(plan),
+        Resolution::Nominal => wide(mission, PROOF_EXPANSIONS).or_else(|| {
+            Program::ALL
+                .into_iter()
+                .filter(|program| mission.supply(*program).is_some())
+                .find_map(|program| wide(&mission.without(program), PROOF_EXPANSIONS / 4))
+        }),
+    }
+}

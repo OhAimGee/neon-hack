@@ -36,8 +36,8 @@ Deck
 1. Programme : Brute-Force; Fort contre : Reseau 2; Cout : 1 cycle; Bruit : bruit 5; Charges : illimite
 2. Programme : Backdoor; Fort contre : Reseau 1; Cout : 1 cycle; Bruit : bruit 1; Charges : illimite
 3. Programme : Decrypt; Fort contre : Chiffrement 2; Cout : 1 cycle; Bruit : bruit 3; Charges : illimite
-4. Programme : Spoof; Fort contre : utilitaire; Cout : 1 cycle; Bruit : bruit 0; Charges : 2 restantes
-5. Programme : Cloak; Fort contre : utilitaire; Cout : 1 cycle; Bruit : bruit 0; Charges : 2 restantes
+4. Programme : Spoof; Fort contre : utilitaire; Cout : 1 cycle; Bruit : bruit 0; Charges : 3 restantes
+5. Programme : Cloak; Fort contre : utilitaire; Cout : 1 cycle; Bruit : bruit 0; Charges : 3 restantes
 Butin : 0 sur 2 pris.
 Annulations restantes : 3.
 Prevision : Trace +7 en fin de tour.
@@ -101,8 +101,8 @@ Deck
 1. Programme : Brute-Force; Fort contre : Reseau 2; Cout : 1 cycle; Bruit : bruit 5; Charges : illimite
 2. Programme : Backdoor; Fort contre : Reseau 1; Cout : 1 cycle; Bruit : bruit 1; Charges : illimite
 3. Programme : Decrypt; Fort contre : Chiffrement 2; Cout : 1 cycle; Bruit : bruit 3; Charges : illimite
-4. Programme : Spoof; Fort contre : utilitaire; Cout : 1 cycle; Bruit : bruit 0; Charges : 2 restantes
-5. Programme : Cloak; Fort contre : utilitaire; Cout : 1 cycle; Bruit : bruit 0; Charges : 2 restantes
+4. Programme : Spoof; Fort contre : utilitaire; Cout : 1 cycle; Bruit : bruit 0; Charges : 3 restantes
+5. Programme : Cloak; Fort contre : utilitaire; Cout : 1 cycle; Bruit : bruit 0; Charges : 3 restantes
 Butin : 1 sur 2 pris.
 Annulations restantes : 2.
 Prevision : Trace +2 en fin de tour.

@@ -392,3 +392,38 @@ fn the_hub_constants_of_rewards_are_checked() {
         "duplicate service id `lie_low`"
     ));
 }
+
+#[test]
+fn an_upgrade_must_raise_a_limited_program_that_some_deck_has() {
+    // A program with no limit has no charge to add.
+    let errors = broken(|s| {
+        replace_once(&mut s.catalog, "boost = \"cloak\"", "boost = \"brute\"");
+    });
+    assert!(has(
+        &errors,
+        File::Catalog,
+        "no limited supply that one more charge can raise"
+    ));
+    // An item grants a program or raises one, not both.
+    let errors = broken(|s| {
+        replace_once(
+            &mut s.catalog,
+            "boost = \"cloak\"",
+            "boost = \"cloak\"\nprogram = \"ghost\"",
+        );
+    });
+    assert!(has(&errors, File::Catalog, "not both"));
+    // The program must be in a deck from the tier of the item on: no Overclock before tier 5.
+    let errors = broken(|s| {
+        replace_once(
+            &mut s.catalog,
+            "id = \"up_spoof\"\nlegacy_name = \"Spoof Module II\"\nprice = 1500\nunlock = { tier = 3 }\nboost = \"spoof\"",
+            "id = \"up_spoof\"\nlegacy_name = \"Spoof Module II\"\nprice = 1500\nunlock = { tier = 6 }\nboost = \"social\"",
+        );
+    });
+    assert!(has(
+        &errors,
+        File::Catalog,
+        "no deck from its tier on has `social`"
+    ));
+}

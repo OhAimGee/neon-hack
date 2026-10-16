@@ -20,14 +20,14 @@ expression: "picture(&app, 100, 28)"
 │Trace +5 (0 → 5, calm).                                             ││                            │
 │Cycles 1/3.                                                         ││▸ Forecast                  │
 │> use cloak                                                         ││Cloak is active.            │
-│Cloak active: the scans at the end of the turn are cancelled (1     ││End of turn: Trace +2       │
-│charge left).                                                       ││Patrol 1: cancelled         │
+│Cloak active: the scans at the end of the turn are cancelled (2     ││End of turn: Trace +2       │
+│charges left).                                                      ││Patrol 1: cancelled         │
 │End of the turn now: Trace +2 (5 → 7, calm).                        ││Ambient: +2                 │
 │Cycles 0/3. No cycle left: `end` ends the turn.                     ││                            │
 │                                                                    ││▸ Deck                      │
 │                                                                    ││1 Brute  2 Backdoor         │
-│                                                                    ││3 Decrypt  4 Spoof (2)      │
-│                                                                    ││5 Cloak (1)                 │
+│                                                                    ││3 Decrypt  4 Spoof (3)      │
+│                                                                    ││5 Cloak (2)                 │
 ╰────────────────────────────────────────────────────────────────────╯╰────────────────────────────╯
 >
 F2 panel | Tab complete | Ctrl+C quit | Up/Down history | PgUp/PgDn scroll

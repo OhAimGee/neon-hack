@@ -520,6 +520,17 @@ impl Mission {
         mission
     }
 
+    /// The same mission without one program in the deck: a plan for it is a plan for this
+    /// mission too, and a search over a smaller deck is narrower.
+    #[must_use]
+    pub fn without(&self, program: Program) -> Self {
+        let mut mission = self.clone();
+        if let Some(slot) = mission.deck.get_mut(program.index()) {
+            *slot = None;
+        }
+        mission
+    }
+
     /// The same mission where every loot is an objective: a run is won once everything on the
     /// site is taken. A plan for it is a plan for this mission too (it only jacks out last),
     /// which is how an automatic intrusion takes the files the quests ask for.
