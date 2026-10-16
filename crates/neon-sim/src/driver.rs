@@ -7,7 +7,8 @@
 //! harness counts. A game that cannot be played on is a [`Stuck`], never a panic: the harness
 //! reports it and goes on with the next game.
 
-use std::collections::VecDeque;
+use std::cell::RefCell;
+use std::collections::{BTreeMap, VecDeque};
 use std::fmt;
 
 use neon_engine::Game;
@@ -15,8 +16,8 @@ use neon_engine::campaign::CampaignGame;
 use neon_engine::content::Stock;
 use neon_engine::content::schema::{QuestStatus, ReadableKind};
 use neon_engine::prompt::{Input, Prompt, Step};
-use neon_engine::run::Action;
 use neon_engine::run::solve::{Goal, Outcome, PROOF_EXPANSIONS, Resolution, auto_resolve, solve};
+use neon_engine::run::{Action, RunState};
 use neon_engine::save::SaveRequest;
 
 use crate::brain::{Brain, Move, Plan};
@@ -63,6 +64,17 @@ pub enum Tactic {
     /// which the Story difficulty offers, plays the rest of it (and takes everything on the
     /// site, the files of the quests included).
     Story,
+}
+
+/// An intrusion as the solver sees it: the site, the pace of the difficulty, the items owned
+/// (which make the deck) and the state it is in.
+type PlanKey = (String, u8, u8, Vec<String>, RunState);
+
+thread_local! {
+    /// The plans found so far, whatever the game: what the solver answers depends on nothing
+    /// else than the key, so the answer can be kept (the reports do not change, the harness
+    /// does the work once).
+    static PLANS: RefCell<BTreeMap<PlanKey, Vec<Action>>> = const { RefCell::new(BTreeMap::new()) };
 }
 
 /// What a driver is told to do besides playing the plan.
@@ -470,30 +482,56 @@ impl<O: Observer> Driver<O> {
                 return Err(self.stuck("the full-loot variant of an intrusion does not build"));
             };
             let state = *intrusion.state();
-            // The bounded chain of `skip` is enough for the small intrusions; a heavy one, with
-            // all its loot to take, gets the wide bound of the tools instead: the harness is not
-            // the game, and what it asks is whether the intrusion can be won.
-            let plan = match auto_resolve(&mission, &state) {
-                Resolution::Optimal(plan) | Resolution::Best(plan) => plan,
-                Resolution::Nominal => {
-                    match solve(&mission, &state, Goal::Feasible, PROOF_EXPANSIONS, u8::MAX).outcome
-                    {
-                        Outcome::Solved { plan, .. }
-                        | Outcome::Unknown {
-                            best: Some(plan), ..
-                        } => plan,
-                        Outcome::Unknown { best: None, .. } | Outcome::Unsolvable => {
-                            // A hoarder that kept to the deck of base is held up by it, which
-                            // is a result; for the others it is a defect of the walk.
-                            if self.config.hoard {
-                                self.too_thin = Some(site.to_string());
+            let pace = self.game.state().difficulty().pace();
+            let key: PlanKey = (
+                site.to_string(),
+                pace.gain_quarters,
+                pace.bonus_cycles,
+                self.game
+                    .state()
+                    .missions()
+                    .owned
+                    .iter()
+                    .map(ToString::to_string)
+                    .collect(),
+                state,
+            );
+            // The same intrusion, with the same deck, from the same state, has the same plan, in
+            // whatever game it is met: a thousand campaigns do not solve it a thousand times.
+            let known = PLANS.with(|plans| plans.borrow().get(&key).cloned());
+            let actions = if let Some(actions) = known {
+                actions
+            } else {
+                // The bounded chain of `skip` is enough for the small intrusions; a heavy one,
+                // with all its loot to take, gets the wide bound of the tools instead: the
+                // harness is not the game, and what it asks is whether the intrusion can be won.
+                let plan = match auto_resolve(&mission, &state) {
+                    Resolution::Optimal(plan) | Resolution::Best(plan) => plan,
+                    Resolution::Nominal => {
+                        match solve(&mission, &state, Goal::Feasible, PROOF_EXPANSIONS, u8::MAX)
+                            .outcome
+                        {
+                            Outcome::Solved { plan, .. }
+                            | Outcome::Unknown {
+                                best: Some(plan), ..
+                            } => plan,
+                            Outcome::Unknown { best: None, .. } | Outcome::Unsolvable => {
+                                // A hoarder that kept to the deck of base is held up by it,
+                                // which is a result; for the others it is a defect of the walk.
+                                if self.config.hoard {
+                                    self.too_thin = Some(site.to_string());
+                                }
+                                return Err(
+                                    self.stuck(&format!("no plan for the intrusion of {site}"))
+                                );
                             }
-                            return Err(self.stuck(&format!("no plan for the intrusion of {site}")));
                         }
                     }
-                }
+                };
+                PLANS.with(|plans| plans.borrow_mut().insert(key, plan.actions.clone()));
+                plan.actions
             };
-            for action in &plan.actions {
+            for action in &actions {
                 if self.game.intrusion().is_none() {
                     break;
                 }

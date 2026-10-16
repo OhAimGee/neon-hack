@@ -10,6 +10,8 @@
 //! and what it may take back is at most 10 per Spoof charge, never below the Trace of the start
 //! of the turn. Scans and the extra noise of the danger band are left out: they only add.
 
+use std::cell::RefCell;
+
 use super::super::mission::{MAX_NODES, Mission};
 use super::super::program::{Family, Program, Supply};
 use super::super::state::{RunState, Status};
@@ -38,7 +40,15 @@ pub(super) struct Bound {
     /// Noise a Ghost charge can cancel in one turn.
     ghost_turn: i32,
     ghost_unlimited: bool,
+    /// What [`Bound::path_needs`] answered lately, by what it depends on (the position, the
+    /// progress on every node, the objectives left): the search meets the same ones again and
+    /// again, one per turn and per Trace. A direct-mapped table, so that nothing depends on the
+    /// order of the questions but the questions themselves.
+    memo: RefCell<Vec<(u64, (i32, i32))>>,
 }
+
+/// Slots of the memo of [`Bound::path_needs`] (a power of two).
+const MEMO_SLOTS: usize = 1 << 12;
 
 /// One cost per node, read and written without indexing.
 struct Costs([i32; MAX_NODES]);
@@ -167,11 +177,37 @@ impl Bound {
             per_turn: i32::from(mission.cycles_per_turn).max(1),
             ghost_turn,
             ghost_unlimited: mission.supply(Program::Ghost) == Some(Supply::Unlimited),
+            memo: RefCell::new(vec![(u64::MAX, (0, 0)); MEMO_SLOTS]),
         }
     }
 
     /// Noise and cycles to reach every objective still to take, by the cheapest way.
     fn path_needs(&self, mission: &Mission, state: &RunState, remaining: u8) -> (i32, i32) {
+        // 3 bits for the node, 3 bits of progress per node, 8 bits for the objectives left.
+        let mut key = (state.position.index() as u64) | (u64::from(remaining) << 3);
+        for (index, progress) in state.progress.iter().enumerate().take(MAX_NODES) {
+            key |= u64::from(*progress & 7) << (11 + 3 * index);
+        }
+        // A multiplicative hash, whose top bits pick the slot.
+        let slot = (key.wrapping_mul(0x9E37_79B9_7F4A_7C15) >> 52) as usize % MEMO_SLOTS;
+        if let Some(&(known, needs)) = self.memo.borrow().get(slot)
+            && known == key
+        {
+            return needs;
+        }
+        let needs = self.path_needs_uncached(mission, state, remaining);
+        if let Some(entry) = self.memo.borrow_mut().get_mut(slot) {
+            *entry = (key, needs);
+        }
+        needs
+    }
+
+    fn path_needs_uncached(
+        &self,
+        mission: &Mission,
+        state: &RunState,
+        remaining: u8,
+    ) -> (i32, i32) {
         let mut weight_noise = Costs::filled(0);
         let mut weight_cycles = Costs::filled(1);
         for node in mission.nodes() {
@@ -277,5 +313,49 @@ impl Bound {
             floor,
             distance: noise_need + ambient + cycle_need,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::super::super::rules::{apply, legal_actions};
+    use super::*;
+    use crate::rng::Pcg32;
+
+    /// What the bound says does not depend on what it was asked before: the memo of the paths
+    /// only saves the work.
+    #[test]
+    fn the_memo_of_the_paths_never_changes_an_estimate() {
+        let mission = crate::run::tests::payroll();
+        let remembering = Bound::new(&mission);
+        let mut rng = Pcg32::new(7, 11);
+        for _ in 0..40 {
+            let mut state = mission.initial_state();
+            for _ in 0..60 {
+                let fresh = Bound::new(&mission).estimate(&mission, &state);
+                let asked = remembering.estimate(&mission, &state);
+                let again = remembering.estimate(&mission, &state);
+                assert_eq!(
+                    asked.map(|e| (e.floor, e.distance)),
+                    fresh.map(|e| (e.floor, e.distance))
+                );
+                assert_eq!(
+                    again.map(|e| (e.floor, e.distance)),
+                    fresh.map(|e| (e.floor, e.distance))
+                );
+                let actions = legal_actions(&mission, &state);
+                if actions.is_empty() {
+                    break;
+                }
+                let pick = rng.next_u32() as usize % actions.len();
+                let Ok(next) = apply(&mission, &state, actions[pick], &mut ()) else {
+                    break;
+                };
+                if next.status != Status::Running {
+                    break;
+                }
+                state = next;
+            }
+        }
     }
 }
