@@ -6,6 +6,7 @@
 //! neon-sim economy --out target/sim/economy.json
 //! neon-sim check target/sim/optimist.json target/sim/sites.json target/sim/economy.json
 //! neon-sim list-worst --report target/sim/prudent-normal.json
+//! neon-sim drift --previous target/sim-previous --current target/sim
 //! ```
 
 use std::fs;
@@ -18,6 +19,7 @@ use neon_engine::campaign::Difficulty;
 use neon_engine::content::Content;
 use neon_sim::bench::bench;
 use neon_sim::campaign::{Bot, PlanSet, plans, run_bot};
+use neon_sim::drift::{Comparison, compare};
 use neon_sim::economy::measure as measure_economy;
 use neon_sim::monkey::{DEFAULT_STEPS, play_monkey};
 use neon_sim::programs::analyse as analyse_programs;
@@ -49,6 +51,21 @@ enum Command {
     Check(CheckArgs),
     /// List the games of a report that went wrong, with the seed to replay each.
     ListWorst(ListWorstArgs),
+    /// Name the indicators that moved by more than a share since the night before.
+    Drift(DriftArgs),
+}
+
+#[derive(Args)]
+struct DriftArgs {
+    /// The directory of the reports of the night before (missing or empty: nothing to compare).
+    #[arg(long)]
+    previous: PathBuf,
+    /// The directory of the reports of tonight.
+    #[arg(long)]
+    current: PathBuf,
+    /// The share, in percent of the previous value, over which an indicator is named.
+    #[arg(long, default_value_t = 5)]
+    percent: u64,
 }
 
 #[derive(Args)]
@@ -233,6 +250,7 @@ fn main() -> ExitCode {
         Command::Bench(args) => bench_command(&args),
         Command::Check(args) => check_reports(&args),
         Command::ListWorst(args) => list_worst(&args),
+        Command::Drift(args) => drift(&args),
     };
     match result {
         Ok(code) => code,
@@ -515,6 +533,81 @@ fn list_worst(args: &ListWorstArgs) -> Result<ExitCode, String> {
             console::line(&line);
         }
     }
+    Ok(ExitCode::SUCCESS)
+}
+
+/// The `.json` files of a directory, by name; none if there is no such directory.
+fn reports_in(dir: &std::path::Path) -> Result<Vec<PathBuf>, String> {
+    let Ok(entries) = fs::read_dir(dir) else {
+        return Ok(Vec::new());
+    };
+    let mut files = Vec::new();
+    for entry in entries {
+        let path = entry.map_err(|e| format!("{}: {e}", dir.display()))?.path();
+        if path.extension().is_some_and(|ext| ext == "json") {
+            files.push(path);
+        }
+    }
+    files.sort();
+    Ok(files)
+}
+
+fn read_json(path: &std::path::Path) -> Result<serde_json::Value, String> {
+    let text = fs::read_to_string(path).map_err(|e| format!("{}: {e}", path.display()))?;
+    serde_json::from_str(&text).map_err(|e| format!("{}: {e}", path.display()))
+}
+
+/// What moved since the night before. Information, never a failure: a change of the data is
+/// meant to move numbers, and this says which.
+fn drift(args: &DriftArgs) -> Result<ExitCode, String> {
+    let currents = reports_in(&args.current)?;
+    if currents.is_empty() {
+        return Err(format!("{}: no report to compare", args.current.display()));
+    }
+    if reports_in(&args.previous)?.is_empty() {
+        console::line("drift: no previous night to compare");
+        return Ok(ExitCode::SUCCESS);
+    }
+    let (mut reports, mut moved) = (0_usize, 0_usize);
+    for current in currents {
+        let Some(name) = current.file_name() else {
+            continue;
+        };
+        let name = name.to_string_lossy();
+        let previous = args.previous.join(&*name);
+        if !previous.is_file() {
+            console::line(&format!("[drift] {name}: new, nothing to compare"));
+            continue;
+        }
+        match compare(&read_json(&previous)?, &read_json(&current)?, args.percent) {
+            Comparison::NotComparable(key) => {
+                console::line(&format!("[drift] {name}: not comparable, `{key}` differs"));
+            }
+            Comparison::Compared(drifts) => {
+                if !drifts.is_empty() {
+                    reports += 1;
+                }
+                for drift in drifts {
+                    moved += 1;
+                    console::line(&format!(
+                        "[drift] {name}: {} {} -> {} ({:+} %)",
+                        drift.path,
+                        drift.previous,
+                        drift.current,
+                        drift.percent()
+                    ));
+                }
+            }
+        }
+    }
+    console::line(&if moved == 0 {
+        format!("drift: no indicator moved by more than {} %", args.percent)
+    } else {
+        format!(
+            "drift: {moved} indicators moved by more than {} % in {reports} reports",
+            args.percent
+        )
+    });
     Ok(ExitCode::SUCCESS)
 }
 

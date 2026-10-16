@@ -241,6 +241,105 @@ fn list_worst_names_the_games_to_replay_and_refuses_a_report_without_games() {
 }
 
 #[test]
+fn drift_names_the_indicators_that_moved_since_the_night_before() {
+    let dir = tempfile::tempdir().unwrap();
+    let tonight = dir.path().join("tonight");
+    let yesterday = dir.path().join("yesterday");
+    std::fs::create_dir_all(&tonight).unwrap();
+    std::fs::create_dir_all(&yesterday).unwrap();
+    let report = path(&tonight, "optimist-story.json");
+    let ran = sim(&[
+        "run",
+        "--difficulty",
+        "story",
+        "--seeds",
+        "1",
+        "--limit",
+        "1",
+        "--out",
+        &report,
+    ]);
+    assert!(ran.status.success(), "{}", out(&ran));
+    let (tonight_dir, yesterday_dir) = (
+        tonight.to_string_lossy().into_owned(),
+        yesterday.to_string_lossy().into_owned(),
+    );
+    // No night before: nothing to compare, and it is not a failure.
+    let none = sim(&[
+        "drift",
+        "--previous",
+        &yesterday_dir,
+        "--current",
+        &tonight_dir,
+    ]);
+    assert!(none.status.success(), "{}", out(&none));
+    assert!(out(&none).contains("no previous night"), "{}", out(&none));
+    // The same night: nothing moved.
+    std::fs::copy(&report, yesterday.join("optimist-story.json")).unwrap();
+    let same = sim(&[
+        "drift",
+        "--previous",
+        &yesterday_dir,
+        "--current",
+        &tonight_dir,
+    ]);
+    assert!(same.status.success(), "{}", out(&same));
+    assert!(
+        out(&same).contains("drift: no indicator moved by more than 5 %"),
+        "{}",
+        out(&same)
+    );
+    // The night before had 400 more credits at the median than tonight (a drift of over 5 %).
+    let json = std::fs::read_to_string(&report).unwrap();
+    let value: serde_json::Value = serde_json::from_str(&json).unwrap();
+    let median = value["credits"]["median"].as_u64().unwrap();
+    let older = json.replacen(
+        &format!("\"median\": {median}"),
+        &format!("\"median\": {}", median + median / 2 + 1),
+        1,
+    );
+    assert_ne!(older, json);
+    std::fs::write(yesterday.join("optimist-story.json"), older).unwrap();
+    let moved = sim(&[
+        "drift",
+        "--previous",
+        &yesterday_dir,
+        "--current",
+        &tonight_dir,
+    ]);
+    assert!(moved.status.success(), "drift never fails: {}", out(&moved));
+    let text = out(&moved);
+    assert!(text.contains("[drift] optimist-story.json: "), "{text}");
+    assert!(text.contains(" -> "), "{text}");
+    assert!(
+        text.contains("indicators moved by more than 5 % in 1 reports"),
+        "{text}"
+    );
+    // Another report with no counterpart is new, and a missing current directory is refused.
+    std::fs::write(tonight.join("economy.json"), json).unwrap();
+    let new = sim(&[
+        "drift",
+        "--previous",
+        &yesterday_dir,
+        "--current",
+        &tonight_dir,
+    ]);
+    assert!(
+        out(&new).contains("[drift] economy.json: new, nothing to compare"),
+        "{}",
+        out(&new)
+    );
+    let missing = sim(&[
+        "drift",
+        "--previous",
+        &yesterday_dir,
+        "--current",
+        &yesterday_dir.replace("yesterday", "nowhere"),
+    ]);
+    assert_eq!(missing.status.code(), Some(2));
+}
+
+#[test]
 fn the_monkey_writes_its_report_and_a_short_one_does_not_pass_t12() {
     let dir = tempfile::tempdir().unwrap();
     let file = path(dir.path(), "monkey.json");
