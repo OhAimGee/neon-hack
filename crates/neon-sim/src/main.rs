@@ -50,8 +50,8 @@ enum Command {
 
 #[derive(Args)]
 struct BenchArgs {
-    /// How many campaigns to time (the representative plans in turn, at Normal).
-    #[arg(long, default_value_t = 16)]
+    /// How many campaigns to time (the 216 plans in turn, at Normal): a thousand, as T13 says.
+    #[arg(long, default_value_t = 1000)]
     games: usize,
     /// Where to write the timings (`bench.json`: not a canonical report, it holds durations).
     #[arg(long)]
@@ -434,8 +434,7 @@ fn programs(args: &ProgramsArgs) -> Result<ExitCode, String> {
 fn bench_command(args: &BenchArgs) -> Result<ExitCode, String> {
     let content =
         Content::embedded().map_err(|e| format!("the game content does not load: {e}"))?;
-    let plans = plans(PlanSet::Representative)
-        .map_err(|e| format!("the game content does not load: {e}"))?;
+    let plans = plans(PlanSet::All).map_err(|e| format!("the game content does not load: {e}"))?;
     let targets = Targets::embedded().map_err(|e| format!("the thresholds do not load: {e}"))?;
     let report = bench(&content, &plans, args.games);
     if let Some(out) = &args.out {

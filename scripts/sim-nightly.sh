@@ -27,6 +27,6 @@ done
 
 # T13: the timings are not a canonical report (they hold durations): apart, not read by `check`.
 mkdir -p "$out/timings"
-"$sim" bench --games 16 --out "$out/timings/bench.json"
+"$sim" bench --out "$out/timings/bench.json"
 
 "$sim" check "$out"/*.json
