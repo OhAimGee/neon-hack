@@ -47,7 +47,7 @@ jobs:
           persist-credentials: false
       - name: Install the toolchain from rust-toolchain.toml
         run: rustup toolchain install
-      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
       # Clippy runs on all three systems: code under cfg(windows) is only seen on Windows.
       - run: cargo clippy --workspace --all-targets --locked -- -D warnings
 
@@ -67,7 +67,7 @@ jobs:
           persist-credentials: false
       - name: Install the toolchain from rust-toolchain.toml
         run: rustup toolchain install
-      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
       - run: cargo test --workspace --locked
 
   plain-only:
@@ -81,7 +81,7 @@ jobs:
           persist-credentials: false
       - name: Install the toolchain from rust-toolchain.toml
         run: rustup toolchain install
-      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
       - run: cargo clippy -p neon-cli --no-default-features --all-targets --locked -- -D warnings
       - run: cargo test -p neon-cli --no-default-features --locked
 
@@ -99,7 +99,7 @@ jobs:
           test "${MSRV%.0}" = "$declared" || { echo "MSRV $MSRV does not match rust-version $declared"; exit 1; }
       - name: Install the MSRV toolchain
         run: rustup toolchain install "$MSRV" --profile minimal
-      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
       - run: cargo +"$MSRV" check --workspace --all-targets --locked
 
   deny:
@@ -138,7 +138,7 @@ jobs:
           persist-credentials: false
       - name: Install the toolchain from rust-toolchain.toml
         run: rustup toolchain install
-      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
       - run: cargo doc --workspace --no-deps --document-private-items --locked
 
   sim-gate:
@@ -152,7 +152,7 @@ jobs:
           persist-credentials: false
       - name: Install the toolchain from rust-toolchain.toml
         run: rustup toolchain install
-      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
       - run: scripts/sim-gate.sh
 
   # The single check to require in the branch protection rules.
