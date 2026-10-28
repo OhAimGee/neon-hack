@@ -81,7 +81,7 @@ jobs:
       # commit: the owner chose not to pin this action.
       - name: Keep the reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sim-nightly-${{ github.run_id }}
           path: |
